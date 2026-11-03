@@ -1,4 +1,5 @@
-// Battle Ostriches core rules ("Balanced" ruleset). All tuning lives in CONFIG.
+// Battle Ostriches core rules ("Open skies" ruleset). All tuning lives in CONFIG.
+// Both birds always see each other. Eggs stay hidden from the vulture until found (landed on) or smashed.
 const CONFIG = {
   cols: 9, rows: 7,
   eggs: 3,
@@ -6,34 +7,43 @@ const CONFIG = {
   warmth: 20,          // an egg goes cold unless the ostrich is on it (or carrying it) at least once every N rounds
   maxSit: 3,           // max consecutive Sit turns; then the ostrich must step off for at least one turn
   vultureFly: 2,       // vulture flies up to N squares (king-move distance)
-  throwRange: 1,       // vulture throws at its own square or within N (stones are unlimited)
+  throwRange: 1,       // vulture throws at its own square or one next to it...
   vultureStart: [4, 3],
-  sitDepth: 1,         // footprint depth added each Sit
-  smellRange: 2,       // on landing, the vulture learns if any egg is within N squares (yes/no)
+  smellRange: 1,       // ...and on landing learns if any egg is on its square or next to it (yes/no, this turn only)
+  food: 12,            // the ostrich must step onto food at least once every N of its turns, or it starves
+  stones: 1,           // stones the vulture can hold; refill by landing on a rock pile
+  foods: [[0, 0], [8, 6]],   // fixed food spots (never run out)
+  rocks: [[4, 0], [4, 6]],   // fixed rock piles (never run out)
 };
 const dist = (a, b) => Math.max(Math.abs(a[0] - b[0]), Math.abs(a[1] - b[1]));
 const key = (p) => p[0] + ',' + p[1];
 const inB = (p, c = CONFIG) => p[0] >= 0 && p[1] >= 0 && p[0] < c.cols && p[1] < c.rows;
+const isFood = (g, p) => g.cfg.foods.some(q => key(q) === key(p));
+const isRock = (g, p) => g.cfg.rocks.some(q => key(q) === key(p));
+const smashed = (g, p) => g.marks[key(p)] === 'hit';
 
 function newGame(cfg = CONFIG) {
   return { cfg, phase: 'setupEggs', round: 1, turn: 'blue', eggs: [], ostrich: null,
-    carrying: null, sitRun: 0, vulture: cfg.vultureStart.slice(),
-    prints: {}, marks: {}, smells: {}, vtracks: {}, winner: null, lastAction: null, lastCold: [] };
+    carrying: null, sitRun: 0, vulture: cfg.vultureStart.slice(), hungerLeft: cfg.food, stones: cfg.stones,
+    marks: {}, sniff: null, winner: null, winBy: null, lastAction: null, lastCold: [] };
 }
 function eggAt(g, p) { return g.eggs.find(e => e.alive && e.pos && key(e.pos) === key(p)); }
 function aliveEggs(g) { return g.eggs.filter(e => e.alive); }
 const myTurn = (g, r) => g.phase === 'play' && g.turn === r;
 
-// --- setup ---
+// --- setup --- eggs can't go on or next to food, or on a rock pile, or under the vulture
+function canPlaceEgg(g, p) {
+  return g.phase === 'setupEggs' && inB(p, g.cfg) && !eggAt(g, p) && key(p) !== key(g.vulture) && !isRock(g, p) && !g.cfg.foods.some(f => dist(f, p) <= 1);
+}
 function placeEgg(g, p) {
-  if (g.phase !== 'setupEggs' || !inB(p, g.cfg) || eggAt(g, p) || key(p) === key(g.vulture)) return false;
+  if (!canPlaceEgg(g, p)) return false;
   g.eggs.push({ id: g.eggs.length, pos: p.slice(), alive: true, lastWarm: 0 });
   if (g.eggs.length === g.cfg.eggs) g.phase = 'setupOstrich';
   return true;
 }
 function placeOstrich(g, p) {
   if (g.phase !== 'setupOstrich' || !inB(p, g.cfg)) return false;
-  g.ostrich = p.slice(); g.prints[key(p)] = 1;
+  g.ostrich = p.slice();
   g.phase = 'play'; g.turn = 'red'; // vulture opens round 1
   return true;
 }
@@ -53,8 +63,8 @@ function ostrichMoves(g, carry = false) {
   for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) {
     if (!dx && !dy) continue;
     const p = [g.ostrich[0] + dx, g.ostrich[1] + dy];
-    if (!inB(p, g.cfg)) continue;
-    if (carry && eggAt(g, p)) continue; // can't carry onto another egg
+    if (!inB(p, g.cfg) || smashed(g, p)) continue;  // smashed squares are blocked
+    if (carry && (eggAt(g, p) || isFood(g, p) || isRock(g, p))) continue; // can't carry onto another egg, food or rocks
     res.push(p);
   }
   return res;
@@ -65,22 +75,21 @@ function mustLeave(g) { return myTurn(g, 'blue') && onEgg(g) && g.sitRun >= g.cf
 function ostrichStep(g, p, carry = false) {
   if (!ostrichMoves(g, carry).some(q => key(q) === key(p))) return false;
   if (carry) { const e = eggAt(g, g.ostrich); e.pos = null; g.carrying = e.id;
-    if (g.marks[key(g.ostrich)] === 'spotted') delete g.marks[key(g.ostrich)]; } // the egg moved: spotted mark clears
-  const from = g.ostrich; g.ostrich = p.slice(); g.sitRun = 0;
-  g.prints[key(p)] = (g.prints[key(p)] || 0) + 1;
-  (g.printT = g.printT || {})[key(p)] = g.round; (g.printDir = g.printDir || {})[key(p)] = [p[0] - from[0], p[1] - from[1]];
-  g.lastAction = { type: carry ? 'carry' : 'step' }; g.lastOAct = 'move';
+    if (g.marks[key(g.ostrich)] === 'spotted') delete g.marks[key(g.ostrich)]; } // the egg moved: found mark clears
+  g.ostrich = p.slice(); g.sitRun = 0;
+  g.lastAction = { type: carry ? 'carry' : 'step' };
   endOstrich(g); return true;
 }
 function ostrichSit(g) {
   if (!canSit(g)) return false;
-  g.prints[key(g.ostrich)] = (g.prints[key(g.ostrich)] || 0) + g.cfg.sitDepth; (g.printT = g.printT || {})[key(g.ostrich)] = g.round;
-  g.sitRun++; g.lastAction = { type: 'sit' }; g.lastOAct = 'stay'; endOstrich(g); return true;
+  g.sitRun++; g.lastAction = { type: 'sit' }; endOstrich(g); return true;
 }
 function smellsEgg(g, p) { return aliveEggs(g).some(e => { const q = e.pos || (g.carrying === e.id ? g.ostrich : null); return q && dist(q, p) <= g.cfg.smellRange; }); }
 function endOstrich(g) {
   const e = g.carrying !== null ? g.eggs[g.carrying] : eggAt(g, g.ostrich);
   if (e) e.lastWarm = g.round;
+  if (isFood(g, g.ostrich)) { g.hungerLeft = g.cfg.food; g.lastAction.ate = true; }
+  else if (--g.hungerLeft <= 0) { g.winner = 'red'; g.winBy = 'starved'; g.phase = 'over'; return; }
   endRound(g);
 }
 
@@ -91,32 +100,31 @@ function flyTargets(g) {
     const d = dist([x, y], g.vulture); if (d >= 1 && d <= g.cfg.vultureFly) r.push([x, y]); }
   return r;
 }
+// Needs a stone. Can't throw at the ostrich or any square next to it (the ostrich guards its own patch).
 function throwTargets(g) {
-  if (!myTurn(g, 'red')) return [];
+  if (!myTurn(g, 'red') || g.stones < 1) return [];
   const r = []; for (let x = 0; x < g.cfg.cols; x++) for (let y = 0; y < g.cfg.rows; y++)
-    if (dist([x, y], g.vulture) <= g.cfg.throwRange) r.push([x, y]);
+    if (dist([x, y], g.vulture) <= g.cfg.throwRange && !(g.ostrich && dist([x, y], g.ostrich) <= 1) && !smashed(g, [x, y])) r.push([x, y]);
   return r;
 }
 function vultureFly(g, p) {
   if (!flyTargets(g).some(q => key(q) === key(p))) return false;
   const from = g.vulture.slice();
   g.vulture = p.slice(); g.lastAction = { type: 'fly', from };
-  g.vtracks[key(p)] = (g.vtracks[key(p)] || 0) + 1;
   const e = eggAt(g, p);
   if (e && key(p) !== key(g.ostrich)) { g.marks[key(p)] = 'spotted'; g.lastAction.spotted = p.slice(); }
-  const sm = smellsEgg(g, p); g.smells[key(p)] = sm; g.smellN = (g.smellN || 0) + 1; (g.smellT = g.smellT || {})[key(p)] = g.smellN; g.lastAction.smell = sm;
+  if (isRock(g, p)) { g.lastAction.refill = g.stones < g.cfg.stones; g.stones = g.cfg.stones; }
+  g.lastAction.smell = smellsEgg(g, p);
+  g.sniff = { p: p.slice(), yes: g.lastAction.smell }; // shown until the vulture's next move
   g.turn = 'blue'; dropCarried(g); return true;
 }
 function vultureThrow(g, p) {
   if (!throwTargets(g).some(q => key(q) === key(p))) return false;
-  const e = eggAt(g, p), guarded = g.ostrich && key(p) === key(g.ostrich); let result;
-  if (guarded && g.carrying !== null) { g.eggs[g.carrying].alive = false; g.carrying = null; result = 'hit'; } // a carried egg is exposed
-  else if (guarded && e) result = 'feather';
-  else if (e) { e.alive = false; result = 'hit'; }
-  else result = 'miss';
-  if (g.marks[key(p)] !== 'hit') g.marks[key(p)] = result;
+  g.stones--; g.sniff = null;
+  const e = eggAt(g, p); let result;
+  if (e) { e.alive = false; result = 'hit'; g.marks[key(p)] = 'hit'; } else result = 'miss';
   g.lastAction = { type: 'throw', from: g.vulture.slice(), p: p.slice(), result }; g.lastThrow = p.slice();
-  if (!aliveEggs(g).length) { g.winner = 'red'; g.phase = 'over'; } else { g.turn = 'blue'; dropCarried(g); }
+  if (!aliveEggs(g).length) { g.winner = 'red'; g.winBy = 'smashed'; g.phase = 'over'; } else { g.turn = 'blue'; dropCarried(g); }
   return result;
 }
 function endRound(g) {
@@ -124,22 +132,16 @@ function endRound(g) {
   for (const e of aliveEggs(g)) if (g.round - e.lastWarm >= g.cfg.warmth) {
     e.alive = false; g.lastCold.push(e.id);
     if (g.carrying === e.id) g.carrying = null;
+    if (e.pos && g.marks[key(e.pos)] === 'spotted') delete g.marks[key(e.pos)];
   }
-  if (!aliveEggs(g).length) { g.winner = 'red'; g.phase = 'over'; return; }
-  if (g.round >= g.cfg.rounds) { g.winner = 'blue'; g.phase = 'over'; return; }
+  if (!aliveEggs(g).length) { g.winner = 'red'; g.winBy = 'cold'; g.phase = 'over'; return; }
+  if (g.round >= g.cfg.rounds) { g.winner = 'blue'; g.winBy = 'survived'; g.phase = 'over'; return; }
   g.round++; g.turn = 'red';
 }
-// Noise reduction: what either side's view shows. Footprints: last 3 rounds. Smells / vulture landings: last 3 landings.
-// Stone marks: only the most recent throw. Spotted marks stay until the egg moves.
-function visible(g) {
-  const pick = (o, ok) => Object.fromEntries(Object.entries(o || {}).filter(([k]) => ok(k)));
-  const pt = g.printT || {}, st = g.smellT || {}, top = Object.values(st).sort((a, b) => b - a).slice(0, 3), minS = top.length ? top[top.length - 1] : Infinity;
-  const pOk = k => (pt[k] || 0) >= g.round - 2, sOk = k => (st[k] || 0) >= minS, lt = g.lastThrow ? key(g.lastThrow) : null;
-  return { prints: pick(g.prints, pOk), printT: pick(pt, pOk), printDir: pick(g.printDir, pOk), smells: pick(g.smells, sOk), smellT: pick(st, sOk),
-    vtracks: pick(g.vtracks, sOk), marks: pick(g.marks, k => g.marks[k] === 'spotted' || k === lt) };
-}
+// What the vulture may see: found eggs ('spotted') and smashed squares ('hit'). Nothing else persists.
+function visible(g) { return { marks: Object.fromEntries(Object.entries(g.marks).filter(([, m]) => m === 'spotted' || m === 'hit')) }; }
 function coldIn(g, e) { return g.cfg.warmth - (g.round - e.lastWarm); } // rounds left before going cold
 
-const API = { CONFIG, newGame, placeEgg, placeOstrich, ostrichMoves, ostrichStep, ostrichSit, canSit, canCarry, mustLeave, onEgg, dropCarried,
-  smellsEgg, flyTargets, throwTargets, vultureFly, vultureThrow, eggAt, aliveEggs, coldIn, key, dist, visible };
+const API = { CONFIG, newGame, canPlaceEgg, placeEgg, placeOstrich, ostrichMoves, ostrichStep, ostrichSit, canSit, canCarry, mustLeave, onEgg, dropCarried,
+  smellsEgg, flyTargets, throwTargets, vultureFly, vultureThrow, eggAt, aliveEggs, coldIn, key, dist, visible, isFood, isRock };
 if (typeof module !== 'undefined') module.exports = API; else window.BO = API;

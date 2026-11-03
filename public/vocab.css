@@ -96,3 +96,50 @@ html[data-theme] #board .cell.zone.legal{box-shadow:inset 0 0 0 3px #ffe14d,inse
 #board .cell{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
 #board .underegg,html[data-theme] #board .underegg{position:absolute;right:-2%;bottom:-2%;font-size:.75em;line-height:1;z-index:4;filter:drop-shadow(0 0 3px #fff) drop-shadow(0 0 2px #ffe14d);animation:ueg 1.2s ease-in-out infinite;pointer-events:none}
 @keyframes ueg{50%{transform:scale(1.15)}}
+/* ===== Open-skies board (all themes): one big simple icon per square, white ring = move, red target = throw ===== */
+#board .cell{position:relative}
+#board .ic,html[data-theme] #board .ic{position:absolute;left:50%;top:50%;width:78%;height:78%;transform:translate(-50%,-50%);display:block;z-index:1;pointer-events:none;background:none!important;border:0!important;box-shadow:none!important}
+#board .ic svg{width:100%;height:100%;display:block;filter:drop-shadow(0 1px 1px rgba(0,0,0,.5))}
+#board .ic-myegg svg:first-child{position:absolute;left:12%;top:8%;width:76%;height:84%}
+#board .ic-myegg.found svg:first-child ellipse{fill:#ffd21f}
+#board .wring,html[data-theme] #board .wring{position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-events:none;filter:none}
+#board .pc .wring,#board .cell>.wring{left:6%;top:6%;width:88%;height:88%}
+#board .wnum,html[data-theme] #board .wnum{position:absolute;left:50%;top:52%;transform:translate(-50%,-50%);z-index:3;font:900 clamp(10px,3vw,14px)/1 system-ui,-apple-system,sans-serif!important;color:#111!important;
+  text-shadow:0 0 2px #fff,0 0 2px #fff!important;pointer-events:none;letter-spacing:0}
+#board .wnum.low{color:#0b3b66!important}
+#board .pc,html[data-theme] #board .pc{position:absolute;left:8%;top:8%;width:84%;height:84%;background:none!important;border:0!important;box-shadow:none!important;z-index:4;pointer-events:none}
+#board .pc svg{width:100%;height:100%}
+#board .cell>.carry{position:absolute;right:2%;bottom:2%;width:36%;height:36%;z-index:6;pointer-events:none}
+/* legal = clean white ring (replaces the yellow glow) */
+html[data-theme] #board .cell.legal,#board .cell.legal{background-image:none!important;animation:none!important;filter:none!important;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.28),inset 0 0 0 2px rgba(0,0,0,.30)!important}
+#board .cell.legal::after,html[data-theme] #board .cell.legal::after{content:'';position:absolute;left:12%;top:12%;right:12%;bottom:12%;border-radius:50%;border:3px solid #fff;
+  box-shadow:0 0 0 1.5px rgba(0,0,0,.55),inset 0 0 0 1.5px rgba(0,0,0,.55);z-index:5;pointer-events:none;background:none;animation:none}
+#board .cell.legal.target::after,html[data-theme] #board .cell.legal.target::after{border-color:#ff2a1f;background:radial-gradient(circle,#ff2a1f 0 12%,transparent 13% 38%,rgba(255,42,31,.9) 39% 46%,transparent 47%)}
+/* smashed squares look blocked */
+html[data-theme] #board .cell.hit,#board .cell.hit{background-image:linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.35))!important}
+/* miss = flash only */
+#board .cell.flash{animation:missflash .8s ease-out 1!important}
+@keyframes missflash{0%{background-color:#fff}100%{}}
+/* sniff + hunger banner */
+#banner,html[data-theme] #banner{margin:4px auto 6px;max-width:520px;text-align:center;font:900 20px/1.2 system-ui,-apple-system,sans-serif!important;padding:8px 12px;border-radius:12px;
+  color:#fff!important;background:#333!important;border:2px solid #000!important;box-shadow:0 2px 0 #000!important;text-transform:none!important;letter-spacing:0!important}
+#banner.yes,html[data-theme] #banner.yes{background:#1f9d3a!important}
+#banner.no,html[data-theme] #banner.no{background:#4b5563!important}
+#banner.hungry,html[data-theme] #banner.hungry{background:#c2410c!important}
+#banner.hidden{display:none!important}
+/* HUD: hunger + stones */
+#stats{display:flex;gap:8px;align-items:center;margin-top:4px}
+#stats.hidden{display:none}
+#stats>span{display:inline-flex;align-items:center;gap:3px;padding:1px 6px;border-radius:9px;background:rgba(0,0,0,.35);color:#fff}
+#stats svg{width:18px;height:18px}
+#stats b{font-weight:900;color:#fff}
+#stats .hh.low{background:#c2410c;animation:hpulse 1s ease-in-out infinite alternate}
+#stats .hs.empty{opacity:.55}
+@keyframes hpulse{to{filter:brightness(1.3)}}
+@media (prefers-reduced-motion:reduce){#stats .hh.low{animation:none}#board .cell.flash{animation:none!important}}
+#hud .ctr,html[data-theme] #hud .ctr{white-space:nowrap!important;font-size:clamp(11px,3.2vw,15px)!important}
+
+/* ostrich standing on its egg: ring wraps the whole cell and the number becomes a badge above the bird, drawn over theme sprites (#fx z 30) */
+#board .cell.sat .wring,html[data-theme] #board .cell.sat .wring{inset:-2%!important;left:-2%!important;top:-2%!important;width:104%!important;height:104%!important;z-index:41!important}
+#board .cell.sat .wnum,html[data-theme] #board .cell.sat .wnum{top:2%!important;left:84%!important;transform:translate(-50%,-50%)!important;z-index:42!important;background:#fff;border:2px solid var(--wc,#111);border-radius:9px;padding:1px 4px;text-shadow:none!important}

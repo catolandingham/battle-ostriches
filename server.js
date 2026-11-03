@@ -24,20 +24,21 @@ const rooms = new Map(); // code -> {g, players:{blue:{ws,token},red:{ws,token}}
 const code = () => { let c; do { c = Array.from({ length: 4 }, () => 'ABCDEFGHJKLMNPQRSTUVWXYZ'[Math.random() * 24 | 0]).join(''); } while (rooms.has(c)); return c; };
 const tok = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
 function view(room, role) {
-  const g = room.g, vis = B.visible(g), mine = g.phase === 'play' && g.turn === role;
-  const v = { role, code: room.code, phase: g.phase, turn: g.turn, round: g.round, cfg: g.cfg, winner: g.winner,
-    eggsLeft: B.aliveEggs(g).length, marks: g.phase === 'over' ? g.marks : vis.marks, vulture: g.vulture, lastAction: g.lastAction && (role === 'blue' || /fly|throw/.test(g.lastAction.type)) ? g.lastAction : null,
+  const g = room.g, mine = g.phase === 'play' && g.turn === role, pub = AI.redView(g);
+  const v = { role, code: room.code, phase: g.phase, turn: g.turn, round: g.round, cfg: g.cfg, winner: g.winner, winBy: g.winBy,
+    eggsLeft: B.aliveEggs(g).length, marks: pub.marks, vulture: g.vulture, ostrich: g.ostrich, stones: g.stones, hungerLeft: g.hungerLeft, sniff: g.sniff,
+    sitRun: g.sitRun, carried: g.carrying !== null, lastAction: role === 'blue' || g.phase === 'over' ? g.lastAction : pub.lastAction,
     lastCold: (g.lastCold || []).length, opponent: !!room.ai || !!room.pass || !!(room.players[role === 'blue' ? 'red' : 'blue'] || {}).ws, myTurn: mine,
     // 'joined' = the other seat has ever been taken; the invite panel is only for a seat nobody has claimed yet
     joined: !!room.ai || !!room.pass || !!room.players[role === 'blue' ? 'red' : 'blue'], ai: room.ai ? room.level : null, pass: !!room.pass };
+  // during setup the vulture doesn't see where the ostrich will stand until play starts (ostrich is null until then anyway)
   if (role === 'blue' || g.phase === 'over') {
     Object.assign(v, { eggs: g.eggs.map(e => ({ pos: e.pos, alive: e.alive, coldIn: B.coldIn(g, e), carried: g.carrying === e.id })),
-      ostrich: g.ostrich, carrying: g.carrying, onEgg: B.onEgg(g), sitRun: g.sitRun, mustLeave: B.mustLeave(g) });
+      carrying: g.carrying, onEgg: B.onEgg(g), mustLeave: B.mustLeave(g) });
     if (role === 'blue') Object.assign(v, { moves: mine ? B.ostrichMoves(g) : [], carryMoves: mine ? B.ostrichMoves(g, true) : [],
-      can: { sit: B.canSit(g), carry: B.canCarry(g) }, vtracks: vis.vtracks });
+      can: { sit: B.canSit(g), carry: B.canCarry(g) } });
   }
-  if (role === 'red' || g.phase === 'over') Object.assign(v, { prints: vis.prints, smells: vis.smells, smellT: vis.smellT, printT: vis.printT, printDir: vis.printDir, ostrichDid: g.lastOAct || null });
-  if (role === 'red') Object.assign(v, { fly: B.flyTargets(g), throw: B.throwTargets(g) });
+  if (role === 'red') Object.assign(v, { fly: pub.fly, throw: pub.throw });
   return v;
 }
 const active = g => g.phase === 'play' ? g.turn : 'blue'; // pass & play: whose hands the phone is in
@@ -46,7 +47,7 @@ function broadcast(room) { schedAI(room);
   for (const r of ['blue', 'red']) { const p = room.players[r]; if (p && p.ws && p.ws.readyState === 1) p.ws.send(JSON.stringify({ t: 'state', state: view(room, r) })); } }
 function act(room, role, m) {
   const g = room.g, p = m.p;
-  if (m.a === 'rematch' && g.phase === 'over') { room.g = B.newGame(); return true; }
+  if (m.a === 'rematch' && g.phase === 'over') { room.g = B.newGame(); room.mem = {}; return true; }
   if (role === 'blue') {
     if (g.phase === 'setupEggs') return B.placeEgg(g, p);
     if (g.phase === 'setupOstrich') return B.placeOstrich(g, p);
@@ -66,7 +67,7 @@ function schedAI(room) {
   if (!due) return;
   const delay = g.phase.startsWith('setup') ? 250 : 800 + Math.random() * 700;
   room.aiT = setTimeout(() => { room.aiT = null; if (!rooms.has(room.code) || room.g !== g) return broadcast(room);
-    const m = r === 'blue' ? AI.ostrich(g, room.level) : AI.vulture(view(room, 'red'), room.level);
+    const m = r === 'blue' ? AI.ostrich(g, room.level) : AI.vulture(AI.redView(g), room.level, room.mem || (room.mem = {}));
     if (!act(room, r, m)) { console.error('AI illegal move', m); return; } room.touched = Date.now(); broadcast(room); }, delay);
 }
 const wss = new WebSocketServer({ server, path: '/ws' });

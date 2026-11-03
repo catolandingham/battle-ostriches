@@ -12,7 +12,7 @@ const vis = p => p.evaluate(() => { const w = document.getElementById('wait'), r
     await A.goto(U + '?theme=' + th); await A.click('#playFriend'); await A.click('#twoPhones'); await A.click('#roleBlue'); await A.waitForSelector('#shareCode:not(:empty)');
     assert.ok(await vis(A) > 50, th + ': panel shown while waiting'); assert.ok(await A.locator('#inviteBtn').isHidden());
     const link = (await A.inputValue('#shareLink')).replace(/^http:\/\/[^/]+/, 'http://localhost:3998');
-    for (const [x, y] of [[3, 4], [8, 6], [0, 6], [8, 6]]) { await cell(A, x, y).click(); await A.waitForTimeout(60); } // set up BEFORE opponent joins
+    for (const [x, y] of [[3, 4], [6, 2], [2, 5], [7, 2]]) { await cell(A, x, y).click(); await A.waitForTimeout(60); } // set up BEFORE opponent joins
     await V.goto(link + '&theme=' + th); await V.waitForSelector('#actions.mine');
     await A.waitForFunction(() => document.getElementById('wait').classList.contains('hidden'));
     assert.equal(await vis(A), 0, th + ': hidden after join'); assert.equal(await vis(V), 0);
@@ -33,13 +33,13 @@ const vis = p => p.evaluate(() => { const w = document.getElementById('wait'), r
   for (const role of ['blue', 'red']) {
     const [P, c] = await mk(); await P.goto(U + '?theme=volcano'); await P.click('#playAI'); await P.click(role === 'blue' ? '#roleBlue' : '#roleRed');
     await P.waitForSelector('#board .cell'); assert.equal(await vis(P), 0, 'no share panel vs AI'); assert.ok(await P.locator('#inviteBtn').isHidden());
-    if (role === 'blue') for (const [x, y] of [[0, 0], [2, 0], [8, 6], [0, 0]]) { await cell(P, x, y).click(); await P.waitForTimeout(80); }
+    if (role === 'blue') for (const [x, y] of [[2, 2], [6, 2], [2, 5], [2, 2]]) { await cell(P, x, y).click(); await P.waitForTimeout(80); }
     let n = 0, t0 = Date.now(), shot = false;
     while (!(await P.locator('#over:not(.hidden)').count()) && n < 200) {
       await P.waitForSelector('#actions.mine, #over:not(.hidden)', { timeout: 10000 }); if (await P.locator('#over:not(.hidden)').count()) break;
       if (!shot && n === 3) { await P.screenshot({ path: OUT + 'vsai-' + role + '.png' }); shot = true; }
       if (role === 'blue') { const s = await P.locator('#actions button:has-text("Sit")'); if (await s.count() && await s.isEnabled() && n % 3) await s.click(); else await P.locator('.cell.legal').first().click(); }
-      else { if (n % 4 === 3) { await P.click('#actions button:has-text("Throw")'); await P.locator('.cell.legal').first().click(); } else await P.locator('.cell.legal').nth(n % 5).click(); }
+      else { const tb = P.locator('#actions button:has-text("Throw")'); if (n % 4 === 3 && await tb.isEnabled()) { await tb.click(); if (await P.locator('.cell.legal').count()) await P.locator('.cell.legal').first().click(); else { await P.click('#actions button:has-text("Fly")'); await P.locator('.cell.legal').first().click(); } } else await P.locator('.cell.legal').nth(n % 5).click(); }
       await P.waitForFunction(() => !document.querySelector('#actions.mine') || document.querySelector('#over:not(.hidden)'), null, { timeout: 5000 }); n++; }
     const per = (Date.now() - t0) / n; console.log('vs AI', role, 'turns', n, 'ms/turn', per | 0, await P.textContent('#over h1'));
     assert.ok(await P.locator('#over:not(.hidden)').count(), 'game finished'); assert.ok(per > 800, 'AI delay');
