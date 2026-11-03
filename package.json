@@ -1,0 +1,23 @@
+{
+  "name": "battle-ostriches",
+  "version": "1.0.0",
+  "description": "Static, no build. Open index.html. Tuning: CONFIG in game.js. Tests: `node test.js`.",
+  "main": "game.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node test.js && node e2e.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "ws": "^8.22.1"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "playwright-core": "^1"
+  }
+}
