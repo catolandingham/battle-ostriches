@@ -44,3 +44,35 @@ html[data-theme=neon],html[data-theme=neon] body{background:#07061a radial-gradi
 [data-theme=nature] .cell.legal{box-shadow:inset 0 0 0 3px #fffbe8!important}
 [data-theme=neon] .cell.miss,[data-theme=neon] .cell.miss *{color:#ff5bd6!important;fill:#ff5bd6;text-shadow:0 0 6px #ff5bd6;opacity:1!important}
 [data-theme=neon] .eggw{background:#08071e;color:#ffb347;border-color:#ffb347}[data-theme=neon] .eggw.crit{color:#ff3b6b;border-color:#ff3b6b}[data-theme=neon] .rock{filter:drop-shadow(0 0 4px #9ff3ff)}
+/* ===== presentation layer ===== */
+#fx{position:absolute;left:0;top:0;width:0;height:0;z-index:30;pointer-events:none}
+.spr{position:absolute;left:0;top:0;will-change:transform;filter:drop-shadow(0 3px 2px #0006)}
+.spr svg{width:100%;height:100%}
+#fx.neon .spr{filter:drop-shadow(0 0 4px currentColor)}#fx.neon .spr-o{color:#38d6f0}#fx.neon .spr-v{color:#e04cff}
+[data-theme=nature] .cell .pc,[data-theme=neon] .cell .pc{visibility:hidden}
+.fxring{position:absolute;border:3px solid;border-radius:50%;animation:fxr .5s ease-out forwards}
+.fxring.radar{border-width:2px;background:radial-gradient(circle,#5effa022 0,#5effa000 70%);animation-name:radar}
+@keyframes fxr{from{transform:scale(.3);opacity:1}to{transform:scale(1.2);opacity:0}}
+@keyframes radar{0%{transform:scale(.1);opacity:1}70%{opacity:.8}100%{transform:scale(1);opacity:0}}
+.fxsvg{position:absolute;overflow:visible}.laser{fill:none;stroke:#ff5bd6;stroke-width:3;filter:drop-shadow(0 0 6px #ff5bd6)}
+.fxstone{position:absolute;left:-7px;top:-7px;width:14px;height:14px;border-radius:45%;background:radial-gradient(circle at 35% 35%,#bbb,#555);box-shadow:0 2px 2px #0007}
+.fxdust{position:absolute;width:16px;height:16px;border-radius:50%;background:#d9c296}
+.fxspark{position:absolute;width:5px;height:5px;border-radius:50%}
+/* --- NATURE: no grid boxes; sand; faint grid only on reachable squares --- */
+[data-theme=nature] #board,[data-theme=nature] body.red #board{gap:0!important;padding:0!important;border:0!important;border-radius:18px!important;overflow:hidden;
+ background:#c9ad7c url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.035' numOctaves='4'/%3E%3CfeColorMatrix values='0 0 0 0 .55 0 0 0 0 .44 0 0 0 0 .27 0 0 0 .5 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E")!important;box-shadow:inset 0 0 40px #6b542f88,0 8px 20px #0005!important}
+[data-theme=nature] .cell,[data-theme=nature] body.red .cell{background:transparent!important;box-shadow:none!important;border-radius:0!important}
+[data-theme=nature] .cell.legal{outline:none!important;box-shadow:inset 0 0 0 1px #fff8e6aa!important;background:#fff8e61a!important}
+[data-theme=nature] .cell.nestok{box-shadow:inset 0 0 0 2px #6fbf5a!important}
+[data-theme=nature] .cell .num{font-size:0!important;position:absolute;inset:18%;background:no-repeat center/contain url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cg fill='%235b4426' opacity='.75'%3E%3Cpath d='M6 9l-2-5 1 0 2 4 1-5 1 0-1 5 3-4 1 1-3 4z'/%3E%3Cpath d='M12 19l-2-5 1 0 2 4 1-5 1 0-1 5 3-4 1 1-3 4z'/%3E%3C/g%3E%3C/svg%3E");transform:rotate(var(--prot,0deg))}
+[data-theme=nature] .cell.hit::before{content:""!important;inset:14%!important;background:no-repeat center/contain url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cpath d='M20 6c9 0 15 7 16 14 2 8-6 10-9 8 3 6-4 8-7 4-3 5-11 2-8-3-5 1-9-5-3-9C7 12 12 6 20 6z' fill='%23f4c430'/%3E%3Cpath d='M9 24l5-4-2-5 6 2 3-4 2 5 6-1-3 5' fill='none' stroke='%23fffbe8' stroke-width='3' stroke-linejoin='round'/%3E%3Cpath d='M9 24l5-4-2-5 6 2 3-4 2 5 6-1-3 5' fill='none' stroke='%236b5040' stroke-width='1.2'/%3E%3C/svg%3E")!important;clip-path:none!important}
+[data-theme=nature] .cell.hit{background:#7a5a3088!important}
+[data-theme=nature] .cell.miss::after{content:""!important;position:absolute;inset:26%;border-radius:50%;background:radial-gradient(circle,#4a3519 0 30%,#7a5f3a 45%,#b8996688 60%,transparent 70%)}
+[data-theme=nature] .rock{font-size:.8em!important;left:auto!important;bottom:auto!important;filter:sepia(.6)}
+[data-theme=nature] .cell.rocksq{background-image:none!important}
+/* --- NEON: arcade; glowing fading trails --- */
+[data-theme=neon] .cell .num{font-size:0!important;position:absolute;inset:30%;border-radius:50%;background:#e04cff;box-shadow:0 0 10px 3px #e04cff;opacity:.55}
+[data-theme=neon] .vtr{color:#e04cff!important;text-shadow:0 0 6px #e04cff}
+[data-theme=neon] .cell.legal{animation:nlg 1.6s ease-in-out infinite}@keyframes nlg{50%{box-shadow:inset 0 0 14px #5effa0aa}}
+[data-theme=neon] .cell.hit::before{content:""!important;inset:20%!important;background:radial-gradient(circle,#fff 0 10%,#ff7a1a 25%,#ff3b6b88 50%,transparent 70%)!important;clip-path:none!important}
+[data-theme=neon] .cell.sniff{animation:none}

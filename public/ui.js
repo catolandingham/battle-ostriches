@@ -42,7 +42,7 @@ function tapper(el,fn){let t=0;el.addEventListener('touchend',e=>{e.preventDefau
 tapper($('mkBlue'),()=>open({t:'create',role:'blue'}));
 tapper($('mkRed'),()=>open({t:'create',role:'red'}));
 tapper($('joinBtn'),()=>open({t:'join',code:$('codeIn').value.trim(),token:me.code===$('codeIn').value.trim().toUpperCase()?me.token:undefined}));
-tapper($('howBtn'),()=>TUT.show('all'));tapper($('helpBtn'),()=>TUT.show(S?S.role:'all'));
+tapper($('inviteBtn'),()=>{sheetOpen=true;render();});tapper($('waitClose'),()=>{sheetOpen=false;render();});tapper($('howBtn'),()=>UI.rules());tapper($('helpBtn'),()=>UI.rules());
 function muteLabel(){$('muteBtn').textContent=SFX.muted?'🔇':'🔊';$('muteBtn2').textContent=SFX.muted?'🔇 Sound off':'🔊 Sound on';}
 muteLabel();tapper($('muteBtn'),()=>{SFX.toggle();muteLabel();});tapper($('muteBtn2'),()=>{SFX.toggle();muteLabel();});
 function sounds(prev){if(!prev)return;const blue=S.role==='blue';
@@ -61,11 +61,23 @@ if(!roomQ)TUT.firstVisit();
 if(roomQ){$('codeIn').value=roomQ;open({t:'join',code:roomQ,token:me.code===roomQ.toUpperCase()?me.token:undefined});}
 $('shareBtn').onclick=()=>{const u=$('shareLink').value;if(navigator.share)navigator.share({title:'Battle Ostriches',text:'Play Battle Ostriches with me! Code '+S.code,url:u}).catch(()=>{});else{navigator.clipboard&&navigator.clipboard.writeText(u);$('shareBtn').textContent='Copied!';}};
 window.UI={rules(){$('rules').classList.remove('hidden')},closeRules(){$('rules').classList.add('hidden')},
- setMode(m){mode=m;render();},act(a){send({t:'act',a})},rematch(){send({t:'act',a:'rematch'})},
- menu(){S=null;localStorage.removeItem('bo_me');location.href='/';}};
+ setMode(m){mode=m;render();},act(a){coachDid(a);send({t:'act',a})},replayCoach(){['blue','red'].forEach(r=>localStorage.removeItem('bo_cs_'+r));if(S)render();},rematch(){send({t:'act',a:'rematch'})},
+ _rr(){if(S)render();},menu(){S=null;localStorage.removeItem('bo_me');location.href='/';}};
+// --- learn-by-playing coach marks: one hint, anchored, everything else dimmed; advances when the player does it ---
+const COACH={blue:[
+  {when:S=>S.myTurn&&S.moves.length,txt:'Tap a glowing square to step',at:'board',done:'step'},
+  {when:S=>S.myTurn&&S.can.sit,txt:'Sit on your egg to keep it warm (🔥 = turns until cold)',at:'sit',done:'sit'},
+  {when:S=>S.myTurn&&S.hungry&&S.food,txt:'Go eat the 🦗',at:'board',done:'eat'}],
+ red:[{when:S=>S.myTurn,txt:'Fly toward the footprints 👣',at:'board',done:'fly'},
+  {when:S=>S.myTurn&&S.stones>0,txt:'Now tap Throw, then a square next to you',at:'throw',done:'throw'},
+  {when:S=>S.myTurn&&!S.stones,txt:'Out of stones: land on a 🪨 rock to reload',at:'board',done:'refill'}]};
+const cIdx=r=>+(localStorage.getItem('bo_cs_'+r)||0);
+function coachNow(){if(!S||S.phase!=='play')return null;const st=COACH[S.role][cIdx(S.role)];return st&&st.when(S)?st:null;}
+function coachDid(a){if(!S)return;const st=COACH[S.role][cIdx(S.role)];if(st&&st.done===a&&st.when(S))localStorage.setItem('bo_cs_'+S.role,cIdx(S.role)+1);}
+let sheetOpen=false;
 function tap(x,y){if(!S)return;const p=[x,y];
  if(S.role==='blue'&&(S.phase==='setupEggs'||S.phase==='setupOstrich'))return send({t:'act',a:'place',p});
- if(!S.myTurn)return;const m=curMode();if(m)send({t:'act',a:m,p});}
+ if(!S.myTurn)return;const m=curMode();if(m){coachDid(m==='carry'?'step':m);if(S.role==='blue'&&S.food&&key(S.food)===key(p))coachDid('eat');if(S.role==='red'&&m==='fly'&&(S.cfg.rocks||[]).some(r=>key(r)===key(p)))coachDid('refill');send({t:'act',a:m,p});}}
 function curMode(){if(!S.myTurn)return null;if(S.role==='red')return mode||'fly';
  if(mode==='carry'&&S.can.carry)return'carry';return S.moves.length?'step':null;}
 function render(prev){
@@ -74,53 +86,79 @@ function render(prev){
  $('roundsLeft').textContent=C.rounds-S.round+1;$('eggsLeft').textContent=S.eggsLeft;if($('stonesLeft'))$('stonesLeft').textContent=S.stones;
  // waiting for opponent
  const link=location.origin+'/?room='+S.code,slot=$('wait-slot');
- if(!S.opponent&&S.phase!=='over'){const w=$('wait');w.classList.remove('hidden');slot.appendChild(w);$('shareCode').textContent=S.code;$('shareLink').value=link;}
- else $('wait').classList.add('hidden');
+ $('shareCode').textContent=S.code;$('shareLink').value=link;const w=$('wait');
+ if(!S.opponent&&S.phase!=='over'){w.classList.remove('hidden','sheet');slot.appendChild(w);sheetOpen=false;}
+ else if(sheetOpen){w.classList.remove('hidden');w.classList.add('sheet');document.body.appendChild(w);} else w.classList.add('hidden');
+ $('inviteBtn').classList.toggle('hidden',!S.opponent||S.phase==='over');
  const M=curMode(),L=S.myTurn?(blue?(M==='carry'?S.carryMoves:S.moves):(M==='throw'?S.throw:S.fly)):[];
  const lk=new Set(L.map(key)),setup=blue&&(S.phase==='setupEggs'||S.phase==='setupOstrich');
+ const B_dist=(a,b)=>Math.max(Math.abs(a[0]-b[0]),Math.abs(a[1]-b[1]));const la0=S.lastAction,sniff=!blue&&S.myTurn&&la0&&la0.type==='fly'&&la0.smell&&prev&&prev.turn==='blue';
  const prints=S.prints||{},maxP=Math.max(1,...Object.values(prints));
  const board=$('board');board.style.gridTemplateColumns=`repeat(${C.cols},1fr)`;board.innerHTML='';
  const eggAt={};(S.eggs||[]).forEach((e,i)=>{if(e.alive&&e.pos)eggAt[key(e.pos)]=e;});
  for(let y=0;y<C.rows;y++)for(let x=0;x<C.cols;x++){const k=x+','+y,d=document.createElement('div');d.className='cell';
-  const m=S.marks[k];if(m)d.classList.add(m);
+  let m=S.marks[k];if(!blue&&m==='fake')m=null;if(m==='fake')m='miss';if(m)d.classList.add(m);if(!blue&&m==='spotted')d.innerHTML+='<div class="egg seen"></div>';
   if(lk.has(k)||(setup&&!eggAt[k]&&(S.phase==='setupOstrich'||k!==key(S.vulture))))d.classList.add('legal');
   const n=prints[k];if(!blue&&n&&m!=='hit'){d.style.background=`rgb(${110+n/maxP*120|0},${34+n/maxP*60|0},34)`;d.innerHTML+=`<span class="num">👣${n>1?n:''}</span>`;}
-  if(blue&&S.vtracks&&S.vtracks[k])d.innerHTML+=`<span class="vtr" style="opacity:${Math.min(1,.35+S.vtracks[k]*.2)}">🪶${S.vtracks[k]>1?S.vtracks[k]:''}</span>`;
+  if(blue&&S.vtracks&&S.vtracks[k]&&!(S.ostrich&&k===key(S.ostrich)))d.innerHTML+=`<span class="vtr" style="opacity:${Math.min(.9,.3+S.vtracks[k]*.15)}">●</span>`;
   if(blue&&S.nestOk&&S.nestOk.some(q=>key(q)===k))d.classList.add('nestok');
   if(blue&&S.can&&S.can.down&&S.ostrich&&k===key(S.ostrich))d.classList.add('nestok');
   if(blue&&(S.fakes||[]).some(f=>key(f)===k))d.innerHTML+='<span class="fakeic">🪹</span>';
-  if(!blue&&S.smells&&k in S.smells)d.innerHTML+=`<span class="smell ${S.smells[k]?'yes':'no'}">${S.smells[k]?'👃':'·'}</span>`;
+  if(!blue&&sniff&&B_dist([x,y],S.vulture)<=C.smellRange)d.classList.add('sniff');
   if((C.rocks||[]).some(r=>key(r)===k)){d.classList.add('rocksq');d.innerHTML+='<span class="rock">🪨</span>';}
   if(blue&&S.food&&key(S.food)===k)d.innerHTML+='<span class="food">🦗</span>';
   const e=eggAt[k];if(e)d.innerHTML+=`<div class="egg${e.coldIn<=2?' cold':''}"></div>`+(blue&&S.phase==='play'?`<span class="eggw${e.coldIn<=1?' crit':e.coldIn<=2?' low':''}">🔥${e.coldIn}</span>`:'');
   if(k===key(S.vulture))d.innerHTML+=`<div class="pc" style="background:none;border:0${blue?';width:60%;height:60%':''}">${VUL}</div>`;
   if(S.ostrich&&k===key(S.ostrich))d.innerHTML+=`<div class="pc" style="background:none;border:0">${OST}${S.carrying!==null?'<span style="position:absolute;right:-4px;bottom:-4px;font-size:.6em">🥚</span>':''}</div>`+(S.carrying!==null&&S.eggs[S.carrying]?`<span class="eggw">🔥${S.eggs[S.carrying].coldIn}</span>`:'');
   d.onclick=()=>tap(x,y);board.appendChild(d);}
- const w=$('warm');w.innerHTML='';
- if(false)S.eggs.forEach((e,i)=>{const c=document.createElement('div');c.className='wchip'+(!e.alive?' dead':e.coldIn<=1?' crit':e.coldIn<=2?' low':'');c.textContent=`🥚${i+1}: ${e.alive?(e.carried?'carried · ':'')+'🔥'+e.coldIn:'lost'}`;w.appendChild(c);});
- const a=$('actions');let h='';a.innerHTML='';
- if(S.phase==='setupEggs')h=blue?`Tap ${C.eggs-S.eggs.length} square(s) to hide eggs. Spread out = harder to find, longer to keep warm.`:'The ostrich is hiding its eggs…';
- else if(S.phase==='setupOstrich')h=blue?'Tap where your ostrich starts (on an egg to start warming it).':'The ostrich is hiding its eggs…';
- else if(S.phase==='play'&&!S.myTurn)h=blue?'Vulture\'s turn — watch the sky…':'Ostrich\'s turn — it\'s moving somewhere…';
+ $('warm').innerHTML='';
+ const a=$('actions');let h='';a.innerHTML='';const CM=coachNow(),coach=!!CM;
+ const btn=(id,lbl,on,click,dis)=>`<button class="${on?'on':''}" ${dis?'disabled':''} onclick="${click}">${lbl}</button>`;
+ if(S.phase==='setupEggs')h=blue?`Tap ${C.eggs-S.eggs.length} squares to hide your eggs.`:'The ostrich is hiding its eggs…';
+ else if(S.phase==='setupOstrich')h=blue?'Tap where your ostrich starts.':'The ostrich is hiding its eggs…';
+ else if(S.phase==='play'&&!S.myTurn)h=blue?'Vulture\'s turn…':'Ostrich\'s turn…';
  else if(S.phase==='play'&&blue){
-  a.innerHTML=`<button class="${M==='step'?'on':''}" onclick="UI.setMode('step')">👣 Step</button>`+(S.carrying===null?`<button ${S.can.carry?'':'disabled'} class="${M==='carry'?'on':''}" onclick="UI.setMode('carry')">🥚 Carry</button><button ${S.can.sit?'':'disabled'} onclick="UI.act('sit')">🪺 Sit</button><button ${S.can.scrape?'':'disabled'} onclick="UI.act('scrape')">🪹 Fake ${S.fakesLeft}</button>`:`<button ${S.can.down?'':'disabled'} onclick="UI.act('down')">⬇️ Set down</button>`);
-  h=S.carryMaxed?(S.can.down?`Carried ${C.maxCarry} turns: you must set the egg down now.`:'Carried too long and this square was stoned: step to a green square — the egg is set down there.'):S.hungry&&S.onEgg&&!S.can.sit&&S.food?'Hungry! Walk to the 🦗 to eat before you can sit again.':M==='carry'?'Carry: tap a highlighted square to walk off WITH this egg.':S.carrying!==null?(S.can.down?'Carrying an egg (cooling). Set down here, or Step.':'Carrying an egg (cooling). A stone has hit this square: you can\'t nest here.')+' Green rings = stone-free squares where you could set it down.':S.hungry?'Hungry! Walk to the 🦗 food to eat. You can\'t sit until you do.':S.mustLeave?`${C.maxSit} rounds on this egg — step off.`:S.onEgg?'On an egg (warm & safe). Sit, Carry it, or Step off.':`Step: tap a highlighted square. Or scrape a fake nest here (${S.fakesLeft} left).`;
+  if(S.carrying===null){a.innerHTML=btn('s','👣 Step',M==='step',"UI.setMode('step')")+(S.onEgg?btn('c','🥚 Carry',M==='carry',"UI.setMode('carry')",!S.can.carry)+btn('t','🪺 Sit',false,"UI.act('sit')",!S.can.sit):'')+(S.can.scrape&&S.round>1?btn('f','🪹 Fake',false,"UI.act('scrape')"):'');}
+  else a.innerHTML=btn('s','👣 Step',M==='step',"UI.setMode('step')",!S.moves.length)+btn('d','⬇️ Set down',false,"UI.act('down')",!S.can.down);
+  h=S.hungry?'Hungry — walk to the 🦗.':S.carryMaxed&&S.can.down?'Set the egg down now.':'';
  } else if(S.phase==='play'){
-  a.innerHTML=`<button class="${M==='fly'?'on':''}" onclick="UI.setMode('fly')">🪽 Fly</button><button ${S.stones>0?'':'disabled'} class="${M==='throw'?'on':''}" onclick="UI.setMode('throw')">🪨 Throw ${S.stones}</button>`;
-  h=M==='fly'?`Fly up to ${C.vultureFly} squares (reveals nothing). Darker 👣 = more ostrich traffic.`:'Throw a stone at your square or a neighbour. Repeats allowed.';
-  if(!S.stones)h='Out of stones! Fly to a 🪨 rock square to reload '+C.stones+'.';}
- // event line
- let ev='';const la=S.lastAction;
- if(prev&&la&&prev.turn==='red'&&S.turn==='blue'&&la.type==='throw')ev=la.result==='fake'?(blue?'🪹 The vulture stoned one of your fake nests.':'🪹 Just an empty scrape — a fake nest!'):la.result==='hit'?'💥 SMASH! An egg was broken.':la.result==='feather'?(blue?'🪶 A stone hit you — your egg was safe.':'🪶 Feathers! An ostrich was guarding an egg there.'):'✕ Stone missed.';
- else if(prev&&la&&prev.turn==='red'&&S.turn==='blue'&&la.spotted)ev=blue?'👁 The vulture SPOTTED an egg! Sit on it or carry it away now.':'';
- else if(prev&&la&&prev.turn==='red'&&S.turn==='blue'&&blue)ev='The vulture flew.';
- if(la&&la.refill&&prev&&prev.turn==='red'&&S.turn==='blue')ev+=blue?' 🪨 It reloaded stones at a rock.':'';
- if(!blue&&S.myTurn&&la&&la.refill&&prev&&prev.turn==='blue')ev='🪨 Reloaded: '+C.stones+' stones. ';
- if(blue&&S.myTurn&&S.food&&prev&&!prev.food)ev+=' 🦗 Hungry! Food appeared nearby.';
- if(S.lastCold&&prev&&prev.round!==S.round)ev+=` ❄️ ${S.lastCold} egg(s) went cold!`;
- if(!blue&&S.myTurn&&la&&la.type==='fly'&&key(S.vulture)&&prev&&prev.turn==='blue')ev=(la.fake?'🪹 This scrape is empty — a fake nest! ':'')+(la.smell?'👃 You smell eggs nearby! (within '+C.smellRange+' squares)':'· No scent here.')+(la.spotted?' 👁 And you spotted an egg right here — throw!':'');
- if(!blue&&S.myTurn&&la&&la.spotted&&!ev&&S.marks[key(la.spotted)]==='spotted'&&key(la.spotted)===key(S.vulture))ev='👁 You spotted an egg right here! Throw at it now.';
- $('hint').textContent=h;$('log').textContent=ev||(S.phase==='play'?`Round ${S.round} of ${C.rounds} · room ${S.code}${S.opponent?'':' · opponent offline'}`:'');
+  a.innerHTML=btn('fl','🪽 Fly',M==='fly',"UI.setMode('fly')")+btn('th',`🪨 Throw · ${S.stones}`,M==='throw',"UI.setMode('throw')",!S.stones);
+  h=!S.stones?'Out of stones — land on a 🪨 rock.':'';}
+ a.className=S.phase==='play'&&S.myTurn?'mine':'';
+ // ONE message per turn: the most important event wins
+ let ev='';const la=S.lastAction,newTurn=prev&&prev.turn!==S.turn&&S.myTurn;
+ if(newTurn&&la){
+  if(blue&&la.type==='throw')ev=la.result==='hit'?'💥 An egg was smashed!':la.result==='feather'?'🪶 A stone bounced off you.':'';
+  if(blue&&!ev&&la.spotted)ev='👁 The vulture found an egg! Move it or sit.';
+  if(!blue&&la.type==='fly'&&la.spotted)ev='🥚 An egg is right here!';
+  if(S.lastCold&&!ev)ev=`❄️ An egg went cold.`;
+  if(blue&&!ev&&S.food&&prev&&!prev.food)ev='🦗 Hungry! Food appeared.';
+ }
+ if(!blue&&prev&&prev.turn==='red'&&la&&la.type==='throw'&&S.turn==='blue')ev=la.result==='hit'?'💥 Smash!':la.result==='feather'?'🪶 Guarded!':'';
+ if(ev)h=ev;
+ // just-in-time tips (once each)
+ if(window.TUT&&S.phase==='play'&&la){const T=TUT.tip;
+  if(la.type==='throw'&&la.result==='hit')T('hit','💥 = a smashed egg. It stays on the map.');
+  if(la.type==='throw'&&(la.result==='miss'||la.result==='fake'))T('miss','✕ = a stone that hit nothing.');
+  if(la.type==='throw'&&la.result==='feather')T('feather',blue?'🪶 Standing on an egg protects it from stones.':'🪶 = the ostrich was sitting on an egg there. Eggs can\'t be hit while guarded.');
+  if(la.spotted)T('spotted',blue?'The vulture landed on an unguarded egg and can see it. Sit on it or carry it away.':'Landing on an egg reveals it. If the ostrich moves it, it disappears next time you look.');
+  if(!blue&&la.type==='fly'&&la.smell&&S.myTurn)T('smell',`👃 The glow means an egg is within ${C.smellRange} squares.`);
+  if(!blue&&la.fake&&S.myTurn)T('fake','That nest was empty — a fake scrape.');}
+ if(window.TUT&&blue&&S.phase==='play'&&S.myTurn){const T=TUT.tip;
+  if(S.onEgg&&S.can.carry&&S.round>2)T('carry',`🥚 Carry lets you walk off with this egg for up to ${C.maxCarry} turns. A stone on you smashes it.`);
+  if(S.carrying!==null)T('setdown','Green squares = where you may set the egg down (no stone has hit them).');
+  if(S.can.scrape&&S.round>2)T('fakebtn','🪹 Fake scrapes a decoy nest that looks real to the vulture.');
+  if(S.vtracks&&Object.keys(S.vtracks).length>1)T('vtracks','● dots = where the vulture has landed.');}
+ if(window.TUT&&!blue&&S.phase==='play'&&S.myTurn&&!S.stones)TUT.tip('rocks',`Out of stones. Land on any 🪨 rock to reload ${C.stones}.`);
+ // render the coach mark
+ document.querySelectorAll('.spot').forEach(e=>e.classList.remove('spot'));let ce=$('coach');if(!ce){ce=document.createElement('div');ce.id='coach';document.body.appendChild(ce);}
+ document.body.classList.toggle('coaching',coach);
+ if(CM){const an=CM.at==='board'?$('board'):[...a.querySelectorAll('button')].find(b=>(CM.at==='sit'?/Sit/:/Throw/).test(b.textContent));
+  if(an){an.classList.add('spot');if(CM.at!=='board')an.classList.add('pulse');}ce.textContent=CM.txt;ce.className='';if(an){const r=an.getBoundingClientRect();ce.style.top=Math.max(4,r.top-ce.offsetHeight-12)+'px';}h='';}
+ else ce.className='hidden';
+ if(coach)$('hint').classList.add('empty');
+ requestAnimationFrame(()=>window.FX&&FX.update(S,prev));
+ $('hint').textContent=h;$('hint').classList.toggle('empty',!h||coach);$('log').textContent=S.phase==='play'&&!S.opponent?'Opponent offline…':'';
  const o=$('over');if(S.phase==='over'){const won=S.winner===S.role;o.classList.remove('hidden');
   o.innerHTML=`<div class="lobbybox"><div class="bigost">${S.winner==='blue'?OST:VUL}</div><h1>${won?'You win!':'You lose'}</h1><p>${S.winner==='blue'?`The ostrich kept ${S.eggsLeft} egg(s) alive for ${C.rounds} rounds.`:`The vulture got every egg by round ${S.round}.`}</p><button class="big" onclick="UI.rematch()">Rematch</button><button class="big ghost" onclick="UI.menu()">Menu</button></div>`;}
  else o.classList.add('hidden');

@@ -93,7 +93,7 @@ function ostrichSetDown(g) {
 }
 function canSit(g) { return g.phase === 'play' && g.turn === 'blue' && g.carrying === null && g.sitEgg !== null && g.sitCount < g.cfg.maxSit && !g.hungry; }
 function ostrichSit(g) { if (!canSit(g)) return false; addPrint(g, g.ostrich, g.cfg.sitDepth); g.sitRun = (g.sitRun || 0) + 1; endOstrich(g);
-  if (g.phase === 'play' && g.sitRun >= g.cfg.maxSit) { g.sitRun = 0; g.food = spawnFood(g); g.hungry = !!g.food; } return true; }
+  if (g.phase === 'play' && (g.sitRun >= g.cfg.maxSit || g.sitCount >= g.cfg.maxSit)) { g.sitRun = 0; g.food = spawnFood(g); g.hungry = !!g.food; } return true; }
 // Food: empty, unstoned, not a rock, foodMin..foodMax away, and the round trip (2*d) must fit the coldest egg's remaining warmth.
 function spawnFood(g) {
   const o = g.ostrich, minWarm = Math.min(...aliveEggs(g).map(e => coldIn(g, e)));
@@ -142,6 +142,7 @@ function vultureFly(g, p) {
   const e = eggAt(g, p);
   if (e && key(p) !== key(g.ostrich)) { g.marks[key(p)] = 'spotted'; g.lastAction.spotted = p.slice(); }
   else if (!e && fakeAt(g, p)) { g.marks[key(p)] = 'fake'; g.lastAction.fake = p.slice(); }
+  else if (!e && g.marks[key(p)] === 'spotted') delete g.marks[key(p)]; // the egg it saw is gone: just vanishes
   const sm = smellsEgg(g, p); g.smells[key(p)] = sm; g.lastAction.smell = sm; g.turn = 'blue'; return true;
 }
 function vultureThrow(g, p) {
