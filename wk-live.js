@@ -8,7 +8,7 @@ const U = process.argv[2] || 'https://battle-ostriches.onrender.com/';
   const A = await mk('A'), V = await mk('V');
   try {
     await A.goto(U);
-    await A.tap('#mkBlue');
+    await A.tap('#playFriend'); await A.tap('#roleBlue');
     await A.waitForSelector('#shareCode:not(:empty)', { timeout: 60000 });
     const code = await A.textContent('#shareCode'); console.log('created room', code);
     await V.goto(U + '?room=' + code);

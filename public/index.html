@@ -11,16 +11,18 @@
  <div id="actions"></div>
  <div id="log"></div>
 </div>
-<div id="lobby" class="screen title"><div class="lobbybox">
- <div class="bigost" id="lobbyArt"></div><h1>Battle<br>Ostriches</h1>
- <p>Online 2-player (one phone each), or play the computer.</p>
- <button class="big" id="mkBlue">Create game — I'm the Ostrich</button>
- <button class="big" id="mkRed">Create game — I'm the Vulture</button>
- <button class="big alt" id="vsAI">🤖 Play vs computer</button>
- <div id="aiPick" class="hidden"><div class="airow"><button class="big" id="aiBlue">I'm the Ostrich</button><button class="big" id="aiRed">I'm the Vulture</button></div>
-  <div class="airow lvl"><button id="lvlEasy">Easy</button><button id="lvlNormal" class="on">Normal</button></div></div>
- <div class="joinrow"><input id="codeIn" maxlength="4" placeholder="CODE" autocapitalize="characters"><button id="joinBtn">Join</button></div>
- <button class="big ghost" id="howBtn">How to play</button><button class="big ghost" id="muteBtn2">🔊 Sound on</button><button class="big ghost" id="themeBtn2">🎨 Classic</button><p id="lobbyErr"></p></div></div>
+<div id="lobby" class="screen title"><div class="corner"><button class="iconbtn" id="howBtn" aria-label="How to play">?</button><button class="iconbtn" id="muteBtn2" aria-label="Sound">🔊</button><button class="iconbtn" id="themeBtn2" aria-label="Theme">🎨</button></div><div class="lobbybox">
+ <div id="homeStep"><div class="bigost" id="lobbyArt"></div><h1>Battle<br>Ostriches</h1>
+ <p class="tag">Hide your eggs. Outwit the vulture.</p>
+ <button class="big" id="playFriend">👫 Play a friend</button>
+ <button class="big alt" id="playAI">🤖 Play the computer</button>
+ <button class="linkbtn" id="haveCode" aria-expanded="false">Have a code?</button>
+ <div class="joinrow hidden" id="joinRow"><input id="codeIn" maxlength="4" placeholder="CODE" autocapitalize="characters"><button id="joinBtn">Join</button></div></div>
+ <div id="roleStep" class="hidden"><h2 id="roleQ">Be the Ostrich or the Vulture?</h2>
+  <div class="rolerow"><button class="rolebtn" id="roleBlue"><span class="ra" id="artBlue"></span>Ostrich<small>hide eggs</small></button><button class="rolebtn" id="roleRed"><span class="ra" id="artRed"></span>Vulture<small>hunt eggs</small></button></div>
+  <div class="airow lvl" id="lvlRow"><button id="lvlEasy">Easy</button><button id="lvlNormal" class="on">Normal</button></div>
+  <button class="linkbtn" id="roleBack">← Back</button></div>
+ <p id="lobbyErr"></p></div></div>
 <div id="wait" class="hidden"><button id="waitClose" aria-label="Close">✕</button><div>Waiting for your opponent. Send them this link:</div><div id="shareCode"></div><input id="shareLink" readonly><button id="shareBtn">Share link</button></div>
 <div id="over" class="screen hidden"></div>
 <div id="rules" class="screen hidden"><div class="card">

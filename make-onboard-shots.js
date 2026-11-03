@@ -13,7 +13,7 @@ process.env.PORT = 3996; const server = require('./server.js');
   const coach = (p, re) => p.waitForFunction(r => new RegExp(r).test(document.getElementById('coach').textContent) && !document.getElementById('coach').classList.contains('hidden'), re);
   const myTurn = p => p.waitForFunction(() => document.querySelector('#actions.mine'));
   const shot = async (p, n) => { await p.waitForTimeout(250); await p.screenshot({ path: O + n + '.png' }); };
-  await A.goto(U); await A.click('#mkBlue'); await A.waitForSelector('#shareCode:not(:empty)');
+  await A.goto(U); await A.click('#playFriend'); await A.click('#roleBlue'); await A.waitForSelector('#shareCode:not(:empty)');
   await V.goto(await A.inputValue('#shareLink')); await V.waitForSelector('#board .cell');
   await A.waitForFunction(() => document.getElementById('wait').classList.contains('hidden'));
   for (const [x, y] of [[0, 0], [8, 6], [4, 5], [0, 0]]) { await cell(A, x, y).click(); await A.waitForTimeout(120); }

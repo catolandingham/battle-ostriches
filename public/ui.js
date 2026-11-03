@@ -2,7 +2,7 @@
 const $=id=>document.getElementById(id);
 const OST='<svg viewBox="0 0 40 40" width="100%" height="100%"><path d="M6 26 L18 18 L30 22 L24 32 L10 32 Z" fill="#38d6f0" stroke="#000" stroke-width="2.5" stroke-linejoin="round"/><path d="M26 22 L28 6 L34 7" fill="none" stroke="#000" stroke-width="4" stroke-linecap="round"/><path d="M26 22 L28 6 L34 7" fill="none" stroke="#38d6f0" stroke-width="2" stroke-linecap="round"/><path d="M14 32 L12 38 M20 32 L22 38" stroke="#000" stroke-width="2.5"/></svg>';
 const VUL='<svg viewBox="0 0 40 40" width="100%" height="100%"><path d="M4 18 L20 12 L36 18 L26 22 L20 32 L14 22 Z" fill="#2b3245" stroke="#000" stroke-width="2.5" stroke-linejoin="round"/><circle cx="20" cy="11" r="5" fill="#f3dfae" stroke="#000" stroke-width="2.5"/><path d="M23 11 L28 13 L23 14Z" fill="#ffb347" stroke="#000" stroke-width="1.5"/></svg>';
-$('lobbyArt').innerHTML=OST;
+$('lobbyArt').innerHTML=OST;$('artBlue').innerHTML=OST;$('artRed').innerHTML=VUL;
 let ws,S=null,mode=null,me=JSON.parse(localStorage.getItem('bo_me')||'{}');
 const key=p=>p[0]+','+p[1];
 const C0=window.BO.CONFIG;
@@ -10,7 +10,7 @@ const C0=window.BO.CONFIG;
 // --- robust connection layer ---
 let pending=null,pendTimer=null,connTimer=null,attempts=0,hb=null,lastPong=0;
 function status(msg,err){const e=$('lobbyErr');if(e){e.textContent=msg||'';e.style.color=err?'#ffb3a8':'#fff';}
- document.querySelectorAll('#mkBlue,#mkRed,#joinBtn,#aiBlue,#aiRed').forEach(b=>b.disabled=!!msg&&!err);
+ document.querySelectorAll('#roleBlue,#roleRed,#joinBtn').forEach(b=>b.disabled=!!msg&&!err);
  if(S&&msg)$('log').textContent=msg;}
 function connect(){
  clearTimeout(connTimer);try{ws&&ws.close();}catch(e){}
@@ -39,18 +39,19 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden&&S&&(!ws||
 const send=o=>ws&&ws.readyState===1&&ws.send(JSON.stringify(o));
 function open(msg){pending=msg;attempts=0;if(ws&&ws.readyState===1)sendPending();else connect();}
 function tapper(el,fn){let t=0;el.addEventListener('touchend',e=>{e.preventDefault();t=Date.now();fn();},{passive:false});el.addEventListener('click',()=>{if(Date.now()-t>600)fn();});}
-tapper($('mkBlue'),()=>open({t:'create',role:'blue'}));
-tapper($('mkRed'),()=>open({t:'create',role:'red'}));
+let pickAI=false;
 let aiLvl=localStorage.getItem('bo_ailvl')||'normal';const lvlUI=()=>{$('lvlEasy').classList.toggle('on',aiLvl==='easy');$('lvlNormal').classList.toggle('on',aiLvl!=='easy');};lvlUI();
-tapper($('vsAI'),()=>$('aiPick').classList.toggle('hidden'));
+function step(role,ai){pickAI=ai;$('homeStep').classList.toggle('hidden',!!role);$('roleStep').classList.toggle('hidden',!role);$('lvlRow').classList.toggle('hidden',!ai);status('');}
+tapper($('playFriend'),()=>step(1,false));tapper($('playAI'),()=>step(1,true));tapper($('roleBack'),()=>step(0,false));
+tapper($('haveCode'),()=>{const h=$('joinRow').classList.toggle('hidden');$('haveCode').setAttribute('aria-expanded',!h);if(!h)$('codeIn').focus();});
 tapper($('lvlEasy'),()=>{aiLvl='easy';localStorage.setItem('bo_ailvl',aiLvl);lvlUI();});tapper($('lvlNormal'),()=>{aiLvl='normal';localStorage.setItem('bo_ailvl',aiLvl);lvlUI();});
-tapper($('aiBlue'),()=>open({t:'create',role:'blue',ai:aiLvl}));tapper($('aiRed'),()=>open({t:'create',role:'red',ai:aiLvl}));
+tapper($('roleBlue'),()=>open(pickAI?{t:'create',role:'blue',ai:aiLvl}:{t:'create',role:'blue'}));tapper($('roleRed'),()=>open(pickAI?{t:'create',role:'red',ai:aiLvl}:{t:'create',role:'red'}));
 tapper($('joinBtn'),()=>open({t:'join',code:$('codeIn').value.trim(),token:me.code===$('codeIn').value.trim().toUpperCase()?me.token:undefined}));
 tapper($('inviteBtn'),()=>{sheetOpen=!sheetOpen;render();});tapper($('waitClose'),()=>{sheetOpen=false;render();});
 // invite popover closes on any tap outside it (or its chip)
 const outside=e=>{if(sheetOpen&&!e.target.closest('#wait,#inviteBtn')){sheetOpen=false;render();}};
 document.addEventListener('touchstart',outside,{passive:true,capture:true});document.addEventListener('mousedown',outside,true);tapper($('howBtn'),()=>UI.rules());tapper($('helpBtn'),()=>UI.rules());
-function muteLabel(){$('muteBtn').textContent=SFX.muted?'🔇':'🔊';$('muteBtn2').textContent=SFX.muted?'🔇 Sound off':'🔊 Sound on';}
+function muteLabel(){$('muteBtn').textContent=SFX.muted?'🔇':'🔊';$('muteBtn2').textContent=SFX.muted?'🔇':'🔊';}
 muteLabel();tapper($('muteBtn'),()=>{SFX.toggle();muteLabel();});tapper($('muteBtn2'),()=>{SFX.toggle();muteLabel();});
 function sounds(prev){if(!prev)return;const blue=S.role==='blue';
  if(S.phase==='over'&&prev.phase!=='over')return SFX.play(S.winner===S.role?'win':'lose');
@@ -64,7 +65,7 @@ function sounds(prev){if(!prev)return;const blue=S.role==='blue';
  if(!blue&&la&&la.type==='fly'&&prev.turn==='red'&&S.turn==='blue')setTimeout(()=>SFX.play(la.smell?'sniffYes':'sniffNo'),350);}
 const roomQ=new URLSearchParams(location.search).get('room');
 if(!roomQ)TUT.firstVisit();
-if(roomQ){$('codeIn').value=roomQ;open({t:'join',code:roomQ,token:me.code===roomQ.toUpperCase()?me.token:undefined});}
+if(roomQ){$('codeIn').value=roomQ;$('joinRow').classList.remove('hidden');open({t:'join',code:roomQ,token:me.code===roomQ.toUpperCase()?me.token:undefined});}
 $('shareBtn').onclick=()=>{const u=$('shareLink').value;if(navigator.share)navigator.share({title:'Battle Ostriches',text:'Play Battle Ostriches with me! Code '+S.code,url:u}).catch(()=>{});else{navigator.clipboard&&navigator.clipboard.writeText(u);$('shareBtn').textContent='Copied!';}};
 window.UI={rules(){$('rules').classList.remove('hidden')},closeRules(){$('rules').classList.add('hidden')},
  setMode(m){mode=m;render();},act(a){coachDid(a);send({t:'act',a})},replayCoach(){['blue','red'].forEach(r=>localStorage.removeItem('bo_cs_'+r));if(S)render();},rematch(){send({t:'act',a:'rematch'})},

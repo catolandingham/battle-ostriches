@@ -10,7 +10,7 @@ process.env.PORT = 3995; const server = require('./server.js'); const O = 'shots
     const [cA, A] = await mk(), [cV, V] = await mk();
     const cell = (p, x, y) => p.locator('.cell').nth(y * 9 + x), W = ms => A.waitForTimeout(ms);
     const my = p => p.waitForFunction(() => document.querySelector('#actions.mine'));
-    await A.goto(U); await A.click('#mkBlue'); await A.waitForSelector('#shareCode:not(:empty)');
+    await A.goto(U); await A.click('#playFriend'); await A.click('#roleBlue'); await A.waitForSelector('#shareCode:not(:empty)');
     await V.goto(await A.inputValue('#shareLink')); await V.waitForSelector('#board .cell');
     await A.waitForFunction(() => document.getElementById('wait').classList.contains('hidden'));
     for (const [x, y] of [[0, 0], [8, 6], [4, 5], [0, 0]]) { await cell(A, x, y).click(); await W(150); }

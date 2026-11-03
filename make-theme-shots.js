@@ -13,7 +13,7 @@ process.env.PORT = 3997; require('./server.js'); fs.mkdirSync('shots/themes', { 
   for (const t of T) { await A.goto(U + '?theme=' + t); await A.waitForTimeout(150); await A.screenshot({ path: `shots/themes/${t}-title.png` }); }
   await A.goto(U); await A.evaluate(() => THEME.set('classic'));
   await A.click('#themeBtn2'); if (await A.evaluate(() => THEME.get()) !== 'nature') throw 'toggle failed';
-  await A.click('#mkBlue'); await A.waitForSelector('#shareCode:not(:empty)');
+  await A.click('#playFriend'); await A.click('#roleBlue'); await A.waitForSelector('#shareCode:not(:empty)');
   await V.goto(await A.inputValue('#shareLink')); await V.waitForSelector('#board .cell');
   await A.waitForFunction(() => document.getElementById('wait').classList.contains('hidden'));
   await cell(A, 0, 0).click(); await A.waitForTimeout(100); await cell(A, 8, 6).click(); await A.waitForTimeout(100);

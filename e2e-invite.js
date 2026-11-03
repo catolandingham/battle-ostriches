@@ -9,7 +9,7 @@ const vis = p => p.evaluate(() => { const w = document.getElementById('wait'), r
   const cell = (p, x, y) => p.locator('.cell').nth(y * 9 + x);
   for (const th of (process.env.THEMES ? process.env.THEMES.split(',') : THEMES)) {
     const [A, cA] = await mk(), [V, cV] = await mk();
-    await A.goto(U + '?theme=' + th); await A.click('#mkBlue'); await A.waitForSelector('#shareCode:not(:empty)');
+    await A.goto(U + '?theme=' + th); await A.click('#playFriend'); await A.click('#roleBlue'); await A.waitForSelector('#shareCode:not(:empty)');
     assert.ok(await vis(A) > 50, th + ': panel shown while waiting'); assert.ok(await A.locator('#inviteBtn').isHidden());
     const link = (await A.inputValue('#shareLink')).replace(/^http:\/\/[^/]+/, 'http://localhost:3998');
     for (const [x, y] of [[3, 4], [8, 6], [0, 6], [8, 6]]) { await cell(A, x, y).click(); await A.waitForTimeout(60); } // set up BEFORE opponent joins
@@ -31,7 +31,7 @@ const vis = p => p.evaluate(() => { const w = document.getElementById('wait'), r
   }
   // vs computer, both roles, full games
   for (const role of ['blue', 'red']) {
-    const [P, c] = await mk(); await P.goto(U + '?theme=volcano'); await P.click('#vsAI'); await P.click(role === 'blue' ? '#aiBlue' : '#aiRed');
+    const [P, c] = await mk(); await P.goto(U + '?theme=volcano'); await P.click('#playAI'); await P.click(role === 'blue' ? '#roleBlue' : '#roleRed');
     await P.waitForSelector('#board .cell'); assert.equal(await vis(P), 0, 'no share panel vs AI'); assert.ok(await P.locator('#inviteBtn').isHidden());
     if (role === 'blue') for (const [x, y] of [[0, 0], [2, 0], [8, 6], [0, 0]]) { await cell(P, x, y).click(); await P.waitForTimeout(80); }
     let n = 0, t0 = Date.now(), shot = false;

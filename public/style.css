@@ -167,3 +167,20 @@ body.coaching::before{content:"";position:fixed;inset:0;background:#000a;z-index
 #wait.hidden{display:none!important}
 #aiPick{display:flex;flex-direction:column;gap:8px}#aiPick.hidden{display:none}.airow{display:flex;gap:8px}.airow>button{flex:1}
 .airow.lvl button{padding:6px;font-size:14px;opacity:.6}.airow.lvl button.on{opacity:1;outline:3px solid #ffd34d}
+
+/* minimal home */
+#lobby{justify-content:center;padding:calc(env(safe-area-inset-top) + 56px) 20px calc(env(safe-area-inset-bottom) + 16px)}
+#lobby .corner{position:absolute;top:calc(env(safe-area-inset-top) + 10px);right:12px;display:flex;gap:8px;z-index:2}
+#lobby .corner .iconbtn{flex:none;width:44px;height:44px;padding:0;font-size:20px;border-width:3px;border-radius:12px;box-shadow:0 3px 0 var(--ink)}
+#lobby .bigost{width:110px;height:92px}
+#lobby .tag{margin:2px 0 14px;font-weight:700;opacity:.85}
+#lobby button.big{font-size:24px;padding:18px}
+.linkbtn{background:none!important;border:0!important;box-shadow:none!important;color:inherit!important;text-decoration:underline;font-size:16px;font-weight:700;padding:12px;margin-top:6px;width:auto;flex:none;opacity:.85}
+#lobby .joinrow{margin-top:4px}
+#roleStep h2{font-size:26px;margin:0 0 16px}
+.rolerow{display:flex;gap:12px}
+.rolebtn{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:22px;padding:14px 6px}
+.rolebtn .ra{width:96px;height:96px;display:block}.rolebtn small{font-size:13px;opacity:.7}
+#lvlRow{margin-top:14px;justify-content:center}#lvlRow button{flex:0 0 110px}
+#lobby button.linkbtn{background:none!important;border:0!important;box-shadow:none!important;color:inherit!important;text-decoration:underline!important;outline:0!important;text-transform:none!important}
+[data-theme=toybox] #lobby .rolebtn{border-radius:28px!important}
