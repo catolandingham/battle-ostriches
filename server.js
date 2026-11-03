@@ -24,9 +24,9 @@ const rooms = new Map(); // code -> {g, players:{blue:{ws,token},red:{ws,token}}
 const code = () => { let c; do { c = Array.from({ length: 4 }, () => 'ABCDEFGHJKLMNPQRSTUVWXYZ'[Math.random() * 24 | 0]).join(''); } while (rooms.has(c)); return c; };
 const tok = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
 function view(room, role) {
-  const g = room.g, mine = g.phase === 'play' && g.turn === role;
+  const g = room.g, vis = B.visible(g), mine = g.phase === 'play' && g.turn === role;
   const v = { role, code: room.code, phase: g.phase, turn: g.turn, round: g.round, cfg: g.cfg, winner: g.winner,
-    eggsLeft: B.aliveEggs(g).length, marks: g.marks, vulture: g.vulture, lastAction: g.lastAction && (role === 'blue' || /fly|throw/.test(g.lastAction.type)) ? g.lastAction : null,
+    eggsLeft: B.aliveEggs(g).length, marks: g.phase === 'over' ? g.marks : vis.marks, vulture: g.vulture, lastAction: g.lastAction && (role === 'blue' || /fly|throw/.test(g.lastAction.type)) ? g.lastAction : null,
     lastCold: (g.lastCold || []).length, opponent: !!room.ai || !!room.pass || !!(room.players[role === 'blue' ? 'red' : 'blue'] || {}).ws, myTurn: mine,
     // 'joined' = the other seat has ever been taken; the invite panel is only for a seat nobody has claimed yet
     joined: !!room.ai || !!room.pass || !!room.players[role === 'blue' ? 'red' : 'blue'], ai: room.ai ? room.level : null, pass: !!room.pass };
@@ -34,9 +34,9 @@ function view(room, role) {
     Object.assign(v, { eggs: g.eggs.map(e => ({ pos: e.pos, alive: e.alive, coldIn: B.coldIn(g, e), carried: g.carrying === e.id })),
       ostrich: g.ostrich, carrying: g.carrying, onEgg: B.onEgg(g), sitRun: g.sitRun, mustLeave: B.mustLeave(g) });
     if (role === 'blue') Object.assign(v, { moves: mine ? B.ostrichMoves(g) : [], carryMoves: mine ? B.ostrichMoves(g, true) : [],
-      can: { sit: B.canSit(g), carry: B.canCarry(g) }, vtracks: g.vtracks });
+      can: { sit: B.canSit(g), carry: B.canCarry(g) }, vtracks: vis.vtracks });
   }
-  if (role === 'red' || g.phase === 'over') Object.assign(v, { prints: g.prints, smells: g.smells });
+  if (role === 'red' || g.phase === 'over') Object.assign(v, { prints: vis.prints, smells: vis.smells, smellT: vis.smellT, printT: vis.printT, printDir: vis.printDir, ostrichDid: g.lastOAct || null });
   if (role === 'red') Object.assign(v, { fly: B.flyTargets(g), throw: B.throwTargets(g) });
   return v;
 }

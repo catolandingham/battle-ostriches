@@ -1,6 +1,6 @@
 // AI vs AI using the server's red view only for the vulture (no egg data). node ai-test.js
 const B = require('./game.js'), AI = require('./ai.js'), assert = require('assert');
-const redView = g => ({ cfg: g.cfg, vulture: g.vulture, prints: g.prints, marks: g.marks, smells: g.smells, fly: B.flyTargets(g), throw: B.throwTargets(g) });
+const redView = g => { const v = B.visible(g); return { cfg: g.cfg, vulture: g.vulture, round: g.round, prints: v.prints, marks: v.marks, smells: v.smells, fly: B.flyTargets(g), throw: B.throwTargets(g) }; };
 const ap = (g, r, m) => r === 'blue' ? (g.phase === 'setupEggs' ? B.placeEgg(g, m.p) : g.phase === 'setupOstrich' ? B.placeOstrich(g, m.p) : m.a === 'sit' ? B.ostrichSit(g) : B.ostrichStep(g, m.p, m.a === 'carry'))
   : m.a === 'fly' ? B.vultureFly(g, m.p) : !!B.vultureThrow(g, m.p);
 for (const lvl of ['easy', 'normal']) { let red = 0; const n = 400;

@@ -11,6 +11,6 @@ const THEMES = ['classic','nature','notes','golden','paper','arcade','toybox','t
     await p.click('#haveCode'); await p.screenshot({ path: OUT + th + '-code.jpg', type: 'jpeg', quality: 85 }); if (await ov() > 0) bad.push(th + ' code');
     await p.click('#haveCode'); await p.click('#playAI'); if (await ov() > 0) bad.push(th + ' role');
     await p.screenshot({ path: OUT + th + '-role-ai.jpg', type: 'jpeg', quality: 85 });
-    await p.click('#roleBack'); await p.click('#playFriend'); await p.screenshot({ path: OUT + th + '-role-friend.jpg', type: 'jpeg', quality: 85 });
+    await p.click('#roleBack'); await p.click('#playFriend'); await p.click('#twoPhones'); await p.screenshot({ path: OUT + th + '-role-friend.jpg', type: 'jpeg', quality: 85 });
     await c.close(); }
   console.log(bad.length ? 'OVERFLOW ' + bad : 'no scroll in any theme'); await b.close(); process.exit(bad.length ? 1 : 0); })();

@@ -29,12 +29,10 @@ function show(role){if(!el)build();
  el.classList.remove('hidden');go(0);}
 // just-in-time tips: shown once per id, small, dismissible, never blocks the board
 const seen=id=>{try{return localStorage.getItem('bo_tip_'+id)}catch(e){return 1}};
-let tq=[],tEl=null,tTimer;
-function tip(id,text){if(seen(id)||tq.some(q=>q[0]===id))return;try{localStorage.setItem('bo_tip_'+id,'1')}catch(e){}tq.push([id,text]);if(!tEl||tEl.classList.contains('hidden'))nextTip();}
-function nextTip(){const q=tq.shift();if(!tEl){tEl=document.createElement('div');tEl.id='toast';tEl.className='hidden';document.body.appendChild(tEl);
-  tEl.addEventListener('click',()=>{tEl.classList.add('hidden');setTimeout(nextTip,150);});}
- if(!q){tEl.classList.add('hidden');return;}tEl.innerHTML=`<span>${q[1]}</span><b>✕</b>`;tEl.dataset.id=q[0];tEl.classList.remove('hidden');
- clearTimeout(tTimer);tTimer=setTimeout(()=>{tEl.classList.add('hidden');setTimeout(nextTip,200);},7000);}
+// tips go to the inline tip bar under the hint (never covers the board, no dismiss needed, clears on the next action)
+let shownThisTurn=false;
+function tip(id,text){if(localStorage.getItem('bo_tips_off')||seen(id))return;const b=document.getElementById('tipbar');if(b&&!b.classList.contains('hidden'))return; // one at a time
+ try{localStorage.setItem('bo_tip_'+id,'1')}catch(e){}window.UI&&UI._tip&&UI._tip(text);}
 window.TUT={show,tip,intro:INTRO,
  maybeShow(){},
  firstVisit(){if(localStorage.getItem('bo_tut_seen'))return;localStorage.setItem('bo_tut_seen','1');show('intro');}};

@@ -6,10 +6,10 @@ process.env.PORT = 3999; const server = require('./server.js');
 const OUT = 'shots/balanced/'; fs.mkdirSync(OUT + 'frames', { recursive: true });
 (async () => {
   const b = await webkit.launch(); const errs = [];
-  const mk = async () => { const c = await b.newContext({ ...devices['iPhone 13'] }); const p = await c.newPage(); await p.addInitScript(() => { localStorage.setItem('bo_tut_seen', '1'); ['blue', 'red'].forEach(r => localStorage.setItem('bo_cs_' + r, '9')); }); p.on('pageerror', e => errs.push(e.message)); return p; };
+  const mk = async () => { const c = await b.newContext({ ...devices['iPhone 13'] }); const p = await c.newPage(); await p.addInitScript(() => { localStorage.setItem('bo_tut_seen', '1'); localStorage.setItem('bo_walk_blue','1'); localStorage.setItem('bo_walk_red','1'); localStorage.setItem('bo_tips_off','1'); ['blue', 'red'].forEach(r => localStorage.setItem('bo_cs_' + r, '9')); }); p.on('pageerror', e => errs.push(e.message)); return p; };
   const A = await mk(), V = await mk(); const U = 'http://localhost:3999/';
   const cell = (p, x, y) => p.locator('.cell').nth(y * 9 + x);
-  await A.goto(U); await A.click('#playFriend'); await A.click('#roleBlue'); await A.waitForSelector('#shareCode:not(:empty)');
+  await A.goto(U); await A.click('#playFriend'); await A.click('#twoPhones'); await A.click('#roleBlue'); await A.waitForSelector('#shareCode:not(:empty)');
   const link = await A.inputValue('#shareLink');
   await V.goto(link.replace(/^http:\/\/[^/]+/, 'http://localhost:3999')); await V.waitForSelector('#board .cell');
   await A.waitForFunction(() => document.getElementById('wait').classList.contains('hidden'));
@@ -31,7 +31,7 @@ const OUT = 'shots/balanced/'; fs.mkdirSync(OUT + 'frames', { recursive: true })
   const acts = await A.textContent('#actions'); assert.ok(/Step/.test(acts) && /Sit/.test(acts) && /Carry egg/.test(acts), acts);
   await A.click('#actions button:has-text("Carry")'); await cell(A, 7, 5).click();
   await V.waitForSelector('#actions.mine');
-  assert.ok(await V.locator('.num').count() >= 1, 'vulture sees footprints');
+  assert.ok(await V.locator('.mk-foot').count() >= 1, 'vulture sees footprints');
   // vulture misses (thud/dust) on its own square
   await V.click('#actions button:has-text("Throw")'); await cell(V, 4, 3).click();
   await A.waitForTimeout(250); await A.screenshot({ path: OUT + '4-ostrich-sees-miss-in-flight.png' }); await A.waitForTimeout(500); await A.screenshot({ path: OUT + '5-ostrich-sees-miss-dust.png' });
@@ -40,7 +40,7 @@ const OUT = 'shots/balanced/'; fs.mkdirSync(OUT + 'frames', { recursive: true })
   // sit 3x then must step off
   for (let k = 0; k < 3; k++) { await A.click('#actions button:has-text("Sit")'); await V.waitForSelector('#actions.mine'); await cell(V, 4, k % 2 ? 3 : 2).click(); await A.waitForSelector('#actions.mine'); }
   assert.ok(await A.locator('#actions button:has-text("Sit")').isDisabled(), 'sit cap'); await A.screenshot({ path: OUT + '6-ostrich-sit-cap.png' });
-  assert.ok(await V.locator('.smell').count() >= 2, 'smell history');
+  assert.ok(await V.locator('.cell.zone,.cell.cleared').count() >= 2, 'smell history');
   await V.screenshot({ path: OUT + '7-vulture-smell-history.png' });
   await A.reload(); await A.waitForFunction(() => document.querySelectorAll('.egg').length === 2);
   console.log('errors', errs); assert.equal(errs.length, 0);

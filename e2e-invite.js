@@ -5,11 +5,11 @@ const THEMES = ['classic','nature','notes','golden','paper','arcade','toybox','t
 const vis = p => p.evaluate(() => { const w = document.getElementById('wait'), r = w.getBoundingClientRect(); return getComputedStyle(w).display !== 'none' && r.height > 0 ? r.height : 0; });
 (async () => {
   const b = await webkit.launch(), errs = [];
-  const mk = async () => { const c = await b.newContext({ ...devices['iPhone 13'] }); const p = await c.newPage(); await p.addInitScript(() => { localStorage.setItem('bo_tut_seen', '1'); ['blue', 'red'].forEach(r => localStorage.setItem('bo_cs_' + r, '9')); }); p.on('pageerror', e => errs.push(e.message)); return [p, c]; };
+  const mk = async () => { const c = await b.newContext({ ...devices['iPhone 13'] }); const p = await c.newPage(); await p.addInitScript(() => { localStorage.setItem('bo_tut_seen', '1'); localStorage.setItem('bo_walk_blue','1'); localStorage.setItem('bo_walk_red','1'); localStorage.setItem('bo_tips_off','1'); ['blue', 'red'].forEach(r => localStorage.setItem('bo_cs_' + r, '9')); }); p.on('pageerror', e => errs.push(e.message)); return [p, c]; };
   const cell = (p, x, y) => p.locator('.cell').nth(y * 9 + x);
   for (const th of (process.env.THEMES ? process.env.THEMES.split(',') : THEMES)) {
     const [A, cA] = await mk(), [V, cV] = await mk();
-    await A.goto(U + '?theme=' + th); await A.click('#playFriend'); await A.click('#roleBlue'); await A.waitForSelector('#shareCode:not(:empty)');
+    await A.goto(U + '?theme=' + th); await A.click('#playFriend'); await A.click('#twoPhones'); await A.click('#roleBlue'); await A.waitForSelector('#shareCode:not(:empty)');
     assert.ok(await vis(A) > 50, th + ': panel shown while waiting'); assert.ok(await A.locator('#inviteBtn').isHidden());
     const link = (await A.inputValue('#shareLink')).replace(/^http:\/\/[^/]+/, 'http://localhost:3998');
     for (const [x, y] of [[3, 4], [8, 6], [0, 6], [8, 6]]) { await cell(A, x, y).click(); await A.waitForTimeout(60); } // set up BEFORE opponent joins

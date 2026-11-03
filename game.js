@@ -66,15 +66,16 @@ function ostrichStep(g, p, carry = false) {
   if (!ostrichMoves(g, carry).some(q => key(q) === key(p))) return false;
   if (carry) { const e = eggAt(g, g.ostrich); e.pos = null; g.carrying = e.id;
     if (g.marks[key(g.ostrich)] === 'spotted') delete g.marks[key(g.ostrich)]; } // the egg moved: spotted mark clears
-  g.ostrich = p.slice(); g.sitRun = 0;
+  const from = g.ostrich; g.ostrich = p.slice(); g.sitRun = 0;
   g.prints[key(p)] = (g.prints[key(p)] || 0) + 1;
-  g.lastAction = { type: carry ? 'carry' : 'step' };
+  (g.printT = g.printT || {})[key(p)] = g.round; (g.printDir = g.printDir || {})[key(p)] = [p[0] - from[0], p[1] - from[1]];
+  g.lastAction = { type: carry ? 'carry' : 'step' }; g.lastOAct = 'move';
   endOstrich(g); return true;
 }
 function ostrichSit(g) {
   if (!canSit(g)) return false;
-  g.prints[key(g.ostrich)] = (g.prints[key(g.ostrich)] || 0) + g.cfg.sitDepth;
-  g.sitRun++; g.lastAction = { type: 'sit' }; endOstrich(g); return true;
+  g.prints[key(g.ostrich)] = (g.prints[key(g.ostrich)] || 0) + g.cfg.sitDepth; (g.printT = g.printT || {})[key(g.ostrich)] = g.round;
+  g.sitRun++; g.lastAction = { type: 'sit' }; g.lastOAct = 'stay'; endOstrich(g); return true;
 }
 function smellsEgg(g, p) { return aliveEggs(g).some(e => { const q = e.pos || (g.carrying === e.id ? g.ostrich : null); return q && dist(q, p) <= g.cfg.smellRange; }); }
 function endOstrich(g) {
@@ -103,7 +104,7 @@ function vultureFly(g, p) {
   g.vtracks[key(p)] = (g.vtracks[key(p)] || 0) + 1;
   const e = eggAt(g, p);
   if (e && key(p) !== key(g.ostrich)) { g.marks[key(p)] = 'spotted'; g.lastAction.spotted = p.slice(); }
-  const sm = smellsEgg(g, p); g.smells[key(p)] = sm; g.lastAction.smell = sm;
+  const sm = smellsEgg(g, p); g.smells[key(p)] = sm; g.smellN = (g.smellN || 0) + 1; (g.smellT = g.smellT || {})[key(p)] = g.smellN; g.lastAction.smell = sm;
   g.turn = 'blue'; dropCarried(g); return true;
 }
 function vultureThrow(g, p) {
@@ -114,7 +115,7 @@ function vultureThrow(g, p) {
   else if (e) { e.alive = false; result = 'hit'; }
   else result = 'miss';
   if (g.marks[key(p)] !== 'hit') g.marks[key(p)] = result;
-  g.lastAction = { type: 'throw', from: g.vulture.slice(), p: p.slice(), result };
+  g.lastAction = { type: 'throw', from: g.vulture.slice(), p: p.slice(), result }; g.lastThrow = p.slice();
   if (!aliveEggs(g).length) { g.winner = 'red'; g.phase = 'over'; } else { g.turn = 'blue'; dropCarried(g); }
   return result;
 }
@@ -128,8 +129,17 @@ function endRound(g) {
   if (g.round >= g.cfg.rounds) { g.winner = 'blue'; g.phase = 'over'; return; }
   g.round++; g.turn = 'red';
 }
+// Noise reduction: what either side's view shows. Footprints: last 3 rounds. Smells / vulture landings: last 3 landings.
+// Stone marks: only the most recent throw. Spotted marks stay until the egg moves.
+function visible(g) {
+  const pick = (o, ok) => Object.fromEntries(Object.entries(o || {}).filter(([k]) => ok(k)));
+  const pt = g.printT || {}, st = g.smellT || {}, top = Object.values(st).sort((a, b) => b - a).slice(0, 3), minS = top.length ? top[top.length - 1] : Infinity;
+  const pOk = k => (pt[k] || 0) >= g.round - 2, sOk = k => (st[k] || 0) >= minS, lt = g.lastThrow ? key(g.lastThrow) : null;
+  return { prints: pick(g.prints, pOk), printT: pick(pt, pOk), printDir: pick(g.printDir, pOk), smells: pick(g.smells, sOk), smellT: pick(st, sOk),
+    vtracks: pick(g.vtracks, sOk), marks: pick(g.marks, k => g.marks[k] === 'spotted' || k === lt) };
+}
 function coldIn(g, e) { return g.cfg.warmth - (g.round - e.lastWarm); } // rounds left before going cold
 
 const API = { CONFIG, newGame, placeEgg, placeOstrich, ostrichMoves, ostrichStep, ostrichSit, canSit, canCarry, mustLeave, onEgg, dropCarried,
-  smellsEgg, flyTargets, throwTargets, vultureFly, vultureThrow, eggAt, aliveEggs, coldIn, key, dist };
+  smellsEgg, flyTargets, throwTargets, vultureFly, vultureThrow, eggAt, aliveEggs, coldIn, key, dist, visible };
 if (typeof module !== 'undefined') module.exports = API; else window.BO = API;
