@@ -1,0 +1,45 @@
+/* ===== NATURE: dusty savanna dirt, sketched grid ===== */
+html[data-theme=nature],html[data-theme=nature] body{background:#b39566 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .27 0 0 0 0 .15 0 0 0 .35 0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3Cpath d='M10 110 l4 -14 M14 110 l-3 -12 M18 110 l1 -15 M90 30 l3 -12 M94 30 l-2 -13 M97 30 l4 -10' stroke='%23806a3a' stroke-width='1.5'/%3E%3C/svg%3E")!important;color:#2a2014!important}
+[data-theme=nature] .logo,[data-theme=nature] h1{color:#fff6df!important;text-shadow:0 2px 0 #4a3a22,0 0 8px #0006}
+[data-theme=nature] .stat,[data-theme=nature] .wchip,[data-theme=nature] #hint{background:#efe2c2!important;border-color:#4a3a22!important;box-shadow:0 3px 0 #4a3a22!important;color:#2a2014!important}
+[data-theme=nature] #turnTag{background:#5c6b3a!important;border-color:#2f2a1a!important}
+[data-theme=nature] body.red #turnTag{background:#8a4a2a!important}
+[data-theme=nature] #board,[data-theme=nature] body.red #board{background:#8a7148!important;border:4px solid #5a4528!important;border-bottom-width:4px;border-radius:6px;gap:1px;box-shadow:0 6px 18px #0005!important}
+[data-theme=nature] .cell,[data-theme=nature] body.red .cell{border-radius:2px;background:radial-gradient(circle at 30% 70%,#b0915e 0 12%,transparent 13%),#c8ab78!important;box-shadow:inset 0 0 0 1px #9c7f5099!important}
+[data-theme=nature] .cell.miss{background:#a98c5c!important}
+[data-theme=nature] .cell.hit{background:#3b2a18 radial-gradient(circle,#1a120a 0 35%,#5a4126 36% 50%,transparent 52%)!important}
+[data-theme=nature] .cell.legal{outline-color:#fffbe8!important}
+[data-theme=nature] button,[data-theme=nature] .big{background:#55603e!important;color:#fff6df!important;border-color:#2f2a1a!important;box-shadow:0 4px 0 #2f2a1a!important}
+[data-theme=nature] .big.ghost{background:#efe2c2!important;color:#3a2e1a!important}
+[data-theme=nature] .pc svg path:first-child{fill:#6b5a44}
+/* ===== NEON: dark night, glowing grid ===== */
+html[data-theme=neon],html[data-theme=neon] body{background:#07061a radial-gradient(ellipse at 50% 0,#2a1050 0,#07061a 60%) fixed!important;color:#e8e6ff!important}
+[data-theme=neon] .logo,[data-theme=neon] h1{color:#e04cff!important;text-shadow:0 0 6px #e04cff,0 0 18px #a020ff;font-style:italic}
+[data-theme=neon] .stat,[data-theme=neon] .wchip,[data-theme=neon] #hint{background:#0d0b28!important;color:#9ff3ff!important;border:2px solid #38d6f0!important;box-shadow:0 0 10px #38d6f088!important}
+[data-theme=neon] .wchip.low{background:#3a2a00!important;color:#ffd84d!important;border-color:#ffd84d!important}
+[data-theme=neon] .wchip.crit{background:#3a0010!important;color:#ff6b8a!important;border-color:#ff3b6b!important}
+[data-theme=neon] #turnTag{background:#0d0b28!important;border:2px solid #38d6f0!important;color:#38d6f0!important;box-shadow:0 0 12px #38d6f0!important}
+[data-theme=neon] body.red #turnTag{border-color:#e04cff!important;color:#e04cff!important;box-shadow:0 0 12px #e04cff!important}
+[data-theme=neon] #board,[data-theme=neon] body.red #board{background:#2a7bd6!important;border:2px solid #4aa8ff!important;border-bottom-width:2px;border-radius:10px;gap:1px;padding:1px;box-shadow:0 0 16px #2a7bd6aa!important}
+[data-theme=neon] body.red #board{background:#a040e0!important;border-color:#d070ff!important;box-shadow:0 0 16px #a040e0aa!important}
+[data-theme=neon] .cell,[data-theme=neon] body.red .cell{background:#08071e!important;border-radius:0}
+[data-theme=neon] .cell.miss{background:#140f38!important}
+[data-theme=neon] .cell.hit{background:#2a0a00!important;box-shadow:inset 0 0 14px #ff7a1a!important}
+[data-theme=neon] .cell.legal{outline:2px solid #5effa0;outline-offset:-3px;box-shadow:inset 0 0 10px #5effa088!important}
+[data-theme=neon] .cell svg{filter:drop-shadow(0 0 3px #38d6f0)}
+[data-theme=neon] body.red .cell svg{filter:drop-shadow(0 0 3px #e04cff)}
+[data-theme=neon] button,[data-theme=neon] .big{background:#0d0b28!important;color:#38d6f0!important;border:2px solid #38d6f0!important;box-shadow:0 0 10px #38d6f0aa!important}
+[data-theme=neon] body.red button{color:#e04cff!important;border-color:#e04cff!important;box-shadow:0 0 10px #e04cffaa!important}
+[data-theme=neon] .lobbybox,[data-theme=neon] .modal>div{color:#e8e6ff!important}
+/* theme button */
+#themeBtn,#themeBtn2{font-weight:800}
+
+[data-theme=nature] #hud{background:#efe2c2cc!important;border:3px solid #4a3a22!important;box-shadow:0 3px 0 #4a3a22!important;color:#2a2014!important}
+[data-theme=nature] body.red #hint{background:#efe2c2!important;color:#2a2014!important}
+[data-theme=neon] #hud{background:#0d0b28cc!important;border:2px solid #a040e0!important;box-shadow:0 0 14px #a040e0aa!important;color:#9ff3ff!important}
+[data-theme=neon] .logo{-webkit-text-fill-color:#e04cff}
+[data-theme=neon] body.red #hint{background:#0d0b28!important;color:#f0b8ff!important;border-color:#e04cff!important}
+[data-theme=neon] .cell.miss::after,[data-theme=neon] .cell .x{color:#ff5bd6}
+[data-theme=neon] #hud b,[data-theme=neon] #hud .cy,[data-theme=neon] #hud .or{color:#38d6f0!important;text-shadow:0 0 6px #38d6f0}
+[data-theme=nature] .cell.legal{box-shadow:inset 0 0 0 3px #fffbe8!important}
+[data-theme=neon] .cell.miss,[data-theme=neon] .cell.miss *{color:#ff5bd6!important;fill:#ff5bd6;text-shadow:0 0 6px #ff5bd6;opacity:1!important}

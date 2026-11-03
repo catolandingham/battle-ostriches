@@ -1,10 +1,10 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes"><title>Battle Ostriches</title>
-<link rel="stylesheet" href="style.css"></head><body>
+<link rel="stylesheet" href="style.css"><link rel="stylesheet" href="themes.css"><script src="theme.js"></script></head><body>
 <div id="app">
  <header id="hud"><div><h1 class="logo">BATTLE OSTRICHES</h1>
-  <div class="ctr">ROUNDS <b id="roundsLeft" class="cy">40</b> | EGGS <b id="eggsLeft" class="or">3</b></div></div><div style="display:flex;align-items:center"><div id="turnTag">BLUE</div><button id="helpBtn" aria-label="How to play">?</button><button id="muteBtn" class="iconbtn" aria-label="Sound">🔊</button></div></header>
+  <div class="ctr">ROUNDS <b id="roundsLeft" class="cy">14</b> | EGGS <b id="eggsLeft" class="or">3</b></div></div><div style="display:flex;align-items:center"><div id="turnTag">BLUE</div><button id="helpBtn" aria-label="How to play">?</button><button id="muteBtn" class="iconbtn" aria-label="Sound">🔊</button><button id="themeBtn" class="iconbtn" aria-label="Theme">🎨</button></div></header>
  <div id="warm"></div>
  <div id="wait-slot"></div><div id="hint">Hint</div>
  <div id="board"></div>
@@ -17,7 +17,7 @@
  <button class="big" id="mkBlue">Create game — I'm the Ostrich</button>
  <button class="big" id="mkRed">Create game — I'm the Vulture</button>
  <div class="joinrow"><input id="codeIn" maxlength="4" placeholder="CODE" autocapitalize="characters"><button id="joinBtn">Join</button></div>
- <button class="big ghost" id="howBtn">How to play</button><button class="big ghost" id="muteBtn2">🔊 Sound on</button><p id="lobbyErr"></p></div></div>
+ <button class="big ghost" id="howBtn">How to play</button><button class="big ghost" id="muteBtn2">🔊 Sound on</button><button class="big ghost" id="themeBtn2">🎨 Classic</button><p id="lobbyErr"></p></div></div>
 <div id="wait" class="hidden"><div>Share this link with your opponent:</div><div id="shareCode"></div><input id="shareLink" readonly><button id="shareBtn">Share link</button></div>
 <div id="over" class="screen hidden"></div>
 <div id="rules" class="screen hidden"><div class="card">

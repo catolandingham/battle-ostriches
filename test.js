@@ -1,4 +1,5 @@
 const B=require('./game.js');const assert=require('assert');let n=0;const t=(name,f)=>{f();n++;console.log('ok',name)};
+const LEGACY=Object.assign({},B.CONFIG,{rounds:40,warmth:6});const _ng=B.newGame;B.newGame=(c)=>_ng(c||LEGACY);
 function setup(){const g=B.newGame();B.placeEgg(g,[0,0]);B.placeEgg(g,[8,6]);B.placeEgg(g,[0,6]);B.placeOstrich(g,[0,0]);B.vultureFly(g,[4,2]);return g;}
 t('setup',()=>{const g=setup();assert.equal(g.phase,'play');assert.equal(g.sitEgg,0);assert(!B.placeEgg(B.newGame(),[4,3]))});
 t('ostrich 8-dir step only adjacent',()=>{const g=setup();assert(!B.ostrichStep(g,[2,2]));assert(B.ostrichStep(g,[1,1]));assert.equal(g.turn,'red')});

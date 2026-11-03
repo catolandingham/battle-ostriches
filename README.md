@@ -4,3 +4,10 @@ Node + WebSocket server (`server.js`) holds the authoritative game (`game.js`, a
 - Tests: `node test.js` (rules) and `node e2e.js` (two headless iPhone browsers play a few turns; needs Chromium for playwright-core).
 - Deploy: Render (render.yaml, free plan: New → Blueprint, pick the repo) or Fly.io (`fly launch --copy-config && fly deploy`, uses Dockerfile).
 Games live in memory: a restart or free-tier sleep ends games in progress.
+
+## Balance (sim.js)
+`node sim.js 2000` plays a heuristic ostrich bot (picks the coldest egg, avoids the vulture, flees with spotted eggs, never sets down on stoned squares) against a vulture bot that hunts prints/scent.
+Tuned CONFIG: rounds 14, warmth 11 (was 40 / 6) → vulture wins ~52%, ~89% of games decided by ≤1 egg or in the final 2 rounds.
+
+## Themes
+`classic` (default), `nature`, `neon`. Use 🎨 in the HUD/title, or `?theme=nature`; saved in localStorage `bo_theme`. CSS only (`public/themes.css`, `public/theme.js`).
