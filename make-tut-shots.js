@@ -1,0 +1,33 @@
+// Plays a scripted local game in two iPhone-sized browsers and saves real UI screenshots for the tutorial.
+const { webkit, devices } = require('playwright-core');
+process.env.PORT = 3998; const server = require('./server.js');
+(async () => {
+  const b = await webkit.launch();
+  const mk = async () => { const c = await b.newContext({ ...devices['iPhone 13'] }); const p = await c.newPage();
+    await p.addInitScript(() => { localStorage.setItem('bo_tut_seen', '1'); localStorage.setItem('bo_tut_blue', '1'); localStorage.setItem('bo_tut_red', '1'); }); return p; };
+  const A = await mk(), V = await mk(), U = 'http://localhost:3998/';
+  const cell = (p, x, y) => p.locator('.cell').nth(y * 9 + x);
+  const shot = (p, n) => p.screenshot({ path: 'public/tut/' + n + '.png' });
+  const myTurn = (p, txt) => p.waitForFunction(t => document.getElementById('actions').textContent.includes(t), txt);
+  const red = async (a, x, y) => { await myTurn(V, 'Throw'); await V.click(`#actions button:has-text("${a}")`); await cell(V, x, y).click(); };
+  const blue = async (f) => { await myTurn(A, 'Step'); await f(); };
+  await A.goto(U); await shot(A, 'lobby');
+  await A.click('#mkBlue'); await A.waitForSelector('#shareCode:not(:empty)'); await shot(A, 'share');
+  await V.goto(await A.inputValue('#shareLink')); await V.waitForSelector('#board .cell');
+  await A.waitForFunction(() => document.getElementById('wait').classList.contains('hidden'));
+  await cell(A, 0, 0).click(); await A.waitForTimeout(100); await cell(A, 8, 6).click(); await A.waitForTimeout(100); await shot(A, 'hide-eggs');
+  await cell(A, 4, 5).click(); await A.waitForTimeout(100); await cell(A, 0, 0).click();
+  await red('Throw', 4, 4); await blue(() => A.click('#actions button:has-text("Sit")'));
+  await red('Fly', 4, 4); await myTurn(A, 'Step'); await A.waitForTimeout(150); await shot(A, 'warmth'); await A.click('#actions button:has-text("Sit")');
+  await red('Throw', 4, 5); await blue(() => A.click('#actions button:has-text("Sit")'));
+  await red('Fly', 2, 3); await myTurn(A, 'Step'); await A.waitForTimeout(150); await shot(A, 'feeding'); await cell(A, 1, 1).click();
+  await red('Fly', 1, 1); await blue(() => cell(A, 0, 0).click());
+  await red('Throw', 0, 0); await myTurn(A, 'Step'); await A.click('#actions button:has-text("Carry")'); await A.waitForTimeout(150); await shot(A, 'carry');
+  await cell(A, 1, 0).click();
+  await myTurn(V, 'Throw'); await V.waitForTimeout(150); await shot(V, 'fly');
+  await V.click('#actions button:has-text("Throw")'); await V.waitForTimeout(150); await shot(V, 'throw');
+  await V.click('#actions button:has-text("Fly")'); await cell(V, 3, 3).click();
+  await myTurn(A, 'Set down'); await A.waitForTimeout(150); await shot(A, 'setdown');
+  await A.click('#actions button:has-text("Set down")'); await myTurn(V, 'Throw'); await V.waitForTimeout(150); await shot(V, 'marks');
+  await b.close(); server.close(); process.exit(0);
+})().catch(e => { console.error(e); process.exit(1); });

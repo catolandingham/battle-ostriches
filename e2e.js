@@ -1,10 +1,10 @@
 // Two headless iPhone sessions play a few turns against the local server.
-const { chromium, devices } = require('playwright-core');
+const { webkit, devices } = require('playwright-core');
 const assert = require('assert');
 process.env.PORT = 3999; const server = require('./server.js');
 (async () => {
-  const b = await chromium.launch(); const errs = [];
-  const mk = async () => { const c = await b.newContext({ ...devices['iPhone 13'] }); const p = await c.newPage(); p.on('pageerror', e => errs.push(e.message)); return p; };
+  const b = await webkit.launch(); const errs = [];
+  const mk = async () => { const c = await b.newContext({ ...devices['iPhone 13'] }); const p = await c.newPage(); await p.addInitScript(() => ['seen','blue','red'].forEach(k => localStorage.setItem('bo_tut_' + k, '1'))); p.on('pageerror', e => errs.push(e.message)); return p; };
   const A = await mk(), V = await mk(); const U = 'http://localhost:3999/';
   const cell = (p, x, y) => p.locator('.cell').nth(y * 9 + x);
   const shot = (p, n) => p.screenshot({ path: 'shots/' + n + '.png' });

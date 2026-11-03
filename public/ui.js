@@ -7,20 +7,44 @@ let ws,S=null,mode=null,me=JSON.parse(localStorage.getItem('bo_me')||'{}');
 const key=p=>p[0]+','+p[1];
 const C0=window.BO.CONFIG;
 ['eggs','warm','sit','fly','rounds'].forEach(k=>document.querySelectorAll('.c-'+k).forEach(e=>e.textContent={eggs:C0.eggs,warm:C0.warmth,sit:C0.maxSit,fly:C0.vultureFly,rounds:C0.rounds}[k]));
-function connect(first){
- ws=new WebSocket((location.protocol==='https:'?'wss://':'ws://')+location.host+'/ws');
- ws.onopen=first; ws.onclose=()=>{if(S){$('log').textContent='Reconnecting…';setTimeout(()=>connect(()=>ws.send(JSON.stringify({t:'join',code:me.code,token:me.token}))),1000);}};
- ws.onmessage=ev=>{const m=JSON.parse(ev.data);
-  if(m.t==='joined'){me={code:m.code,token:m.token,role:m.role};localStorage.setItem('bo_me',JSON.stringify(me));history.replaceState(null,'','/?room='+m.code);}
-  if(m.t==='state'){const prev=S;S=m.state;if(!prev||prev.turn!==S.turn||prev.phase!==S.phase)mode=null;render(prev);}
-  if(m.t==='error'){if(!S)$('lobbyErr').textContent=m.msg;else $('log').textContent=m.msg;}};
+// --- robust connection layer ---
+let pending=null,pendTimer=null,connTimer=null,attempts=0,hb=null,lastPong=0;
+function status(msg,err){const e=$('lobbyErr');if(e){e.textContent=msg||'';e.style.color=err?'#ffb3a8':'#fff';}
+ document.querySelectorAll('#mkBlue,#mkRed,#joinBtn').forEach(b=>b.disabled=!!msg&&!err);
+ if(S&&msg)$('log').textContent=msg;}
+function connect(){
+ clearTimeout(connTimer);try{ws&&ws.close();}catch(e){}
+ attempts++;status(S?`Reconnecting… (try ${attempts})`:attempts>1?`Connecting… (try ${attempts}, the server may be waking up)`:'Connecting…');
+ const sock=new WebSocket((location.protocol==='https:'?'wss://':'ws://')+location.host+'/ws');ws=sock;
+ connTimer=setTimeout(()=>{if(sock.readyState!==1)retry();},6000);
+ sock.onopen=()=>{clearTimeout(connTimer);lastPong=Date.now();startHB();
+  if(pending)sendPending();else if(S&&me.code)sock.send(JSON.stringify({t:'join',code:me.code,token:me.token}));};
+ sock.onerror=()=>{};
+ sock.onclose=()=>{if(sock!==ws)return;stopHB();if(pending||S)retry();};
+ sock.onmessage=ev=>{const m=JSON.parse(ev.data);lastPong=Date.now();
+  if(m.t==='pong')return;
+  if(m.t==='joined'){pending=null;clearTimeout(pendTimer);attempts=0;status('');me={code:m.code,token:m.token,role:m.role};localStorage.setItem('bo_me',JSON.stringify(me));history.replaceState(null,'','/?room='+m.code);}
+  if(m.t==='state'){const prev=S;S=m.state;if(!prev||prev.turn!==S.turn||prev.phase!==S.phase)mode=null;render(prev);if(!prev&&window.TUT)TUT.maybeShow(S.role);}
+  if(m.t==='error'){if(!S){pending=null;clearTimeout(pendTimer);attempts=0;status(m.msg,true);}else $('log').textContent=m.msg;}};
 }
+function retry(){
+ if(attempts>=6&&!S){pending=null;clearTimeout(pendTimer);attempts=0;status('Could not reach the game server. Check your connection and tap again.',true);return;}
+ setTimeout(connect,Math.min(800*attempts,4000));
+}
+function sendPending(){ws.send(JSON.stringify(pending));clearTimeout(pendTimer);
+ pendTimer=setTimeout(()=>{if(pending){status('Still waiting for the server… retrying');connect();}},5000);}
+function startHB(){stopHB();hb=setInterval(()=>{if(ws.readyState===1){ws.send('{"t":"ping"}');if(Date.now()-lastPong>45000){ws.close();}}},20000);}
+function stopHB(){clearInterval(hb);}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&S&&(!ws||ws.readyState>1)){attempts=0;connect();}});
 const send=o=>ws&&ws.readyState===1&&ws.send(JSON.stringify(o));
-function open(msg){if(ws&&ws.readyState===1)send(msg);else connect(()=>send(msg));}
-$('mkBlue').onclick=()=>open({t:'create',role:'blue'});
-$('mkRed').onclick=()=>open({t:'create',role:'red'});
-$('joinBtn').onclick=()=>open({t:'join',code:$('codeIn').value.trim(),token:me.code===$('codeIn').value.trim().toUpperCase()?me.token:undefined});
+function open(msg){pending=msg;attempts=0;if(ws&&ws.readyState===1)sendPending();else connect();}
+function tapper(el,fn){let t=0;el.addEventListener('touchend',e=>{e.preventDefault();t=Date.now();fn();},{passive:false});el.addEventListener('click',()=>{if(Date.now()-t>600)fn();});}
+tapper($('mkBlue'),()=>open({t:'create',role:'blue'}));
+tapper($('mkRed'),()=>open({t:'create',role:'red'}));
+tapper($('joinBtn'),()=>open({t:'join',code:$('codeIn').value.trim(),token:me.code===$('codeIn').value.trim().toUpperCase()?me.token:undefined}));
+tapper($('howBtn'),()=>TUT.show('all'));tapper($('helpBtn'),()=>TUT.show(S?S.role:'all'));
 const roomQ=new URLSearchParams(location.search).get('room');
+if(!roomQ)TUT.firstVisit();
 if(roomQ){$('codeIn').value=roomQ;open({t:'join',code:roomQ,token:me.code===roomQ.toUpperCase()?me.token:undefined});}
 $('shareBtn').onclick=()=>{const u=$('shareLink').value;if(navigator.share)navigator.share({title:'Battle Ostriches',text:'Play Battle Ostriches with me! Code '+S.code,url:u}).catch(()=>{});else{navigator.clipboard&&navigator.clipboard.writeText(u);$('shareBtn').textContent='Copied!';}};
 window.UI={rules(){$('rules').classList.remove('hidden')},closeRules(){$('rules').classList.add('hidden')},

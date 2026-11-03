@@ -51,10 +51,12 @@ function act(room, role, m) {
 }
 const wss = new WebSocketServer({ server, path: '/ws' });
 wss.on('connection', ws => {
+  ws.isAlive = true; ws.on('pong', () => { ws.isAlive = true; });
   let room = null, role = null;
   const send = o => ws.send(JSON.stringify(o));
   ws.on('message', raw => {
     let m; try { m = JSON.parse(raw); } catch { return; }
+    if (m.t === 'ping') return send({ t: 'pong' });
     if (m.t === 'create') {
       const c = code(); role = m.role === 'red' ? 'red' : 'blue';
       room = { code: c, g: B.newGame(), players: { blue: null, red: null }, touched: Date.now() };
@@ -78,6 +80,7 @@ wss.on('connection', ws => {
   });
   ws.on('close', () => { if (room && room.players[role] && room.players[role].ws === ws) { room.players[role].ws = null; broadcast(room); } });
 });
+setInterval(() => { for (const c of wss.clients) { if (!c.isAlive) { c.terminate(); continue; } c.isAlive = false; try { c.ping(); } catch {} } }, 25000).unref();
 setInterval(() => { const now = Date.now(); for (const [c, r] of rooms) if (now - r.touched > 6 * 3600e3) rooms.delete(c); }, 600e3).unref();
 server.listen(PORT, () => console.log('Battle Ostriches on http://localhost:' + PORT));
 module.exports = server;
