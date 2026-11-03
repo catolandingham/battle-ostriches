@@ -49,11 +49,13 @@ function sounds(prev){if(!prev)return;const blue=S.role==='blue';
  if(S.phase==='over'&&prev.phase!=='over')return SFX.play(S.winner===S.role?'win':'lose');
  if(prev.phase.startsWith('setup')&&S.phase===prev.phase&&blue)SFX.play('place');
  const la=S.lastAction;
- if(prev.turn==='red'&&S.turn==='blue'&&la&&prev.phase==='play')SFX.play(la.type==='fly'?(la.spotted?'warn':'fly'):la.result==='hit'?'crack':la.result==='feather'?'feather':'miss');
+ if(prev.turn==='red'&&S.turn==='blue'&&la&&prev.phase==='play')SFX.play(la.type==='fly'?(la.spotted?'warn':'fly'):la.result==='fake'?'scrape':la.result==='hit'?'crack':la.result==='feather'?'feather':'miss');
  if(prev.turn==='blue'&&S.turn==='red'&&prev.phase==='play')setTimeout(()=>SFX.play('step'),blue?0:0);
  if(S.lastCold&&prev.round!==S.round)setTimeout(()=>SFX.play('cold'),400);
  else if(blue&&S.myTurn&&S.eggs&&S.eggs.some(e=>e.alive&&e.coldIn<=1))setTimeout(()=>SFX.play('warn'),700);
- if(S.myTurn&&!prev.myTurn&&S.phase==='play')setTimeout(()=>SFX.play('turn'),450);}
+ if(S.myTurn&&!prev.myTurn&&S.phase==='play')setTimeout(()=>SFX.play('turn'),450);
+ if(!blue&&la&&la.type==='fly'&&prev.turn==='red'&&S.turn==='blue')setTimeout(()=>SFX.play(la.smell?'sniffYes':'sniffNo'),350);
+ if(blue&&prev.fakesLeft>S.fakesLeft)SFX.play('scrape');}
 const roomQ=new URLSearchParams(location.search).get('room');
 if(!roomQ)TUT.firstVisit();
 if(roomQ){$('codeIn').value=roomQ;open({t:'join',code:roomQ,token:me.code===roomQ.toUpperCase()?me.token:undefined});}
@@ -83,6 +85,11 @@ function render(prev){
   const m=S.marks[k];if(m)d.classList.add(m);
   if(lk.has(k)||(setup&&!eggAt[k]&&(S.phase==='setupOstrich'||k!==key(S.vulture))))d.classList.add('legal');
   const n=prints[k];if(!blue&&n&&m!=='hit'){d.style.background=`rgb(${110+n/maxP*120|0},${34+n/maxP*60|0},34)`;d.innerHTML+=`<span class="num">👣${n>1?n:''}</span>`;}
+  if(blue&&S.vtracks&&S.vtracks[k])d.innerHTML+=`<span class="vtr" style="opacity:${Math.min(1,.35+S.vtracks[k]*.2)}">🪶${S.vtracks[k]>1?S.vtracks[k]:''}</span>`;
+  if(blue&&S.nestOk&&S.nestOk.some(q=>key(q)===k))d.classList.add('nestok');
+  if(blue&&S.can&&S.can.down&&S.ostrich&&k===key(S.ostrich))d.classList.add('nestok');
+  if(blue&&(S.fakes||[]).some(f=>key(f)===k))d.innerHTML+='<span class="fakeic">🪹</span>';
+  if(!blue&&S.smells&&k in S.smells)d.innerHTML+=`<span class="smell ${S.smells[k]?'yes':'no'}">${S.smells[k]?'👃':'·'}</span>`;
   const e=eggAt[k];if(e)d.innerHTML+=`<div class="egg${e.coldIn<=2?' cold':''}"></div>`;
   if(k===key(S.vulture))d.innerHTML+=`<div class="pc" style="background:none;border:0${blue?';width:60%;height:60%':''}">${VUL}</div>`;
   if(S.ostrich&&k===key(S.ostrich))d.innerHTML+=`<div class="pc" style="background:none;border:0">${OST}${S.carrying!==null?'<span style="position:absolute;right:-4px;bottom:-4px;font-size:.6em">🥚</span>':''}</div>`;
@@ -94,18 +101,19 @@ function render(prev){
  else if(S.phase==='setupOstrich')h=blue?'Tap where your ostrich starts (on an egg to start warming it).':'The ostrich is hiding its eggs…';
  else if(S.phase==='play'&&!S.myTurn)h=blue?'Vulture\'s turn — watch the sky…':'Ostrich\'s turn — it\'s moving somewhere…';
  else if(S.phase==='play'&&blue){
-  a.innerHTML=`<button class="${M==='step'?'on':''}" onclick="UI.setMode('step')">👣 Step</button>`+(S.carrying===null?`<button ${S.can.carry?'':'disabled'} class="${M==='carry'?'on':''}" onclick="UI.setMode('carry')">🥚 Carry</button><button ${S.can.sit?'':'disabled'} onclick="UI.act('sit')">🪺 Sit</button>`:`<button ${S.can.down?'':'disabled'} onclick="UI.act('down')">⬇️ Set down</button>`);
-  h=M==='carry'?'Carry: tap a highlighted square to walk off WITH this egg.':S.carrying!==null?'Carrying an egg (it is cooling). Step, or Set down here (takes your turn).':S.mustLeave?`Hungry! ${C.maxSit} rounds on this egg — step off to feed.`:S.onEgg?'On an egg (warm & safe). Sit, Carry it, or Step off.':'Step: tap a highlighted square.';
+  a.innerHTML=`<button class="${M==='step'?'on':''}" onclick="UI.setMode('step')">👣 Step</button>`+(S.carrying===null?`<button ${S.can.carry?'':'disabled'} class="${M==='carry'?'on':''}" onclick="UI.setMode('carry')">🥚 Carry</button><button ${S.can.sit?'':'disabled'} onclick="UI.act('sit')">🪺 Sit</button><button ${S.can.scrape?'':'disabled'} onclick="UI.act('scrape')">🪹 Fake ${S.fakesLeft}</button>`:`<button ${S.can.down?'':'disabled'} onclick="UI.act('down')">⬇️ Set down</button>`);
+  h=M==='carry'?'Carry: tap a highlighted square to walk off WITH this egg.':S.carrying!==null?(S.can.down?'Carrying an egg (cooling). Set down here, or Step.':'Carrying an egg (cooling). A stone has hit this square: you can\'t nest here.')+' Green rings = stone-free squares where you could set it down.':S.mustLeave?`Hungry! ${C.maxSit} rounds on this egg — step off to feed.`:S.onEgg?'On an egg (warm & safe). Sit, Carry it, or Step off.':`Step: tap a highlighted square. Or scrape a fake nest here (${S.fakesLeft} left).`;
  } else if(S.phase==='play'){
   a.innerHTML=`<button class="${M==='fly'?'on':''}" onclick="UI.setMode('fly')">🪽 Fly</button><button class="${M==='throw'?'on':''}" onclick="UI.setMode('throw')">🪨 Throw</button>`;
   h=M==='fly'?`Fly up to ${C.vultureFly} squares (reveals nothing). Darker 👣 = more ostrich traffic.`:'Throw a stone at your square or a neighbour. Repeats allowed.';}
  // event line
  let ev='';const la=S.lastAction;
- if(prev&&la&&prev.turn==='red'&&S.turn==='blue'&&la.type==='throw')ev=la.result==='hit'?'💥 SMASH! An egg was broken.':la.result==='feather'?(blue?'🪶 A stone hit you — your egg was safe.':'🪶 Feathers! An ostrich was guarding an egg there.'):'✕ Stone missed.';
+ if(prev&&la&&prev.turn==='red'&&S.turn==='blue'&&la.type==='throw')ev=la.result==='fake'?(blue?'🪹 The vulture stoned one of your fake nests.':'🪹 Just an empty scrape — a fake nest!'):la.result==='hit'?'💥 SMASH! An egg was broken.':la.result==='feather'?(blue?'🪶 A stone hit you — your egg was safe.':'🪶 Feathers! An ostrich was guarding an egg there.'):'✕ Stone missed.';
  else if(prev&&la&&prev.turn==='red'&&S.turn==='blue'&&la.spotted)ev=blue?'👁 The vulture SPOTTED an egg! Sit on it or carry it away now.':'';
  else if(prev&&la&&prev.turn==='red'&&S.turn==='blue'&&blue)ev='The vulture flew.';
  if(S.lastCold&&prev&&prev.round!==S.round)ev+=` ❄️ ${S.lastCold} egg(s) went cold!`;
- if(!blue&&S.myTurn&&la&&la.spotted&&S.marks[key(la.spotted)]==='spotted'&&key(la.spotted)===key(S.vulture))ev='👁 You spotted an egg right here! Throw at it now.';
+ if(!blue&&S.myTurn&&la&&la.type==='fly'&&key(S.vulture)&&prev&&prev.turn==='blue')ev=(la.fake?'🪹 This scrape is empty — a fake nest! ':'')+(la.smell?'👃 You smell eggs nearby! (within '+C.smellRange+' squares)':'· No scent here.')+(la.spotted?' 👁 And you spotted an egg right here — throw!':'');
+ if(!blue&&S.myTurn&&la&&la.spotted&&!ev&&S.marks[key(la.spotted)]==='spotted'&&key(la.spotted)===key(S.vulture))ev='👁 You spotted an egg right here! Throw at it now.';
  $('hint').textContent=h;$('log').textContent=ev||(S.phase==='play'?`Round ${S.round} of ${C.rounds} · room ${S.code}${S.opponent?'':' · opponent offline'}`:'');
  const o=$('over');if(S.phase==='over'){const won=S.winner===S.role;o.classList.remove('hidden');
   o.innerHTML=`<div class="lobbybox"><div class="bigost">${S.winner==='blue'?OST:VUL}</div><h1>${won?'You win!':'You lose'}</h1><p>${S.winner==='blue'?`The ostrich kept ${S.eggsLeft} egg(s) alive for ${C.rounds} rounds.`:`The vulture got every egg by round ${S.round}.`}</p><button class="big" onclick="UI.rematch()">Rematch</button><button class="big ghost" onclick="UI.menu()">Menu</button></div>`;}

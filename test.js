@@ -25,4 +25,28 @@ t('fly onto unguarded egg spots it; ostrich can react; mark goes stale',()=>{con
  const h=B.newGame();B.placeEgg(h,[5,3]);B.placeEgg(h,[0,0]);B.placeEgg(h,[8,6]);B.placeOstrich(h,[5,3]);assert(B.vultureFly(h,[5,3]));assert.equal(h.marks['5,3'],undefined);
  // unreacted: throw next turn smashes it
  const k=B.newGame();B.placeEgg(k,[5,3]);B.placeEgg(k,[0,0]);B.placeEgg(k,[8,6]);B.placeOstrich(k,[0,0]);B.vultureFly(k,[5,3]);B.ostrichSit(k);assert.equal(B.vultureThrow(k,[5,3]),'hit');});
+t('fake nests: deep tracks, one per square, revealed by landing',()=>{const g=B.newGame();B.placeEgg(g,[0,0]);B.placeEgg(g,[8,6]);B.placeEgg(g,[8,0]);B.placeOstrich(g,[3,3]);
+ B.vultureFly(g,[4,1]);const before=g.prints['3,3'];assert(B.ostrichScrape(g));assert.equal(g.prints['3,3'],before+B.CONFIG.scrapeDepth);assert(!B.ostrichScrape(g),'not on vulture turn');
+ assert(B.vultureFly(g,[3,3]));assert.equal(g.marks['3,3'],'fake');assert.deepEqual(g.lastAction.fake,[3,3]);
+ assert(!B.canScrape(g),'already a fake here');assert(B.ostrichStep(g,[3,4]));});
+t('fake nest limit from CONFIG; not on egg squares',()=>{const cfg={...B.CONFIG,warmth:99};const g=B.newGame(cfg);B.placeEgg(g,[0,0]);B.placeEgg(g,[8,6]);B.placeEgg(g,[8,0]);B.placeOstrich(g,[3,3]);
+ const steps=[[3,4],[3,5],[4,5]];let made=0,r=0;
+ for(let i=0;i<8;i++){B.vultureFly(g,r++%2?[6,1]:[5,1]);if(B.ostrichScrape(g))made++;else B.ostrichStep(g,steps.shift()||[4,4]);}
+ assert.equal(made,cfg.fakeNests);
+ const h=B.newGame();B.placeEgg(h,[3,3]);B.placeEgg(h,[8,6]);B.placeEgg(h,[8,0]);B.placeOstrich(h,[3,3]);B.vultureFly(h,[5,1]);assert(!B.canScrape(h));});
+t('throw at unguarded fake reveals fake',()=>{const g=B.newGame();B.placeEgg(g,[0,0]);B.placeEgg(g,[8,6]);B.placeEgg(g,[8,0]);B.placeOstrich(g,[4,4]);
+ B.vultureFly(g,[4,2]);B.ostrichScrape(g);B.vultureFly(g,[4,3]);B.ostrichStep(g,[5,5]);assert.equal(B.vultureThrow(g,[4,4]),'fake');assert.equal(g.marks['4,4'],'fake');});
+t('smell: yes/no within range after landing, includes carried eggs',()=>{const g=B.newGame();B.placeEgg(g,[0,0]);B.placeEgg(g,[1,0]);B.placeEgg(g,[2,0]);B.placeOstrich(g,[8,6]);
+ B.vultureFly(g,[4,1]);assert.equal(g.lastAction.smell,true);assert.equal(g.smells['4,1'],true);
+ B.ostrichStep(g,[7,6]);B.vultureFly(g,[6,3]);assert.equal(g.lastAction.smell,false);assert.equal(g.smells['6,3'],false);
+ const h=B.newGame();B.placeEgg(h,[8,6]);B.placeEgg(h,[0,6]);B.placeEgg(h,[0,0]);B.placeOstrich(h,[8,6]);B.vultureFly(h,[5,4]);B.ostrichStep(h,[7,5],true);
+ B.vultureFly(h,[5,3]);assert.equal(h.lastAction.smell,true,'carried egg 2 away');});
+t('sitting deepens the nest tracks',()=>{const g=setup();const a=g.prints['0,0']||0;B.ostrichSit(g);assert.equal(g.prints['0,0'],a+1);});
+t('set down only where no stone was ever thrown',()=>{const g=setup();B.ostrichStep(g,[1,1],true);
+ B.vultureFly(g,[2,2]);assert(B.canSetDown(g));B.ostrichStep(g,[1,2]);
+ assert.equal(B.vultureThrow(g,[2,3]),'miss');B.ostrichStep(g,[2,3]);B.vultureFly(g,[3,2]);assert.equal(g.turn,'blue');assert(!B.canSetDown(g),'stone square');assert(!B.ostrichSetDown(g));
+ B.ostrichStep(g,[3,3]);B.vultureFly(g,[4,3]);assert(B.canSetDown(g));assert(!B.stoneFree(g,[2,3]));});
+t('vulture landing tracks deepen; no signal when eggs move',()=>{const g=setup();B.ostrichStep(g,[1,1],true);
+ assert.equal(g.vtracks['4,2'],1);B.vultureFly(g,[4,3]);B.ostrichStep(g,[1,2]);B.vultureFly(g,[4,2]);assert.equal(g.vtracks['4,2'],2);
+ assert.deepEqual(Object.keys(g.lastAction).sort(),['smell','type']);});
 console.log(n+' tests passed');

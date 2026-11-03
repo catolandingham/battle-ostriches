@@ -8,6 +8,10 @@ const CONFIG = {
   vultureFly: 2,       // vulture flies up to N squares (king-move distance)
   throwRange: 1,       // vulture throws at own square or within N
   vultureStart: [4, 3],
+  fakeNests: 3,        // decoy scrapes the ostrich may make per game
+  scrapeDepth: 2,      // footprint depth a scrape (fake or sat-on nest) adds
+  sitDepth: 1,         // footprint depth added each round the ostrich sits on a real egg
+  smellRange: 2,       // after landing, vulture learns if any egg is within N squares (yes/no)
 };
 const dist = (a, b) => Math.max(Math.abs(a[0] - b[0]), Math.abs(a[1] - b[1]));
 const key = (p) => p[0] + ',' + p[1];
@@ -16,7 +20,7 @@ const inB = (p, c = CONFIG) => p[0] >= 0 && p[1] >= 0 && p[0] < c.cols && p[1] <
 function newGame(cfg = CONFIG) {
   return { cfg, phase: 'setupEggs', round: 1, turn: 'blue', eggs: [], ostrich: null,
     carrying: null, sitEgg: null, sitCount: 0, vulture: cfg.vultureStart.slice(),
-    prints: {}, marks: {}, log: [], winner: null };
+    prints: {}, marks: {}, fakes: [], smells: {}, thrown: {}, vtracks: {}, log: [], winner: null };
 }
 function eggAt(g, p) { return g.eggs.find(e => e.alive && e.pos && key(e.pos) === key(p)); }
 function aliveEggs(g) { return g.eggs.filter(e => e.alive); }
@@ -52,7 +56,8 @@ function ostrichMoves(g, carry = false) {
 function canPickUp(g) { // standing on a placed egg, not carrying
   return g.phase === 'play' && g.turn === 'blue' && g.carrying === null && g.sitEgg !== null;
 }
-function canSetDown(g) { return g.phase === 'play' && g.turn === 'blue' && g.carrying !== null && !eggAt(g, g.ostrich); }
+function stoneFree(g, p) { return !g.thrown[key(p)]; }
+function canSetDown(g) { return g.phase === 'play' && g.turn === 'blue' && g.carrying !== null && !eggAt(g, g.ostrich) && stoneFree(g, g.ostrich); }
 function ostrichStep(g, p, carry = false) {
   if (carry && !canPickUp(g)) return false;
   if (!ostrichMoves(g, carry).some(q => key(q) === key(p))) return false;
@@ -69,7 +74,12 @@ function ostrichSetDown(g) {
   g.sitEgg = e.id; g.sitCount = 0; endOstrich(g); return true;
 }
 function canSit(g) { return g.phase === 'play' && g.turn === 'blue' && g.carrying === null && g.sitEgg !== null && g.sitCount < g.cfg.maxSit; }
-function ostrichSit(g) { if (!canSit(g)) return false; endOstrich(g); return true; }
+function ostrichSit(g) { if (!canSit(g)) return false; addPrint(g, g.ostrich, g.cfg.sitDepth); endOstrich(g); return true; }
+function addPrint(g, p, n) { g.prints[key(p)] = (g.prints[key(p)] || 0) + n; }
+function fakeAt(g, p) { return g.fakes.some(f => key(f) === key(p)); }
+function canScrape(g) { return g.phase === 'play' && g.turn === 'blue' && g.fakes.length < g.cfg.fakeNests && !eggAt(g, g.ostrich) && !fakeAt(g, g.ostrich) && g.carrying === null; }
+function ostrichScrape(g) { if (!canScrape(g)) return false; g.fakes.push(g.ostrich.slice()); addPrint(g, g.ostrich, g.cfg.scrapeDepth); endOstrich(g); return true; }
+function smellsEgg(g, p) { return aliveEggs(g).some(e => { const q = e.pos || (g.carrying === e.id ? g.ostrich : null); return q && dist(q, p) <= g.cfg.smellRange; }); }
 function mustLeave(g) { return g.sitEgg !== null && g.sitCount >= g.cfg.maxSit; }
 function endOstrich(g) {
   if (g.sitEgg !== null) { g.sitCount++; g.eggs[g.sitEgg].lastWarm = g.round; }
@@ -95,9 +105,12 @@ function throwTargets(g) {
 function vultureFly(g, p) {
   if (!flyTargets(g).some(q => key(q) === key(p))) return false;
   g.vulture = p.slice(); g.lastAction = { type: 'fly' };
+  g.vtracks[key(p)] = (g.vtracks[key(p)] || 0) + 1;
   // Landing on an unguarded, uncarried egg spots it. The mark stays even if the egg later moves (stale).
   const e = eggAt(g, p);
-  if (e && key(p) !== key(g.ostrich)) { g.marks[key(p)] = 'spotted'; g.lastAction.spotted = p.slice(); } g.turn = 'blue'; return true;
+  if (e && key(p) !== key(g.ostrich)) { g.marks[key(p)] = 'spotted'; g.lastAction.spotted = p.slice(); }
+  else if (!e && fakeAt(g, p)) { g.marks[key(p)] = 'fake'; g.lastAction.fake = p.slice(); }
+  const sm = smellsEgg(g, p); g.smells[key(p)] = sm; g.lastAction.smell = sm; g.turn = 'blue'; return true;
 }
 function vultureThrow(g, p) {
   if (!throwTargets(g).some(q => key(q) === key(p))) return false;
@@ -105,7 +118,9 @@ function vultureThrow(g, p) {
   const guarded = key(p) === key(g.ostrich);
   if (guarded && (e || g.carrying !== null)) result = 'feather';
   else if (e) { e.alive = false; result = 'hit'; if (g.sitEgg === e.id) { g.sitEgg = null; g.sitCount = 0; } }
+  else if (fakeAt(g, p)) result = 'fake';
   else result = 'miss';
+  g.thrown[key(p)] = (g.thrown[key(p)] || 0) + 1;
   g.marks[key(p)] = result; g.lastAction = { type: 'throw', p: p.slice(), result };
   if (!aliveEggs(g).length) { g.winner = 'red'; g.phase = 'over'; } else g.turn = 'blue';
   return result;
@@ -124,6 +139,6 @@ function endRound(g) {
 }
 function coldIn(g, e) { return g.cfg.warmth - (g.round - e.lastWarm); } // rounds left before going cold
 
-const API = { CONFIG, newGame, placeEgg, placeOstrich, ostrichMoves, ostrichStep, ostrichSetDown, canPickUp, canSit, ostrichSit,
+const API = { CONFIG, newGame, placeEgg, placeOstrich, ostrichMoves, ostrichStep, ostrichSetDown, canPickUp, canSit, ostrichSit, canScrape, ostrichScrape, fakeAt, smellsEgg, stoneFree,
   canCarryNow, canSetDown, mustLeave, flyTargets, throwTargets, vultureFly, vultureThrow, eggAt, aliveEggs, coldIn, key, dist };
 if (typeof module !== 'undefined') module.exports = API; else window.BO = API;

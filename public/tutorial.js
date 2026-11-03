@@ -9,11 +9,13 @@ const STEPS=[
  {r:'blue',img:'warmth',t:'Keep every egg warm',d:`Each egg's 🔥 timer counts down. Sit on it at least once every ${C.warmth} rounds or it goes cold and is lost. The egg you stand on can't be smashed.`},
  {r:'blue',img:'feeding',t:'Sit, then go feed',d:`Sit stays on an egg. After ${C.maxSit} rounds in a row on the same egg you get hungry and must step off.`},
  {r:'blue',img:'carry',t:'Carry an egg',d:'On an egg, tap Carry, then a square: you walk off holding it. It is safe with you but cools down. Every other turn: Step one square in any direction.'},
- {r:'blue',img:'setdown',t:'Set it down',d:'Tap Set down to place the egg on your square. It takes your whole turn. Hide it somewhere the vulture already searched! If the vulture lands on an unguarded egg it is spotted (👁): sit on it or carry it away right away.'},
+ {r:'blue',img:'setdown',t:'Set it down',d:'Tap Set down to place the egg on your square (takes your whole turn). Only squares no stone has ever hit are allowed; green rings show them. The vulture is never told an egg moved — it only has your footprints. If the vulture lands on an unguarded egg it is spotted (👁): sit on it or carry it away right away.'},
+ {r:'blue',img:'fake',t:'Scrape fake nests',d:`Tap Fake to scrape a decoy nest on your empty square (${C.fakeNests} per game). It leaves deep tracks like a real nest, so the vulture can't tell the difference until it lands on it or stones it. You see your fakes as 🪹, and grey 🪶 marks show every square the vulture has landed on (a number = repeat visits).`},
  {r:'red',img:'fly',t:'Vulture: fly',d:`Fly up to ${C.vultureFly} squares. It reveals nothing, but gets you close to where the eggs might be.`},
  {r:'red',img:'throw',t:'Vulture: throw a stone',d:'Throw at your own square or any square next to you. You may hit any square again: eggs move!'},
- {r:'red',img:'marks',t:'Read the footprints',d:'👣 Every square the ostrich crosses shows footprints, and they get deeper (darker, with a number) each time. Busy trails lead to eggs.'},
- {r:'all',img:'marks',t:'Hit, miss, feather',d:'Black square + orange burst = egg smashed. Dark ✕ = miss. 🪶 Feather = an egg was there, but the ostrich was guarding it. 👁 = egg spotted by landing on it (it may have moved since).'},
+ {r:'red',img:'smell',t:'Smell for eggs',d:`Every time you land, you sniff: 👃 "You smell eggs nearby!" means an egg is within ${C.smellRange} squares (not which one). · means no scent. The marks stay on your map.`},
+ {r:'red',img:'marks',t:'Read the footprints',d:'👣 Every square the ostrich crosses shows footprints, and they get deeper (darker, with a number) each time. Busy trails and deep nest scrapes lead to eggs… or to fakes. You are never told when an egg moves: old marks can go stale.'},
+ {r:'all',img:'marks',t:'Hit, miss, feather',d:'Black square + orange burst = egg smashed. Dark ✕ = miss. 🪶 Feather = an egg was there, but the ostrich was guarding it. 👁 = egg spotted by landing on it (it may have moved since). Dashed ring = fake nest.'},
  {r:'all',img:'warmth',t:'Who wins?',d:`The top counter shows ROUNDS left and EGGS left. The Ostrich wins if any egg survives ${C.rounds} rounds. The Vulture wins by destroying every egg.`},
 ];
 let list=[],i=0,el;
