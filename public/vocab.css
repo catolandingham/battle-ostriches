@@ -89,3 +89,10 @@ html[data-theme] #board .cell.zone.legal{box-shadow:inset 0 0 0 3px #ffe14d,inse
 @keyframes wave{0%{width:20%;height:20%;opacity:1}100%{width:520%;height:520%;opacity:0}}
 #legend .lg-zone{width:22px;height:22px;border-radius:4px;flex:none;background:rgba(46,232,122,.55);box-shadow:inset 0 0 0 2px #2ee87a}
 #legend .lg-cleared{width:22px;height:22px;border-radius:4px;flex:none;background:repeating-linear-gradient(45deg,#555 0 3px,#ddd 3px 7px)}
+
+/* mark tooltip: same look in every theme */
+#marktip,html[data-theme] #marktip{position:fixed;z-index:90;max-width:240px;padding:6px 10px;border-radius:10px;background:#111!important;color:#fff!important;font:700 13px/1.3 system-ui,-apple-system,sans-serif!important;box-shadow:0 4px 14px #0007;pointer-events:none;border:0!important;text-transform:none!important;letter-spacing:normal!important}
+#marktip.hidden{display:none!important}
+#board .cell{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+#board .underegg,html[data-theme] #board .underegg{position:absolute;right:-2%;bottom:-2%;font-size:.75em;line-height:1;z-index:4;filter:drop-shadow(0 0 3px #fff) drop-shadow(0 0 2px #ffe14d);animation:ueg 1.2s ease-in-out infinite;pointer-events:none}
+@keyframes ueg{50%{transform:scale(1.15)}}

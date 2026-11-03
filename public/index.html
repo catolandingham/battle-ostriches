@@ -10,7 +10,6 @@
  <div id="board"></div>
  <div id="actions"></div>
  <div id="log"></div>
- <button id="keyBtn" aria-haspopup="dialog">What's this? 🔑 Map key</button>
 </div>
 <div id="lobby" class="screen title"><div class="corner"><button class="iconbtn" id="howBtn" aria-label="How to play">?</button><button class="iconbtn" id="muteBtn2" aria-label="Sound">🔊</button><button class="iconbtn" id="themeBtn2" aria-label="Theme">🎨</button></div><div class="lobbybox">
  <div id="homeStep"><div class="bigost" id="lobbyArt"></div><h1>Battle<br>Ostriches</h1>
@@ -30,7 +29,6 @@
  <p id="lobbyErr"></p></div></div>
 <div id="wait" class="hidden"><button id="waitClose" aria-label="Close">✕</button><div>Waiting for your opponent. Send them this link:</div><div id="shareCode"></div><input id="shareLink" readonly><button id="shareBtn">Share link</button></div>
 <div id="handoff" class="hidden" role="dialog" aria-modal="true"><div class="hbox"><div class="hart" id="hArt"></div><h1 id="hTitle">Pass to the Vulture</h1><p id="hSub">No peeking!</p><button class="big" id="hGo">I'm the Vulture — tap to start</button></div></div>
-<div id="legend" class="hidden" role="dialog" aria-label="Map key"></div>
 <div id="walk" class="hidden" role="dialog" aria-label="Walkthrough"></div>
 <div id="over" class="screen hidden"></div>
 <div id="rules" class="screen hidden"><div class="card">
@@ -48,7 +46,7 @@
  <li>Each landing sniffs <span class="c-smell"></span> squares around you. Green tint = an egg could be there; hatched = cleared. Only your last 3 landings count.</li>
  <li>Landing on an unguarded egg reveals it until it is moved.</li></ul>
  <h3>Marks</h3><ul class="legend">
- <li>Glowing square = tap it now · 💥 smashed egg · ✕ stone missed · 🛡 egg was guarded · 👣 footprints · green tint = egg could be here · hatched = cleared (last 3 sniffs) · 👁 spotted egg · 🦅 vulture landed. Tap any mark in a game to see what it means.</li></ul>
+ <li>Glowing square = tap it now · 💥 smashed egg · ✕ stone missed · 🛡 egg was guarded · 👣 footprints · green tint = egg could be here · hatched = cleared (last 3 sniffs) · 👁 spotted egg · 🦅 vulture landed. In a game, hover or tap a mark to see what it is (long-press on a glowing square).</li></ul>
  <button class="big" onclick="UI.closeRules()">Got it</button>
  <button class="big ghost" onclick="UI.closeRules();TUT.show('intro')">Replay intro</button>
  <button class="big ghost" onclick="UI.closeRules();UI.walk()">Replay walkthrough</button>
