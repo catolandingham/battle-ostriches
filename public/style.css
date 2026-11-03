@@ -184,3 +184,15 @@ body.coaching::before{content:"";position:fixed;inset:0;background:#000a;z-index
 #lvlRow{margin-top:14px;justify-content:center}#lvlRow button{flex:0 0 110px}
 #lobby button.linkbtn{background:none!important;border:0!important;box-shadow:none!important;color:inherit!important;text-decoration:underline!important;outline:0!important;text-transform:none!important}
 [data-theme=toybox] #lobby .rolebtn{border-radius:28px!important}
+
+/* pass & play */
+#lobby .big.sub{font-size:1rem;padding:.55em 1em;margin-top:-.2em;opacity:.95;background:transparent;border:2px solid currentColor;box-shadow:none;color:inherit;width:auto;min-height:44px}
+#handoff{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:calc(env(safe-area-inset-top) + 16px) 20px calc(env(safe-area-inset-bottom) + 16px);text-align:center;color:#fff;font-family:inherit}
+#handoff.hidden{display:none}
+#handoff.blue{background:linear-gradient(160deg,#0d5e6e,#06262e)}
+#handoff.red{background:linear-gradient(160deg,#5a1414,#1d0606)}
+#handoff .hbox{max-width:360px;width:100%}
+#handoff .hart{width:120px;height:120px;margin:0 auto 10px}
+#handoff h1{font-size:2rem;margin:.2em 0;color:#fff;text-shadow:none}
+#handoff p{font-size:1.05rem;opacity:.9;margin:.4em 0 1.4em;color:#fff}
+#handoff button{width:100%;font-size:1.15rem;min-height:56px;color:#111;background:#fff;border:0;border-radius:14px;font-weight:800}

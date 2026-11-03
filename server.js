@@ -27,9 +27,9 @@ function view(room, role) {
   const g = room.g, mine = g.phase === 'play' && g.turn === role;
   const v = { role, code: room.code, phase: g.phase, turn: g.turn, round: g.round, cfg: g.cfg, winner: g.winner,
     eggsLeft: B.aliveEggs(g).length, marks: g.marks, vulture: g.vulture, lastAction: g.lastAction && (role === 'blue' || /fly|throw/.test(g.lastAction.type)) ? g.lastAction : null,
-    lastCold: (g.lastCold || []).length, opponent: !!room.ai || !!(room.players[role === 'blue' ? 'red' : 'blue'] || {}).ws, myTurn: mine,
+    lastCold: (g.lastCold || []).length, opponent: !!room.ai || !!room.pass || !!(room.players[role === 'blue' ? 'red' : 'blue'] || {}).ws, myTurn: mine,
     // 'joined' = the other seat has ever been taken; the invite panel is only for a seat nobody has claimed yet
-    joined: !!room.ai || !!room.players[role === 'blue' ? 'red' : 'blue'], ai: room.ai ? room.level : null };
+    joined: !!room.ai || !!room.pass || !!room.players[role === 'blue' ? 'red' : 'blue'], ai: room.ai ? room.level : null, pass: !!room.pass };
   if (role === 'blue' || g.phase === 'over') {
     Object.assign(v, { eggs: g.eggs.map(e => ({ pos: e.pos, alive: e.alive, coldIn: B.coldIn(g, e), carried: g.carrying === e.id })),
       ostrich: g.ostrich, carrying: g.carrying, onEgg: B.onEgg(g), sitRun: g.sitRun, mustLeave: B.mustLeave(g) });
@@ -40,7 +40,10 @@ function view(room, role) {
   if (role === 'red') Object.assign(v, { fly: B.flyTargets(g), throw: B.throwTargets(g) });
   return v;
 }
-function broadcast(room) { schedAI(room); for (const r of ['blue', 'red']) { const p = room.players[r]; if (p && p.ws && p.ws.readyState === 1) p.ws.send(JSON.stringify({ t: 'state', state: view(room, r) })); } }
+const active = g => g.phase === 'play' ? g.turn : 'blue'; // pass & play: whose hands the phone is in
+function broadcast(room) { schedAI(room);
+  if (room.pass) { const p = room.players.blue; if (p && p.ws && p.ws.readyState === 1) p.ws.send(JSON.stringify({ t: 'state', pass: true, active: active(room.g), views: { blue: view(room, 'blue'), red: view(room, 'red') } })); return; }
+  for (const r of ['blue', 'red']) { const p = room.players[r]; if (p && p.ws && p.ws.readyState === 1) p.ws.send(JSON.stringify({ t: 'state', state: view(room, r) })); } }
 function act(room, role, m) {
   const g = room.g, p = m.p;
   if (m.a === 'rematch' && g.phase === 'over') { room.g = B.newGame(); return true; }
@@ -78,6 +81,7 @@ wss.on('connection', ws => {
       const c = code(); role = m.role === 'red' ? 'red' : 'blue';
       room = { code: c, g: B.newGame(), players: { blue: null, red: null }, touched: Date.now() };
       rooms.set(c, room); const token = tok(); room.players[role] = { ws, token };
+      if (m.pass) { room.pass = true; role = 'blue'; room.players = { blue: { ws, token }, red: { ws, token } }; send({ t: 'joined', code: c, role, token, pass: true }); return broadcast(room); }
       if (m.ai) { room.ai = role === 'blue' ? 'red' : 'blue'; room.level = m.ai === 'easy' ? 'easy' : 'normal'; room.players[room.ai] = { ws: null, token: tok(), bot: true }; }
       send({ t: 'joined', code: c, role, token }); return broadcast(room);
     }
@@ -87,16 +91,18 @@ wss.on('connection', ws => {
       let seat = ['blue', 'red'].find(s => r.players[s] && m.token && r.players[s].token === m.token);
       if (!seat) seat = ['blue', 'red'].find(s => !r.players[s]);
       if (!seat) return send({ t: 'error', msg: r.ai ? 'That is a single-player game.' : 'That game already has two players.' });
+      if (r.pass) { if (!m.token || r.players.blue.token !== m.token) return send({ t: 'error', msg: 'That is a pass & play game on another phone.' });
+        room = r; role = 'blue'; r.players.blue.ws = r.players.red.ws = ws; r.touched = Date.now(); send({ t: 'joined', code: r.code, role, token: m.token, pass: true }); return broadcast(r); }
       room = r; role = seat; const token = r.players[seat] ? r.players[seat].token : tok();
       r.players[seat] = { ws, token }; r.touched = Date.now();
       send({ t: 'joined', code: r.code, role, token }); return broadcast(r);
     }
     if (m.t === 'act' && room) {
-      if (act(room, role, m)) { room.touched = Date.now(); broadcast(room); }
+      if (act(room, room.pass ? (m.a === 'rematch' ? 'blue' : active(room.g)) : role, m)) { room.touched = Date.now(); broadcast(room); }
       else send({ t: 'error', msg: 'Not a legal move right now.', soft: true });
     }
   });
-  ws.on('close', () => { if (room && room.players[role] && room.players[role].ws === ws) { room.players[role].ws = null; broadcast(room); } });
+  ws.on('close', () => { if (room && room.pass) { for (const s of ['blue', 'red']) if (room.players[s].ws === ws) room.players[s].ws = null; return; } if (room && room.players[role] && room.players[role].ws === ws) { room.players[role].ws = null; broadcast(room); } });
 });
 setInterval(() => { for (const c of wss.clients) { if (!c.isAlive) { c.terminate(); continue; } c.isAlive = false; try { c.ping(); } catch {} } }, 25000).unref();
 setInterval(() => { const now = Date.now(); for (const [c, r] of rooms) if (now - r.touched > 6 * 3600e3) rooms.delete(c); }, 600e3).unref();
