@@ -6,8 +6,8 @@ Node + WebSocket server (`server.js`) holds the authoritative game (`game.js`, a
 Games live in memory: a restart or free-tier sleep ends games in progress.
 
 ## Balance (sim.js)
-`node sim.js 4000` pits a smart ostrich bot (coldest-egg routing, eats food, flees with spotted eggs, obeys carry limit) against a vulture bot (hunts prints/scent, reloads at rocks).
-CONFIG: rounds 35, warmth 14, stones 3, maxCarry 2, food 2-3 squares → vulture wins ~53.5%, avg 26 rounds; ~47% of games end with the ostrich on its last egg or the vulture winning after 60% of rounds.
+`node sim.js 6000` pits an ostrich bot (coldest-egg routing, guards when the vulture is near, carries spotted eggs away, obeys the sit cap) against a vulture bot (hunts footprints, uses smell history to rule squares in/out, throws at guarded/spotted squares).
+Balanced CONFIG: rounds 35, warmth 13, maxSit 3, fly 2, throw adjacent (unlimited stones), smell 2 → vulture wins ~50%, avg 25 rounds. Stone throws animate via public/smash.js (egg crack + yolk on a hit, dust on a miss, feather bounce when guarded).
 
 ## Themes
 `classic` (default), `nature`, `neon`. Use 🎨 in the HUD/title, or `?theme=nature`; saved in localStorage `bo_theme`. CSS only (`public/themes.css`, `public/theme.js`).

@@ -6,7 +6,7 @@ const VUL='<svg viewBox="0 0 40 40"><path d="M4 18 L20 12 L36 18 L26 22 L20 32 L
 const INTRO=[
  {art:`<div class="tart"><div class="tbird">${OST}</div><div class="tvs">vs</div><div class="tbird">${VUL}</div></div><div class="tlogo">Battle Ostriches</div>`,t:'Welcome!',d:'A hide-and-seek duel for two phones.'},
  {art:`<div class="tgoal"><div><div class="tbird s">${OST}</div><b>🥚</b><span>keep 1 egg alive for ${C.rounds} rounds</span></div><div><div class="tbird s">${VUL}</div><b>💥💥💥</b><span>smash all ${C.eggs}</span></div></div>`,t:'Ostrich vs vulture',d:'Real Egyptian vultures crack ostrich eggs with stones. One of you is the ostrich, one is the vulture.'},
- {art:`<div class="tart"><div class="tbird">${OST}</div><div class="tvs">👆</div></div>`,t:'Ready?',d:"You'll learn your moves as you play."},
+ {art:`<div class="tart"><div class="tbird">${OST}</div><div class="tvs">👆</div></div>`,t:'Ready?',d:'Ostrich: Step, Sit, Carry egg. Vulture: Fly, Throw stone. Hints show up as you play.'},
 ];
 let list=[],i=0,el,after=null;
 function build(){el=document.createElement('div');el.id='tut';el.className='screen hidden';el.innerHTML=

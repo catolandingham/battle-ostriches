@@ -72,7 +72,7 @@ window.FX={update(S,prev){const t=theme();ensure();layer.className=t||'';
  if(S.vulture)sprite('v',SPR[t].v,S,S.vulture,S.role==='blue'?.8:sz);
  const la=S.lastAction,sig=la&&JSON.stringify([S.round,S.turn,la]);
  if(prev&&la&&sig!==last.sig&&prev.turn==='red'&&S.turn==='blue'){
-  if(la.type==='throw')throwFx(S,S.vulture,la.p,la.result);
+  if(la.type==='throw'&&!window.SMASH)throwFx(S,S.vulture,la.p,la.result);
   if(la.type==='fly'&&la.smell&&S.role==='red'&&TH[t].ring){const r=cellRect(S.vulture[0],S.vulture[1],S);if(r)ring(r.x+r.w/2,r.y+r.h/2,r.w*(S.cfg.smellRange+.5),'#5effa0',1.4,'radar');}}
  last.sig=sig;},
  relayout(){for(const k in spr)spr[k].dataset.pos='';}};

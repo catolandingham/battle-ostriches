@@ -20,16 +20,15 @@ const tok = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
 function view(room, role) {
   const g = room.g, mine = g.phase === 'play' && g.turn === role;
   const v = { role, code: room.code, phase: g.phase, turn: g.turn, round: g.round, cfg: g.cfg, winner: g.winner,
-    eggsLeft: B.aliveEggs(g).length, stones: g.stones, marks: g.marks, vulture: g.vulture, lastAction: g.lastAction || null,
+    eggsLeft: B.aliveEggs(g).length, marks: g.marks, vulture: g.vulture, lastAction: g.lastAction && (role === 'blue' || /fly|throw/.test(g.lastAction.type)) ? g.lastAction : null,
     lastCold: (g.lastCold || []).length, opponent: !!(room.players[role === 'blue' ? 'red' : 'blue'] || {}).ws, myTurn: mine };
   if (role === 'blue' || g.phase === 'over') {
     Object.assign(v, { eggs: g.eggs.map(e => ({ pos: e.pos, alive: e.alive, coldIn: B.coldIn(g, e), carried: g.carrying === e.id })),
-      ostrich: g.ostrich, carrying: g.carrying, carryTurns: g.carryTurns, carryMaxed: B.carryMaxed(g), food: g.food, hungry: g.hungry, onEgg: g.sitEgg !== null, mustLeave: B.mustLeave(g) });
-    if (role === 'blue') Object.assign(v, { moves: mine ? B.ostrichMoves(g) : [], carryMoves: mine && B.canCarryNow(g) ? B.ostrichMoves(g, true) : [],
-      can: { sit: B.canSit(g), carry: B.canCarryNow(g), down: B.canSetDown(g), scrape: B.canScrape(g) }, fakes: g.fakes, vtracks: g.vtracks, nestOk: mine && g.carrying !== null ? B.ostrichMoves(g).filter(q => B.stoneFree(g, q) && !B.eggAt(g, q)) : [], fakesLeft: g.cfg.fakeNests - g.fakes.length });
+      ostrich: g.ostrich, carrying: g.carrying, onEgg: B.onEgg(g), sitRun: g.sitRun, mustLeave: B.mustLeave(g) });
+    if (role === 'blue') Object.assign(v, { moves: mine ? B.ostrichMoves(g) : [], carryMoves: mine ? B.ostrichMoves(g, true) : [],
+      can: { sit: B.canSit(g), carry: B.canCarry(g) }, vtracks: g.vtracks });
   }
   if (role === 'red' || g.phase === 'over') Object.assign(v, { prints: g.prints, smells: g.smells });
-  if (g.phase === 'over') v.fakes = g.fakes;
   if (role === 'red') Object.assign(v, { fly: B.flyTargets(g), throw: B.throwTargets(g) });
   return v;
 }
@@ -43,8 +42,6 @@ function act(room, role, m) {
     if (m.a === 'step') return B.ostrichStep(g, p, false);
     if (m.a === 'carry') return B.ostrichStep(g, p, true);
     if (m.a === 'sit') return B.ostrichSit(g);
-    if (m.a === 'down') return B.ostrichSetDown(g);
-    if (m.a === 'scrape') return B.ostrichScrape(g);
   } else {
     if (m.a === 'fly') return B.vultureFly(g, p);
     if (m.a === 'throw') return !!B.vultureThrow(g, p);

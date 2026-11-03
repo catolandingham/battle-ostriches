@@ -14,6 +14,8 @@ function noise(dur,{vol=.3,at=0,freq=1000,q=1,type='bandpass'}={}){const t=ctx.c
 const FX={
  thud(){tone(110,.25,{to:45,vol:.5});noise(.12,{freq:300,vol:.35});},
  crack(){FX.thud();noise(.08,{freq:3500,q:3,vol:.4,at:.06});noise(.1,{freq:2200,q:4,vol:.35,at:.12});tone(900,.12,{type:'square',vol:.08,at:.08,to:300});},
+ whoosh(){noise(.45,{freq:1400,q:1.5,vol:.12});tone(500,.4,{vol:.04,to:250});},
+ smash(){FX.crack();noise(.3,{freq:600,type:'lowpass',vol:.35,at:.1});tone(180,.25,{type:'triangle',vol:.12,at:.12,to:90});noise(.06,{freq:4500,q:5,vol:.3,at:.2});},
  miss(){noise(.25,{freq:500,type:'lowpass',vol:.18});},
  feather(){FX.thud();noise(.35,{freq:6000,q:.7,vol:.12,at:.08});},
  fly(){for(let i=0;i<3;i++)noise(.13,{freq:700,q:.8,vol:.3,at:i*.16});},
