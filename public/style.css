@@ -158,3 +158,12 @@ body.coaching::before{content:"";position:fixed;inset:0;background:#000a;z-index
 #hud button.iconbtn,#hud button#helpBtn,#hud #themeBtn{width:32px!important;min-width:32px!important;max-width:32px!important;flex:0 0 32px!important;height:32px!important}
 [data-theme=nature] .cell.hit,[data-theme=nature] .cell.miss{background:transparent!important}
 #hud .ctr{white-space:normal!important;line-height:1.25}
+/* invite chip + popover (only after the opponent joined) */
+#hud #inviteBtn{height:30px;padding:0 8px!important;font-size:12px!important;font-weight:800;border-radius:15px!important;min-width:0!important;width:auto!important;margin:0!important;white-space:nowrap;letter-spacing:1px}
+#hud #inviteBtn.hidden{display:none!important}
+#wait.sheet{position:fixed!important;left:auto!important;right:8px!important;top:calc(env(safe-area-inset-top) + 100px)!important;bottom:auto!important;width:min(300px,calc(100vw - 16px))!important;z-index:70!important;padding:10px!important;gap:6px!important;box-shadow:0 8px 28px #000a!important}
+#wait.sheet #shareCode{font-size:22px!important}#wait.sheet #shareLink{font-size:12px}
+#wait.sheet #waitClose{display:block}
+#wait.hidden{display:none!important}
+#aiPick{display:flex;flex-direction:column;gap:8px}#aiPick.hidden{display:none}.airow{display:flex;gap:8px}.airow>button{flex:1}
+.airow.lvl button{padding:6px;font-size:14px;opacity:.6}.airow.lvl button.on{opacity:1;outline:3px solid #ffd34d}

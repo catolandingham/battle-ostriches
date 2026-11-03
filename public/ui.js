@@ -10,7 +10,7 @@ const C0=window.BO.CONFIG;
 // --- robust connection layer ---
 let pending=null,pendTimer=null,connTimer=null,attempts=0,hb=null,lastPong=0;
 function status(msg,err){const e=$('lobbyErr');if(e){e.textContent=msg||'';e.style.color=err?'#ffb3a8':'#fff';}
- document.querySelectorAll('#mkBlue,#mkRed,#joinBtn').forEach(b=>b.disabled=!!msg&&!err);
+ document.querySelectorAll('#mkBlue,#mkRed,#joinBtn,#aiBlue,#aiRed').forEach(b=>b.disabled=!!msg&&!err);
  if(S&&msg)$('log').textContent=msg;}
 function connect(){
  clearTimeout(connTimer);try{ws&&ws.close();}catch(e){}
@@ -41,8 +41,15 @@ function open(msg){pending=msg;attempts=0;if(ws&&ws.readyState===1)sendPending()
 function tapper(el,fn){let t=0;el.addEventListener('touchend',e=>{e.preventDefault();t=Date.now();fn();},{passive:false});el.addEventListener('click',()=>{if(Date.now()-t>600)fn();});}
 tapper($('mkBlue'),()=>open({t:'create',role:'blue'}));
 tapper($('mkRed'),()=>open({t:'create',role:'red'}));
+let aiLvl=localStorage.getItem('bo_ailvl')||'normal';const lvlUI=()=>{$('lvlEasy').classList.toggle('on',aiLvl==='easy');$('lvlNormal').classList.toggle('on',aiLvl!=='easy');};lvlUI();
+tapper($('vsAI'),()=>$('aiPick').classList.toggle('hidden'));
+tapper($('lvlEasy'),()=>{aiLvl='easy';localStorage.setItem('bo_ailvl',aiLvl);lvlUI();});tapper($('lvlNormal'),()=>{aiLvl='normal';localStorage.setItem('bo_ailvl',aiLvl);lvlUI();});
+tapper($('aiBlue'),()=>open({t:'create',role:'blue',ai:aiLvl}));tapper($('aiRed'),()=>open({t:'create',role:'red',ai:aiLvl}));
 tapper($('joinBtn'),()=>open({t:'join',code:$('codeIn').value.trim(),token:me.code===$('codeIn').value.trim().toUpperCase()?me.token:undefined}));
-tapper($('inviteBtn'),()=>{sheetOpen=true;render();});tapper($('waitClose'),()=>{sheetOpen=false;render();});tapper($('howBtn'),()=>UI.rules());tapper($('helpBtn'),()=>UI.rules());
+tapper($('inviteBtn'),()=>{sheetOpen=!sheetOpen;render();});tapper($('waitClose'),()=>{sheetOpen=false;render();});
+// invite popover closes on any tap outside it (or its chip)
+const outside=e=>{if(sheetOpen&&!e.target.closest('#wait,#inviteBtn')){sheetOpen=false;render();}};
+document.addEventListener('touchstart',outside,{passive:true,capture:true});document.addEventListener('mousedown',outside,true);tapper($('howBtn'),()=>UI.rules());tapper($('helpBtn'),()=>UI.rules());
 function muteLabel(){$('muteBtn').textContent=SFX.muted?'🔇':'🔊';$('muteBtn2').textContent=SFX.muted?'🔇 Sound off':'🔊 Sound on';}
 muteLabel();tapper($('muteBtn'),()=>{SFX.toggle();muteLabel();});tapper($('muteBtn2'),()=>{SFX.toggle();muteLabel();});
 function sounds(prev){if(!prev)return;const blue=S.role==='blue';
@@ -84,9 +91,13 @@ function render(prev){
  // waiting for opponent
  const link=location.origin+'/?room='+S.code,slot=$('wait-slot');
  $('shareCode').textContent=S.code;$('shareLink').value=link;const w=$('wait');
- if(!S.opponent&&S.phase!=='over'){w.classList.remove('hidden','sheet');slot.appendChild(w);sheetOpen=false;}
- else if(sheetOpen){w.classList.remove('hidden');w.classList.add('sheet');document.body.appendChild(w);} else w.classList.add('hidden');
- $('inviteBtn').classList.toggle('hidden',!S.opponent||S.phase==='over');
+ // Big panel ONLY while the other seat has never been claimed. It used to key off S.opponent (= opponent's socket is
+ // live right now), so whenever the opponent's phone slept/backgrounded/reconnected mid-game the full panel came back.
+ const waiting=!S.joined&&!S.ai&&S.phase!=='over';
+ if(waiting){w.classList.remove('hidden','sheet');slot.appendChild(w);sheetOpen=false;}
+ else if(sheetOpen&&!S.ai){w.classList.remove('hidden');w.classList.add('sheet');document.body.appendChild(w);} else{w.classList.add('hidden');w.classList.remove('sheet');sheetOpen=false;}
+ w.firstElementChild.nextElementSibling.textContent=waiting?'Waiting for your opponent. Send them this link:':'Room code';
+ $('inviteCode').textContent=S.code;$('inviteBtn').classList.toggle('hidden',waiting||!!S.ai||S.phase==='over');$('inviteBtn').setAttribute('aria-expanded',sheetOpen);
  const M=curMode(),L=S.myTurn?(blue?(M==='carry'?S.carryMoves:S.moves):(M==='throw'?S.throw:S.fly)):[];
  const lk=new Set(L.map(key)),setup=blue&&(S.phase==='setupEggs'||S.phase==='setupOstrich');
  const smells=S.smells||{};
@@ -145,9 +156,9 @@ function render(prev){
  else ce.className='hidden';
  if(coach)$('hint').classList.add('empty');
  requestAnimationFrame(()=>window.FX&&FX.update(S,prev));window.SMASH&&SMASH.update(S,prev);
- $('hint').textContent=h;$('hint').classList.toggle('empty',!h||coach);$('log').textContent=S.phase==='play'&&!S.opponent?'Opponent offline…':'';
+ $('hint').textContent=h;$('hint').classList.toggle('empty',!h||coach);$('log').textContent=S.joined&&!S.opponent&&S.phase!=='over'?'Opponent offline… they can rejoin with the same link.':'';
  const o=$('over');if(S.phase==='over'){const won=S.winner===S.role;o.classList.remove('hidden');
-  o.innerHTML=`<div class="lobbybox"><div class="bigost">${S.winner==='blue'?OST:VUL}</div><h1>${won?'You win!':'You lose'}</h1><p>${S.winner==='blue'?`The ostrich kept ${S.eggsLeft} egg(s) alive for ${C.rounds} rounds.`:`The vulture got every egg by round ${S.round}.`}</p><button class="big" onclick="UI.rematch()">Rematch</button><button class="big ghost" onclick="UI.menu()">Menu</button></div>`;}
+  o.innerHTML=`<div class="lobbybox"><div class="bigost">${S.winner==='blue'?OST:VUL}</div><h1>${won?'You win!':'You lose'}</h1>${S.ai?`<p>vs computer (${S.ai})</p>`:''}<p>${S.winner==='blue'?`The ostrich kept ${S.eggsLeft} egg(s) alive for ${C.rounds} rounds.`:`The vulture got every egg by round ${S.round}.`}</p><button class="big" onclick="UI.rematch()">Rematch</button><button class="big ghost" onclick="UI.menu()">Menu</button></div>`;}
  else o.classList.add('hidden');
 }
 })();

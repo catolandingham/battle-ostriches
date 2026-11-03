@@ -4,7 +4,7 @@
 <link rel="stylesheet" href="style.css"><link rel="stylesheet" href="themes.css"><link rel="stylesheet" href="themes2.css"><link rel="stylesheet" href="themes3.css"><link rel="stylesheet" href="smash.css"><script src="theme.js"></script></head><body>
 <div id="app">
  <header id="hud"><div><h1 class="logo">BATTLE OSTRICHES</h1>
-  <div class="ctr">ROUNDS <b id="roundsLeft" class="cy">14</b> | EGGS <b id="eggsLeft" class="or">3</b></div></div><div style="display:flex;align-items:center"><div id="turnTag">BLUE</div><button id="inviteBtn" class="iconbtn hidden" aria-label="Invite">🔗</button><button id="helpBtn" aria-label="How to play">?</button><button id="muteBtn" class="iconbtn" aria-label="Sound">🔊</button><button id="themeBtn" class="iconbtn" aria-label="Theme">🎨</button></div></header>
+  <div class="ctr">ROUNDS <b id="roundsLeft" class="cy">14</b> | EGGS <b id="eggsLeft" class="or">3</b></div></div><div style="display:flex;align-items:center"><div id="turnTag">BLUE</div><button id="inviteBtn" class="hidden" aria-label="Invite / room code" aria-expanded="false">🔗 <span id="inviteCode"></span></button><button id="helpBtn" aria-label="How to play">?</button><button id="muteBtn" class="iconbtn" aria-label="Sound">🔊</button><button id="themeBtn" class="iconbtn" aria-label="Theme">🎨</button></div></header>
  <div id="warm"></div>
  <div id="wait-slot"></div><div id="hint">Hint</div>
  <div id="board"></div>
@@ -13,9 +13,12 @@
 </div>
 <div id="lobby" class="screen title"><div class="lobbybox">
  <div class="bigost" id="lobbyArt"></div><h1>Battle<br>Ostriches</h1>
- <p>Online 2-player. One phone each.</p>
+ <p>Online 2-player (one phone each), or play the computer.</p>
  <button class="big" id="mkBlue">Create game — I'm the Ostrich</button>
  <button class="big" id="mkRed">Create game — I'm the Vulture</button>
+ <button class="big alt" id="vsAI">🤖 Play vs computer</button>
+ <div id="aiPick" class="hidden"><div class="airow"><button class="big" id="aiBlue">I'm the Ostrich</button><button class="big" id="aiRed">I'm the Vulture</button></div>
+  <div class="airow lvl"><button id="lvlEasy">Easy</button><button id="lvlNormal" class="on">Normal</button></div></div>
  <div class="joinrow"><input id="codeIn" maxlength="4" placeholder="CODE" autocapitalize="characters"><button id="joinBtn">Join</button></div>
  <button class="big ghost" id="howBtn">How to play</button><button class="big ghost" id="muteBtn2">🔊 Sound on</button><button class="big ghost" id="themeBtn2">🎨 Classic</button><p id="lobbyErr"></p></div></div>
 <div id="wait" class="hidden"><button id="waitClose" aria-label="Close">✕</button><div>Waiting for your opponent. Send them this link:</div><div id="shareCode"></div><input id="shareLink" readonly><button id="shareBtn">Share link</button></div>

@@ -5,7 +5,7 @@
   "main": "game.js",
   "scripts": {
     "start": "node server.js",
-    "test": "node test.js && node e2e.js"
+    "test": "node test.js && node ai-test.js && node e2e.js && node e2e-invite.js"
   },
   "keywords": [],
   "author": "",

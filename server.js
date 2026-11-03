@@ -1,7 +1,7 @@
 // Battle Ostriches online server: serves public/ and runs authoritative games over WebSocket.
 const http = require('http'), fs = require('fs'), path = require('path');
 const { WebSocketServer } = require('ws');
-const B = require('./game.js');
+const B = require('./game.js'), AI = require('./ai.js');
 const PORT = process.env.PORT || 3000, PUB = path.join(__dirname, 'public');
 const TYPES = { '.html': 'text/html', '.css': 'text/css', '.js': 'application/javascript', '.svg': 'image/svg+xml', '.mp4': 'video/mp4', '.jpg': 'image/jpeg', '.png': 'image/png' };
 const server = http.createServer((req, res) => {
@@ -27,7 +27,9 @@ function view(room, role) {
   const g = room.g, mine = g.phase === 'play' && g.turn === role;
   const v = { role, code: room.code, phase: g.phase, turn: g.turn, round: g.round, cfg: g.cfg, winner: g.winner,
     eggsLeft: B.aliveEggs(g).length, marks: g.marks, vulture: g.vulture, lastAction: g.lastAction && (role === 'blue' || /fly|throw/.test(g.lastAction.type)) ? g.lastAction : null,
-    lastCold: (g.lastCold || []).length, opponent: !!(room.players[role === 'blue' ? 'red' : 'blue'] || {}).ws, myTurn: mine };
+    lastCold: (g.lastCold || []).length, opponent: !!room.ai || !!(room.players[role === 'blue' ? 'red' : 'blue'] || {}).ws, myTurn: mine,
+    // 'joined' = the other seat has ever been taken; the invite panel is only for a seat nobody has claimed yet
+    joined: !!room.ai || !!room.players[role === 'blue' ? 'red' : 'blue'], ai: room.ai ? room.level : null };
   if (role === 'blue' || g.phase === 'over') {
     Object.assign(v, { eggs: g.eggs.map(e => ({ pos: e.pos, alive: e.alive, coldIn: B.coldIn(g, e), carried: g.carrying === e.id })),
       ostrich: g.ostrich, carrying: g.carrying, onEgg: B.onEgg(g), sitRun: g.sitRun, mustLeave: B.mustLeave(g) });
@@ -38,7 +40,7 @@ function view(room, role) {
   if (role === 'red') Object.assign(v, { fly: B.flyTargets(g), throw: B.throwTargets(g) });
   return v;
 }
-function broadcast(room) { for (const r of ['blue', 'red']) { const p = room.players[r]; if (p && p.ws && p.ws.readyState === 1) p.ws.send(JSON.stringify({ t: 'state', state: view(room, r) })); } }
+function broadcast(room) { schedAI(room); for (const r of ['blue', 'red']) { const p = room.players[r]; if (p && p.ws && p.ws.readyState === 1) p.ws.send(JSON.stringify({ t: 'state', state: view(room, r) })); } }
 function act(room, role, m) {
   const g = room.g, p = m.p;
   if (m.a === 'rematch' && g.phase === 'over') { room.g = B.newGame(); return true; }
@@ -54,6 +56,16 @@ function act(room, role, m) {
   }
   return false;
 }
+// computer opponent: moves after a short, readable delay using only its own side's view
+function schedAI(room) {
+  const r = room.ai, g = room.g; if (!r || room.aiT) return;
+  const due = r === 'blue' ? (g.phase.startsWith('setup') || (g.phase === 'play' && g.turn === 'blue')) : g.phase === 'play' && g.turn === 'red';
+  if (!due) return;
+  const delay = g.phase.startsWith('setup') ? 250 : 800 + Math.random() * 700;
+  room.aiT = setTimeout(() => { room.aiT = null; if (!rooms.has(room.code) || room.g !== g) return broadcast(room);
+    const m = r === 'blue' ? AI.ostrich(g, room.level) : AI.vulture(view(room, 'red'), room.level);
+    if (!act(room, r, m)) { console.error('AI illegal move', m); return; } room.touched = Date.now(); broadcast(room); }, delay);
+}
 const wss = new WebSocketServer({ server, path: '/ws' });
 wss.on('connection', ws => {
   ws.isAlive = true; ws.on('pong', () => { ws.isAlive = true; });
@@ -66,6 +78,7 @@ wss.on('connection', ws => {
       const c = code(); role = m.role === 'red' ? 'red' : 'blue';
       room = { code: c, g: B.newGame(), players: { blue: null, red: null }, touched: Date.now() };
       rooms.set(c, room); const token = tok(); room.players[role] = { ws, token };
+      if (m.ai) { room.ai = role === 'blue' ? 'red' : 'blue'; room.level = m.ai === 'easy' ? 'easy' : 'normal'; room.players[room.ai] = { ws: null, token: tok(), bot: true }; }
       send({ t: 'joined', code: c, role, token }); return broadcast(room);
     }
     if (m.t === 'join') {
@@ -73,7 +86,7 @@ wss.on('connection', ws => {
       // reconnect with token, else take the free seat
       let seat = ['blue', 'red'].find(s => r.players[s] && m.token && r.players[s].token === m.token);
       if (!seat) seat = ['blue', 'red'].find(s => !r.players[s]);
-      if (!seat) return send({ t: 'error', msg: 'That game already has two players.' });
+      if (!seat) return send({ t: 'error', msg: r.ai ? 'That is a single-player game.' : 'That game already has two players.' });
       room = r; role = seat; const token = r.players[seat] ? r.players[seat].token : tok();
       r.players[seat] = { ws, token }; r.touched = Date.now();
       send({ t: 'joined', code: r.code, role, token }); return broadcast(r);
