@@ -30,7 +30,7 @@ process.env.PORT = 3999; const server = require('./server.js');
   await A.click('#actions button:has-text("Set down")'); await A.waitForTimeout(300); console.log('A:', await A.textContent('#hint'), '|', await A.textContent('#log'), '| V:', await V.textContent('#hint'));
   await V.waitForFunction(() => /fly/i.test(document.getElementById('hint').textContent));
   await V.click('#actions button:has-text("Throw")'); await cell(V, 2, 1).click();
-  await A.waitForFunction(() => /Step/.test(document.getElementById('actions').textContent) && document.getElementById('roundsLeft').textContent === '12');
+  await A.waitForFunction(() => /Step/.test(document.getElementById('actions').textContent) && document.getElementById('roundsLeft').textContent === '33');
   await shot(A, '4-ostrich-turn'); await shot(V, '5-vulture-wait');
   // illegal move from wrong player is ignored
   const before = await V.textContent('#roundsLeft'); await cell(V, 0, 0).click(); await V.waitForTimeout(200);

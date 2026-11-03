@@ -17,7 +17,7 @@ process.env.PORT = 3998; const server = require('./server.js');
   await A.waitForFunction(() => document.getElementById('wait').classList.contains('hidden'));
   await cell(A, 0, 0).click(); await A.waitForTimeout(100); await cell(A, 8, 6).click(); await A.waitForTimeout(100); await shot(A, 'hide-eggs');
   await cell(A, 4, 5).click(); await A.waitForTimeout(100); await cell(A, 0, 0).click();
-  await red('Throw', 4, 4); await blue(() => A.click('#actions button:has-text("Sit")'));
+  await red('Fly', 4, 5); await blue(() => A.click('#actions button:has-text("Sit")'));
   await red('Fly', 4, 4); await myTurn(A, 'Step'); await A.waitForTimeout(150); await shot(A, 'warmth'); await A.click('#actions button:has-text("Sit")');
   await red('Throw', 4, 5); await blue(() => A.click('#actions button:has-text("Sit")'));
   await red('Fly', 2, 3); await myTurn(A, 'Step'); await A.waitForTimeout(150); await shot(A, 'feeding'); await cell(A, 1, 1).click();

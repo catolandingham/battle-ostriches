@@ -43,3 +43,4 @@ html[data-theme=neon],html[data-theme=neon] body{background:#07061a radial-gradi
 [data-theme=neon] #hud b,[data-theme=neon] #hud .cy,[data-theme=neon] #hud .or{color:#38d6f0!important;text-shadow:0 0 6px #38d6f0}
 [data-theme=nature] .cell.legal{box-shadow:inset 0 0 0 3px #fffbe8!important}
 [data-theme=neon] .cell.miss,[data-theme=neon] .cell.miss *{color:#ff5bd6!important;fill:#ff5bd6;text-shadow:0 0 6px #ff5bd6;opacity:1!important}
+[data-theme=neon] .eggw{background:#08071e;color:#ffb347;border-color:#ffb347}[data-theme=neon] .eggw.crit{color:#ff3b6b;border-color:#ff3b6b}[data-theme=neon] .rock{filter:drop-shadow(0 0 4px #9ff3ff)}

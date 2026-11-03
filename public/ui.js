@@ -71,7 +71,7 @@ function curMode(){if(!S.myTurn)return null;if(S.role==='red')return mode||'fly'
 function render(prev){
  $('lobby').classList.add('hidden');const C=S.cfg,blue=S.role==='blue',body=document.body;body.className=blue?'blue':'red';
  $('turnTag').innerHTML=`<span style="display:inline-block;width:26px;height:26px;vertical-align:middle">${blue?OST:VUL}</span> ${blue?'OSTRICH':'VULTURE'}`;
- $('roundsLeft').textContent=C.rounds-S.round+1;$('eggsLeft').textContent=S.eggsLeft;
+ $('roundsLeft').textContent=C.rounds-S.round+1;$('eggsLeft').textContent=S.eggsLeft;if($('stonesLeft'))$('stonesLeft').textContent=S.stones;
  // waiting for opponent
  const link=location.origin+'/?room='+S.code,slot=$('wait-slot');
  if(!S.opponent&&S.phase!=='over'){const w=$('wait');w.classList.remove('hidden');slot.appendChild(w);$('shareCode').textContent=S.code;$('shareLink').value=link;}
@@ -90,27 +90,33 @@ function render(prev){
   if(blue&&S.can&&S.can.down&&S.ostrich&&k===key(S.ostrich))d.classList.add('nestok');
   if(blue&&(S.fakes||[]).some(f=>key(f)===k))d.innerHTML+='<span class="fakeic">🪹</span>';
   if(!blue&&S.smells&&k in S.smells)d.innerHTML+=`<span class="smell ${S.smells[k]?'yes':'no'}">${S.smells[k]?'👃':'·'}</span>`;
-  const e=eggAt[k];if(e)d.innerHTML+=`<div class="egg${e.coldIn<=2?' cold':''}"></div>`;
+  if((C.rocks||[]).some(r=>key(r)===k)){d.classList.add('rocksq');d.innerHTML+='<span class="rock">🪨</span>';}
+  if(blue&&S.food&&key(S.food)===k)d.innerHTML+='<span class="food">🦗</span>';
+  const e=eggAt[k];if(e)d.innerHTML+=`<div class="egg${e.coldIn<=2?' cold':''}"></div>`+(blue&&S.phase==='play'?`<span class="eggw${e.coldIn<=1?' crit':e.coldIn<=2?' low':''}">🔥${e.coldIn}</span>`:'');
   if(k===key(S.vulture))d.innerHTML+=`<div class="pc" style="background:none;border:0${blue?';width:60%;height:60%':''}">${VUL}</div>`;
-  if(S.ostrich&&k===key(S.ostrich))d.innerHTML+=`<div class="pc" style="background:none;border:0">${OST}${S.carrying!==null?'<span style="position:absolute;right:-4px;bottom:-4px;font-size:.6em">🥚</span>':''}</div>`;
+  if(S.ostrich&&k===key(S.ostrich))d.innerHTML+=`<div class="pc" style="background:none;border:0">${OST}${S.carrying!==null?'<span style="position:absolute;right:-4px;bottom:-4px;font-size:.6em">🥚</span>':''}</div>`+(S.carrying!==null&&S.eggs[S.carrying]?`<span class="eggw">🔥${S.eggs[S.carrying].coldIn}</span>`:'');
   d.onclick=()=>tap(x,y);board.appendChild(d);}
  const w=$('warm');w.innerHTML='';
- if(blue&&S.phase==='play')S.eggs.forEach((e,i)=>{const c=document.createElement('div');c.className='wchip'+(!e.alive?' dead':e.coldIn<=1?' crit':e.coldIn<=2?' low':'');c.textContent=`🥚${i+1}: ${e.alive?(e.carried?'carried · ':'')+'🔥'+e.coldIn:'lost'}`;w.appendChild(c);});
+ if(false)S.eggs.forEach((e,i)=>{const c=document.createElement('div');c.className='wchip'+(!e.alive?' dead':e.coldIn<=1?' crit':e.coldIn<=2?' low':'');c.textContent=`🥚${i+1}: ${e.alive?(e.carried?'carried · ':'')+'🔥'+e.coldIn:'lost'}`;w.appendChild(c);});
  const a=$('actions');let h='';a.innerHTML='';
  if(S.phase==='setupEggs')h=blue?`Tap ${C.eggs-S.eggs.length} square(s) to hide eggs. Spread out = harder to find, longer to keep warm.`:'The ostrich is hiding its eggs…';
  else if(S.phase==='setupOstrich')h=blue?'Tap where your ostrich starts (on an egg to start warming it).':'The ostrich is hiding its eggs…';
  else if(S.phase==='play'&&!S.myTurn)h=blue?'Vulture\'s turn — watch the sky…':'Ostrich\'s turn — it\'s moving somewhere…';
  else if(S.phase==='play'&&blue){
   a.innerHTML=`<button class="${M==='step'?'on':''}" onclick="UI.setMode('step')">👣 Step</button>`+(S.carrying===null?`<button ${S.can.carry?'':'disabled'} class="${M==='carry'?'on':''}" onclick="UI.setMode('carry')">🥚 Carry</button><button ${S.can.sit?'':'disabled'} onclick="UI.act('sit')">🪺 Sit</button><button ${S.can.scrape?'':'disabled'} onclick="UI.act('scrape')">🪹 Fake ${S.fakesLeft}</button>`:`<button ${S.can.down?'':'disabled'} onclick="UI.act('down')">⬇️ Set down</button>`);
-  h=M==='carry'?'Carry: tap a highlighted square to walk off WITH this egg.':S.carrying!==null?(S.can.down?'Carrying an egg (cooling). Set down here, or Step.':'Carrying an egg (cooling). A stone has hit this square: you can\'t nest here.')+' Green rings = stone-free squares where you could set it down.':S.mustLeave?`Hungry! ${C.maxSit} rounds on this egg — step off to feed.`:S.onEgg?'On an egg (warm & safe). Sit, Carry it, or Step off.':`Step: tap a highlighted square. Or scrape a fake nest here (${S.fakesLeft} left).`;
+  h=S.carryMaxed?(S.can.down?`Carried ${C.maxCarry} turns: you must set the egg down now.`:'Carried too long and this square was stoned: step to a green square — the egg is set down there.'):S.hungry&&S.onEgg&&!S.can.sit&&S.food?'Hungry! Walk to the 🦗 to eat before you can sit again.':M==='carry'?'Carry: tap a highlighted square to walk off WITH this egg.':S.carrying!==null?(S.can.down?'Carrying an egg (cooling). Set down here, or Step.':'Carrying an egg (cooling). A stone has hit this square: you can\'t nest here.')+' Green rings = stone-free squares where you could set it down.':S.hungry?'Hungry! Walk to the 🦗 food to eat. You can\'t sit until you do.':S.mustLeave?`${C.maxSit} rounds on this egg — step off.`:S.onEgg?'On an egg (warm & safe). Sit, Carry it, or Step off.':`Step: tap a highlighted square. Or scrape a fake nest here (${S.fakesLeft} left).`;
  } else if(S.phase==='play'){
-  a.innerHTML=`<button class="${M==='fly'?'on':''}" onclick="UI.setMode('fly')">🪽 Fly</button><button class="${M==='throw'?'on':''}" onclick="UI.setMode('throw')">🪨 Throw</button>`;
-  h=M==='fly'?`Fly up to ${C.vultureFly} squares (reveals nothing). Darker 👣 = more ostrich traffic.`:'Throw a stone at your square or a neighbour. Repeats allowed.';}
+  a.innerHTML=`<button class="${M==='fly'?'on':''}" onclick="UI.setMode('fly')">🪽 Fly</button><button ${S.stones>0?'':'disabled'} class="${M==='throw'?'on':''}" onclick="UI.setMode('throw')">🪨 Throw ${S.stones}</button>`;
+  h=M==='fly'?`Fly up to ${C.vultureFly} squares (reveals nothing). Darker 👣 = more ostrich traffic.`:'Throw a stone at your square or a neighbour. Repeats allowed.';
+  if(!S.stones)h='Out of stones! Fly to a 🪨 rock square to reload '+C.stones+'.';}
  // event line
  let ev='';const la=S.lastAction;
  if(prev&&la&&prev.turn==='red'&&S.turn==='blue'&&la.type==='throw')ev=la.result==='fake'?(blue?'🪹 The vulture stoned one of your fake nests.':'🪹 Just an empty scrape — a fake nest!'):la.result==='hit'?'💥 SMASH! An egg was broken.':la.result==='feather'?(blue?'🪶 A stone hit you — your egg was safe.':'🪶 Feathers! An ostrich was guarding an egg there.'):'✕ Stone missed.';
  else if(prev&&la&&prev.turn==='red'&&S.turn==='blue'&&la.spotted)ev=blue?'👁 The vulture SPOTTED an egg! Sit on it or carry it away now.':'';
  else if(prev&&la&&prev.turn==='red'&&S.turn==='blue'&&blue)ev='The vulture flew.';
+ if(la&&la.refill&&prev&&prev.turn==='red'&&S.turn==='blue')ev+=blue?' 🪨 It reloaded stones at a rock.':'';
+ if(!blue&&S.myTurn&&la&&la.refill&&prev&&prev.turn==='blue')ev='🪨 Reloaded: '+C.stones+' stones. ';
+ if(blue&&S.myTurn&&S.food&&prev&&!prev.food)ev+=' 🦗 Hungry! Food appeared nearby.';
  if(S.lastCold&&prev&&prev.round!==S.round)ev+=` ❄️ ${S.lastCold} egg(s) went cold!`;
  if(!blue&&S.myTurn&&la&&la.type==='fly'&&key(S.vulture)&&prev&&prev.turn==='blue')ev=(la.fake?'🪹 This scrape is empty — a fake nest! ':'')+(la.smell?'👃 You smell eggs nearby! (within '+C.smellRange+' squares)':'· No scent here.')+(la.spotted?' 👁 And you spotted an egg right here — throw!':'');
  if(!blue&&S.myTurn&&la&&la.spotted&&!ev&&S.marks[key(la.spotted)]==='spotted'&&key(la.spotted)===key(S.vulture))ev='👁 You spotted an egg right here! Throw at it now.';

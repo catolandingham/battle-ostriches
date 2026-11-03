@@ -6,6 +6,7 @@ function ostrichBot(g) {
   const vThreat = (p) => D(p, v) <= C.vultureFly + C.throwRange;
   // spotted egg under me or adjacent: carry it away / sit
   if (g.carrying !== null) {
+    if (B.carryMaxed(g)) { if (B.canSetDown(g)) return B.ostrichSetDown(g); const m = B.ostrichMoves(g).sort((a, b) => D(b, v) - D(a, v)); return B.ostrichStep(g, m[0]); }
     if (B.canSetDown(g) && !vThreat(g.ostrich)) return B.ostrichSetDown(g);
     const mv = B.ostrichMoves(g).filter(q => B.stoneFree(g, q)).sort((a, b) => D(b, v) - D(a, v));
     return B.ostrichStep(g, (mv[0] || R(B.ostrichMoves(g))));
@@ -17,6 +18,11 @@ function ostrichBot(g) {
     const urgent = others.some(o => B.coldIn(g, o) - D(o.pos, g.ostrich) <= 2);
     if (!urgent && B.canSit(g) && D(v, g.ostrich) <= 2) return B.ostrichSit(g); // guard
     if (!urgent && B.canSit(g) && Math.random() < .3) return B.ostrichSit(g);
+  }
+  // hungry: walk to the food unless an egg is about to go cold
+  if (g.hungry && g.food) {
+    const urgent = alive.some(e => e.pos && B.coldIn(g, e) - D(e.pos, g.ostrich) <= 1 && D(e.pos, g.food) > 0);
+    if (!urgent) { const mv = B.ostrichMoves(g).sort((a, b) => D(a, g.food) - D(b, g.food) - (D(a, v) - D(b, v)) * .1); return B.ostrichStep(g, mv[0]); }
   }
   // fake nest sometimes when on empty square away from eggs
   if (B.canScrape(g) && g.round > 2 && Math.random() < .25 && !alive.some(e => e.pos && D(e.pos, g.ostrich) <= 1)) return B.ostrichScrape(g);
@@ -34,6 +40,11 @@ function vultureBot(g, mem) {
     if (g.marks[k] === 'spotted') s += 20; if (g.marks[k] === 'fake') s -= 50; if (g.marks[k] === 'miss') s -= 1.5; if (g.marks[k] === 'hit') s -= 50;
     for (const [sk, yes] of Object.entries(g.smells)) { const q = sk.split(',').map(Number); if (D(q, p) <= C.smellRange) s += yes ? 1.5 : -3; }
     return s + Math.random() * .3; };
+  const near = (p) => Math.min(...C.rocks.map(r => D(r, p)));
+  if (g.stones === 0 || (g.stones < C.stones && near(v) <= C.vultureFly && !Object.values(g.marks).includes('spotted') && Math.random() < .5)) {
+    const rk = C.rocks.slice().sort((a, b) => D(a, v) - D(b, v))[0];
+    const fl = B.flyTargets(g).sort((a, b) => D(a, rk) - D(b, rk) - (score(a) - score(b)) * .05); return B.vultureFly(g, fl[0]);
+  }
   const th = B.throwTargets(g).map(p => [p, score(p)]).sort((a, b) => b[1] - a[1])[0];
   if (th && th[1] >= mem.throwBar) return B.vultureThrow(g, th[0]);
   const best = sq.map(p => [p, score(p) + sq.filter(q => D(p, q) <= 1).reduce((a, q) => a + score(q) * .3, 0)]).sort((a, b) => b[1] - a[1])[0][0];
@@ -54,6 +65,6 @@ function play(cfg) {
 const n = +process.argv[2] || 2000, over = {};
 let SPREAD = 3;
 for (const a of process.argv.slice(3)) { const [k, v] = a.split('='); if (k === 'spread') SPREAD = +v; else over[k] = +v; }
-const cfg = { ...B.CONFIG, ...over }; let red = 0, rs = 0, close = 0, hits = 0;
-for (let i = 0; i < n; i++) { const o = play(cfg); if (o.w === 'red') { red++; if (o.r >= cfg.rounds * .75) close++; } else if (o.eggs === 1) close++; rs += o.r; hits += o.hits; }
-console.log(JSON.stringify(over), `vulture ${(100 * red / n).toFixed(1)}%  avg rounds ${(rs / n).toFixed(1)}  close ${(100 * close / n).toFixed(1)}%  eggs smashed/game ${(hits / n).toFixed(2)} (rest lost to cold)`);
+const cfg = { ...B.CONFIG, ...over }; let red = 0, rs = 0, close = 0, hits = 0, ost1 = 0, late = 0;
+for (let i = 0; i < n; i++) { const o = play(cfg); if (o.w === 'red') { red++; if (o.r >= cfg.rounds * .75) close++; } else if (o.eggs === 1) close++; rs += o.r; hits += o.hits; if (o.w !== 'red' && o.eggs === 1) ost1++; if (o.w === 'red' && o.r >= cfg.rounds * .6) late++; }
+console.log(JSON.stringify(over), `vulture ${(100 * red / n).toFixed(1)}%  avg rounds ${(rs / n).toFixed(1)}  close ${(100 * close / n).toFixed(1)}%  eggs smashed/game ${(hits / n).toFixed(2)} (rest lost to cold)  [ostrich won w/ 1 egg ${(100*ost1/n).toFixed(0)}% | vulture won after 60% of rounds ${(100*late/n).toFixed(0)}% | decided-late-or-1-egg ${(100*(ost1+late)/n).toFixed(0)}%]`);
