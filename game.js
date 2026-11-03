@@ -94,7 +94,10 @@ function throwTargets(g) {
 }
 function vultureFly(g, p) {
   if (!flyTargets(g).some(q => key(q) === key(p))) return false;
-  g.vulture = p.slice(); g.lastAction = { type: 'fly' }; g.turn = 'blue'; return true;
+  g.vulture = p.slice(); g.lastAction = { type: 'fly' };
+  // Landing on an unguarded, uncarried egg spots it. The mark stays even if the egg later moves (stale).
+  const e = eggAt(g, p);
+  if (e && key(p) !== key(g.ostrich)) { g.marks[key(p)] = 'spotted'; g.lastAction.spotted = p.slice(); } g.turn = 'blue'; return true;
 }
 function vultureThrow(g, p) {
   if (!throwTargets(g).some(q => key(q) === key(p))) return false;

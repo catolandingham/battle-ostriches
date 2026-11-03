@@ -16,4 +16,13 @@ t('vulture wins when all eggs lost',()=>{const g=setup();for(let r=1;r<=6;r++){B
 t('ostrich wins after 40 rounds',()=>{const g=B.newGame();B.placeEgg(g,[0,0]);B.placeEgg(g,[2,0]);B.placeEgg(g,[8,6]);B.placeOstrich(g,[1,0]);B.vultureFly(g,[4,2]);
  let a=[0,0],b=[2,0],cur=[1,0],nx=a;for(let r=1;r<=40&&!g.winner;r++){ if(B.canSit(g)&&r%3!==0)B.ostrichSit(g); else {nx=(g.ostrich[0]===0?[1,0]:g.ostrich[0]===2?[1,0]:(r%2?a:b));B.ostrichStep(g,nx);} B.vultureFly(g,[4,r%2?4:3]);}
  assert.equal(g.winner,'blue');assert.equal(g.round,40)});
+t('fly onto unguarded egg spots it; ostrich can react; mark goes stale',()=>{const g=B.newGame();B.placeEgg(g,[5,3]);B.placeEgg(g,[0,0]);B.placeEgg(g,[8,6]);B.placeOstrich(g,[6,3]);
+ assert(B.vultureFly(g,[5,3]));assert.equal(g.marks['5,3'],'spotted');assert.deepEqual(g.lastAction.spotted,[5,3]);
+ // ostrich reacts by stepping on it, then carries it away
+ assert(B.ostrichStep(g,[5,3]));assert(B.vultureFly(g,[4,3]));assert(B.ostrichStep(g,[5,4],true));
+ assert.equal(g.marks['5,3'],'spotted');assert.equal(B.vultureThrow(g,[5,3]),'miss');assert(g.eggs[0].alive);
+ // guarded egg is not spotted
+ const h=B.newGame();B.placeEgg(h,[5,3]);B.placeEgg(h,[0,0]);B.placeEgg(h,[8,6]);B.placeOstrich(h,[5,3]);assert(B.vultureFly(h,[5,3]));assert.equal(h.marks['5,3'],undefined);
+ // unreacted: throw next turn smashes it
+ const k=B.newGame();B.placeEgg(k,[5,3]);B.placeEgg(k,[0,0]);B.placeEgg(k,[8,6]);B.placeOstrich(k,[0,0]);B.vultureFly(k,[5,3]);B.ostrichSit(k);assert.equal(B.vultureThrow(k,[5,3]),'hit');});
 console.log(n+' tests passed');

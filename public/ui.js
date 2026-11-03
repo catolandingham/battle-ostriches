@@ -24,7 +24,7 @@ function connect(){
  sock.onmessage=ev=>{const m=JSON.parse(ev.data);lastPong=Date.now();
   if(m.t==='pong')return;
   if(m.t==='joined'){pending=null;clearTimeout(pendTimer);attempts=0;status('');me={code:m.code,token:m.token,role:m.role};localStorage.setItem('bo_me',JSON.stringify(me));history.replaceState(null,'','/?room='+m.code);}
-  if(m.t==='state'){const prev=S;S=m.state;if(!prev||prev.turn!==S.turn||prev.phase!==S.phase)mode=null;render(prev);if(!prev&&window.TUT)TUT.maybeShow(S.role);}
+  if(m.t==='state'){const prev=S;S=m.state;if(!prev||prev.turn!==S.turn||prev.phase!==S.phase)mode=null;render(prev);sounds(prev);if(!prev&&window.TUT)TUT.maybeShow(S.role);}
   if(m.t==='error'){if(!S){pending=null;clearTimeout(pendTimer);attempts=0;status(m.msg,true);}else $('log').textContent=m.msg;}};
 }
 function retry(){
@@ -43,6 +43,17 @@ tapper($('mkBlue'),()=>open({t:'create',role:'blue'}));
 tapper($('mkRed'),()=>open({t:'create',role:'red'}));
 tapper($('joinBtn'),()=>open({t:'join',code:$('codeIn').value.trim(),token:me.code===$('codeIn').value.trim().toUpperCase()?me.token:undefined}));
 tapper($('howBtn'),()=>TUT.show('all'));tapper($('helpBtn'),()=>TUT.show(S?S.role:'all'));
+function muteLabel(){$('muteBtn').textContent=SFX.muted?'🔇':'🔊';$('muteBtn2').textContent=SFX.muted?'🔇 Sound off':'🔊 Sound on';}
+muteLabel();tapper($('muteBtn'),()=>{SFX.toggle();muteLabel();});tapper($('muteBtn2'),()=>{SFX.toggle();muteLabel();});
+function sounds(prev){if(!prev)return;const blue=S.role==='blue';
+ if(S.phase==='over'&&prev.phase!=='over')return SFX.play(S.winner===S.role?'win':'lose');
+ if(prev.phase.startsWith('setup')&&S.phase===prev.phase&&blue)SFX.play('place');
+ const la=S.lastAction;
+ if(prev.turn==='red'&&S.turn==='blue'&&la&&prev.phase==='play')SFX.play(la.type==='fly'?(la.spotted?'warn':'fly'):la.result==='hit'?'crack':la.result==='feather'?'feather':'miss');
+ if(prev.turn==='blue'&&S.turn==='red'&&prev.phase==='play')setTimeout(()=>SFX.play('step'),blue?0:0);
+ if(S.lastCold&&prev.round!==S.round)setTimeout(()=>SFX.play('cold'),400);
+ else if(blue&&S.myTurn&&S.eggs&&S.eggs.some(e=>e.alive&&e.coldIn<=1))setTimeout(()=>SFX.play('warn'),700);
+ if(S.myTurn&&!prev.myTurn&&S.phase==='play')setTimeout(()=>SFX.play('turn'),450);}
 const roomQ=new URLSearchParams(location.search).get('room');
 if(!roomQ)TUT.firstVisit();
 if(roomQ){$('codeIn').value=roomQ;open({t:'join',code:roomQ,token:me.code===roomQ.toUpperCase()?me.token:undefined});}
@@ -91,8 +102,10 @@ function render(prev){
  // event line
  let ev='';const la=S.lastAction;
  if(prev&&la&&prev.turn==='red'&&S.turn==='blue'&&la.type==='throw')ev=la.result==='hit'?'💥 SMASH! An egg was broken.':la.result==='feather'?(blue?'🪶 A stone hit you — your egg was safe.':'🪶 Feathers! An ostrich was guarding an egg there.'):'✕ Stone missed.';
+ else if(prev&&la&&prev.turn==='red'&&S.turn==='blue'&&la.spotted)ev=blue?'👁 The vulture SPOTTED an egg! Sit on it or carry it away now.':'';
  else if(prev&&la&&prev.turn==='red'&&S.turn==='blue'&&blue)ev='The vulture flew.';
  if(S.lastCold&&prev&&prev.round!==S.round)ev+=` ❄️ ${S.lastCold} egg(s) went cold!`;
+ if(!blue&&S.myTurn&&la&&la.spotted&&S.marks[key(la.spotted)]==='spotted'&&key(la.spotted)===key(S.vulture))ev='👁 You spotted an egg right here! Throw at it now.';
  $('hint').textContent=h;$('log').textContent=ev||(S.phase==='play'?`Round ${S.round} of ${C.rounds} · room ${S.code}${S.opponent?'':' · opponent offline'}`:'');
  const o=$('over');if(S.phase==='over'){const won=S.winner===S.role;o.classList.remove('hidden');
   o.innerHTML=`<div class="lobbybox"><div class="bigost">${S.winner==='blue'?OST:VUL}</div><h1>${won?'You win!':'You lose'}</h1><p>${S.winner==='blue'?`The ostrich kept ${S.eggsLeft} egg(s) alive for ${C.rounds} rounds.`:`The vulture got every egg by round ${S.round}.`}</p><button class="big" onclick="UI.rematch()">Rematch</button><button class="big ghost" onclick="UI.menu()">Menu</button></div>`;}

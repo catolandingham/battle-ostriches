@@ -25,6 +25,12 @@ const U = process.argv[2] || 'https://battle-ostriches.onrender.com/';
     await T.tap('#tutSkip'); await T.tap('#helpBtn'); const help = await T.isVisible('#tut');
     if (forced || !imgOk || !help || dots < 2) throw new Error('tutorial check failed');
     console.log('PASS tutorial: intro', dots, 'steps (', t1, '→', t2, '), img loaded', imgOk, '; not forced on reload', !forced, '; How to play', all, 'steps; vulture-side on join', redSteps, 'steps starting', JSON.stringify(redT), '; ? help opens', help);
+    const snd = await T.evaluate(() => { SFX.names.forEach(n => SFX.play(n)); return { names: SFX.names.length, muted: SFX.muted }; });
+    await T.tap('#tutSkip'); await T.tap('#muteBtn'); await T.reload(); await T.waitForTimeout(500); const mutedAfter = await T.evaluate(() => SFX.muted);
+    await T.evaluate(() => SFX.toggle());
+    const firstCard = await T.evaluate(() => TUT.steps[0].t);
+    if (!mutedAfter) throw new Error('mute did not persist');
+    console.log('PASS sound:', snd.names, 'effects played without error; mute persists after reload', mutedAfter, '; first tutorial card', JSON.stringify(firstCard));
     console.log('PASS: join synced; A hint =', await A.textContent('#hint'), '| V hint =', await V.textContent('#hint'));
   } catch (e) { console.log('FAIL', e.message.split('\n')[0]); console.log('lobbyErr:', await A.textContent('#lobbyErr').catch(()=>'')); process.exitCode = 1; }
   console.log(logs.slice(0, 10).join('\n')); await b.close();
