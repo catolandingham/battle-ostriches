@@ -2,8 +2,8 @@
 const CONFIG = {
   cols: 9, rows: 7,
   eggs: 3,
-  rounds: 35,          // ostrich wins if any egg survives this many rounds
-  warmth: 13,          // an egg goes cold unless the ostrich is on it (or carrying it) at least once every N rounds
+  rounds: 30,          // ostrich wins if any egg survives this many rounds
+  warmth: 20,          // an egg goes cold unless the ostrich is on it (or carrying it) at least once every N rounds
   maxSit: 3,           // max consecutive Sit turns; then the ostrich must step off for at least one turn
   vultureFly: 2,       // vulture flies up to N squares (king-move distance)
   throwRange: 1,       // vulture throws at its own square or within N (stones are unlimited)

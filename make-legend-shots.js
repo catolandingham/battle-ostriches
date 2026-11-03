@@ -21,7 +21,7 @@ const T = ['classic','nature','notes','golden','paper','arcade','toybox','tactic
     await O(); await P.waitForTimeout(200); await P.screenshot({ path: `${OUT}${t}-ostrich.jpg`, type: 'jpeg', quality: 80 });
     await cell(7, 6).click();
     await V(); await P.waitForTimeout(200); await P.screenshot({ path: `${OUT}${t}-vulture.jpg`, type: 'jpeg', quality: 80 });
-    await cell(6, 5).click({ force: true }).catch(()=>{}); // not legal from here? label shows if marked
+    if (!(await cell(6, 5).evaluate(e => e.classList.contains('legal')))) await cell(6, 5).click({ force: true }).catch(()=>{}); // label only; never make a move here
     await P.click('#keyBtn'); await P.waitForTimeout(150); await P.screenshot({ path: `${OUT}${t}-key.jpg`, type: 'jpeg', quality: 80 });
     await P.click('#legendClose'); await P.evaluate(() => UI.walk()); await P.click('#wNext');
     await P.screenshot({ path: `${OUT}${t}-walkthrough.jpg`, type: 'jpeg', quality: 80 });

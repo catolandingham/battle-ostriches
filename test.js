@@ -2,7 +2,7 @@ const B=require('./game.js');const assert=require('assert');let n=0;const t=(nam
 const C=B.CONFIG;
 function setup(cfg){const g=B.newGame(cfg);B.placeEgg(g,[0,0]);B.placeEgg(g,[8,6]);B.placeEgg(g,[0,6]);B.placeOstrich(g,[0,0]);B.vultureFly(g,[4,2]);return g;}
 const fl=(g,i)=>B.vultureFly(g,g.vulture[1]===2?[4,3]:[4,2]);
-t('balanced config',()=>{assert.equal(C.rounds,35);assert(C.warmth>=10&&C.warmth<=16);assert.equal(C.maxSit,3);assert.equal(C.vultureFly,2);assert.equal(C.throwRange,1);
+t('balanced config',()=>{assert.equal(C.rounds,30);assert(C.warmth>=10&&C.warmth<=22);assert.equal(C.maxSit,3);assert.equal(C.vultureFly,2);assert.equal(C.throwRange,1);
  for(const k of['fakeNests','stones','rocks','foodMin','maxCarry'])assert(!(k in C),'removed '+k);});
 t('setup: vulture opens; cannot hide egg under vulture',()=>{const g=setup();assert.equal(g.phase,'play');assert.equal(g.turn,'blue');assert(!B.placeEgg(B.newGame(),[4,3]))});
 t('ostrich steps 1 square (8 dirs)',()=>{const g=setup();assert(!B.ostrichStep(g,[2,2]));assert(B.ostrichStep(g,[1,1]));assert.equal(g.turn,'red')});
@@ -25,7 +25,7 @@ t('smell history within 2, includes carried egg',()=>{const g=B.newGame();B.plac
  const h=B.newGame();B.placeEgg(h,[8,6]);B.placeEgg(h,[0,6]);B.placeEgg(h,[0,0]);B.placeOstrich(h,[8,6]);B.vultureFly(h,[5,4]);B.ostrichStep(h,[7,5],true);assert(B.smellsEgg(h,[5,3]));});
 t('footprints: steps and sits deepen',()=>{const g=setup();const a=g.prints['0,0'];B.ostrichSit(g);assert.equal(g.prints['0,0'],a+1);fl(g);B.ostrichStep(g,[1,1]);fl(g);B.ostrichStep(g,[0,0]);assert.equal(g.prints['0,0'],a+2)});
 t('warmth: unvisited eggs go cold after N rounds; vulture wins',()=>{const g=setup();for(let r=1;r<=C.warmth+1&&!g.winner;r++){B.ostrichStep(g,[1+r%2,1]);if(!g.winner)fl(g);}assert.equal(g.winner,'red')});
-t('ostrich wins after 35 rounds',()=>{const g=B.newGame();B.placeEgg(g,[0,0]);B.placeEgg(g,[2,0]);B.placeEgg(g,[8,6]);B.placeOstrich(g,[0,0]);B.vultureFly(g,[4,2]);
+t('ostrich wins after C.rounds rounds',()=>{const g=B.newGame();B.placeEgg(g,[0,0]);B.placeEgg(g,[2,0]);B.placeEgg(g,[8,6]);B.placeOstrich(g,[0,0]);B.vultureFly(g,[4,2]);
  for(let r=1;r<=40&&!g.winner;r++){if(B.canSit(g))B.ostrichSit(g);else B.ostrichStep(g,g.ostrich[0]===0?[1,0]:[0,0]);if(!g.winner)fl(g);}
- assert.equal(g.winner,'blue');assert.equal(g.round,35)});
+ assert.equal(g.winner,'blue');assert.equal(g.round,C.rounds)});
 console.log(n+' tests passed');

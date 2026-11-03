@@ -2,7 +2,7 @@
 // the vulture bot never reads egg positions; it works from footprints, marks and its smell history.
 const B = require('./game.js');
 const K = B.key, D = B.dist, R = a => a[Math.random() * a.length | 0];
-const LVL = { easy: { noise: 3, throwBar: 6, sitP: .2, fea: 2, yes: 0, no: 1 }, normal: { noise: .3, throwBar: 2, sitP: .35, fea: 8, yes: .3, no: .2 } };
+const LVL = { easy: { noise: 3, throwBar: 8, sitP: .2, fea: 2, yes: 0, no: 1 }, normal: { noise: .3, throwBar: 2, sitP: .35, fea: 8, yes: .3, no: .2 } };
 // --- ostrich: its own eggs and the (public) vulture position are fair game ---
 function ostrich(g, lvl = 'normal') {
   const L = LVL[lvl] || LVL.normal, C = g.cfg;
