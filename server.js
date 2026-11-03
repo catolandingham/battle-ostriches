@@ -3,7 +3,7 @@ const http = require('http'), fs = require('fs'), path = require('path');
 const { WebSocketServer } = require('ws');
 const B = require('./game.js');
 const PORT = process.env.PORT || 3000, PUB = path.join(__dirname, 'public');
-const TYPES = { '.html': 'text/html', '.css': 'text/css', '.js': 'application/javascript', '.svg': 'image/svg+xml' };
+const TYPES = { '.html': 'text/html', '.css': 'text/css', '.js': 'application/javascript', '.svg': 'image/svg+xml', '.mp4': 'video/mp4', '.jpg': 'image/jpeg', '.png': 'image/png' };
 const server = http.createServer((req, res) => {
   let u = decodeURIComponent(req.url.split('?')[0]);
   if (u === '/healthz') return res.end('ok');
@@ -11,7 +11,13 @@ const server = http.createServer((req, res) => {
   if (!f.startsWith(__dirname)) { res.writeHead(403); return res.end(); }
   fs.readFile(f, (e, d) => {
     if (e) { fs.readFile(path.join(PUB, 'index.html'), (e2, d2) => { res.writeHead(200, { 'content-type': 'text/html' }); res.end(d2); }); return; }
-    res.writeHead(200, { 'content-type': TYPES[path.extname(f)] || 'application/octet-stream', 'cache-control': 'no-cache' }); res.end(d);
+    const type = TYPES[path.extname(f)] || 'application/octet-stream', m = /bytes=(\d*)-(\d*)/.exec(req.headers.range || '');
+    if (m) { // byte ranges: iOS Safari needs these to play <video>
+      let a = m[1] ? +m[1] : d.length - +m[2], z = m[1] && m[2] ? Math.min(+m[2], d.length - 1) : d.length - 1;
+      if (isNaN(a) || a < 0 || a >= d.length || a > z) { res.writeHead(416, { 'content-range': `bytes */${d.length}` }); return res.end(); }
+      res.writeHead(206, { 'content-type': type, 'accept-ranges': 'bytes', 'content-range': `bytes ${a}-${z}/${d.length}`, 'content-length': z - a + 1, 'cache-control': 'no-cache' }); return res.end(d.subarray(a, z + 1));
+    }
+    res.writeHead(200, { 'content-type': type, 'accept-ranges': 'bytes', 'content-length': d.length, 'cache-control': 'no-cache' }); res.end(d);
   });
 });
 const rooms = new Map(); // code -> {g, players:{blue:{ws,token},red:{ws,token}}, touched}

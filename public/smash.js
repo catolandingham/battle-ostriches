@@ -19,12 +19,12 @@ function play(S,la){ensure();const a=rect(S,la.from),b=rect(S,la.p);if(!a||!b)re
  const K=[],KS=[];for(let i=0;i<=16;i++){const t=i/16,x=ax+(bx-ax)*t,y=ay+(by-ay)*t-H*4*t*(1-t);
   K.push({transform:`translate(${x-w*.17}px,${y-w*.15}px) rotate(${t*540}deg) scale(${1+.5*4*t*(1-t)})`});KS.push({transform:`translate(${x-w*.18}px,${ay+(by-ay)*t+w*.25}px) scale(${.5+.5*t})`,opacity:.25+.4*t});}
  st.animate(K,{duration:T,easing:'cubic-bezier(.3,.1,.6,1)',fill:'forwards'});sh.animate(KS,{duration:T,easing:'cubic-bezier(.3,.1,.6,1)',fill:'forwards'});
- window.SFX&&SFX.play('whoosh');
+ window.SFX&&SFX.play('whoosh');try{document.dispatchEvent(new CustomEvent('bo-throw',{detail:{ax,ay,bx,by,w,T,res:la.result}}))}catch(e){}
  setTimeout(()=>{sh.remove();if(cell)cell.classList.remove('fxhold');impact(la.result,bx,by,w,st,egg);},T);}
 function dust(x,y,w,n,col){for(let i=0;i<n;i++){const d=el('sm-dust',`left:${x}px;top:${y}px;width:${w*.22}px;height:${w*.22}px;background:${col}`);
  const ang=Math.PI*(1+i/(n-1)),r=w*(.35+Math.random()*.3);d.animate([{transform:'translate(-50%,-50%) scale(.3)',opacity:.9},{transform:`translate(calc(-50% + ${Math.cos(ang)*r}px),calc(-50% + ${Math.sin(ang)*r*.6}px)) scale(1.6)`,opacity:0}],{duration:700,easing:'ease-out'});kill(d,720);}}
 function shake(){const b=document.getElementById('board');b&&b.animate([{transform:'translate(0,0)'},{transform:'translate(-4px,2px)'},{transform:'translate(4px,-2px)'},{transform:'translate(-2px,1px)'},{transform:'translate(0,0)'}],{duration:260});}
-function impact(res,x,y,w,st,egg){
+function impact(res,x,y,w,st,egg){try{document.dispatchEvent(new CustomEvent('bo-impact',{detail:{x,y,w,res}}))}catch(e){}
  if(res==='feather'){window.SFX&&SFX.play('feather');const dx=w*.9;st.animate([{transform:st.style.transform||getComputedStyle(st).transform},{transform:`translate(${x+dx*.5-w*.17}px,${y-w*.8}px) rotate(700deg)`},{transform:`translate(${x+dx-w*.17}px,${y+w*.1}px) rotate(900deg)`,opacity:0}],{duration:520,easing:'ease-out',fill:'forwards'});kill(st,540);
   const f=el('sm-feather',`left:${x}px;top:${y}px;font-size:${w*.45}px`,'🪶');f.animate([{transform:'translate(-50%,-50%) rotate(0)',opacity:1},{transform:`translate(-20%,${-w*.2}px) rotate(-30deg)`,offset:.3},{transform:`translate(-80%,${w*.4}px) rotate(25deg)`,opacity:0}],{duration:1300,easing:'ease-in-out'});kill(f,1320);
   const r=el('sm-ring',`left:${x}px;top:${y}px;width:${w}px;height:${w}px`);kill(r,500);return;}

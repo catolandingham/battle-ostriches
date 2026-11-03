@@ -2,7 +2,7 @@
 (function(){
 let ctx=null,muted=localStorage.getItem('bo_muted')==='1';
 function unlock(){if(!ctx){const A=window.AudioContext||window.webkitAudioContext;if(!A)return;ctx=new A();}
- if(ctx.state==='suspended')ctx.resume();
+ if(ctx.state==='suspended')ctx.resume().catch(()=>{});
  const b=ctx.createBuffer(1,1,22050),s=ctx.createBufferSource();s.buffer=b;s.connect(ctx.destination);s.start(0);}
 ['touchend','click','keydown'].forEach(e=>document.addEventListener(e,unlock,{capture:true,passive:true}));
 function tone(f,dur,{type='sine',vol=.25,at=0,to=null}={}){const t=ctx.currentTime+at,o=ctx.createOscillator(),g=ctx.createGain();
@@ -30,6 +30,6 @@ const FX={
  win(){[523,659,784,1047].forEach((f,i)=>tone(f,.35,{type:'triangle',vol:.2,at:i*.12}));},
  lose(){[392,330,262,196].forEach((f,i)=>tone(f,.4,{type:'sawtooth',vol:.08,at:i*.18}));},
 };
-window.SFX={play(n){if(muted||!ctx||!FX[n])return;try{if(ctx.state==='suspended')ctx.resume();FX[n]();}catch(e){}},
+window.SFX={play(n){if(muted||!ctx||!FX[n])return;try{if(ctx.state==='suspended')ctx.resume().catch(()=>{});FX[n]();}catch(e){}},
  get muted(){return muted},toggle(){muted=!muted;localStorage.setItem('bo_muted',muted?'1':'0');return muted;},names:Object.keys(FX)};
 })();
