@@ -215,3 +215,10 @@ body.red #banner,body.blue #banner,body.hunter #banner{min-height:44px;box-sizin
 @keyframes rockc{to{box-shadow:inset 0 0 0 4px #fff,0 0 22px 8px #fff}}
 #hint.myturn{border-color:#ffd21f!important;box-shadow:0 0 0 3px #ffd21f,0 0 16px 2px #ffd21f88!important;animation:myturn 1.2s ease-in-out 2}@keyframes myturn{50%{box-shadow:0 0 0 5px #ffd21f,0 0 26px 6px #ffd21f}}
 #hud .hh{position:relative}#hud .hh .hbar{display:block;position:absolute;left:8px;right:8px;bottom:2px;height:4px;border-radius:3px;background:#0005;overflow:hidden}#hud .hh .hbar i{display:block;height:100%;background:#38d66b;border-radius:3px;transition:width .4s}#hud .hh.low .hbar i{background:#ff3b2f}
+#banner.final,html[data-theme] #banner.final{background:#ffd21f!important;color:#111!important;font-weight:900}
+/* carried egg: held in the beak (top-right of the ostrich), big and outlined */
+#board .cell>.carry,html[data-theme] #board .cell>.carry{right:-4%;top:-2%;bottom:auto;width:40%;height:46%;z-index:7;filter:drop-shadow(0 0 0 #fff) drop-shadow(0 2px 0 #000)}
+#board .cell>.carry svg{width:100%;height:100%;transform:rotate(18deg)}
+/* Step/Carry/Sit stay on screen on short phones even when a tip shows */
+#actions{position:sticky;bottom:max(6px,env(safe-area-inset-bottom));z-index:30}
+#gone{position:fixed;inset:0;z-index:200;background:rgba(10,15,25,.92);display:flex;align-items:center;justify-content:center;padding:20px}#gone .gbox{background:#fff;color:#111;border:5px solid #111;border-radius:20px;padding:22px;max-width:360px;text-align:center}#gone .gt{font:900 30px/1.1 system-ui,sans-serif;margin-bottom:8px}#gone p{font-weight:600;margin:0 0 14px}#gone button{width:100%}

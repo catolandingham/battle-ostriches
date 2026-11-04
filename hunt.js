@@ -1,4 +1,5 @@
 // 4-player "Hunters" mode: ostrich (blue) + vulture (red) + hyena + honey badger, one seat each. Wraps the 2-player rules in
+const TOUGHH = typeof process !== 'undefined' && process.env.BO_TOUGH ? +process.env.BO_TOUGH : 0.3; // share of badger digs that hit tough ground (2 still turns instead of 1)
 // game.js without changing them (like three.js). Turn order each round: vulture, ostrich, hyena, badger. 10s shot clock.
 // Hyena: Pounce, 2 catches knock a bird out. Badger: Burrow, 1 catch knocks a bird out. No speed boost in this mode.
 // Fearless rivalry: badger moves onto the hyena -> the hyena is knocked back 2; hyena moves onto the badger -> the hyena
@@ -127,7 +128,7 @@ function hunterMove(g, p) {
 }
 function hunterStay(g) {
   const h = g.turn; if (g.phase !== 'play' || !isH(h)) return false;
-  const x = g.hunt.hs[h]; if (!x.pounce && h === 'badger') { x.dig = Math.min(2, x.dig + 1); x.burrowed = x.dig >= 2; } // 2 still turns to dig in
+  const x = g.hunt.hs[h]; if (!x.pounce && h === 'badger') { x.dig = x.dig ? 2 : (Math.random() < TOUGHH ? 1 : 2); x.burrowed = x.dig >= 2; } // tough ground: some digs take 2 still turns
   x.last = { type: x.pounce ? 'skip' : 'stay' }; endHunter(g, h); return true;
 }
 function timeout(g) {

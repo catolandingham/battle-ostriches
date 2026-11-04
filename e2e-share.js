@@ -45,5 +45,19 @@ const OUT = 'shots/share/'; fs.mkdirSync(OUT, { recursive: true });
   await V.locator('.cell').nth(0).click(); await V.waitForTimeout(60);
   const ht = await V.textContent('#hint, #tipbar, body'); assert.ok(/Can't carry egg and food/.test(ht), 'carry-onto-food message'); assert.ok(!/hands full/i.test(ht));
   await V.screenshot({ path: OUT + '6-cant-carry-egg-and-food.jpg', type: 'jpeg', quality: 88 });
+  // buttons stay on screen (iPhone 13) even with a tip + banner showing; carried egg is drawn in the beak; final-rounds banner
+  await V.evaluate(() => { const S = UI._S(); S.carried = true; S.carrying = 0; S.hungerLeft = 3; S.round = S.cfg.rounds - 2; UI._rr(); UI._tip('Tip: this is a long just-in-time tip that wraps onto a second line to push things down.'); });
+  await V.waitForTimeout(200);
+  const lay = await V.evaluate(() => { const a = document.getElementById('actions').getBoundingClientRect(); return { bottom: a.bottom, top: a.top, h: innerHeight, tip: !document.getElementById('tipbar').classList.contains('hidden') }; });
+  assert.ok(lay.tip && lay.bottom <= lay.h + 1 && lay.top >= 0, 'action buttons on screen with a tip ' + JSON.stringify(lay));
+  assert.ok(await V.locator('.cell>.carry svg').count() === 1, 'carried egg drawn');
+  await V.screenshot({ path: OUT + '7-buttons-with-tip.jpg', type: 'jpeg', quality: 88 });
+  await V.evaluate(() => { UI._tip(null); const S = UI._S(); S.hungerLeft = 9; UI._rr(); });
+  assert.match(await V.textContent('#banner'), /Final 3 rounds!/); await V.screenshot({ path: OUT + '8-final-rounds-banner.jpg', type: 'jpeg', quality: 88 });
+  await V.locator('.cell').nth(1 * 9 + 1).screenshot({ path: OUT + '9-beak-egg-cell.jpg', type: 'jpeg', quality: 92 });
+  // a game the server lost: big clear "Game was reset" instead of a frozen board
+  const G = await mk(); await G.goto(U); await G.evaluate(() => localStorage.setItem('bo_me', JSON.stringify({ code: 'QQQQ', token: 'gone', role: 'blue' })));
+  await G.goto(U + '?room=QQQQ'); await G.waitForSelector('#gone', { timeout: 8000 }); assert.match(await G.textContent('#gone'), /Game was reset/);
+  await G.screenshot({ path: OUT + '10-game-was-reset.jpg', type: 'jpeg', quality: 85 });
   console.log('e2e-share PASSED'); await b.close(); process.exit(0);
 })().catch(e => { console.error(e); process.exit(1); });

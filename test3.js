@@ -1,3 +1,4 @@
+process.env.BO_TOUGH = process.env.BO_TOUGH || "1"; // exercise the 2-turn (tough ground) dig path
 // Unit tests for the 3-player rules (three.js). node test3.js
 const B = require('./game.js'), T = require('./three.js'), AI = require('./ai.js'), assert = require('assert');
 let n = 0; const t = (name, f) => { f(); n++; console.log('ok', name); };

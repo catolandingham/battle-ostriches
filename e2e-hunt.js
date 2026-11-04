@@ -1,6 +1,6 @@
 // 4-player Hunters mode + the new lobby on WebKit iPhone 13s: Classic default lobby, "More players" picker, Hunters setup,
 // a friend joining as the hyena by link, the badger's view with both hunters, badger digging 1/2, rivalry, game over.
-process.env.PORT = 3995; process.env.BO_H4START = '2,3,4,3'; process.env.BO_BOTMS = '200'; process.env.BO_CLOCKMS = '8000';
+process.env.PORT = 3995; process.env.BO_TOUGH = '1'; process.env.BO_H4START = '2,3,4,3'; process.env.BO_BOTMS = '200'; process.env.BO_CLOCKMS = '8000';
 const { webkit, devices } = require('playwright-core'); const assert = require('assert'), fs = require('fs');
 const server = require('./server.js'), H = require('./hunt.js'); const U = 'http://localhost:3995/', OUT = 'shots/hunt/'; fs.mkdirSync(OUT, { recursive: true });
 const shot = (p, n) => p.screenshot({ path: OUT + n + '.jpg', type: 'jpeg', quality: 85 });

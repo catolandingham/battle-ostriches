@@ -1,3 +1,4 @@
+process.env.BO_TOUGH = process.env.BO_TOUGH || "1"; // exercise the 2-turn (tough ground) dig path
 // Unit tests: 4-player Hunters mode (ostrich + vulture + hyena + honey badger). node testhunt.js
 process.env.PORT = 0;
 const assert = require('assert'), H = require('./hunt.js'), HA = require('./huntai.js'), SIM = require('./simhunt.js'), B = require('./game.js');

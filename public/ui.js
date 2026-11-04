@@ -6,6 +6,11 @@ $('lobbyArt').innerHTML=OST;$('artBlue').innerHTML=OST;$('artRed').innerHTML=VUL
 let ws,S=null,mode=null,me=JSON.parse(localStorage.getItem('bo_me')||'{}');
 const key=p=>p[0]+','+p[1];
 // Open-skies icon set: ONE big simple mark per square, no corner badges. Same in every theme (vocab.css).
+window.addEventListener('DOMContentLoaded',()=>{const r=document.getElementById('roundsLeft');if(r&&window.BO)r.textContent=BO.CONFIG.rounds;});
+// the server lost this game (restart/deploy with no saved copy): say so plainly instead of leaving a frozen board
+function gameGone(){if(document.getElementById('gone'))return;pending=null;try{clearTimeout(pendTimer)}catch(e){}localStorage.removeItem('bo_me');
+ const d=document.createElement('div');d.id='gone';d.innerHTML='<div class="gbox"><div class="gt">Game was reset</div><p>The server restarted and this game could not be restored.</p><button id="goneNew" class="big">Start a new game</button></div>';
+ document.body.appendChild(d);document.getElementById('goneNew').onclick=()=>{location.href='/';};}
 const LEAF='<svg viewBox="0 0 40 40" aria-hidden="true"><path d="M8 32C8 14 20 6 34 6c0 16-8 28-26 26z" fill="#3fbf4a" stroke="#0d3d14" stroke-width="2.5" stroke-linejoin="round"/><path d="M10 30L28 12" stroke="#0d3d14" stroke-width="2.5" stroke-linecap="round"/></svg>';
 const ROCKS='<svg viewBox="0 0 40 40" aria-hidden="true"><path d="M5 33l4-10 9-3 6 5-2 8z" fill="#9aa1ab" stroke="#1d2128" stroke-width="2.5" stroke-linejoin="round"/><path d="M19 33l3-12 9-4 5 9-3 7z" fill="#7d858f" stroke="#1d2128" stroke-width="2.5" stroke-linejoin="round"/><path d="M12 21l4-10 8 1 2 8-8 3z" fill="#b8bec6" stroke="#1d2128" stroke-width="2.5" stroke-linejoin="round"/></svg>';
 const STONE='<svg viewBox="0 0 40 40" aria-hidden="true"><path d="M7 27l5-13 13-4 9 9-4 12-17 2z" fill="#9aa1ab" stroke="#1d2128" stroke-width="3" stroke-linejoin="round"/></svg>';
@@ -45,6 +50,7 @@ function connect(){
   if(m.t==='joined'){pending=null;clearTimeout(pendTimer);attempts=0;status('');me={code:m.code,token:m.token,role:m.role};localStorage.setItem('bo_me',JSON.stringify(me));history.replaceState(null,'','/?room='+m.code);}
   if(m.t==='state'&&m.pass)return passState(m);
   if(m.t==='state'){const prev=S;S=m.state;if(!prev||prev.turn!==S.turn||prev.phase!==S.phase)mode=null;render(prev);sounds(prev);if(!prev)maybeWalk(S.role);}
+  if(m.t==='error'&&/No game with that code/.test(m.msg)&&(S||m.gone)){gameGone();return;}
   if(m.t==='error'){if(!S){pending=null;clearTimeout(pendTimer);attempts=0;status(m.msg,true);}else $('log').textContent=m.msg;}};
 }
 function retry(){
@@ -235,7 +241,7 @@ function render(prev){
  const board=$('board');board.style.gridTemplateColumns=`repeat(${C.cols},1fr)`;board.innerHTML='';
  const la=S.lastAction,newTurn=!!(prev&&(prev.turn!==S.turn||prev.round!==S.round));
  const lastThrow=la&&la.type==='throw'&&la.p&&newTurn?key(la.p):null;const eggAt={};(S.eggs||[]).forEach(e=>{if(e.alive&&e.pos)eggAt[key(e.pos)]=e;});
- const sn=S.phase==='play'&&S.sniff?S.sniff:null,snK=sn?sn.p+'|'+S.round+'|'+sn.yes:'',snNew=!!sn&&snK!==sniffSeen;if(sn)sniffSeen=snK;if(snNew)sniffUntil=Date.now()+1200;
+ const sn=S.phase==='play'&&S.sniff?S.sniff:null,snK=sn?sn.p+'|'+sn.yes:'',snNew=!!sn&&snK!==sniffSeen;sniffSeen=snK; // keyed by the sniff itself, not the round: the ostrich's own move bumps the round and used to replay it lateif(snNew)sniffUntil=Date.now()+1200;
  const found=!!sn&&key(sn.p)===key(S.vulture)&&S.marks[key(S.vulture)]==='spotted'; // landed ON an egg: that's a find, not a sniff
  const inSn=k=>{if(!sn)return false;const [a,b]=k.split(',').map(Number);return Math.max(Math.abs(a-sn.p[0]),Math.abs(b-sn.p[1]))<=1;};
  const throwing=!blue&&M==='throw',ok=key(S.ostrich||[-9,-9]),vk=key(S.vulture);
@@ -276,6 +282,7 @@ function render(prev){
  const bn=$('banner');let bt='',bc='';
  if(S.phase==='play'&&!blue&&S.sniff){bt=S.marks[key(S.vulture)]==='spotted'&&key(S.sniff.p)===key(S.vulture)?'Found egg!':S.sniff.yes?'Egg nearby!':'No egg nearby';bc=S.sniff.yes?'yes':'no';}
  if(S.phase==='play'&&blue&&S.hungerLeft<=3){bt=`Hungry! ${S.hungerLeft} turn${S.hungerLeft===1?'':'s'} to reach food`;bc='hungry';}
+ {const left=C.rounds-S.round+1;if(S.phase==='play'&&left<=3&&!bt){bt=left===1?'⏳ Last round!':`⏳ Final ${left} rounds!`;bc='final';}}
  if(bn){bn.textContent=bt;bn.className=bt?bc:'hidden';}
  $('warm').innerHTML='';
  const a=$('actions');let h='';a.innerHTML='';const CM=coachNow(),coach=!!CM;
@@ -285,7 +292,7 @@ function render(prev){
  else if(S.phase==='play'&&S.three&&(!S.myTurn||S.role==='hunter'))h=window.T3UI.hint(S,a);
  else if(S.phase==='play'&&!S.myTurn)h=blue?'Vulture\'s turn…':'Ostrich\'s turn…';
  else if(S.phase==='play'&&blue){
-  a.innerHTML=btn('s','Step',M==='step',"UI.setMode('step')")+(S.onEgg?btn('c','Carry egg',M==='carry',"UI.setMode('carry')",!S.can.carry)+btn('t',S.mustLeave?'Sit · step off first':`Sit · ${C.maxSit-S.sitRun} left`,false,"UI.act('sit')",!S.can.sit):'');
+  a.innerHTML=btn('s','Step',M==='step',"UI.setMode('step')")+(S.onEgg?btn('c','🥚 Carry egg 1 square',M==='carry',"UI.setMode('carry')",!S.can.carry)+btn('t',S.mustLeave?'Sit · step off first':`Sit · ${C.maxSit-S.sitRun} left`,false,"UI.act('sit')",!S.can.sit):'');
   h=S.mustLeave?`You sat ${C.maxSit} turns: step off (or Carry egg).`:M==='carry'?'Tap a glowing square to carry the egg there. It lands where you stand next turn.':S.moves.length?(S.can.sit?'Tap a glowing square to move, or Sit.':'Tap a glowing square to move.'):'';
  } else if(S.phase==='play'){
   a.innerHTML=btn('fl','Fly',M==='fly',"UI.setMode('fly')")+btn('th',`Throw stone · ${S.stones}/${C.stones}`,M==='throw',"UI.setMode('throw')",S.stones<1);

@@ -20,6 +20,7 @@ const server = http.createServer((req, res) => {
     res.writeHead(200, { 'content-type': type, 'accept-ranges': 'bytes', 'content-length': d.length, 'cache-control': 'no-cache' }); res.end(d);
   });
 });
+const ST = require('./store.js');
 const rooms = new Map(); // code -> {g, players:{blue:{ws,token},red:{ws,token}}, touched}
 const code = () => { let c; do { c = Array.from({ length: 4 }, () => 'ABCDEFGHJKLMNPQRSTUVWXYZ'[Math.random() * 24 | 0]).join(''); } while (rooms.has(c)); return c; };
 const tok = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
@@ -45,7 +46,8 @@ function view(room, role) {
   return v;
 }
 const active = g => g.phase === 'play' ? g.turn : 'blue'; // pass & play: whose hands the phone is in
-function broadcast(room) { if (room.hunt) return broadcastH(room); if (room.team) return broadcastT(room); if (room.three) return broadcast3(room); schedAI(room);
+function persist(room) { if (room.saveT) return; room.saveT = setTimeout(() => { room.saveT = null; if (rooms.get(room.code) === room) ST.save(room); }, 150); }
+function broadcast(room) { persist(room); if (room.hunt) return broadcastH(room); if (room.team) return broadcastT(room); if (room.three) return broadcast3(room); schedAI(room);
   if (room.pass) { const p = room.players.blue; if (p && p.ws && p.ws.readyState === 1) p.ws.send(JSON.stringify({ t: 'state', pass: true, active: active(room.g), views: { blue: view(room, 'blue'), red: view(room, 'red') } })); return; }
   for (const r of ['blue', 'red']) { const p = room.players[r]; if (p && p.ws && p.ws.readyState === 1) p.ws.send(JSON.stringify({ t: 'state', state: view(room, r) })); } }
 function act(room, role, m) {
@@ -325,7 +327,7 @@ wss.on('connection', ws => {
   ws.isAlive = true; ws.on('pong', () => { ws.isAlive = true; });
   let room = null, role = null;
   const send = o => ws.send(JSON.stringify(o));
-  ws.on('message', raw => {
+  ws.on('message', async raw => {
     let m; try { m = JSON.parse(raw); } catch { return; }
     if (m.t === 'ping') return send({ t: 'pong' });
     if (m.t === 'create' && m.hunt) { const rh = createH(m, ws); room = rh.room; role = rh.role; send({ t: 'joined', code: room.code, role: HU.isH(role) ? 'hunter' : role, token: rh.token, three: true }); return broadcast(room); }
@@ -340,7 +342,11 @@ wss.on('connection', ws => {
       send({ t: 'joined', code: c, role, token }); return broadcast(room);
     }
     if (m.t === 'join') {
-      const r = rooms.get(String(m.code || '').toUpperCase()); if (!r) return send({ t: 'error', msg: 'No game with that code.' });
+      const code = String(m.code || '').toUpperCase(); let r = rooms.get(code);
+      if (!r) { const saved = await ST.load(code).catch(() => null); // survived a deploy/restart: bring it back
+        if (saved && saved.g && !rooms.has(code)) { saved.touched = Date.now(); for (const k in saved.players || {}) if (saved.players[k]) saved.players[k].ws = null; rooms.set(code, saved); }
+        r = rooms.get(code); }
+      if (!r) return send({ t: 'error', msg: 'No game with that code.', gone: !!m.token });
       // reconnect with token, else take the free seat
       const SEATS = r.hunt ? SEATSH : r.team ? ['o1', 'v1', 'o2', 'v2', 'hunter'].filter(x => x in r.players) : r.three ? ['blue', 'red', 'hunter'] : ['blue', 'red'];
       let seat = SEATS.find(s => r.players[s] && m.token && r.players[s].token === m.token);
@@ -370,4 +376,6 @@ wss.on('connection', ws => {
 setInterval(() => { for (const c of wss.clients) { if (!c.isAlive) { c.terminate(); continue; } c.isAlive = false; try { c.ping(); } catch {} } }, 25000).unref();
 setInterval(() => { const now = Date.now(); for (const [c, r] of rooms) if (now - r.touched > 6 * 3600e3) rooms.delete(c); }, 600e3).unref();
 server.listen(PORT, () => console.log('Battle Ostriches on http://localhost:' + PORT));
+// on shutdown (deploys send SIGTERM) save every live room right away
+process.on('SIGTERM', async () => { try { await Promise.all([...rooms.values()].map(r => ST.save(r))); ST.flushFile(); } catch {} process.exit(0); });
 module.exports = server; server.view3 = view3; server.create3 = create3; server.viewT = viewT; server.createT = createT; server.viewH = viewH; server.createH = createH; server.rooms = rooms; server.broadcast = broadcast;
