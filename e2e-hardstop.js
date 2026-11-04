@@ -44,6 +44,14 @@ const OUT = 'shots/hardstop/'; fs.mkdirSync(OUT, { recursive: true });
   await A.evaluate(() => localStorage.setItem('bo_g_cold', '1')); await setCold(6);
   assert.ok(!(await A.locator('#hint.guide').count()), 'no banner after first time');
   assert.ok(await A.locator('.cell.gcool').count() === 1 && !(await A.locator('.cell.gloud').count()), 'subtle pulse afterward'); await shot('6-egg-cooling-later-subtle.jpg');
+  // 4) Skip guide opt-out: button shows with the guide prompt; tapping it ends guides + warnings for good; ? menu turns them back on
+  await A.evaluate(() => { localStorage.removeItem('bo_g_hungry'); UI._S().hungerLeft = 4; UI._rr(); });
+  assert.ok(await A.locator('#hint #skipGuide').isVisible(), 'Skip guide button visible'); await shot('7-skip-guide-button.jpg');
+  await A.click('#skipGuide'); assert.equal(await A.evaluate(() => localStorage.getItem('bo_hs_off')), '1');
+  assert.ok(!(await A.locator('#hint.guide').count()) && !(await A.locator('.cell.gpath,.cell.gtarget,.cell.gloud,.cell.gcool').count()), 'guides gone after skip');
+  assert.ok((await legal()).length >= 3, 'free moves after skip'); await A.evaluate(() => { UI._S().hungerLeft = 13; UI._rr(); });
+  await A.click('#helpBtn'); assert.match(await A.textContent('#guideToggle'), /OFF/); await A.click('#guideToggle');
+  assert.equal(await A.evaluate(() => localStorage.getItem('bo_hs_off')), null, 'guides back on'); await A.evaluate(() => UI.closeRules());
   console.log('errors', errs); assert.equal(errs.length, 0);
   await b.close(); server.close(); console.log('PASS e2e-hardstop'); process.exit(0);
 })().catch(e => { console.error(e); process.exit(1); });

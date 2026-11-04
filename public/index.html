@@ -49,5 +49,5 @@
  <button class="big" onclick="UI.closeRules()">Got it</button>
  <button class="big ghost" onclick="UI.closeRules();TUT.show('intro')">Replay intro</button>
  <button class="big ghost" onclick="UI.closeRules();UI.walk()">Replay walkthrough</button>
- <button class="big ghost" onclick="UI.closeRules();UI.replayCoach()">Replay move hints &amp; tips</button></div></div>
+ <button class="big ghost" onclick="UI.closeRules();UI.replayCoach()">Replay move hints &amp; tips</button><button class="big ghost" id="guideToggle" onclick="UI.guides(!!localStorage.getItem('bo_hs_off'))">Ostrich guides</button></div></div>
 <script src="game.js"></script><script src="sound.js"></script><script src="tutorial.js"></script><script src="fx.js"></script><script src="smash.js"></script><script src="juice.js"></script><script src="ui.js"></script></body></html>

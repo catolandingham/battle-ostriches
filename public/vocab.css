@@ -191,9 +191,17 @@ html #board .cell.gtarget::after{inset:-4%;border:6px solid #ffd23f;box-shadow:0
 @keyframes gpath{50%{opacity:.35}}
 @keyframes gpulse{50%{transform:scale(1.15);opacity:.7}}
 #hint.guide{background:#2f5a1e!important;color:#fff!important;border:3px solid #ffd23f!important;font:900 19px/1.2 system-ui,-apple-system,sans-serif!important;border-radius:14px;padding:8px 10px;text-align:center}
-#board .cell.gcool .wring{animation:gcool 1.8s ease-in-out infinite}
+/* cold-egg warning: glow lives on the SQUARE around the egg; the egg keeps its normal cream egg shape (no tint, no dark disc) */
 @keyframes gcool{50%{opacity:.45}}
-html #board .cell.gloud::after{inset:-6%;border:6px solid #6fc8ff;box-shadow:0 0 20px 8px #6fc8ff;animation:gpulse .9s ease-in-out infinite}
-html #board .cell.gloud.urgent::after{border-color:#ff5a2a;box-shadow:0 0 24px 10px #ff5a2a;animation-duration:.55s}
+html #board .cell.gcool::after{content:'';position:absolute;inset:3%;border-radius:22%;pointer-events:none;z-index:0;box-shadow:inset 0 0 8px 2px rgba(111,200,255,.55);animation:gcool 1.8s ease-in-out infinite}
+html #board .cell.gloud::after{inset:-3%;border:0;border-radius:24%;z-index:0;background:radial-gradient(circle,transparent 48%,rgba(111,200,255,.55) 72%,rgba(111,200,255,.15) 100%);box-shadow:0 0 14px 5px #6fc8ff,inset 0 0 0 3px #6fc8ff;animation:gglow .9s ease-in-out infinite}
+html #board .cell.gloud.urgent::after{background:radial-gradient(circle,transparent 48%,rgba(255,90,42,.6) 72%,rgba(255,90,42,.15) 100%);box-shadow:0 0 18px 7px #ff5a2a,inset 0 0 0 3px #ff7a3a;animation-duration:.55s}
+@keyframes gglow{50%{opacity:.55}}
+html #board .cell:is(.gloud,.gcool) .ic-myegg,html[data-theme] #board .cell:is(.gloud,.gcool) .ic-myegg{z-index:2;width:96%;height:96%}
+html #board .cell:is(.gloud,.gcool) .ic-myegg svg:first-child{left:0!important;top:0!important;width:100%!important;height:100%!important}
+html #board .cell:is(.gloud,.gcool) .ic-myegg svg:first-child ellipse{fill:#fffaf0!important;stroke:#8a7a5a!important;stroke-width:1.5!important}
+html #board .cell:is(.gloud,.gcool) .wring,html[data-theme] #board .cell:is(.gloud,.gcool) .wring{display:none!important}
+html #board .cell:is(.gloud,.gcool) .wnum,html[data-theme] #board .cell:is(.gloud,.gcool) .wnum{top:4%!important;left:84%!important;transform:translate(-50%,-50%)!important;z-index:46!important;background:#fff;border:2px solid var(--wc,#111);border-radius:9px;padding:1px 4px;text-shadow:none!important}
 #hint.guide.cold{background:#0e4a73!important;border-color:#6fc8ff!important}
 #hint.guide.cold.urgent{background:#8a1d06!important;border-color:#ffb627!important}
+#hint .skipguide{display:block;margin:6px auto 0;background:rgba(255,255,255,.15)!important;color:#fff!important;border:2px solid rgba(255,255,255,.7)!important;border-radius:999px!important;font:800 14px/1 system-ui,-apple-system,sans-serif!important;padding:6px 12px!important;box-shadow:none!important;min-height:0!important;width:auto!important}
