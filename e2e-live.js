@@ -29,6 +29,7 @@ const passed = []; const ok = (c, m) => { assert.ok(c, m); passed.push(m); conso
   for (let i = 0; i < 4; i++) { const L = await A.evaluate(() => UI._legal()); const p = L[(i * 7 + 3) % L.length]; await cell(A, p[0], p[1]).click(); await A.waitForTimeout(250); }
   await V.waitForSelector('#actions.mine', { timeout: 15000 }); await V.waitForTimeout(600);
   for (const P of [A, V]) ok(!(await P.textContent('#hud')).includes(code) && !(await P.isVisible('#wait')), 'no room code in in-game header (' + (P === A ? 'ostrich' : 'vulture') + ')');
+  ok(await A.locator('#hud .hh .hbar i').count() === 1, 'ostrich hunger bar'); await shot(A, '7-hunger-bar-ostrich');
   const eggs = await A.evaluate(() => UI._S().eggs.map(e => e.pos)); let flyDev = 0, missDev = 0, bounced = false, smashed = false, smashDev = 0, fly = 0;
   for (let t = 0; t < 40 && !smashed; t++) {
     await V.waitForSelector('#actions.mine', { timeout: 20000 }); await V.waitForTimeout(700);
