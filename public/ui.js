@@ -149,7 +149,7 @@ function nope(msg){const h=$('hint');h.textContent=msg;h.classList.remove('empty
 const isF=(C,k)=>C.foods.some(q=>key(q)===k),isR=(C,k)=>C.rocks.some(q=>key(q)===k);
 const nearF=(C,p)=>C.foods.some(q=>Math.max(Math.abs(q[0]-p[0]),Math.abs(q[1]-p[1]))<=1);
 function legalNow(){if(!S)return[];const blue=S.role==='blue',M=curMode(),C=S.cfg;
- if(blue&&S.phase==='setupEggs'){const eg=new Set((S.eggs||[]).map(e=>key(e.pos)));const r=[];for(let y=0;y<C.rows;y++)for(let x=0;x<C.cols;x++){const k=x+','+y;if(!eg.has(k)&&k!==key(S.vulture)&&!isR(C,k)&&!nearF(C,[x,y]))r.push([x,y]);}return r;}
+ if(blue&&S.phase==='setupEggs'){const eg=new Set((S.eggs||[]).map(e=>key(e.pos)));const r=[];for(let y=0;y<C.rows;y++)for(let x=0;x<C.cols;x++){const k=x+','+y;if(!eg.has(k)&&k!==key(S.vulture)&&!(S.h3&&S.h3.block||[]).some(q=>key(q)===k)&&!isR(C,k)&&!nearF(C,[x,y]))r.push([x,y]);}return r;}
  if(blue&&S.phase==='setupOstrich'){const r=[];for(let y=0;y<C.rows;y++)for(let x=0;x<C.cols;x++)r.push([x,y]);return r;}
  if(!S.myTurn)return[];if(S.role==='hunter')return S.hmoves||[];return blue?(M==='carry'?S.carryMoves:S.moves):(M==='throw'?S.throw:S.fly);}
 function tap(x,y){if(!S||locked)return;if(Date.now()<sniffUntil){clearTimeout(tap.q);tap.q=setTimeout(()=>tap(x,y),sniffUntil-Date.now()+20);return;}const p=[x,y],ok=legalNow().some(q=>q[0]===x&&q[1]===y);
@@ -197,7 +197,7 @@ function guideApply(){if(S&&!S._o)S._o={m:S.moves,c:S.carryMoves,cc:S.can&&S.can
  G.path=[];let p=o.slice();for(let k=0;k<20&&gd(p,G.t)>0;k++){p=[p[0]+Math.sign(G.t[0]-p[0]),p[1]+Math.sign(G.t[1]-p[1])];G.path.push(key(p));}}
 function render(prev){
  $('lobby').classList.add('hidden');const C=S.cfg,blue=S.role==='blue',body=document.body;body.className=(S.role==='hunter'?'hunter':blue?'blue':'red')+(S.three?' three':'');
- $('turnTag').innerHTML=S.role==='hunter'?window.T3UI.tag(S):`<span style="display:inline-block;width:26px;height:26px;vertical-align:middle">${blue?OST:VUL}</span> ${blue?'OSTRICH':'VULTURE'}`;
+ $('turnTag').innerHTML=S.role==='hunter'||(S.h3&&S.h3.team)?window.T3UI.tag(S):`<span style="display:inline-block;width:26px;height:26px;vertical-align:middle">${blue?OST:VUL}</span> ${blue?'OSTRICH':'VULTURE'}`;
  $('roundsLeft').textContent=C.rounds-S.round+1;$('eggsLeft').textContent=S.eggsLeft;
  // HUD: ostrich hunger (leaf + turns left) and vulture stones, both public
  const hud=$('stats');if(hud){const play=S.phase==='play'||S.phase==='over';hud.classList.toggle('hidden',!play);

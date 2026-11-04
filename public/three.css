@@ -37,3 +37,25 @@
 @keyframes h3claw{0%{transform:scale(1.6);opacity:0}20%{transform:scale(1);opacity:1}85%{opacity:1}100%{opacity:0}}
 .cell.h3kb{animation:h3kb .7s ease-out 2}@keyframes h3kb{30%{box-shadow:inset 0 0 0 6px #ff2a6d;transform:scale(1.08)}}
 body.hunter #turnTag{background:#c46a12}body.hunter .cell{background:#6b4a1f}body.hunter .cell.legal{outline-color:#ffd21f}
+/* 4/5 players */
+.pcount button{width:48px}
+#threeStep .rolerow.r5{flex-wrap:wrap}#threeStep .rolerow.r5 .rolebtn{flex:1 1 30%;font-size:14px}
+.rolebtn .ra{position:relative}.rolebtn .ra .snum{position:absolute;right:-4px;bottom:-4px}
+b.snum{position:absolute;right:2px;bottom:1px;z-index:6;min-width:17px;height:17px;line-height:15px;font-size:12px;font-weight:900;text-align:center;border-radius:9px;border:2px solid #000;background:#fff;color:#000;pointer-events:none}
+b.snum.o{background:#38d6f0}b.snum.v{background:#ffb000}b.snum.me{background:#ffd21f;box-shadow:0 0 0 2px #fff}
+.cell .pc.other.mate{filter:drop-shadow(0 0 4px #ffffff)}
+.cell .pc.other.opp{filter:drop-shadow(0 0 3px #ff2a6d)}
+.msniff{position:absolute;left:1px;top:1px;z-index:6;font-size:12px;font-weight:900;padding:0 3px;border-radius:7px;border:2px solid #000;background:#c9ced6;pointer-events:none}
+.msniff.yes{background:#ffb000}
+.cell.mateegg::after{content:'';position:absolute;inset:3px;border:3px dashed #38d6f0;border-radius:10px;pointer-events:none}
+#h3bar.team{gap:4px}#h3bar.team .bchip{padding:2px 5px}#h3bar .bchip .cnum{font-size:13px;margin-left:-2px}
+#h3bar .bchip.me{outline:3px solid #ffd21f}
+#threeStep .rolerow.r5{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+#threeStep .rolerow.r5 .rolebtn{padding:4px 2px;font-size:13px;min-height:0}
+#threeStep .rolerow.r5 .rolebtn .ra{display:block;width:40px;height:40px;margin:0 auto}
+#threeStep .rolerow.r5 .rolebtn .ra svg{width:40px;height:40px}
+#threeStep .rolerow.r5 .rolebtn small{font-size:10px}
+#h3bar.team{flex-wrap:nowrap;max-width:100%;overflow:hidden;justify-content:center}
+#h3bar.team .bchip{gap:1px;padding:2px 4px;min-width:0}
+#h3bar.team .bchip .h3i{width:20px!important;height:20px!important}
+#h3bar.team .pips{gap:1px}#h3bar.team .pip{width:8px;height:8px;border-width:2px}

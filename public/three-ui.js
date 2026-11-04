@@ -13,40 +13,84 @@ const KIND={hyena:{n:'Hyena',art:HYENA,pw:'Pounce',pwTxt:'If your sense says a b
  badger:{n:'Honey badger',art:BADGER,pw:'Burrow',pwTxt:'Stay still for a turn to burrow: the birds can never see you. Moving pops you up, and you can catch on that move. 1 catch knocks a bird out.'}};
 const BN={blue:'Ostrich',red:'Vulture',hunter:'Hunter'};
 const hName=S=>S.h3&&S.h3.kind?KIND[S.h3.kind].n:'Hunter';
-const tname=(S,r)=>r==='hunter'?hName(S):BN[r];
+const tname=(S,r)=>r==='hunter'?hName(S):(S&&S.h3&&S.h3.team?{o1:'Ostrich 1',o2:'Ostrich 2',v1:'Vulture 1',v2:'Vulture 2'}[r]:0)||BN[r];
 const sp=(svg,px)=>`<span class="h3i" style="width:${px}px;height:${px}px">${svg}</span>`;
-// --- lobby: 2 or 3 players; 3-player setup step ---
-let three=localStorage.getItem('bo_np')==='3',myRole='blue',kind=localStorage.getItem('bo_kind')||'hyena',seat={blue:'friend',red:'friend',hunter:'friend'};
+// --- lobby: 2 to 5 players; a setup step for 3/4/5 (pick your seat, friend or computer for the rest, hunter animal) ---
+const SN={o1:'Ostrich 1',o2:'Ostrich 2',v1:'Vulture 1',v2:'Vulture 2',blue:'Ostrich',red:'Vulture',hunter:'Hunter'};
+const SEATS={3:['blue','red','hunter'],4:['o1','v1','o2','v2'],5:['o1','v1','o2','v2','hunter']};
+const isOs=r=>r==='blue'||r==='o1'||r==='o2';
+const seatArt=(r,k)=>r==='hunter'?KIND[k].art:isOs(r)?OSTI:VULI;
+const SUB={blue:'hide eggs',red:'hunt eggs',hunter:'catch birds',o1:'team ostrich',o2:'team ostrich',v1:'team vulture',v2:'team vulture'};
+let np=+(localStorage.getItem('bo_np')||2);if(!(np>=2&&np<=5))np=2;let three=np>2;
+let myRole='blue',kind=localStorage.getItem('bo_kind')||'hyena',seat={};
 function lobby(){const home=$('homeStep');if(!home||$('pcount'))return;
- const pc=document.createElement('div');pc.id='pcount';pc.className='pcount';pc.innerHTML='<span>Players</span><button id="pc2">2</button><button id="pc3">3</button>';
+ const pc=document.createElement('div');pc.id='pcount';pc.className='pcount';pc.innerHTML='<span>Players</span>'+[2,3,4,5].map(n=>`<button id="pc${n}">${n}</button>`).join('');
  home.insertBefore(pc,$('playFriend'));
  const st=document.createElement('div');st.id='threeStep';st.className='hidden';
- st.innerHTML=`<h2>3-player game</h2><div class="t3lbl">You play</div><div class="rolerow r3"><button class="rolebtn" data-r="blue"><span class="ra">${OSTI}</span>Ostrich<small>hide eggs</small></button><button class="rolebtn" data-r="red"><span class="ra">${VULI}</span>Vulture<small>hunt eggs</small></button><button class="rolebtn" data-r="hunter"><span class="ra" id="t3hart">${HYENA}</span>Hunter<small>catch birds</small></button></div>
- <div id="t3seats"></div><div id="t3kind"></div><button class="big" id="t3go">Start 3-player game</button><button class="linkbtn" id="t3back">← Back</button>`;
+ st.innerHTML=`<h2 id="t3title">3-player game</h2><div class="t3lbl">You play</div><div class="rolerow r3" id="t3roles"></div>
+ <div id="t3seats"></div><div id="t3kind"></div><button class="big" id="t3go">Start game</button><button class="linkbtn" id="t3back">← Back</button>`;
  $('roleStep').parentNode.insertBefore(st,$('roleStep').nextSibling);
- const pcUI=()=>{$('pc2').classList.toggle('on',!three);$('pc3').classList.toggle('on',three);$('playPassNote')&&0;};pcUI();
+ const pcUI=()=>{[2,3,4,5].forEach(n=>$('pc'+n).classList.toggle('on',np===n));};pcUI();
  const tap=(el,f)=>{let t=0;el.addEventListener('touchend',e=>{e.preventDefault();t=Date.now();f(e);},{passive:false});el.addEventListener('click',e=>{if(Date.now()-t>600)f(e);});};
- tap($('pc2'),()=>{three=false;localStorage.setItem('bo_np','2');pcUI();});tap($('pc3'),()=>{three=true;localStorage.setItem('bo_np','3');pcUI();});
- // when 3 players is chosen, both play buttons open the 3-player step (captured before the 2-player handlers)
+ [2,3,4,5].forEach(n=>tap($('pc'+n),()=>{np=n;three=n>2;localStorage.setItem('bo_np',String(n));pcUI();}));
+ // with 3+ players, both play buttons open the setup step (captured before the 2-player handlers)
  for(const id of ['playFriend','playAI'])for(const ev of ['touchend','click'])$(id).addEventListener(ev,e=>{if(!three)return;e.stopImmediatePropagation();e.preventDefault();
   if(ev==='click'&&Date.now()-(tap.t||0)<600)return;if(ev==='touchend')tap.t=Date.now();
-  const bot=id==='playAI';seat={blue:bot?'bot':'friend',red:bot?'bot':'friend',hunter:bot?'bot':'friend'};show3();},true);
+  const bot=id==='playAI';seat={};SEATS[np].forEach(r=>seat[r]=bot?'bot':'friend');if(!SEATS[np].includes(myRole))myRole=SEATS[np][0];show3();},true);
  st.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
   if(b.dataset.r){myRole=b.dataset.r;draw3();}else if(b.dataset.seat){seat[b.dataset.seat]=b.dataset.v;draw3();}else if(b.dataset.k){kind=b.dataset.k;localStorage.setItem('bo_kind',kind);draw3();}
   else if(b.id==='t3back'){st.classList.add('hidden');$('homeStep').classList.remove('hidden');}
-  else if(b.id==='t3go'){const bots=['blue','red','hunter'].filter(r=>r!==myRole&&seat[r]==='bot');UI.open({t:'create',three:1,role:myRole,bots,kind,level:localStorage.getItem('bo_ailvl')||'normal'});}});}
+  else if(b.id==='t3go'){const bots=SEATS[np].filter(r=>r!==myRole&&seat[r]==='bot'),level=localStorage.getItem('bo_ailvl')||'normal';
+   UI.open(np===3?{t:'create',three:1,role:myRole,bots,kind,level}:{t:'create',team:np,role:myRole,bots,kind,level});}});}
 function show3(){$('homeStep').classList.add('hidden');$('friendStep').classList.add('hidden');$('roleStep').classList.add('hidden');$('threeStep').classList.remove('hidden');draw3();}
-function draw3(){const st=$('threeStep');st.querySelectorAll('[data-r]').forEach(b=>b.classList.toggle('on',b.dataset.r===myRole));$('t3hart').innerHTML=KIND[kind].art;
- const others=['blue','red','hunter'].filter(r=>r!==myRole);
- $('t3seats').innerHTML=others.map(r=>`<div class="t3row"><span class="t3who">${r==='blue'?sp(OSTI,26):r==='red'?sp(VULI,26):sp(KIND[kind].art,26)} ${BN[r]}</span><span class="seg"><button data-seat="${r}" data-v="friend" class="${seat[r]==='friend'?'on':''}">👤 Friend</button><button data-seat="${r}" data-v="bot" class="${seat[r]==='bot'?'on':''}">🤖 Computer</button></span></div>`).join('');
- const pick=myRole==='hunter'||seat.hunter==='bot';
- $('t3kind').innerHTML=pick?`<div class="t3lbl">${myRole==='hunter'?'Your hunter':'Computer hunter'}</div><div class="kindrow">${['hyena','badger'].map(k=>`<button class="kindbtn${kind===k?' on':''}" data-k="${k}"><span class="ka">${KIND[k].art}</span><b>${KIND[k].n}</b><small>${KIND[k].pw}: ${KIND[k].pwTxt}</small></button>`).join('')}</div>`:'<p class="t3note">The 3rd player picks hyena or honey badger when they join.</p>';}
+function draw3(){const S3=SEATS[np];
+ $('t3title').textContent=np===3?'3-player game':np===4?'4 players · 2 vs 2':'5 players · 2 vs 2 + hunter';$('t3go').textContent=`Start ${np}-player game`;
+ const rr=$('t3roles');rr.className='rolerow r3'+(S3.length>3?' r5':'');
+ rr.innerHTML=S3.map(r=>`<button class="rolebtn${r===myRole?' on':''}" data-r="${r}"><span class="ra">${seatArt(r,kind)}${/\d/.test(r)?`<b class="snum">${r[1]}</b>`:''}</span>${SN[r]}<small>${SUB[r]}</small></button>`).join('');
+ const others=S3.filter(r=>r!==myRole);
+ $('t3seats').innerHTML=(np>3?'<p class="t3note">Ostriches 1 + 2 team up (each has its own 2-egg nest, either can warm any egg). Vultures 1 + 2 share every sniff.</p>':'')+others.map(r=>`<div class="t3row"><span class="t3who">${sp(seatArt(r,kind),26)} ${SN[r]}</span><span class="seg"><button data-seat="${r}" data-v="friend" class="${seat[r]==='friend'?'on':''}">👤 Friend</button><button data-seat="${r}" data-v="bot" class="${seat[r]==='bot'?'on':''}">🤖 Computer</button></span></div>`).join('');
+ const hasH=S3.includes('hunter'),pick=hasH&&(myRole==='hunter'||seat.hunter==='bot');
+ $('t3kind').innerHTML=!hasH?'':pick?`<div class="t3lbl">${myRole==='hunter'?'Your hunter':'Computer hunter'}</div><div class="kindrow">${['hyena','badger'].map(k=>`<button class="kindbtn${kind===k?' on':''}" data-k="${k}"><span class="ka">${KIND[k].art}</span><b>${KIND[k].n}</b><small>${KIND[k].pw}: ${KIND[k].pwTxt}</small></button>`).join('')}</div>`:'<p class="t3note">The hunter player picks hyena or honey badger when they join.</p>';}
+// --- 4/5 players (2v2, + hunter): numbered birds, teammates, shared sniffs ---
+const NUM=r=>/\d/.test(r)?r[1]:'';
+function tTag(S){const r=S.h3.mySeat;if(r==='hunter')return tag(S);return `<span style="display:inline-block;width:26px;height:26px;vertical-align:middle">${isOs(r)?OSTI:VULI}</span> ${SN[r].toUpperCase()}`;}
+function tHint(S,a){const r=S.h3.mySeat,t=S.turn,h=S.h3;
+ if(r==='hunter'&&S.myTurn)return hint(Object.assign({},S,{h3:h}),a);
+ if(!h.ready)return h.needKind?'Pick your hunter.':`Waiting for all ${h.n} players…`;
+ if(S.phase==='play'&&h.setupStep==='done')return 'Waiting for the other ostrich to hide its eggs…';
+ const me=h.birds[r];if(me&&me.out)return `You're out (${me.why==='starved'?'starved':'knocked out'}). ${tname(S,t)}'s turn…`;
+ if(h.lost&&h.lost.bird===r&&h.lost.round>=S.round-1&&t!==r)return 'Caught! You lost this turn. '+tname(S,t)+'\'s turn…';
+ const mt=t&&t!=='hunter'&&t[0]===r[0]?' (your teammate)':'';return `${tname(S,t)}'s turn${mt}…`;}
+function tChips(S){let bar=$('h3bar');if(!bar){bar=document.createElement('div');bar.id='h3bar';$('hud').after(bar);
+  bar.addEventListener('click',e=>{const c=e.target.closest('[data-tip]');if(c&&UI._tip)UI._tip(c.dataset.tip);});}
+ const h=S.h3,live=S.phase==='play',five=h.n===5,ko=h.ko;bar.classList.add('team');
+ const bird=r=>{const b=h.birds[r],pips=five?Array.from({length:ko},(_,i)=>`<i class="pip${i<b.catches?' on':''}"></i>`).join(''):'';
+  const tip=`${SN[r]}${r===h.mySeat?' (you)':''}${five?`: caught ${b.catches} of ${ko} times`:''}${b.out?' · OUT ('+(b.why==='starved'?'starved':'knocked out')+')':b.skip?' · loses its next turn':''}`;
+  return `<span class="bchip ${isOs(r)?'blue':'red'} s${r}${b.out?' out':''}${live&&S.turn===r?' now':''}${r===h.mySeat?' me':''}" data-tip="${tip}" data-b="${r}">${sp(isOs(r)?OSTI:VULI,22)}<b class="cnum">${NUM(r)}</b>${five?`<span class="pips">${pips}</span>`:''}${b.out?'<b class="ko">OUT</b>':''}</span>`;};
+ const k=h.kind||'hyena';
+ bar.innerHTML=h.order.filter(r=>r!=='hunter').map(bird).join('')+(five?`<span class="bchip hunter${live&&S.turn==='hunter'?' now':''}" data-tip="${KIND[k].n}: ${KIND[k].pw}. Moves ${h.boost?2:1} square${h.boost?'s (boost after its first knock-out)':''}. Wins by knocking out an ostrich AND a vulture.">${sp(KIND[k].art,24)}<b>${h.boost?'⚡2':'1'}</b></span>`:'');}
+function tPieces(S,board){const h=S.h3,me=h.mySeat;
+ const badge=(c,r,mate)=>{const b=document.createElement('b');b.className='snum '+(isOs(r)?'o':'v')+(mate?' mate':'')+(r===me?' me':'');b.textContent=NUM(r);c.appendChild(b);};
+ for(const q of h.pieces){const c=cellAt(board,S,q.p);if(!c)continue;const d=document.createElement('div');d.className='pc '+(q.type==='o'?'po':'pv')+' other'+(q.mate?' mate':' opp');
+  d.innerHTML=q.type==='o'?OSTI:VULI;c.appendChild(d);badge(c,q.seat,q.mate);
+  c.dataset.tip=(c.dataset.tip?c.dataset.tip+' · ':'')+SN[q.seat]+(q.mate?' (your teammate)':'')+(q.carrying?', carrying an egg':'');}
+ const mine=me==='hunter'?null:cellAt(board,S,isOs(me)?S.ostrich:S.vulture);if(mine)badge(mine,me,false);
+ const ms=h.mateSniff;if(ms){const c=cellAt(board,S,ms.p);if(c){const r=document.createElement('div');r.className='msniff '+(ms.yes?'yes':'no');r.textContent=ms.yes?'👃!':'👃';c.appendChild(r);
+  c.dataset.tip=(c.dataset.tip?c.dataset.tip+' · ':'')+(isOs(me)?'':'Your teammate sniffed here: ')+(ms.yes?'an egg is on or next to this square':'no egg on or next to this square');}}
+ if(isOs(me)&&S.eggs)S.eggs.forEach(e=>{if(!e.alive||!e.pos||e.mine)return;const c=cellAt(board,S,e.pos);c&&c.classList.add('mateegg');});}
+function tOver(S){const h=S.h3,w=S.winner,me=h.mySeat,C=S.cfg,mySide=me==='hunter'?'hunter':isOs(me)?'blue':'red';
+ const art=w==='hunter'?KIND[h.kind||'hyena'].art:w==='blue'?OSTI:w==='red'?VULI:'🤝';
+ const title=w==='none'?'No winner':w===mySide?(me==='hunter'?'You win!':'Your team wins!'):w==='hunter'?`${hName(S)} wins!`:w==='blue'?'Ostriches win!':'Vultures win!';
+ const why=w==='hunter'?`The ${hName(S)} knocked out an ostrich and a vulture by round ${S.round}.`:w==='blue'?`The ostriches kept ${S.eggsLeft} egg(s) alive for ${C.rounds} rounds.`
+  :w==='red'?(S.winBy==='cold'?`The last egg went cold in round ${S.round}.`:S.winBy==='ostriches-out'?'Both ostriches were out.':`The vultures smashed every egg by round ${S.round}.`)
+  :'Every bird that could win was out.';
+ return `<div class="lobbybox"><div class="bigost">${art}</div><h1>${title}</h1><p>${why}</p><button class="big" onclick="UI.rematch()">Rematch</button><button class="big ghost" onclick="UI.menu()">Menu</button></div>`;}
 // --- in game ---
 let lastSense='',lastCatch=0,deadline=0,clockMs=10000,raf=0,lastTurnKey='';
-function tag(S){const k=S.h3&&S.h3.kind||'hyena';return `<span style="display:inline-block;width:30px;height:30px;vertical-align:middle">${KIND[k].art}</span> ${KIND[k].n.toUpperCase()}`;}
+function tag(S){if(S.h3&&S.h3.team&&S.h3.mySeat!=='hunter')return tTag(S);const k=S.h3&&S.h3.kind||'hyena';return `<span style="display:inline-block;width:30px;height:30px;vertical-align:middle">${KIND[k].art}</span> ${KIND[k].n.toUpperCase()}`;}
 function waitMsg(S){return `Wait, it's the ${tname(S,S.turn)}'s turn.`;}
 function nopeMsg(S){return `Move ${S.h3.range} square${S.h3.range>1?'s':''}: tap a glowing square.`;}
-function hint(S,a){const r=S.role,t=S.turn;
+function hint(S,a){if(S.h3.team&&!hint.in){hint.in=1;try{return tHint(S,a);}finally{hint.in=0;}}const r=S.role,t=S.turn;
  if(r==='hunter'&&S.myTurn){const k=S.h3.kind;
   a.innerHTML=S.pounce?'<button class="on" onclick="UI.send({t:\'act\',a:\'hstay\'})">Stop here</button>':`<button onclick="UI.send({t:'act',a:'hstay'})">${k==='badger'?(S.burrowed?'Stay burrowed':'Stay · burrow'):'Stay put'}</button>`;
   if(S.pounce)return '🐾 POUNCE! One more square.';
@@ -55,7 +99,7 @@ function hint(S,a){const r=S.role,t=S.turn;
  const lost=S.h3.lost;if(r!=='hunter'&&lost&&lost.bird===r&&lost.round>=S.round-1&&t!==r)return 'Caught! You lost this turn. '+tname(S,t)+'\'s turn…';
  if(r!=='hunter'&&S.h3.birds[r].out)return `You're out (${S.h3.birds[r].why==='starved'?'starved':'knocked out'}). ${tname(S,t)}'s turn…`;
  return `${tname(S,t)}'s turn…`;}
-function chips(S){let bar=$('h3bar');if(!bar){bar=document.createElement('div');bar.id='h3bar';$('hud').after(bar);
+function chips(S){if(S.h3.team)return tChips(S);let bar=$('h3bar');if(!bar){bar=document.createElement('div');bar.id='h3bar';$('hud').after(bar);
   bar.addEventListener('click',e=>{const c=e.target.closest('[data-tip]');if(c&&UI._tip)UI._tip(c.dataset.tip);});}
  const h=S.h3,ko=h.ko,live=S.phase==='play';
  const bird=r=>{const b=h.birds[r],pips=Array.from({length:ko},(_,i)=>`<i class="pip${i<b.catches?' on':''}"></i>`).join('');
@@ -72,7 +116,7 @@ function clock(S){let c=$('clock3');if(!c){c=document.createElement('div');c.id=
  cancelAnimationFrame(raf);tick();}
 function cellAt(board,S,p){return p&&p[0]>=0?board.children[p[1]*S.cfg.cols+p[0]]:null;}
 function pop(board,txt,cls){const o=document.createElement('div');o.className='h3pop '+cls;o.textContent=txt;board.appendChild(o);setTimeout(()=>o.remove(),1800);}
-function after(S,prev,board){chips(S);clock(S);kindPick(S);
+function after(S,prev,board){chips(S);clock(S);kindPick(S);if(S.h3.team)tPieces(S,board);
  const h=S.h3,k=h.kind||'hyena',me=S.role;
  // hunter piece: the hunter always sees itself; a bird only sees it within 2 squares (never a burrowed badger)
  const hp=h.hunter,hc=cellAt(board,S,hp);
@@ -92,14 +136,14 @@ function after(S,prev,board){chips(S);clock(S);kindPick(S);
   if(fresh){const ac=cellAt(board,S,lc.at),tc=cellAt(board,S,lc.to);
    if(ac){const m=document.createElement('div');m.className='h3claw';m.innerHTML=CLAW;ac.appendChild(m);}
    if(tc)tc.classList.add('h3kb');
-   const who=BN[lc.bird];pop(board,me==='hunter'?(lc.ko?`${who} KNOCKED OUT!`:`Caught the ${who}!`):me===lc.bird?(lc.ko?'You were knocked out!':'CAUGHT! Knocked back 2'):(lc.ko?`${who} knocked out!`:`${who} was caught!`),'catch');
+   const who=tname(S,lc.bird);pop(board,me==='hunter'?(lc.ko?`${who} KNOCKED OUT!`:`Caught the ${who}!`):me===lc.bird||(S.h3.team&&S.h3.mySeat===lc.bird)?(lc.ko?'You were knocked out!':'CAUGHT! Knocked back 2'):(lc.ko?`${who} knocked out!`:`${who} was caught!`),'catch');
    const ch=document.querySelector('#h3bar .bchip.'+lc.bird);ch&&ch.classList.add('hitnow');window.SFX&&SFX.play(me==='hunter'?'win':'warn');}}
  // waiting panel text: which seats are still open
- if(!S.joined){const w=$('wait');const open=Object.entries(h.seats).filter(([,v])=>v==='open').map(([r])=>BN[r]);if(w)w.firstElementChild.nextElementSibling.textContent=`Waiting for: ${open.join(', ')}. Send them this link:`;}}
+ if(!S.joined){const w=$('wait');const open=Object.entries(h.seats).filter(([,v])=>v==='open').map(([r])=>h.team?SN[r]:BN[r]);if(w)w.firstElementChild.nextElementSibling.textContent=`Waiting for: ${open.join(', ')}. Send them this link:`;}}
 function kindPick(S){let k=$('kindPick');if(!S.h3.needKind){k&&k.classList.add('hidden');return;}
  if(!k){k=document.createElement('div');k.id='kindPick';document.body.appendChild(k);}
  k.className='';k.innerHTML=`<div class="hbox"><h1>You're the hunter</h1><p>Pick your animal</p><div class="kindrow">${['hyena','badger'].map(x=>`<button class="kindbtn" id="pick-${x}" onclick="UI.send({t:'act',a:'kind',kind:'${x}'})"><span class="ka">${KIND[x].art}</span><b>${KIND[x].n}</b><small>${KIND[x].pw}: ${KIND[x].pwTxt}</small></button>`).join('')}</div></div>`;}
-function over(S){const h=S.h3,w=S.winner,me=S.role,C=S.cfg;
+function over(S){if(S.h3.team)return tOver(S);const h=S.h3,w=S.winner,me=S.role,C=S.cfg;
  const art=w==='hunter'?KIND[h.kind||'hyena'].art:w==='blue'?OSTI:w==='red'?VULI:'🤝';
  const title=w==='none'?'No winner':w===me?'You win!':`${tname(S,w)} wins!`;
  const why=w==='hunter'?`The ${hName(S)} knocked out both birds in round ${S.round}.`:w==='blue'?`The ostrich kept ${S.eggsLeft} egg(s) alive for ${C.rounds} rounds.`
