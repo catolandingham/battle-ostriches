@@ -1,7 +1,7 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes"><title>Battle Ostriches</title>
-<link rel="stylesheet" href="style.css"><link rel="stylesheet" href="themes.css"><link rel="stylesheet" href="themes2.css"><link rel="stylesheet" href="themes3.css"><link rel="stylesheet" href="smash.css"><link rel="stylesheet" href="squares.css"><link rel="stylesheet" href="vocab.css"><script src="theme.js"></script></head><body>
+<link rel="stylesheet" href="style.css"><link rel="stylesheet" href="themes.css"><link rel="stylesheet" href="themes2.css"><link rel="stylesheet" href="themes3.css"><link rel="stylesheet" href="smash.css"><link rel="stylesheet" href="squares.css"><link rel="stylesheet" href="vocab.css"><link rel="stylesheet" href="three.css"><script src="theme.js"></script></head><body>
 <div id="app">
  <header id="hud"><div><h1 class="logo">BATTLE OSTRICHES</h1>
   <div class="ctr">ROUNDS <b id="roundsLeft" class="cy">14</b><span class="sep"> | </span><span class="eg">EGGS <b id="eggsLeft" class="or">3</b></span></div><div id="stats" class="hidden"></div></div><div style="display:flex;align-items:center"><div id="turnTag">BLUE</div><button id="inviteBtn" class="hidden" aria-label="Invite / room code" aria-expanded="false">🔗 <span id="inviteCode"></span></button><button id="helpBtn" aria-label="How to play">?</button><button id="muteBtn" class="iconbtn" aria-label="Sound">🔊</button><button id="themeBtn" class="iconbtn" aria-label="Theme">🎨</button></div></header>
@@ -44,10 +44,15 @@
  <li>Each turn: <b>Fly</b> up to <span class="c-fly"></span> squares, or <b>Throw stone</b> at your square or one next to it. A stone at the ostrich just bounces off (it protects its egg). A miss leaves a gray stone mark for the rest of the game; the ostrich won't carry an egg onto it. The vulture eats eggs and never needs food.</li>
  <li>After each landing you learn <b>Egg nearby!</b> or <b>No egg nearby</b> (within <span class="c-smell"></span> square). This turn only.</li>
  <li>You hold <span class="c-stones"></span> stone. Land on a gray rock pile to pick one up. Landing on an egg finds it (big yellow egg).</li></ul>
+ <h3>🐾 3 players</h3><ul>
+ <li>Turn order: vulture, ostrich, hunter. Each turn has a 10-second shot clock; if it runs out the turn ends (pass or stay put).</li>
+ <li>The hunter (hyena or honey badger) moves 1 square and only learns yes/no whether a bird is within 2 squares. Birds see it only within 2 squares (never a burrowed badger).</li>
+ <li>Landing on a bird catches it (so does a bird stepping onto the hunter): it is knocked back 2 squares and loses its next turn. Hyena: 2 catches knock a bird out; it may Pounce one extra square when it senses a bird. Honey badger: 1 catch; stay still to Burrow.</li>
+ <li>The hunter wins only by knocking out both birds before round 30; after the first knock-out it moves 2. A bird left alone still has to meet its own goal. A starved ostrich is out.</li></ul>
  <h3>Marks</h3><ul class="legend">
  <li>Glowing yellow square = you can move here · red-orange glow = throw here · gray stone = a stone landed here (the ostrich won't carry an egg onto it) · green leaf = food · gray stones = rock pile · big yellow egg = found egg · red X = smashed (blocked). Hover or tap a square to see what it is.</li></ul>
  <button class="big" onclick="UI.closeRules()">Got it</button>
  <button class="big ghost" onclick="UI.closeRules();TUT.show('intro')">Replay intro</button>
  <button class="big ghost" onclick="UI.closeRules();UI.walk()">Replay walkthrough</button>
  <button class="big ghost" onclick="UI.closeRules();UI.replayCoach()">Replay move hints &amp; tips</button><button class="big ghost" id="guideToggle" onclick="UI.guides(!!localStorage.getItem('bo_hs_off'))">Ostrich guides</button></div></div>
-<script src="game.js"></script><script src="sound.js"></script><script src="tutorial.js"></script><script src="fx.js"></script><script src="smash.js"></script><script src="juice.js"></script><script src="ui.js"></script></body></html>
+<script src="game.js"></script><script src="sound.js"></script><script src="tutorial.js"></script><script src="fx.js"></script><script src="smash.js"></script><script src="juice.js"></script><script src="three-ui.js"></script><script src="ui.js"></script></body></html>

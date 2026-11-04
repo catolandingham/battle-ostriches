@@ -145,5 +145,5 @@ function visible(g) { return { marks: Object.fromEntries(Object.entries(g.marks)
 function coldIn(g, e) { return g.cfg.warmth - (g.round - e.lastWarm); } // rounds left before going cold
 
 const API = { CONFIG, newGame, canPlaceEgg, placeEgg, placeOstrich, ostrichMoves, ostrichStep, ostrichSit, canSit, canCarry, mustLeave, onEgg, dropCarried,
-  smellsEgg, flyTargets, throwTargets, vultureFly, vultureThrow, eggAt, aliveEggs, coldIn, key, dist, visible, isFood, isRock };
+  endRound, smellsEgg, flyTargets, throwTargets, vultureFly, vultureThrow, eggAt, aliveEggs, coldIn, key, dist, visible, isFood, isRock };
 if (typeof module !== 'undefined') module.exports = API; else window.BO = API;
