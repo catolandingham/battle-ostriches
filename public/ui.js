@@ -159,6 +159,7 @@ function tap(x,y){if(!S||locked)return;if(Date.now()<sniffUntil){clearTimeout(ta
  if(S.phase!=='play')return;if(!S.myTurn)return nope(S.three?window.T3UI.waitMsg(S):S.role==='blue'?'Wait, it\'s the Vulture\'s turn.':'Wait, it\'s the Ostrich\'s turn.');
  const m0=curMode();if(m0==='hmove'){if(!ok)return nope(window.T3UI.nopeMsg(S));return send({t:'act',a:'hmove',p});}
  const m=curMode();if(!m)return;
+ if(!ok&&m==='carry'&&isF(S.cfg,key(p))&&gd(p,S.ostrich)===1){const c=$('board').children[p[1]*S.cfg.cols+p[0]];c&&c.animate([{transform:'translateX(0)'},{transform:'translateX(-3px)'},{transform:'translateX(3px)'},{transform:'translateX(0)'}],{duration:180});return nope("Can't carry egg and food");}
  if(!ok)return nope(m==='throw'?(S.stones<1?'No stone. Land on a rock pile to pick one up.':'Throw at a red-orange square: your square or one next to you. A stone at the ostrich just bounces off.'):m==='fly'?`Too far. Fly up to ${S.cfg.vultureFly} squares: tap a glowing square.`:m==='carry'?'Carry 1 square: tap a glowing square (not onto an egg, food, rocks, a stone mark, or a smashed square).':'Step 1 square: tap a glowing square next to you (smashed squares are blocked).');
  coachDid(m==='carry'?'step':m);send({t:'act',a:m,p});}
 function curMode(){if(!S.myTurn)return null;if(S.role==='hunter')return'hmove';if(S.role==='red')return mode||'fly';
@@ -210,7 +211,7 @@ function render(prev){
  $('roundsLeft').textContent=C.rounds-S.round+1;$('eggsLeft').textContent=S.eggsLeft;
  // HUD: ostrich hunger (leaf + turns left) and vulture stones, both public
  const hud=$('stats');if(hud){const play=S.phase==='play'||S.phase==='over';hud.classList.toggle('hidden',!play);
-  if(play)hud.innerHTML=`<span class="hh${S.hungerLeft<=3?' low':''}" data-tip="Ostrich food: turns left before it starves">${LEAF}<b id="hungerLeft">${S.hungerLeft}</b></span><span class="hs${S.stones<1?' empty':''}" data-tip="Vulture stones">${STONE}<b id="stonesLeft">${S.stones}/${C.stones}</b></span>`;}
+  if(play)hud.innerHTML=`<span class="hh${S.hungerLeft<=3?' low':''}" data-tip="Ostrich food: turns left before it starves">${LEAF}<b id="hungerLeft">${S.hungerLeft}</b>${blue?`<i class="hbar"><i style="width:${Math.max(0,Math.min(100,100*S.hungerLeft/C.food))}%"></i></i>`:''}</span><span class="hs${S.stones<1?' empty':''}" data-tip="Vulture stones">${STONE}<b id="stonesLeft">${S.stones}/${C.stones}</b></span>`;}
  // waiting for opponent
  const link=location.origin+'/?room='+S.code,slot=$('wait-slot');
  $('shareCode').textContent=S.code;$('shareLink').value=link;const w=$('wait');
@@ -264,7 +265,7 @@ function render(prev){
   if(k===vk&&k!==ok&&(m==='spotted'||(blue&&e)))d.classList.add('vfound'); // vulture on a found egg: both show, corner layout
   if(k===vk&&k===ok){d.classList.add('both');tip.push('Vulture and ostrich share this square');}
   if(k===vk){h+=`<div class="pc pv">${VUL}</div>`;tip.push(blue?'The vulture':'You (vulture)');tags.push(blue?'vul':'me');}
-  if(k===ok){if(blue&&e){d.classList.add('sat');h+='<span class="shield" title="Sitting: your egg is protected. Stones bounce off you.">🛡️</span>';tip.push('Protected: a stone thrown here bounces off you');}h+=`<div class="pc po">${OST}</div>`+(S.carried?'<span class="carry">'+MYEGG+'</span>':'');tip.push(blue?'You (ostrich)'+(S.carried?', carrying an egg':''):'The ostrich'+(S.carried?' (carrying something)':''));tags.push(blue?'me':'ost');
+  if(k===ok){if(blue&&e){d.classList.add('sat');}h+=`<div class="pc po">${OST}</div>`+(S.carried?'<span class="carry">'+MYEGG+'</span>':'');tip.push(blue?'You (ostrich)'+(S.carried?', carrying an egg':''):'The ostrich'+(S.carried?' (carrying something)':''));tags.push(blue?'me':'ost');
    if(blue&&S.carried&&S.eggs&&S.eggs[S.carrying])h+=warmRing(S.eggs[S.carrying].coldIn,C.warmth);}
   if(legal)tip.push(throwing?'Throw a stone here':setup?(S.phase==='setupEggs'?'Hide an egg here':'Start here'):blue?'Move here':'Fly here');
   d.innerHTML=h;d.dataset.tip=[...new Set(tip)].join(' · ');

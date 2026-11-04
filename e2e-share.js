@@ -37,5 +37,13 @@ const OUT = 'shots/share/'; fs.mkdirSync(OUT, { recursive: true });
       assert.ok(!r.miss && r.egg && r.vul, `${th}/${who}: egg and vulture inside the cell ${JSON.stringify(r)}`);
       if (th === 'classic' || th === 'neon') await P.screenshot({ path: OUT + `4-vulture-on-egg-${who}-${th}.jpg`, type: 'jpeg', quality: 85 });
     } }
+  // ostrich: hunger bar in the header; carrying an egg onto food -> small shake + "Can't carry egg and food"
+  await V.evaluate(() => { delete document.documentElement.dataset.theme; UI._rr(); });
+  assert.ok(await V.locator('#hud .hh .hbar i').count() === 1, 'hunger bar for the ostrich'); assert.equal(await A.locator('#hud .hbar').count(), 0, 'no hunger bar for the vulture');
+  await V.screenshot({ path: OUT + '5-hunger-bar.jpg', type: 'jpeg', quality: 88 });
+  await V.evaluate(() => { const S = UI._S(); S.vulture = [6, 5]; S.ostrich = [1, 1]; S.eggs[0].pos = [1, 1]; S.myTurn = true; S.phase = 'play'; S.can = { sit: true, carry: true }; S.carryMoves = [[2, 0], [1, 0], [2, 2]]; S.moves = [[0, 0], [1, 0], [2, 0]]; S._o = null; UI._rr(); UI.setMode('carry'); });
+  await V.locator('.cell').nth(0).click(); await V.waitForTimeout(60);
+  const ht = await V.textContent('#hint, #tipbar, body'); assert.ok(/Can't carry egg and food/.test(ht), 'carry-onto-food message'); assert.ok(!/hands full/i.test(ht));
+  await V.screenshot({ path: OUT + '6-cant-carry-egg-and-food.jpg', type: 'jpeg', quality: 88 });
   console.log('e2e-share PASSED'); await b.close(); process.exit(0);
 })().catch(e => { console.error(e); process.exit(1); });
