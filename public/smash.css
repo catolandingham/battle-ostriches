@@ -16,3 +16,8 @@
 .cell .smell.no{opacity:.35;filter:grayscale(1)}
 .cell .smell.yes{filter:drop-shadow(0 0 3px #ffd34d)}
 .cell.hit.fxhold{background:transparent!important}
+
+.sm-reveal{position:fixed;z-index:60;pointer-events:none;display:flex;flex-direction:column;align-items:center;filter:drop-shadow(0 0 3px #fff) drop-shadow(0 2px 4px #0008)}
+.sm-reveal svg{width:70%;height:70%}
+.sm-reveal b{font:900 20px/1 system-ui,sans-serif;letter-spacing:.5px;padding:3px 6px;border-radius:6px;color:#fff;white-space:nowrap;margin-top:2px}
+.sm-reveal.yes b{background:#1f9d3a}.sm-reveal.no b{background:#d22}

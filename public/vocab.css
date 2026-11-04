@@ -177,3 +177,10 @@ html[data-theme] #board .cell.stone.legal:not(.target),#board .cell.stone.legal:
 #board .cell.stone .ic-stone{opacity:1}
 /* ostrich's smaller sniff echo: thin dashed green outline on the 3x3 for the rest of the turn */
 #board .cell.snseen::after{content:'';position:absolute;inset:10%;border:2px dashed #3dff7a;border-radius:6px;z-index:6;pointer-events:none}
+
+/* vulture + ostrich on one square: vulture top-left, ostrich bottom-right, both visible */
+#board .cell.both .pc.pv,html[data-theme] #board .cell.both .pc.pv{left:0;top:0;width:60%;height:60%;z-index:5}
+#board .cell.both .pc.po,html[data-theme] #board .cell.both .pc.po{left:40%;top:40%;width:60%;height:60%;z-index:6}
+/* vulture standing on a found egg: shrink the vulture to a corner so the egg shows */
+#board .cell.vfound .pc.pv,html[data-theme] #board .cell.vfound .pc.pv{left:0;top:0;width:55%;height:55%;z-index:5}
+#board .cell.vfound .ic-spot{transform:scale(1.15) translate(12%,12%)}

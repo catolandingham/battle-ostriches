@@ -33,7 +33,7 @@ const TH={storm:{sz:1.08,th:'stone'},volcano:{sz:1.08,th:'stone'},comic:{sz:1.1,
 let layer,spr={},last={},theme=()=>document.documentElement.getAttribute('data-theme');
 function cellRect(x,y,S){const b=document.getElementById('board');const c=b&&b.children[y*S.cfg.cols+x];if(!c)return null;const r=c.getBoundingClientRect();return{x:r.left+scrollX,y:r.top+scrollY,w:r.width,h:r.height};}
 function ensure(){if(!layer){layer=document.createElement('div');layer.id='fx';document.body.appendChild(layer);}}
-function sprite(id,svg,S,p,sz){const r=cellRect(p[0],p[1],S);if(!r)return;let e=spr[id];
+function sprite(id,svg,S,p,sz,off){let r=cellRect(p[0],p[1],S);if(!r)return;if(off){r={x:r.x+off*r.w*.2,y:r.y+off*r.h*.2,w:r.w*.6,h:r.h*.6};}let e=spr[id];
  if(!e||e.dataset.svg!==svg){if(e)e.remove();e=document.createElement('div');e.className='spr spr-'+id;e.innerHTML=svg;e.dataset.svg=svg;layer.appendChild(e);spr[id]=e;e.style.transition='none';}
  const s=r.w*(sz||1),tx=r.x+(r.w-s)/2,ty=r.y+(r.h-s)/2,prev=e.dataset.pos,np=p.join(',');
  e.style.width=e.style.height=s+'px';
@@ -72,8 +72,9 @@ window.FX={update(S,prev){const t=theme();ensure();layer.className=t||'';
  if(!TH[t]||!S||S.phase==='setupEggs'){for(const k in spr){spr[k].remove();delete spr[k];}return;}
  orientPrints(S);
  const sz=TH[t].sz;
- if(S.ostrich)sprite('o',SPR[t].o,S,S.ostrich,sz);else if(spr.o){spr.o.remove();delete spr.o;}
- if(S.vulture)sprite('v',SPR[t].v,S,S.vulture,S.role==='blue'?.8:sz);
+ const both=S.ostrich&&S.vulture&&S.ostrich+''===S.vulture+''; // share a square: shrink both and offset so neither hides the other
+ if(S.ostrich)sprite('o',SPR[t].o,S,S.ostrich,sz,both?1:0);else if(spr.o){spr.o.remove();delete spr.o;}
+ if(S.vulture)sprite('v',SPR[t].v,S,S.vulture,S.role==='blue'?.8:sz,both?-1:0);
  const la=S.lastAction,sig=la&&JSON.stringify([S.round,S.turn,la]);
  if(prev&&la&&sig!==last.sig&&prev.turn==='red'&&S.turn==='blue'){
   if(la.type==='throw'&&!window.SMASH)throwFx(S,S.vulture,la.p,la.result);

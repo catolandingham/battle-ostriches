@@ -124,7 +124,8 @@ function vultureThrow(g, p) {
   const e = eggAt(g, p); let result;
   if (g.ostrich && key(p) === key(g.ostrich)) result = 'bounce'; // the ostrich protects the egg under it or in its beak
   else if (e) { e.alive = false; result = 'hit'; g.marks[key(p)] = 'hit'; } else { result = 'miss'; g.marks[key(p)] = 'stone'; } // a missed stone stays on the square for the rest of the game
-  g.lastAction = { type: 'throw', from: g.vulture.slice(), p: p.slice(), result }; g.lastThrow = p.slice();
+  g.lastAction = { type: 'throw', from: g.vulture.slice(), p: p.slice(), result };
+  if (result === 'bounce') g.lastAction.egg = !!(e || g.carrying !== null); // a bounce reveals whether the ostrich was guarding an egg (under it or in its beak) g.lastThrow = p.slice();
   if (!aliveEggs(g).length) { g.winner = 'red'; g.winBy = 'smashed'; g.phase = 'over'; } else { g.turn = 'blue'; dropCarried(g); }
   return result;
 }

@@ -20,11 +20,15 @@ function play(S,la){ensure();const a=rect(S,la.from),b=rect(S,la.p);if(!a||!b)re
   K.push({transform:`translate(${x-w*.17}px,${y-w*.15}px) rotate(${t*540}deg) scale(${1+.5*4*t*(1-t)})`});KS.push({transform:`translate(${x-w*.18}px,${ay+(by-ay)*t+w*.25}px) scale(${.5+.5*t})`,opacity:.25+.4*t});}
  st.animate(K,{duration:T,easing:'cubic-bezier(.3,.1,.6,1)',fill:'forwards'});sh.animate(KS,{duration:T,easing:'cubic-bezier(.3,.1,.6,1)',fill:'forwards'});
  window.SFX&&SFX.play('whoosh');try{document.dispatchEvent(new CustomEvent('bo-throw',{detail:{ax,ay,bx,by,w,T,res:la.result}}))}catch(e){}
- setTimeout(()=>{sh.remove();if(cell)cell.classList.remove('fxhold');impact(la.result,bx,by,w,st,egg);},T);}
+ setTimeout(()=>{sh.remove();if(cell)cell.classList.remove('fxhold');impact(la.result,bx,by,w,st,egg);if(la.result==='bounce')reveal(la.egg,bx,by,w);},T);}
+// after a bounce: big bold egg outline (egg safe) or a crossed-out empty egg (no egg), held ~1.6s
+function reveal(has,x,y,w){const d=el('sm-reveal '+(has?'yes':'no'),`left:${x}px;top:${y}px;width:${w*1.8}px;height:${w*1.8}px`,`<svg viewBox="0 0 40 50"><path d="M20 3C9 3 4 20 4 31c0 10 7 16 16 16s16-6 16-16C36 20 31 3 20 3z" fill="${has?'#fff6c8':'#ffffffcc'}" stroke="${has?'#1f9d3a':'#d22'}" stroke-width="4.5" ${has?'':'stroke-dasharray="6 4"'}/>${has?'<path d="M12 28l6 6 11-13" fill="none" stroke="#1f9d3a" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>':'<path d="M6 46L34 6" stroke="#d22" stroke-width="5" stroke-linecap="round"/>'}</svg><b>${has?'EGG SAFE':'NO EGG'}</b>`);
+ d.animate([{transform:'translate(-50%,-60%) scale(.3)',opacity:0},{transform:'translate(-50%,-60%) scale(1.1)',opacity:1,offset:.15},{transform:'translate(-50%,-60%) scale(1)',opacity:1,offset:.8},{transform:'translate(-50%,-60%) scale(1)',opacity:0}],{duration:2000,fill:'forwards'});kill(d,2050);}
 function dust(x,y,w,n,col){for(let i=0;i<n;i++){const d=el('sm-dust',`left:${x}px;top:${y}px;width:${w*.22}px;height:${w*.22}px;background:${col}`);
  const ang=Math.PI*(1+i/(n-1)),r=w*(.35+Math.random()*.3);d.animate([{transform:'translate(-50%,-50%) scale(.3)',opacity:.9},{transform:`translate(calc(-50% + ${Math.cos(ang)*r}px),calc(-50% + ${Math.sin(ang)*r*.6}px)) scale(1.6)`,opacity:0}],{duration:700,easing:'ease-out'});kill(d,720);}}
 function shake(){const b=document.getElementById('board');b&&b.animate([{transform:'translate(0,0)'},{transform:'translate(-4px,2px)'},{transform:'translate(4px,-2px)'},{transform:'translate(-2px,1px)'},{transform:'translate(0,0)'}],{duration:260});}
-function impact(res,x,y,w,st,egg){try{document.dispatchEvent(new CustomEvent('bo-impact',{detail:{x,y,w,res}}))}catch(e){}
+const kind=r=>r==='hit'?'hit':r==='miss'?'miss':'feather'; // 'bounce' (stone at the ostrich) must never play the egg-crack
+function impact(res,x,y,w,st,egg){res=kind(res);try{document.dispatchEvent(new CustomEvent('bo-impact',{detail:{x,y,w,res}}))}catch(e){}
  if(res==='feather'){window.SFX&&SFX.play('feather');const dx=w*.9;st.animate([{transform:st.style.transform||getComputedStyle(st).transform},{transform:`translate(${x+dx*.5-w*.17}px,${y-w*.8}px) rotate(700deg)`},{transform:`translate(${x+dx-w*.17}px,${y+w*.1}px) rotate(900deg)`,opacity:0}],{duration:520,easing:'ease-out',fill:'forwards'});kill(st,540);
   const f=el('sm-feather',`left:${x}px;top:${y}px;font-size:${w*.45}px`,'🪶');f.animate([{transform:'translate(-50%,-50%) rotate(0)',opacity:1},{transform:`translate(-20%,${-w*.2}px) rotate(-30deg)`,offset:.3},{transform:`translate(-80%,${w*.4}px) rotate(25deg)`,opacity:0}],{duration:1300,easing:'ease-in-out'});kill(f,1320);
   const r=el('sm-ring',`left:${x}px;top:${y}px;width:${w}px;height:${w}px`);kill(r,500);return;}
@@ -43,7 +47,7 @@ function impact(res,x,y,w,st,egg){try{document.dispatchEvent(new CustomEvent('bo
   d.animate([{transform:'translate(-50%,-50%) rotate(0)'},{transform:`translate(calc(-50% + ${Math.cos(ang)*r}px),calc(-50% + ${Math.sin(ang)*r-w*.3}px)) rotate(${Math.random()*720}deg)`,opacity:1,offset:.6},{transform:`translate(calc(-50% + ${Math.cos(ang)*r*1.1}px),calc(-50% + ${Math.sin(ang)*r+w*.1}px)) rotate(${Math.random()*900}deg)`,opacity:0}],{duration:850,easing:'ease-out'});kill(d,870);}
  for(let i=0;i<6;i++){const d=el('sm-drop',`left:${x}px;top:${y}px;width:${w*.12}px;height:${w*.12}px`);const ang=Math.PI*(1.1+.8*i/5),r=w*(.45+Math.random()*.35);
   d.animate([{transform:'translate(-50%,-50%) scale(.4)'},{transform:`translate(calc(-50% + ${Math.cos(ang)*r}px),calc(-50% + ${Math.sin(ang)*r*.5}px)) scale(1)`}],{duration:380,easing:'ease-out',fill:'forwards'});setTimeout(()=>d.animate([{opacity:1},{opacity:0}],{duration:700,fill:'forwards'}),1700);kill(d,2450);}}
-window.SMASH={play,update(S,prev){const la=S&&S.lastAction;if(!la||la.type!=='throw'||!la.from){lastSig=la?JSON.stringify(la)+S.round:null;return;}
+window.SMASH={kind,play,update(S,prev){const la=S&&S.lastAction;if(!la||la.type!=='throw'||!la.from){lastSig=la?JSON.stringify(la)+S.round:null;return;}
  const sig=JSON.stringify(la)+S.round;if(!prev||sig===lastSig){lastSig=sig;return;}lastSig=sig;
  if(prev.turn==='red'&&(S.turn==='blue'||S.phase==='over'))requestAnimationFrame(()=>play(S,la));}};
 })();
