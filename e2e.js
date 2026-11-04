@@ -26,7 +26,7 @@ const OUT = 'shots/balanced/'; fs.mkdirSync(OUT + 'frames', { recursive: true })
   await cell(V, 4, 4).click(); await V.waitForTimeout(300);
   assert.equal(await V.textContent('#banner'), 'Egg nearby!');
   await A.waitForSelector('#actions.mine'); assert.ok(await A.locator('.wnum').count() === 3, 'warmth numbers'); assert.ok(!(await A.textContent('body')).includes('\u{1F525}'), 'no fire emoji');
-  assert.equal(await A.textContent('#hungerLeft'), String(12));
+  assert.equal(await A.textContent('#hungerLeft'), String(require('./game.js').CONFIG.food));
   await A.screenshot({ path: OUT + '1-ostrich.png' });
   await cell(A, 6, 2).click(); // step onto egg
   await V.waitForSelector('#actions.mine'); await V.click('#actions button:has-text("Throw")');

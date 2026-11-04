@@ -18,9 +18,9 @@ async function game(ctx, name) {
     if (ctx._mobile) await P.locator('.cell').nth(y * 9 + x).tap(); else await P.locator('.cell').nth(y * 9 + x).click();
     await P.waitForFunction(r => { const S = UI._S(); return S.round > r && S.myTurn; }, r0, { timeout: 15000 });
     markCell = await P.evaluate(() => { const lg = new Set(UI._legal().map(p => p + '')), cs = [...document.querySelectorAll('#board .cell')];
-      const i = cs.findIndex((c, i) => /footprint/.test(c.dataset.tip || '') && !lg.has([i % 9, Math.floor(i / 9)] + '')); return i < 0 ? null : i; });
+      const i = cs.findIndex((c, i) => /^Food/.test(c.dataset.tip || '') && !lg.has([i % 9, Math.floor(i / 9)] + '')); return i < 0 ? null : i; });
   }
-  assert.ok(markCell !== null, 'got a footprint on a non-legal square');
+  assert.ok(markCell !== null, 'got a food mark on a non-legal square');
   const c = P.locator('.cell').nth(markCell);
   return { P, errs, c, markCell };
 }
@@ -31,7 +31,7 @@ async function game(ctx, name) {
   let { P, errs, c, markCell } = await game(pc, 'phone');
   const r0 = await P.evaluate(() => UI._S().round);
   await c.tap(); await P.waitForSelector('#marktip:not(.hidden)');
-  const txt = await P.textContent('#marktip'); console.log('phone tap tip:', txt); assert.match(txt, /Ostrich footprint( \(newest\))?, (this round|\d+ rounds? ago)/);
+  const txt = await P.textContent('#marktip'); console.log('phone tap tip:', txt); assert.match(txt, /Food/);
   await P.screenshot({ path: 'shots/tooltip/phone-tap.jpg', type: 'jpeg', quality: 85 });
   assert.equal(await P.evaluate(() => UI._S().round), r0, 'tap on non-legal mark did not move');
   // long-press on a cell with a tip via touch events

@@ -12,10 +12,12 @@ const STONE='<svg viewBox="0 0 40 40" aria-hidden="true"><path d="M7 27l5-13 13-
 const XMARK='<svg viewBox="0 0 40 40" aria-hidden="true"><path d="M9 9L31 31M31 9L9 31" stroke="#1a0000" stroke-width="11" stroke-linecap="round"/><path d="M9 9L31 31M31 9L9 31" stroke="#ff2a1f" stroke-width="7" stroke-linecap="round"/></svg>';
 const EGG='<svg viewBox="0 0 40 40" aria-hidden="true"><ellipse cx="20" cy="22" rx="12" ry="15" fill="#ffd21f" stroke="#3a2a00" stroke-width="3"/><ellipse cx="15" cy="15" rx="3" ry="5" fill="#fff6c0"/></svg>';
 const MYEGG='<svg viewBox="0 0 40 40" aria-hidden="true"><ellipse cx="20" cy="21" rx="11" ry="14" fill="#fffaf0" stroke="#2a2418" stroke-width="2.5"/></svg>';
-const VOCAB={legal:['','White ring = you can move here'],target:['','Red target = you can throw a stone here'],food:[LEAF,'Food: the ostrich must step here at least every '+window.BO.CONFIG.food+' turns or it starves'],
+const MAYBE='<svg viewBox="0 0 40 40" aria-hidden="true"><ellipse cx="20" cy="21" rx="11" ry="14" fill="none" stroke="#fff" stroke-width="3" stroke-dasharray="5 3"/><text x="20" y="28" text-anchor="middle" font-size="19" font-weight="900" fill="#fff" font-family="sans-serif">?</text></svg>';
+let sniffSeen='',sniffUntil=0;
+const VOCAB={maybe:[MAYBE,'Egg might be here: your last sniff said "Egg nearby!" and nothing rules this square out'],legal:['','Glowing square = you can move here'],target:['','Red-orange glow = you can throw a stone here'],stone:[STONE,'Stone mark: a stone landed here. The ostrich won\'t carry an egg onto it'],food:[LEAF,'Food: the ostrich must step here at least every '+window.BO.CONFIG.food+' turns or it starves'],
  rock:[ROCKS,'Rock pile: the vulture lands here to pick up a stone (holds 1)'],hit:[XMARK,'Smashed egg: this square is blocked now'],spot:[EGG,'Found egg: the vulture landed on it'],
  myegg:[MYEGG,'Your egg: the ring drains as it cools; the number is rounds left'],me:['','This is you'],vul:['','The vulture'],ost:['','The ostrich']};
-const SHORT={hit:'Smashed egg (square blocked)',spot:'Found egg',food:'Food',rock:'Rock pile (stone refill)',vul:'The vulture',ost:'The ostrich'};
+const SHORT={stone:'Stone mark (no carrying eggs here)',hit:'Smashed egg (square blocked)',spot:'Found egg',food:'Food',rock:'Rock pile (stone refill)',vul:'The vulture',ost:'The ostrich'};
 // warmth ring: full red when just warmed -> orange -> pale -> icy blue as it cools (never purple)
 const WSTOPS=[[0,[111,200,255]],[.34,[236,240,236]],[.67,[255,154,46]],[1,[232,56,47]]];
 function warmCol(f){f=Math.max(0,Math.min(1,f));for(let i=1;i<WSTOPS.length;i++)if(f<=WSTOPS[i][0]){const[a,ca]=WSTOPS[i-1],[b,cb]=WSTOPS[i],t=(f-a)/(b-a);return'rgb('+ca.map((c,j)=>Math.round(c+(cb[j]-c)*t)).join(',')+')';}return'rgb(232,56,47)';}
@@ -103,10 +105,10 @@ $('shareBtn').onclick=()=>{const u=$('shareLink').value;if(navigator.share)navig
 // --- walkthrough (same chips as the board) ---
 const WALK={blue:[['🥚','Your goal','Hide '+C0.eggs+' eggs. Keep at least one alive for '+C0.rounds+' rounds. The vulture sees you, but not your eggs.'],
   ['👆','Your turn','Step 1 square. On an egg: Sit (max '+C0.maxSit+' in a row) or Carry it 1 square. The ring on each egg drains as it cools: visit it before the number hits 0.'],
-  ['🍃','Stay fed','Step on a leaf at least every '+C0.food+' turns or you starve. The vulture can\'t throw at you or next to you, so stand guard, then sneak off to eat.']],
+  ['🍃','Stay fed','Step on a leaf at least every '+C0.food+' turns or you starve. A stone thrown at you just bounces off, so your square (and an egg in your beak) is always safe. Squares next to you are not!']],
  red:[['💥','Your goal','Smash all '+C0.eggs+' hidden eggs. You can see the ostrich; its eggs are hidden.'],
   ['👆','Your turn','Fly up to '+C0.vultureFly+' squares. Each landing tells you "Egg nearby!" or "No egg nearby" (within 1 square). Land on an egg to find it.'],
-  ['🪨','Stones','You carry 1 stone. Throw at your square or one next to it, never at the ostrich or next to it. Land on a rock pile to pick up another.']]};
+  ['🪨','Stones','You carry 1 stone. Throw at your square or one next to it. A stone at the ostrich just bounces off. A missed stone stays on the board, and the ostrich won\'t carry an egg onto it. Land on a rock pile to pick up another.']]};
 let wi=0,wr='blue',wDone=null;
 function maybeWalk(r){if(!localStorage.getItem('bo_walk_'+r))walk(r);}
 function walk(role,done){wr=role||(S?S.role:'blue');wi=0;wDone=done||null;drawWalk();$('walk').classList.remove('hidden');}
@@ -119,9 +121,9 @@ window.UI={walk(){walk();},rules(){$('rules').classList.remove('hidden')},closeR
  _rr(){if(S)render();},_tip:t=>tipBar(t),_S:()=>S,_legal:()=>legalNow(),_locked:()=>locked,menu(){S=null;localStorage.removeItem('bo_me');location.href='/';}};
 // --- learn-by-playing coach marks: one hint, anchored, everything else dimmed; advances when the player does it ---
 const COACH={blue:[
-  {when:S=>S.myTurn&&S.moves.length,txt:'Tap a white ring to step',at:'board',done:'step'},
+  {when:S=>S.myTurn&&S.moves.length,txt:'Tap a glowing square to step',at:'board',done:'step'},
   {when:S=>S.myTurn&&S.can.sit,txt:'Sit to warm this egg (the ring refills)',at:'sit',done:'sit'}],
- red:[{when:S=>S.myTurn,txt:'Tap a white ring to fly and sniff',at:'board',done:'fly'},
+ red:[{when:S=>S.myTurn,txt:'Tap a glowing square to fly and sniff',at:'board',done:'fly'},
   {when:S=>S.myTurn&&S.throw&&S.throw.length,txt:'Tip: tap Throw stone to aim',at:'throw',done:'throw'}]};
 const cIdx=r=>+(localStorage.getItem('bo_cs_'+r)||0);
 function coachNow(){return null;if(!S||S.phase!=='play')return null;const st=COACH[S.role][cIdx(S.role)];return st&&st.when(S)?st:null;}
@@ -150,12 +152,12 @@ function legalNow(){if(!S)return[];const blue=S.role==='blue',M=curMode(),C=S.cf
  if(blue&&S.phase==='setupEggs'){const eg=new Set((S.eggs||[]).map(e=>key(e.pos)));const r=[];for(let y=0;y<C.rows;y++)for(let x=0;x<C.cols;x++){const k=x+','+y;if(!eg.has(k)&&k!==key(S.vulture)&&!isR(C,k)&&!nearF(C,[x,y]))r.push([x,y]);}return r;}
  if(blue&&S.phase==='setupOstrich'){const r=[];for(let y=0;y<C.rows;y++)for(let x=0;x<C.cols;x++)r.push([x,y]);return r;}
  if(!S.myTurn)return[];return blue?(M==='carry'?S.carryMoves:S.moves):(M==='throw'?S.throw:S.fly);}
-function tap(x,y){if(!S||locked)return;const p=[x,y],ok=legalNow().some(q=>q[0]===x&&q[1]===y);
+function tap(x,y){if(!S||locked)return;if(Date.now()<sniffUntil){clearTimeout(tap.q);tap.q=setTimeout(()=>tap(x,y),sniffUntil-Date.now()+20);return;}const p=[x,y],ok=legalNow().some(q=>q[0]===x&&q[1]===y);
  if(!ok){const c=$('board').children[y*S.cfg.cols+x];if(c&&c.dataset.tip&&c.dataset.tags)showTip(c,c.dataset.tip,2600);}
- if(S.role==='blue'&&(S.phase==='setupEggs'||S.phase==='setupOstrich'))return ok?send({t:'act',a:'place',p}):nope('Tap a white ring. Eggs can\'t go on rocks, or on or next to food.');
+ if(S.role==='blue'&&(S.phase==='setupEggs'||S.phase==='setupOstrich'))return ok?send({t:'act',a:'place',p}):nope('Tap a glowing square. Eggs can\'t go on rocks, or on or next to food.');
  if(S.phase!=='play')return;if(!S.myTurn)return nope(S.role==='blue'?'Wait, it\'s the Vulture\'s turn.':'Wait, it\'s the Ostrich\'s turn.');
  const m=curMode();if(!m)return;
- if(!ok)return nope(m==='throw'?(S.stones<1?'No stone. Land on a rock pile to pick one up.':'Throw at a red target: your square or next to you, not at the ostrich or next to it.'):m==='fly'?`Too far. Fly up to ${S.cfg.vultureFly} squares: tap a white ring.`:m==='carry'?'Carry 1 square: tap a white ring (not onto an egg, food, rocks, or a smashed square).':'Step 1 square: tap a white ring next to you (smashed squares are blocked).');
+ if(!ok)return nope(m==='throw'?(S.stones<1?'No stone. Land on a rock pile to pick one up.':'Throw at a red-orange square: your square or one next to you. A stone at the ostrich just bounces off.'):m==='fly'?`Too far. Fly up to ${S.cfg.vultureFly} squares: tap a glowing square.`:m==='carry'?'Carry 1 square: tap a glowing square (not onto an egg, food, rocks, a stone mark, or a smashed square).':'Step 1 square: tap a glowing square next to you (smashed squares are blocked).');
  coachDid(m==='carry'?'step':m);send({t:'act',a:m,p});}
 function curMode(){if(!S.myTurn)return null;if(S.role==='red')return mode||'fly';
  if(mode==='carry'&&S.can&&S.can.carry)return'carry';return S.moves.length?'step':null;}
@@ -181,27 +183,37 @@ function render(prev){
  const board=$('board');board.style.gridTemplateColumns=`repeat(${C.cols},1fr)`;board.innerHTML='';
  const la=S.lastAction,newTurn=!!(prev&&(prev.turn!==S.turn||prev.round!==S.round));
  const lastThrow=la&&la.type==='throw'&&la.p&&newTurn?key(la.p):null;const eggAt={};(S.eggs||[]).forEach(e=>{if(e.alive&&e.pos)eggAt[key(e.pos)]=e;});
+ const sn=S.phase==='play'&&S.sniff?S.sniff:null,snK=sn?sn.p+'|'+S.round+'|'+sn.yes:'',snNew=!!sn&&snK!==sniffSeen;if(sn)sniffSeen=snK;if(snNew)sniffUntil=Date.now()+1200;
+ const inSn=k=>{if(!sn)return false;const [a,b]=k.split(',').map(Number);return Math.max(Math.abs(a-sn.p[0]),Math.abs(b-sn.p[1]))<=1;};
  const throwing=!blue&&M==='throw',ok=key(S.ostrich||[-9,-9]),vk=key(S.vulture);
  for(let y=0;y<C.rows;y++)for(let x=0;x<C.cols;x++){const k=x+','+y,d=document.createElement('div');d.className='cell';
   const m=S.marks[k];if(m)d.classList.add(m);const tags=[],tip=[];
   const legal=lk.has(k)||(setup&&(S.phase==='setupOstrich'||legalNow().some(q=>key(q)===k)));
   if(legal){d.classList.add('legal');if(throwing)d.classList.add('target');tags.push(throwing?'target':'legal');}
+  const maybe=!blue&&sn&&sn.yes&&inSn(k)&&!m&&k!==ok&&!isF(C,k)&&!isR(C,k);
+  if(blue&&sn&&sn.yes&&inSn(k)&&m!=='hit')d.classList.add('snseen');
+  if(maybe){d.classList.add('maybe');tags.push('maybe');tip.push('Egg might be here (sniff)');}
+  if(sn&&snNew&&inSn(k)){d.classList.add(sn.yes?'snyes':'snno');d.style.animationDelay=(Math.max(Math.abs(x-sn.p[0]),Math.abs(y-sn.p[1]))*.18)+'s';}
   // exactly one tile icon: smashed > found egg > own egg > food > rocks
   const e=eggAt[k];let h='';
   if(m==='hit'){h=icon('hit');tip.push(SHORT.hit);}
+  else if(m==='stone'){h=icon('stone');tip.push(SHORT.stone);}
   else if(!blue&&m==='spotted'){h=icon('spot');tip.push(SHORT.spot);}
   else if(blue&&e){h=`<span class="ic ic-myegg${m==='spotted'?' found':''}" data-t="myegg">${MYEGG}${S.phase==='play'?warmRing(e.coldIn,C.warmth):''}</span>`;
    tip.push('Your egg: '+e.coldIn+' round'+(e.coldIn===1?'':'s')+' until cold'+(m==='spotted'?' · the vulture found it':''));}
+  else if(maybe){h=icon('maybe');}
   else if(isF(C,k)){h=icon('food');tip.push(SHORT.food+': resets the ostrich\'s hunger to '+C.food);}
   else if(isR(C,k)){h=icon('rock');tip.push(SHORT.rock);}
   if(h)tags.push(h.match(/data-t="(\w+)"/)[1]);
-  if(k===lastThrow&&la.result==='miss'){d.classList.add('flash');}
+  if(k===lastThrow&&(la.result==='miss'||la.result==='bounce')){d.classList.add(la.result==='bounce'?'bounce':'flash');}
   if(k===vk){h+=`<div class="pc">${VUL}</div>`;tip.push(blue?'The vulture':'You (vulture)');tags.push(blue?'vul':'me');}
   if(k===ok){if(blue&&e)d.classList.add('sat');h+=`<div class="pc">${OST}</div>`+(S.carried?'<span class="carry">'+MYEGG+'</span>':'');tip.push(blue?'You (ostrich)'+(S.carried?', carrying an egg':''):'The ostrich'+(S.carried?' (carrying something)':''));tags.push(blue?'me':'ost');
    if(blue&&S.carried&&S.eggs&&S.eggs[S.carrying])h+=warmRing(S.eggs[S.carrying].coldIn,C.warmth);}
   if(legal)tip.push(throwing?'Throw a stone here':setup?(S.phase==='setupEggs'?'Hide an egg here':'Start here'):blue?'Move here':'Fly here');
   d.innerHTML=h;d.dataset.tip=[...new Set(tip)].join(' · ');
   d.dataset.tags=tags.join(' ');d.onclick=()=>{if(Date.now()<noClick)return;tap(x,y);};board.appendChild(d);}
+ if(snNew){const vc=board.children[sn.p[1]*C.cols+sn.p[0]];if(vc){const w=document.createElement('div');w.className='snwave '+(sn.yes?'yes':'no');vc.appendChild(w);}
+  const o=document.createElement('div');o.id='snpop';o.className=(sn.yes?'yes':'no')+(blue?' small':'');o.textContent=sn.yes?(blue?'Vulture smells an egg nearby':'Egg nearby!'):(blue?'Vulture smells nothing':'No egg nearby');board.appendChild(o);setTimeout(()=>o.remove(),1400);}
  // sniff banner: yes/no for this turn only (vulture), plus hunger warning (ostrich)
  const bn=$('banner');let bt='',bc='';
  if(S.phase==='play'&&!blue&&S.sniff){bt=S.sniff.yes?'Egg nearby!':'No egg nearby';bc=S.sniff.yes?'yes':'no';}
@@ -210,35 +222,36 @@ function render(prev){
  $('warm').innerHTML='';
  const a=$('actions');let h='';a.innerHTML='';const CM=coachNow(),coach=!!CM;
  const btn=(id,lbl,on,click,dis)=>`<button class="${on&&!dis?'on':''}" ${dis?'disabled aria-disabled="true"':''} ${on?'aria-pressed="true"':''} onclick="${click}">${on&&!dis?'✓ ':''}${lbl}</button>`;
- if(S.phase==='setupEggs')h=blue?`Tap a white ring to hide an egg (${C.eggs-S.eggs.length} left). Not on rocks, or on or next to food.`:'The ostrich is hiding its eggs…';
+ if(S.phase==='setupEggs')h=blue?`Tap a glowing square to hide an egg (${C.eggs-S.eggs.length} left). Not on rocks, or on or next to food.`:'The ostrich is hiding its eggs…';
  else if(S.phase==='setupOstrich')h=blue?'Tap a square to place your ostrich.':'The ostrich is hiding its eggs…';
  else if(S.phase==='play'&&!S.myTurn)h=blue?'Vulture\'s turn…':'Ostrich\'s turn…';
  else if(S.phase==='play'&&blue){
   a.innerHTML=btn('s','Step',M==='step',"UI.setMode('step')")+(S.onEgg?btn('c','Carry egg',M==='carry',"UI.setMode('carry')",!S.can.carry)+btn('t',S.mustLeave?'Sit · step off first':`Sit · ${C.maxSit-S.sitRun} left`,false,"UI.act('sit')",!S.can.sit):'');
-  h=S.mustLeave?`You sat ${C.maxSit} turns: step off (or Carry egg).`:M==='carry'?'Tap a white ring to carry the egg there. It lands where you stand next turn.':S.moves.length?(S.can.sit?'Tap a white ring to move, or Sit.':'Tap a white ring to move.'):'';
+  h=S.mustLeave?`You sat ${C.maxSit} turns: step off (or Carry egg).`:M==='carry'?'Tap a glowing square to carry the egg there. It lands where you stand next turn.':S.moves.length?(S.can.sit?'Tap a glowing square to move, or Sit.':'Tap a glowing square to move.'):'';
  } else if(S.phase==='play'){
   a.innerHTML=btn('fl','Fly',M==='fly',"UI.setMode('fly')")+btn('th',`Throw stone · ${S.stones}/${C.stones}`,M==='throw',"UI.setMode('throw')",S.stones<1);
-  h=M==='throw'?'Tap a red target to throw your stone.':S.stones<1?'No stone: fly to a rock pile to pick one up.':'Tap a white ring to fly there.';}
+  h=M==='throw'?'Tap a red-orange square to throw your stone.':S.stones<1?'No stone: fly to a rock pile to pick one up.':'Tap a glowing square to fly there.';}
  a.className=S.phase==='play'&&S.myTurn?'mine':'';
  // ONE message per turn: the most important event wins
  let ev='';const myNew=newTurn&&S.myTurn;
  if(myNew&&la){
-  if(blue&&la.type==='throw')ev=la.result==='hit'?'💥 An egg was smashed!':'The stone missed.';
+  if(blue&&la.type==='throw')ev=la.result==='bounce'?'The stone bounced off you. Your egg is safe.':la.result==='hit'?'💥 An egg was smashed!':'The stone missed.';
   if(blue&&!ev&&la.spotted)ev='The vulture found an egg! Move it or sit on it.';
   if(!blue&&la.type==='fly'&&la.spotted)ev='You found an egg! Throw your stone at it.';
   if(!blue&&la.type==='fly'&&la.refill)ev='Picked up a stone.';
   if(S.lastCold&&!ev)ev=`❄️ An egg went cold.`;
  }
- if(!blue&&prev&&prev.turn==='red'&&la&&la.type==='throw'&&S.turn==='blue')ev=la.result==='hit'?'💥 Smash!':'Miss.';
+ if(!blue&&prev&&prev.turn==='red'&&la&&la.type==='throw'&&S.turn==='blue')ev=la.result==='hit'?'💥 Smash!':la.result==='bounce'?'Bounced off the ostrich.':'Miss.';
  if(ev)h=ev+(h?' '+h:'');
  if(!blue&&S.phase==='play'&&S.myTurn&&S.marks[key(S.vulture)]==='spotted'&&S.stones>0)h=M==='throw'?'Tap your own square to smash the egg.':'An egg is right under you! Tap Throw stone, then your own square.';
  // just-in-time tips (once each)
  if(window.TUT&&S.phase==='play'){const T=TUT.tip;
   if(la&&la.type==='throw'&&la.result==='hit')T('hit','Red X = a smashed egg. Nobody can step there now.');
+  if(la&&la.type==='throw'&&la.result==='miss')T('stone','Gray stone = a stone landed here. It stays all game, and the ostrich won\'t carry an egg onto it.');
   if(la&&la.spotted)T('spotted',blue?'The vulture landed on your egg and found it. Sit on it or carry it away.':'Big yellow egg = found. It stays found until the ostrich carries it away.');
-  if(!blue&&S.myTurn&&la&&la.type==='fly')T('sniff',`After each landing: "Egg nearby!" means an egg is on your square or next to it. This turn only.`);
+  if(!blue&&S.myTurn&&la&&la.type==='fly')T('sniff',`After each landing you sniff: "Egg nearby!" means an egg is on your square or next to it, and the possible squares turn green.`);
   if(!blue&&S.myTurn&&S.stones<1)T('stones','Out of stones. Land on a gray rock pile to pick one up.');
-  if(!blue&&S.myTurn&&M==='throw')T('ruleb','You can\'t throw at the ostrich or next to it: it guards its patch.');}
+  if(!blue&&S.myTurn&&M==='throw')T('throwtip','Red-orange = you can throw here. Green ? = an egg might be here. A stone at the ostrich just bounces off.');}
  if(window.TUT&&blue&&S.phase==='play'&&S.myTurn){const T=TUT.tip;
   if(S.round>1)T('warm','The ring on each egg drains as it cools. Stand on the egg to refill it.');
   if(S.hungerLeft<=C.food/2)T('food',`Step on a green leaf within ${S.hungerLeft} turns or you starve.`);

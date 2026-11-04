@@ -4,13 +4,13 @@ const CONFIG = {
   cols: 9, rows: 7,
   eggs: 3,
   rounds: 30,          // ostrich wins if any egg survives this many rounds
-  warmth: 20,          // an egg goes cold unless the ostrich is on it (or carrying it) at least once every N rounds
+  warmth: 24,          // an egg goes cold unless the ostrich is on it (or carrying it) at least once every N rounds
   maxSit: 3,           // max consecutive Sit turns; then the ostrich must step off for at least one turn
   vultureFly: 2,       // vulture flies up to N squares (king-move distance)
   throwRange: 1,       // vulture throws at its own square or one next to it...
   vultureStart: [4, 3],
   smellRange: 1,       // ...and on landing learns if any egg is on its square or next to it (yes/no, this turn only)
-  food: 12,            // the ostrich must step onto food at least once every N of its turns, or it starves
+  food: 13,            // the ostrich must step onto food at least once every N of its turns, or it starves
   stones: 1,           // stones the vulture can hold; refill by landing on a rock pile
   foods: [[0, 0], [8, 6]],   // fixed food spots (never run out)
   rocks: [[4, 0], [4, 6]],   // fixed rock piles (never run out)
@@ -64,7 +64,7 @@ function ostrichMoves(g, carry = false) {
     if (!dx && !dy) continue;
     const p = [g.ostrich[0] + dx, g.ostrich[1] + dy];
     if (!inB(p, g.cfg) || smashed(g, p)) continue;  // smashed squares are blocked
-    if (carry && (eggAt(g, p) || isFood(g, p) || isRock(g, p))) continue; // can't carry onto another egg, food or rocks
+    if (carry && (eggAt(g, p) || isFood(g, p) || isRock(g, p) || g.marks[key(p)] === 'stone')) continue; // the ostrich won't carry an egg onto a stone-marked square (afraid) // can't carry onto another egg, food or rocks
     res.push(p);
   }
   return res;
@@ -100,11 +100,11 @@ function flyTargets(g) {
     const d = dist([x, y], g.vulture); if (d >= 1 && d <= g.cfg.vultureFly) r.push([x, y]); }
   return r;
 }
-// Needs a stone. Can't throw at the ostrich or any square next to it (the ostrich guards its own patch).
+// Needs a stone. Any square in range; a stone at the ostrich's own square just bounces off (wasted turn).
 function throwTargets(g) {
   if (!myTurn(g, 'red') || g.stones < 1) return [];
   const r = []; for (let x = 0; x < g.cfg.cols; x++) for (let y = 0; y < g.cfg.rows; y++)
-    if (dist([x, y], g.vulture) <= g.cfg.throwRange && !(g.ostrich && dist([x, y], g.ostrich) <= 1) && !smashed(g, [x, y])) r.push([x, y]);
+    if (dist([x, y], g.vulture) <= g.cfg.throwRange && !smashed(g, [x, y]) && g.marks[key([x, y])] !== 'stone') r.push([x, y]);
   return r;
 }
 function vultureFly(g, p) {
@@ -122,7 +122,8 @@ function vultureThrow(g, p) {
   if (!throwTargets(g).some(q => key(q) === key(p))) return false;
   g.stones--; g.sniff = null;
   const e = eggAt(g, p); let result;
-  if (e) { e.alive = false; result = 'hit'; g.marks[key(p)] = 'hit'; } else result = 'miss';
+  if (g.ostrich && key(p) === key(g.ostrich)) result = 'bounce'; // the ostrich protects the egg under it or in its beak
+  else if (e) { e.alive = false; result = 'hit'; g.marks[key(p)] = 'hit'; } else { result = 'miss'; g.marks[key(p)] = 'stone'; } // a missed stone stays on the square for the rest of the game
   g.lastAction = { type: 'throw', from: g.vulture.slice(), p: p.slice(), result }; g.lastThrow = p.slice();
   if (!aliveEggs(g).length) { g.winner = 'red'; g.winBy = 'smashed'; g.phase = 'over'; } else { g.turn = 'blue'; dropCarried(g); }
   return result;
@@ -139,7 +140,7 @@ function endRound(g) {
   g.round++; g.turn = 'red';
 }
 // What the vulture may see: found eggs ('spotted') and smashed squares ('hit'). Nothing else persists.
-function visible(g) { return { marks: Object.fromEntries(Object.entries(g.marks).filter(([, m]) => m === 'spotted' || m === 'hit')) }; }
+function visible(g) { return { marks: Object.fromEntries(Object.entries(g.marks).filter(([, m]) => m === 'spotted' || m === 'hit' || m === 'stone')) }; }
 function coldIn(g, e) { return g.cfg.warmth - (g.round - e.lastWarm); } // rounds left before going cold
 
 const API = { CONFIG, newGame, canPlaceEgg, placeEgg, placeOstrich, ostrichMoves, ostrichStep, ostrichSit, canSit, canCarry, mustLeave, onEgg, dropCarried,

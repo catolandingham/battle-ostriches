@@ -14,7 +14,11 @@ t('carry 1 square, set down next turn; not onto egg/food/rocks',()=>{const g=set
  const h=B.newGame();B.placeEgg(h,[3,1]);B.placeEgg(h,[2,4]);B.placeEgg(h,[6,4]);B.placeOstrich(h,[3,1]);B.vultureFly(h,[5,3]);assert(!B.ostrichMoves(h,true).some(p=>p+''==='4,0'));});
 t('one stone: throw uses it, refill by landing on rocks',()=>{const g=setup();B.ostrichStep(g,[2,1]);assert.equal(g.stones,1);assert.equal(B.vultureThrow(g,[5,2]),'miss');assert.equal(g.stones,0);
  B.ostrichStep(g,[2,2]);assert.equal(B.throwTargets(g).length,0);assert(!B.vultureThrow(g,[5,2]));assert(B.vultureFly(g,[4,0]));assert.equal(g.stones,1);assert(g.lastAction.refill);});
-t('rule B: no throw at the ostrich or next to it',()=>{const g=setup();B.ostrichStep(g,[3,2]);const T=B.throwTargets(g).map(String);assert(!T.includes('3,2'));assert(!T.includes('4,2'));assert(!T.includes('3,3'));assert(T.includes('5,2'));});
+t('throw at the ostrich bounces (egg under/in beak safe); adjacent is fine',()=>{const g=setup();assert(B.ostrichSit(g));const T=B.throwTargets(g).map(String);assert(T.includes('3,2'));
+ const h=setup();assert(B.ostrichStep(h,[3,2],true));assert(B.throwTargets(h).map(String).includes('3,2'));assert.equal(B.vultureThrow(h,[3,2]),'bounce');assert.equal(h.eggs[0].alive,true);assert.equal(h.marks['3,2'],undefined);assert.equal(h.stones,0);});
+t('missed stone leaves a mark; ostrich can step there but not carry an egg onto it',()=>{const g=setup();assert(B.ostrichSit(g));assert(B.vultureFly(g,[3,3]));assert(B.ostrichSit(g));
+ assert.equal(B.vultureThrow(g,[3,2]),'miss');assert.equal(g.marks['3,2'],'stone');assert.equal(B.visible(g).marks['3,2'],'stone');
+ assert(!B.ostrichMoves(g,true).some(p=>p+''==='3,2'));assert(B.ostrichMoves(g).some(p=>p+''==='3,2'));assert(B.ostrichMoves(g,true).length>0);});
 t('unguarded egg smashed; square becomes blocked',()=>{const g=setup();B.ostrichStep(g,[1,1]);B.vultureFly(g,[5,2]);B.ostrichStep(g,[1,2]);assert.equal(B.vultureThrow(g,[6,2]),'hit');assert.equal(g.marks['6,2'],'hit');
  const h=setup();h.marks['3,3']='hit';assert(!B.ostrichMoves(h).some(p=>p+''==='3,3'));});
 t('fly range 2; sniff = egg within 1, this turn only',()=>{const g=setup();B.ostrichStep(g,[1,1]);assert(!B.vultureFly(g,[7,2]));assert(B.vultureFly(g,[6,3]));assert.equal(g.lastAction.smell,true);

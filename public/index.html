@@ -4,7 +4,7 @@
 <link rel="stylesheet" href="style.css"><link rel="stylesheet" href="themes.css"><link rel="stylesheet" href="themes2.css"><link rel="stylesheet" href="themes3.css"><link rel="stylesheet" href="smash.css"><link rel="stylesheet" href="squares.css"><link rel="stylesheet" href="vocab.css"><script src="theme.js"></script></head><body>
 <div id="app">
  <header id="hud"><div><h1 class="logo">BATTLE OSTRICHES</h1>
-  <div class="ctr">ROUNDS <b id="roundsLeft" class="cy">14</b> | EGGS <b id="eggsLeft" class="or">3</b></div><div id="stats" class="hidden"></div></div><div style="display:flex;align-items:center"><div id="turnTag">BLUE</div><button id="inviteBtn" class="hidden" aria-label="Invite / room code" aria-expanded="false">🔗 <span id="inviteCode"></span></button><button id="helpBtn" aria-label="How to play">?</button><button id="muteBtn" class="iconbtn" aria-label="Sound">🔊</button><button id="themeBtn" class="iconbtn" aria-label="Theme">🎨</button></div></header>
+  <div class="ctr">ROUNDS <b id="roundsLeft" class="cy">14</b><span class="sep"> | </span><span class="eg">EGGS <b id="eggsLeft" class="or">3</b></span></div><div id="stats" class="hidden"></div></div><div style="display:flex;align-items:center"><div id="turnTag">BLUE</div><button id="inviteBtn" class="hidden" aria-label="Invite / room code" aria-expanded="false">🔗 <span id="inviteCode"></span></button><button id="helpBtn" aria-label="How to play">?</button><button id="muteBtn" class="iconbtn" aria-label="Sound">🔊</button><button id="themeBtn" class="iconbtn" aria-label="Theme">🎨</button></div></header>
  <div id="warm"></div>
  <div id="wait-slot"></div><div id="hint">Hint</div><div id="tipbar" class="hidden" aria-live="polite"></div>
  <div id="banner" class="hidden" aria-live="polite"></div><div id="board"></div>
@@ -38,14 +38,14 @@
  <li>Each turn: <b>Step</b> 1 square, <b>Sit</b> on an egg (max <span class="c-sit"></span> in a row), or <b>Carry egg</b> 1 square.</li>
  <li>The ring on each egg drains as it cools; the number is rounds left. Stand on it within <span class="c-warm"></span> rounds or it goes cold.</li>
  <li>Step on a green leaf at least every <span class="c-food"></span> turns or you starve.</li>
- <li>Stones can't land on you or next to you. Smashed squares (red X) are blocked.</li></ul>
+ <li>A stone thrown at you just bounces off: your square (and an egg you carry) is always safe. Squares next to you are not. You can't carry an egg onto a gray stone mark. Smashed squares (red X) are blocked.</li></ul>
  <h3>🦅 Vulture</h3><ul>
  <li>Smash every egg (or outlast them: cold eggs and a starved ostrich count too).</li>
- <li>Each turn: <b>Fly</b> up to <span class="c-fly"></span> squares, or <b>Throw stone</b> at your square or one next to it, never at the ostrich or next to it.</li>
+ <li>Each turn: <b>Fly</b> up to <span class="c-fly"></span> squares, or <b>Throw stone</b> at your square or one next to it. A stone at the ostrich just bounces off (it protects its egg). A miss leaves a gray stone mark for the rest of the game; the ostrich won't carry an egg onto it. The vulture eats eggs and never needs food.</li>
  <li>After each landing you learn <b>Egg nearby!</b> or <b>No egg nearby</b> (within <span class="c-smell"></span> square). This turn only.</li>
  <li>You hold <span class="c-stones"></span> stone. Land on a gray rock pile to pick one up. Landing on an egg finds it (big yellow egg).</li></ul>
  <h3>Marks</h3><ul class="legend">
- <li>White ring = you can move here · red target = throw here · green leaf = food · gray stones = rock pile · big yellow egg = found egg · red X = smashed (blocked). Hover or tap a square to see what it is.</li></ul>
+ <li>Glowing yellow square = you can move here · red-orange glow = throw here · gray stone = a stone landed here (the ostrich won't carry an egg onto it) · green leaf = food · gray stones = rock pile · big yellow egg = found egg · red X = smashed (blocked). Hover or tap a square to see what it is.</li></ul>
  <button class="big" onclick="UI.closeRules()">Got it</button>
  <button class="big ghost" onclick="UI.closeRules();TUT.show('intro')">Replay intro</button>
  <button class="big ghost" onclick="UI.closeRules();UI.walk()">Replay walkthrough</button>

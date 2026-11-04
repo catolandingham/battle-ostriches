@@ -110,12 +110,11 @@ html[data-theme] #board .cell.zone.legal{box-shadow:inset 0 0 0 3px #ffe14d,inse
 #board .pc,html[data-theme] #board .pc{position:absolute;left:8%;top:8%;width:84%;height:84%;background:none!important;border:0!important;box-shadow:none!important;z-index:4;pointer-events:none}
 #board .pc svg{width:100%;height:100%}
 #board .cell>.carry{position:absolute;right:2%;bottom:2%;width:36%;height:36%;z-index:6;pointer-events:none}
-/* legal = clean white ring (replaces the yellow glow) */
-html[data-theme] #board .cell.legal,#board .cell.legal{background-image:none!important;animation:none!important;filter:none!important;
-  box-shadow:inset 0 0 0 1px rgba(255,255,255,.28),inset 0 0 0 2px rgba(0,0,0,.30)!important}
-#board .cell.legal::after,html[data-theme] #board .cell.legal::after{content:'';position:absolute;left:12%;top:12%;right:12%;bottom:12%;border-radius:50%;border:3px solid #fff;
-  box-shadow:0 0 0 1.5px rgba(0,0,0,.55),inset 0 0 0 1.5px rgba(0,0,0,.55);z-index:5;pointer-events:none;background:none;animation:none}
-#board .cell.legal.target::after,html[data-theme] #board .cell.legal.target::after{border-color:#ff2a1f;background:radial-gradient(circle,#ff2a1f 0 12%,transparent 13% 38%,rgba(255,42,31,.9) 39% 46%,transparent 47%)}
+/* legal = the yellow glow from squares.css; throw targets glow red-orange instead */
+html[data-theme] #board .cell.legal.target,#board .cell.legal.target{background-image:linear-gradient(rgba(255,90,40,.45),rgba(255,90,40,.45))!important;animation:sqGlowR 1s ease-in-out infinite alternate!important;box-shadow:inset 0 0 0 4px #ff5a1f,inset 0 0 0 6px rgba(0,0,0,.6),0 0 14px 4px rgba(255,80,30,.95)!important}
+@keyframes sqGlowR{from{filter:brightness(1)}to{filter:brightness(1.2)}}
+/* stone mark: a missed stone stays on the square */
+#board .ic-stone{opacity:.7}
 /* smashed squares look blocked */
 html[data-theme] #board .cell.hit,#board .cell.hit{background-image:linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.35))!important}
 /* miss = flash only */
@@ -129,7 +128,7 @@ html[data-theme] #board .cell.hit,#board .cell.hit{background-image:linear-gradi
 #banner.hungry,html[data-theme] #banner.hungry{background:#c2410c!important}
 #banner.hidden{display:none!important}
 /* HUD: hunger + stones */
-#stats{display:flex;gap:8px;align-items:center;margin-top:4px}
+#stats{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:4px}
 #stats.hidden{display:none}
 #stats>span{display:inline-flex;align-items:center;gap:3px;padding:1px 6px;border-radius:9px;background:rgba(0,0,0,.35);color:#fff}
 #stats svg{width:18px;height:18px}
@@ -143,3 +142,38 @@ html[data-theme] #board .cell.hit,#board .cell.hit{background-image:linear-gradi
 /* ostrich standing on its egg: ring wraps the whole cell and the number becomes a badge above the bird, drawn over theme sprites (#fx z 30) */
 #board .cell.sat .wring,html[data-theme] #board .cell.sat .wring{inset:-2%!important;left:-2%!important;top:-2%!important;width:104%!important;height:104%!important;z-index:41!important}
 #board .cell.sat .wnum,html[data-theme] #board .cell.sat .wnum{top:2%!important;left:84%!important;transform:translate(-50%,-50%)!important;z-index:42!important;background:#fff;border:2px solid var(--wc,#111);border-radius:9px;padding:1px 4px;text-shadow:none!important}
+
+
+/* ===== sniff + stone + egg-maybe states (shape + color, all themes) ===== */
+html[data-theme] #board .cell.maybe,#board .cell.maybe{background:#14b84a!important;background-image:none!important}
+html[data-theme] #board .cell.maybe.legal:not(.target){box-shadow:inset 0 0 0 4px #ffe14d,0 0 12px 3px rgba(255,225,77,.85)!important}
+html[data-theme] #board .cell.maybe.legal.target{background:#14b84a!important;background-image:none!important}
+#board .ic-maybe svg{filter:drop-shadow(0 1px 1px #0008)}
+#board .ic-stone{opacity:.85}
+html[data-theme] #board .cell.stone,#board .cell.stone{background-image:radial-gradient(circle,rgba(0,0,0,.28) 0 30%,transparent 62%)!important}
+#board .cell.snno::before{content:'';position:absolute;inset:0;z-index:7;pointer-events:none;background:repeating-linear-gradient(45deg,rgba(80,80,80,.75) 0 4px,rgba(160,160,160,.55) 4px 8px);animation:snno 1.3s ease-out forwards;animation-delay:inherit;opacity:0}
+@keyframes snno{10%{opacity:1}60%{opacity:1}100%{opacity:0}}
+#board .cell.snyes::before{content:'';position:absolute;inset:0;z-index:7;pointer-events:none;background:rgba(40,255,110,.8);animation:snyes 1s ease-out forwards;animation-delay:inherit;opacity:0}
+@keyframes snyes{15%{opacity:1}100%{opacity:0}}
+.snwave{position:absolute;left:50%;top:50%;width:300%;height:300%;margin:-150% 0 0 -150%;border-radius:50%;border:5px solid #fff;z-index:8;pointer-events:none;animation:snwave 1s ease-out forwards}
+.snwave.yes{border-color:#3dff7a;box-shadow:0 0 18px #3dff7a}.snwave.no{border-color:#bbb}
+@keyframes snwave{0%{transform:scale(.2);opacity:1}100%{transform:scale(1.05);opacity:0}}
+#board{position:relative}
+#snpop{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:50;pointer-events:none;font:900 clamp(22px,7vw,40px)/1.1 system-ui,sans-serif;padding:.35em .7em;border-radius:14px;border:4px solid #000;animation:snpop 1.4s ease-out forwards;white-space:nowrap}
+#snpop.yes{background:#14b84a;color:#fff}#snpop.no{background:#777;color:#fff}#snpop.small{font-size:clamp(14px,4vw,20px);top:12%}
+@keyframes snpop{0%{transform:translate(-50%,-50%) scale(.6);opacity:0}15%{transform:translate(-50%,-50%) scale(1);opacity:1}75%{opacity:1}100%{opacity:0}}
+#board .cell.bounce{animation:bnc .6s ease-out 1!important}@keyframes bnc{0%,100%{transform:none}30%{transform:scale(1.15)}60%{transform:scale(.95)}}
+@media (prefers-reduced-motion:reduce){.snwave,#snpop,#board .cell.snno::before,#board .cell.snyes::before,#board .cell.bounce{animation-duration:.01s!important}}
+/* phone header: role pill shows only its bird icon so ROUNDS never hides behind it */
+@media (max-width:440px){#hud #turnTag{font-size:0!important;padding:4px 6px!important;gap:0!important}#hud #turnTag svg,#hud #turnTag img,#hud #turnTag span{font-size:13px}#hud>div:first-child{overflow:hidden}}
+html[data-theme] #board .cell.maybe.legal.target,#board .cell.maybe.legal.target{animation:none!important;box-shadow:inset 0 0 0 4px #ff5a1f,inset 0 0 0 6px rgba(0,0,0,.6),0 0 14px 4px rgba(255,80,30,.95)!important}
+@media (max-width:440px){#hud .ctr{white-space:normal!important;line-height:1.15}}
+@media (max-width:440px){#hud #inviteCode{display:none}#hud #inviteBtn{padding:4px 8px!important}}
+html[data-theme] #board .cell.legal.target:not(.maybe){outline:none!important}
+@media (max-width:440px){#hud .ctr .sep{display:none}#hud .ctr .eg{display:block}}
+/* stone mark: solid slate square + one big stone (rock piles keep the theme floor and show 3 stones) */
+html[data-theme] #board .cell.stone,#board .cell.stone{background:#5b6472!important;background-image:none!important;box-shadow:inset 0 0 0 3px #2b3038!important}
+html[data-theme] #board .cell.stone.legal:not(.target),#board .cell.stone.legal:not(.target){box-shadow:inset 0 0 0 4px #ffe14d,0 0 12px 3px rgba(255,225,77,.85)!important}
+#board .cell.stone .ic-stone{opacity:1}
+/* ostrich's smaller sniff echo: thin dashed green outline on the 3x3 for the rest of the turn */
+#board .cell.snseen::after{content:'';position:absolute;inset:10%;border:2px dashed #3dff7a;border-radius:6px;z-index:6;pointer-events:none}

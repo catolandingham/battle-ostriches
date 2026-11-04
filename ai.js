@@ -3,8 +3,8 @@
 // uses its yes/no sniffs, and refills its single stone at the rock piles. Memory lives in `mem` (one per game).
 const B = require('./game.js');
 const K = B.key, D = B.dist, R = a => a[Math.random() * a.length | 0];
-const LVL = { easy: { noise: 1.5, throwBar: 5, stay: 1, ret: 0, smellW: .1, rand: .08, sitP: .15, wander: 3.5, relocate: 0 },
-  normal: { noise: .3, throwBar: 2.5, stay: 1.5, ret: 0, smellW: .35, sitP: .35, wander: 2.5, relocate: 1 } };
+const LVL = { easy: { noise: 1.2, throwBar: 3.5, stay: 1, ret: 0, smellW: .25, rand: .04, sitP: .15, wander: 3.5, relocate: 0, camp: .3 },
+  normal: { noise: .3, throwBar: 2.5, stay: 1.5, ret: 0, smellW: .35, sitP: .35, wander: 2.5, relocate: 1, camp: .9 } };
 const near = (p, arr) => arr.slice().sort((a, b) => D(a, p) - D(b, p))[0];
 const sortBy = (arr, f) => arr.map(x => [x, f(x)]).sort((a, b) => a[1] - b[1]).map(x => x[0]);
 // --- ostrich: its own eggs, the food, and the (public) vulture position ---
@@ -45,17 +45,18 @@ function observe(v, mem) {
   const k = K(v.ostrich); for (const x in mem.heat) mem.heat[x] *= .85; mem.heat[k] = (mem.heat[k] || 0) + 1;
   if (mem.last === k) mem.stay[k] = (mem.stay[k] || 0) + 1;
   if (mem.seen[k] && v.round - mem.seen[k] >= 4) mem.ret[k] = (mem.ret[k] || 0) + 1;
+  mem.prevO = mem.last; mem.prevStay = mem.last && mem.last !== k ? (mem.stay[mem.last] || 0) : 0;
   mem.seen[k] = v.round; mem.last = k;
   const la = v.lastAction;
   if (v.sniff) { mem.smells.push([v.sniff.p.slice(), v.sniff.yes]); if (mem.smells.length > 4) mem.smells.shift(); }
-  if (mem.lastThrow && !v.marks[K(mem.lastThrow)]) { const t = K(mem.lastThrow); mem.miss[t] = 1; delete mem.stay[t]; delete mem.ret[t]; mem.heat[t] = 0; }
+  if (mem.lastThrow && v.marks[K(mem.lastThrow)] !== 'hit') { const t = K(mem.lastThrow); mem.miss[t] = 1; delete mem.stay[t]; delete mem.ret[t]; mem.heat[t] = 0; }
 }
 function vulture(v, lvl = 'normal', mem = {}) {
   const L = LVL[lvl] || LVL.normal, C = v.cfg, me = v.vulture, sq = [];
   observe(v, mem);
   for (let x = 0; x < C.cols; x++) for (let y = 0; y < C.rows; y++) sq.push([x, y]);
   const score = p => { const k = K(p); let s = (mem.heat[k] || 0) + (mem.stay[k] || 0) * L.stay + (mem.ret[k] || 0) * L.ret;
-    const m = v.marks[k]; if (m === 'spotted') s += 20; if (m === 'hit') s -= 50; if (mem.miss[k]) s -= 6;
+    const m = v.marks[k]; if (m === 'spotted') s += 20; if (m === 'hit' || m === 'stone') s -= 50; if (mem.miss[k]) s -= 6;
     if (C.foods.some(f => K(f) === k) || C.rocks.some(r => K(r) === k)) s -= 30; // eggs are never on food or rocks
     const no = mem.smells.some(([q, y]) => !y && D(q, p) <= C.smellRange), yes = mem.smells.filter(([q, y]) => y && D(q, p) <= C.smellRange).length;
     if (no) s *= .2; s += yes * L.smellW;
@@ -63,7 +64,14 @@ function vulture(v, lvl = 'normal', mem = {}) {
   const fly = t => ({ a: 'fly', p: sortBy(v.fly, q => D(q, t) + (Math.random() - .5) * .5)[0] });
   if (L.rand && Math.random() < L.rand) return { a: 'fly', p: R(v.fly) };                 // easy: often just drifts
   if (v.stones < 1) { const r = near(me, C.rocks); return fly(r); }                        // out of stones: refill
-  const th = v.throw.map(p => [p, score(p)]).sort((a, b) => b[1] - a[1])[0];
+  // camping: the ostrich just stepped off a square it sat on while we hovered next to it -> stone that square now
+  const CAMP = L.camp && process.env.BO_NOCAMP !== '1';
+  if (CAMP && mem.prevO && mem.prevStay >= 1 && mem.prevO !== K(v.ostrich)) { const t = v.throw.find(q => K(q) === mem.prevO);
+    if (t && Math.random() < L.camp) { mem.lastThrow = t; return { a: 'throw', p: t }; } }
+  // camping: the ostrich is sitting; hover in a square next to it (throw range covers its square when it leaves)
+  if (CAMP && mem.stay[K(v.ostrich)] >= 1 && D(me, v.ostrich) <= 2 && Math.random() < L.camp) { const h = v.fly.filter(q => D(q, v.ostrich) === 1);
+    if (h.length) return { a: 'fly', p: R(h) }; }
+  const th = v.throw.filter(p => K(p) !== K(v.ostrich)).map(p => [p, score(p)]).sort((a, b) => b[1] - a[1])[0];
   if (th && th[1] >= L.throwBar) { mem.lastThrow = th[0]; return { a: 'throw', p: th[0] }; }
   mem.lastThrow = null;
   // best guess: where the ostrich keeps coming back. If that's under the ostrich, hover next to it and wait for it to leave.
