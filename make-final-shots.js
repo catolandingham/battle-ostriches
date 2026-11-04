@@ -7,7 +7,7 @@ const URL = BASE || 'http://localhost:3995/';
   fs.mkdirSync(OUT, { recursive: true }); const b = await webkit.launch(), errs = [];
   for (const th of THEMES) {
     const c = await b.newContext({ ...devices['iPhone 13'] }), P = await c.newPage();
-    await P.addInitScript(t => { localStorage.setItem('bo_theme', t); localStorage.setItem('bo_tut_seen', '1'); localStorage.setItem('bo_walk_blue','1'); localStorage.setItem('bo_walk_red','1'); localStorage.setItem('bo_tips_off','1'); ['blue','red'].forEach(r => localStorage.setItem('bo_cs_' + r, '9')); }, th);
+    await P.addInitScript(t => { localStorage.setItem('bo_hs_off','1'); localStorage.setItem('bo_theme', t); localStorage.setItem('bo_tut_seen', '1'); localStorage.setItem('bo_walk_blue','1'); localStorage.setItem('bo_walk_red','1'); localStorage.setItem('bo_tips_off','1'); ['blue','red'].forEach(r => localStorage.setItem('bo_cs_' + r, '9')); }, th);
     P.on('pageerror', e => errs.push(th + ': ' + e.message)); P.on('console', m => m.type() === 'error' && errs.push(th + ': ' + m.text()));
     const cell = (x, y) => P.locator('.cell').nth(y * 9 + x);
     const go = async role => { await P.waitForSelector('#handoff.' + role); await P.click('#hGo'); await P.waitForSelector('#actions.mine'); await P.waitForTimeout(1500); };

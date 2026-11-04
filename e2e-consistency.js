@@ -8,7 +8,7 @@ let seed = 7; const rnd = n => { seed = (seed * 16807) % 2147483647; return seed
 (async () => { const b = await webkit.launch(), errs = []; let checks = 0;
   async function game(kind, theme) {
     const c = await b.newContext({ ...devices['iPhone 13'] }), P = await c.newPage();
-    await P.addInitScript(() => { localStorage.setItem('bo_tut_seen', '1'); localStorage.setItem('bo_walk_blue','1'); localStorage.setItem('bo_walk_red','1'); localStorage.removeItem('bo_cs_red'); localStorage.removeItem('bo_cs_blue'); });
+    await P.addInitScript(() => { localStorage.setItem('bo_hs_off','1'); localStorage.setItem('bo_tut_seen', '1'); localStorage.setItem('bo_walk_blue','1'); localStorage.setItem('bo_walk_red','1'); localStorage.removeItem('bo_cs_red'); localStorage.removeItem('bo_cs_blue'); });
     P.on('pageerror', e => errs.push(e.message));
     await P.goto('http://localhost:3992/?theme=' + theme);
     if (kind === 'pass') { await P.click('#playFriend'); await P.click('#playPass'); await P.click('#hGo'); }

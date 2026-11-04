@@ -7,7 +7,7 @@ process.env.PORT = 3994; const server = require('./server.js'); const O = 'shots
   for (const theme of process.argv.slice(2).length ? process.argv.slice(2) : ['storm', 'volcano', 'comic', 'pharaoh']) {
     const t0 = Date.now();
     const mk = async () => { const c = await b.newContext({ ...devices['iPhone 13'], recordVideo: { dir: TMP, size: { width: 390, height: 664 } } }); const p = await c.newPage();
-      await p.addInitScript(t => { localStorage.setItem('bo_tut_seen', '1'); localStorage.setItem('bo_walk_blue','1'); localStorage.setItem('bo_walk_red','1'); localStorage.setItem('bo_cs_blue', '9'); localStorage.setItem('bo_cs_red', '9');
+      await p.addInitScript(t => { localStorage.setItem('bo_hs_off','1'); localStorage.setItem('bo_tut_seen', '1'); localStorage.setItem('bo_walk_blue','1'); localStorage.setItem('bo_walk_red','1'); localStorage.setItem('bo_cs_blue', '9'); localStorage.setItem('bo_cs_red', '9');
         ['hit','miss','feather','spotted','smell','fake','carry','setdown','fakebtn','vtracks','rocks'].forEach(k => localStorage.setItem('bo_tip_' + k, '1')); localStorage.setItem('bo_theme', t); }, theme); return [c, p]; };
     const [cA, A] = await mk(), [cV, V] = await mk();
     const cell = (p, x, y) => p.locator('.cell').nth(y * 9 + x), W = ms => A.waitForTimeout(ms);

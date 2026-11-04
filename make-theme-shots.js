@@ -4,7 +4,7 @@ process.env.PORT = 3997; require('./server.js'); fs.mkdirSync('shots/themes', { 
 (async () => {
   const b = await webkit.launch();
   const mk = async () => { const c = await b.newContext({ ...devices['iPhone 13'] }); const p = await c.newPage();
-    await p.addInitScript(() => { ['bo_tut_seen','bo_tut_blue','bo_tut_red'].forEach(k => localStorage.setItem(k, '1')); }); return p; };
+    await p.addInitScript(() => { localStorage.setItem('bo_hs_off','1'); ['bo_tut_seen','bo_tut_blue','bo_tut_red'].forEach(k => localStorage.setItem(k, '1')); }); return p; };
   const A = await mk(), V = await mk(), U = 'http://localhost:3997/';
   const cell = (p, x, y) => p.locator('.cell').nth(y * 9 + x);
   const myTurn = (p, t) => p.waitForFunction(t => document.getElementById('actions').textContent.includes(t), t);

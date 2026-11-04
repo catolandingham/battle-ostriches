@@ -5,7 +5,7 @@ process.env.PORT = 3990; const server = require('./server.js');
 const T = ['classic','nature','notes','golden','paper','arcade','toybox','tactical','storm','volcano','comic','pharaoh','neon'];
 (async () => { const b = await webkit.launch(), errs = [];
   for (const t of T) { const c = await b.newContext({ ...devices['iPhone 13'] }), P = await c.newPage(); P.on('pageerror', e => errs.push(e.message));
-    await P.addInitScript(() => { localStorage.setItem('bo_tut_seen', '1'); localStorage.setItem('bo_walk_blue', '1'); localStorage.setItem('bo_walk_red', '1'); localStorage.setItem('bo_tips_off', '1'); ['blue','red'].forEach(r => localStorage.setItem('bo_cs_' + r, '9')); });
+    await P.addInitScript(() => { localStorage.setItem('bo_hs_off','1'); localStorage.setItem('bo_tut_seen', '1'); localStorage.setItem('bo_walk_blue', '1'); localStorage.setItem('bo_walk_red', '1'); localStorage.setItem('bo_tips_off', '1'); ['blue','red'].forEach(r => localStorage.setItem('bo_cs_' + r, '9')); });
     await P.goto('http://localhost:3990/?theme=' + t); await P.click('#playFriend'); await P.click('#playPass'); await P.click('#hGo');
     const cell = (x, y) => P.locator('.cell').nth(y * 9 + x);
     const V = async () => { await P.waitForSelector('#handoff.red'); await P.click('#hGo'); await P.waitForSelector('#actions.mine'); };

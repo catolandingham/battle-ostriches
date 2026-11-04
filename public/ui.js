@@ -117,7 +117,7 @@ function drawWalk(){const st=WALK[wr],cur=st[wi],W=$('walk');
  W.innerHTML=`<div class="wcard"><div class="wart"><span style="width:56px;height:56px;display:inline-block">${wr==='red'?VUL:OST}</span><span style="font-size:44px">${cur[0]}</span></div><h2>${cur[1]}</h2><p id="wText">${cur[2]}</p><div class="wdots">${st.map((_,k)=>`<span class="${k===wi?'on':''}"></span>`).join('')}</div><div class="wnav"><button id="wSkip">Skip</button><button id="wNext">${wi===st.length-1?"Let's play":'Next'}</button></div></div>`;
  tapper($('wSkip'),closeWalk);tapper($('wNext'),()=>{if(wi<st.length-1){wi++;drawWalk();}else closeWalk();});}
 window.UI={walk(){walk();},rules(){$('rules').classList.remove('hidden')},closeRules(){$('rules').classList.add('hidden')},
- setMode(m){if(locked||!S||!S.myTurn)return;mode=m;if(m==='throw')coachDid('throw');render();},act(a){if(locked||!S||!S.myTurn)return;if(a==='sit'&&!(S.can&&S.can.sit))return nope(S.mustLeave?`You sat ${S.cfg.maxSit} turns in a row. Step off this turn.`:'Sit only works while you stand on an egg.');coachDid(a);send({t:'act',a})},replayCoach(){['blue','red'].forEach(r=>localStorage.removeItem('bo_cs_'+r));localStorage.removeItem('bo_tips_off');Object.keys(localStorage).filter(k=>k.startsWith('bo_tip_')).forEach(k=>localStorage.removeItem(k));if(S)render();},rematch(){holder=null;lastBy={};send({t:'act',a:'rematch'})},
+ setMode(m){if(locked||!S||!S.myTurn)return;mode=m;if(m==='throw')coachDid('throw');render();},act(a){if(locked||!S||!S.myTurn)return;if(a==='sit'&&!(S.can&&S.can.sit))return nope(S.mustLeave?`You sat ${S.cfg.maxSit} turns in a row. Step off this turn.`:'Sit only works while you stand on an egg.');coachDid(a);if(a==='sit'&&G&&G.id==='start')gSet('start','1');send({t:'act',a})},replayCoach(){Object.keys(localStorage).filter(k=>k.startsWith('bo_g_')).forEach(k=>localStorage.removeItem(k));['blue','red'].forEach(r=>localStorage.removeItem('bo_cs_'+r));localStorage.removeItem('bo_tips_off');Object.keys(localStorage).filter(k=>k.startsWith('bo_tip_')).forEach(k=>localStorage.removeItem(k));if(S)render();},rematch(){holder=null;lastBy={};send({t:'act',a:'rematch'})},
  _rr(){if(S)render();},_tip:t=>tipBar(t),_S:()=>S,_legal:()=>legalNow(),_locked:()=>locked,menu(){S=null;localStorage.removeItem('bo_me');location.href='/';}};
 // --- learn-by-playing coach marks: one hint, anchored, everything else dimmed; advances when the player does it ---
 const COACH={blue:[
@@ -161,6 +161,39 @@ function tap(x,y){if(!S||locked)return;if(Date.now()<sniffUntil){clearTimeout(ta
  coachDid(m==='carry'?'step':m);send({t:'act',a:m,p});}
 function curMode(){if(!S.myTurn)return null;if(S.role==='red')return mode||'fly';
  if(mode==='carry'&&S.can&&S.can.carry)return'carry';return S.moves.length?'step':null;}
+// --- GUIDED HARD STOPS (human ostrich only, client-side): once per device, the ostrich must DO the thing.
+// start: only moves toward an egg, then only Sit. hungry: only moves toward the nearest leaf until it eats. cold: only moves toward the coldest egg until it stands on it.
+// Server rules and the computer ostrich are untouched. Skip in tests: localStorage bo_hs_off=1.
+const gd=(a,b)=>Math.max(Math.abs(a[0]-b[0]),Math.abs(a[1]-b[1]));
+const gGet=id=>localStorage.getItem('bo_g_'+id),gSet=(id,v)=>localStorage.setItem('bo_g_'+id,v);
+let G=null;
+function guideNow(){G=null;if(!S||S.role!=='blue'||S.phase!=='play'||localStorage.getItem('bo_hs_off'))return null;const C=S.cfg,o=S.ostrich,eggs=(S.eggs||[]).map((e,i)=>Object.assign({i},e)).filter(e=>e.alive&&!e.carried&&e.pos);
+ const near=ps=>ps.reduce((b,p)=>!b||gd(p,o)<gd(b,o)?p:b,null);
+ // finish active guides
+ if(gGet('hungry')==='on'&&isF(C,key(o)))gSet('hungry','1');
+ const cv=gGet('cold');if(cv&&cv.startsWith('on:')){const e=S.eggs[+cv.slice(3)];if(!e||!e.alive||e.carried||key(e.pos)===key(o))gSet('cold','1');}
+ if(!S.myTurn)return null;
+ // start new ones (one at a time, start first)
+ if(!gGet('start')&&eggs.length)gSet('start','on');
+ if(gGet('start')!=='on'){const fd=gd(near(C.foods),o);if(!gGet('hungry')&&S.hungerLeft<=Math.max(4,fd+2))gSet('hungry','on');
+}
+ if(gGet('start')==='on'){const t=eggs.find(e=>key(e.pos)===key(o));if(t)return G={id:'start',t:o,sit:1,txt:'Sit on your egg to warm it'};
+  return G={id:'start',t:near(eggs.map(e=>e.pos)),any:eggs.map(e=>e.pos),txt:'Go to your egg and sit on it'};}
+ if(gGet('hungry')==='on')return G={id:'hungry',t:near(C.foods),txt:`You're hungry! Go eat (${S.hungerLeft} left)`};
+ return null;}
+// cold egg: NOT forced. First time any egg has <=8 rounds left: loud pulse + one-line warning until it's warmed. Afterward: subtle ring pulse only.
+const COOL=8;let W=null;
+function coolNow(){W=null;if(!S||S.role!=='blue'||S.phase!=='play')return;const eggs=(S.eggs||[]).map((e,i)=>Object.assign({i},e)).filter(e=>e.alive&&!e.carried&&e.pos);
+ const off=localStorage.getItem('bo_hs_off'),cv=gGet('cold');
+ if(cv&&cv.startsWith('on:')){const e=S.eggs[+cv.slice(3)];if(!e||!e.alive||e.carried||key(e.pos)===key(S.ostrich)||e.coldIn>COOL)gSet('cold','1');}
+ const ce=eggs.slice().sort((a,b)=>a.coldIn-b.coldIn)[0];
+ if(!off&&!gGet('cold')&&ce&&ce.coldIn<=COOL&&key(ce.pos)!==key(S.ostrich)&&gGet('start')!=='on')gSet('cold','on:'+ce.i);
+ const c=gGet('cold');const loud=!off&&c&&c.startsWith('on:')?S.eggs[+c.slice(3)]:null;
+ W={cool:new Set(eggs.filter(e=>e.coldIn<=COOL&&key(e.pos)!==key(S.ostrich)).map(e=>key(e.pos))),loud:loud?key(loud.pos):null,
+  txt:loud?`Egg cooling — ${loud.coldIn} round${loud.coldIn===1?'':'s'} left!${loud.coldIn<=4?' Hurry back!':''}`:'',urgent:loud&&loud.coldIn<=4};}
+function guideApply(){if(S&&!S._o)S._o={m:S.moves,c:S.carryMoves,cc:S.can&&S.can.carry};else if(S){S.moves=S._o.m;S.carryMoves=S._o.c;if(S.can)S.can.carry=S._o.cc;}if(!G)return;const o=S.ostrich;if(!G.t)return;const tg=G.any||[G.t],f=ms=>{const r=(ms||[]).filter(p=>tg.some(t=>gd(p,t)<gd(o,t)));return r.length||!(ms||[]).length?r:ms;};
+ if(G.sit&&S.can&&S.can.sit){S.moves=[];S.carryMoves=[];S.can.carry=false;}else{S.moves=f(S.moves);S.carryMoves=f(S.carryMoves);}
+ G.path=[];let p=o.slice();for(let k=0;k<20&&gd(p,G.t)>0;k++){p=[p[0]+Math.sign(G.t[0]-p[0]),p[1]+Math.sign(G.t[1]-p[1])];G.path.push(key(p));}}
 function render(prev){
  $('lobby').classList.add('hidden');const C=S.cfg,blue=S.role==='blue',body=document.body;body.className=blue?'blue':'red';
  $('turnTag').innerHTML=`<span style="display:inline-block;width:26px;height:26px;vertical-align:middle">${blue?OST:VUL}</span> ${blue?'OSTRICH':'VULTURE'}`;
@@ -178,6 +211,7 @@ function render(prev){
  else if(sheetOpen&&!S.ai){w.classList.remove('hidden');w.classList.add('sheet');document.body.appendChild(w);} else{w.classList.add('hidden');w.classList.remove('sheet');sheetOpen=false;}
  w.firstElementChild.nextElementSibling.textContent=waiting?'Waiting for your opponent. Send them this link:':'Room code';
  $('inviteCode').textContent=S.code;$('inviteBtn').classList.toggle('hidden',waiting||!!S.ai||S.phase==='over');$('inviteBtn').setAttribute('aria-expanded',sheetOpen);
+ guideNow();guideApply();coolNow();
  const M=curMode(),L=S.myTurn?(blue?(M==='carry'?S.carryMoves:S.moves):(M==='throw'?S.throw:S.fly)):[];
  const lk=new Set(L.map(key)),setup=blue&&(S.phase==='setupEggs'||S.phase==='setupOstrich');
  const board=$('board');board.style.gridTemplateColumns=`repeat(${C.cols},1fr)`;board.innerHTML='';
@@ -190,6 +224,8 @@ function render(prev){
  for(let y=0;y<C.rows;y++)for(let x=0;x<C.cols;x++){const k=x+','+y,d=document.createElement('div');d.className='cell';
   const m=S.marks[k];if(m)d.classList.add(m);const tags=[],tip=[];
   const legal=lk.has(k)||(setup&&(S.phase==='setupOstrich'||legalNow().some(q=>key(q)===k)));
+  if(W&&W.cool.has(k)){if(W.loud===k){d.classList.add('gloud');if(W.urgent)d.classList.add('urgent');}else d.classList.add('gcool');}
+  if(G&&G.path.includes(k))d.classList.add(k===key(G.t)?'gtarget':'gpath');
   if(legal){d.classList.add('legal');if(throwing)d.classList.add('target');tags.push(throwing?'target':'legal');}
   const maybe=!found&&!blue&&sn&&sn.yes&&inSn(k)&&!m&&k!==ok&&!isF(C,k)&&!isR(C,k);
   if(blue&&sn&&sn.yes&&inSn(k)&&m!=='hit')d.classList.add('snseen');
@@ -246,6 +282,8 @@ function render(prev){
  }
  if(!blue&&prev&&prev.turn==='red'&&la&&la.type==='throw'&&S.turn==='blue')ev=la.result==='hit'?'💥 Smash!':la.result==='bounce'?(la.egg?'Bounced! Egg under ostrich.':'Bounced! No egg.'):'Miss.';
  if(ev)h=ev+(h?' '+h:'');
+ if(W&&W.txt&&!G)h=W.txt;
+ if(G)h=G.txt;
  if(!blue&&S.phase==='play'&&S.myTurn&&S.marks[key(S.vulture)]==='spotted'&&S.stones>0)h=M==='throw'?'Tap your own square to smash the egg.':'An egg is right under you! Tap Throw stone, then your own square.';
  // just-in-time tips (once each)
  if(window.TUT&&S.phase==='play'){const T=TUT.tip;
@@ -267,7 +305,7 @@ function render(prev){
  if(CM){let an=CM.at==='board'?null:[...a.querySelectorAll('button')].find(b=>(CM.at==='sit'?/Sit/:/Throw/).test(b.textContent));
   if(an&&!an.disabled){an.classList.add('spot','pulse');}if(CM.at==='board'||(an&&!an.disabled))h=CM.txt+(h&&CM.at!=='board'?' — or '+h.charAt(0).toLowerCase()+h.slice(1):'');}
  requestAnimationFrame(()=>window.FX&&FX.update(S,prev));window.SMASH&&SMASH.update(S,prev);
- $('hint').textContent=h;$('hint').classList.toggle('empty',!h);$('log').textContent=S.joined&&!S.opponent&&S.phase!=='over'?'Opponent offline… they can rejoin with the same link.':'';
+ $('hint').textContent=h;$('hint').classList.toggle('empty',!h);$('hint').classList.toggle('guide',!!G||!!(W&&W.txt));$('hint').classList.toggle('cold',!G&&!!(W&&W.txt));$('hint').classList.toggle('urgent',!G&&!!(W&&W.urgent));$('log').textContent=S.joined&&!S.opponent&&S.phase!=='over'?'Opponent offline… they can rejoin with the same link.':'';
  const o=$('over');if(S.phase==='over'){const won=S.winner===S.role;o.classList.remove('hidden');
   o.innerHTML=`<div class="lobbybox"><div class="bigost">${S.winner==='blue'?OST:VUL}</div><h1>${S.pass?(S.winner==='blue'?'Ostrich wins!':'Vulture wins!'):won?'You win!':'You lose'}</h1>${S.ai?`<p>vs computer (${S.ai})</p>`:''}<p>${S.winner==='blue'?`The ostrich kept ${S.eggsLeft} egg(s) alive for ${C.rounds} rounds.`:S.winBy==='starved'?`The ostrich starved in round ${S.round}.`:S.winBy==='cold'?`The last egg went cold in round ${S.round}.`:`The vulture smashed every egg by round ${S.round}.`}</p><button class="big" onclick="UI.rematch()">Rematch</button><button class="big ghost" onclick="UI.menu()">Menu</button></div>`;}
  else o.classList.add('hidden');

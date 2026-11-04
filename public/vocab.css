@@ -184,3 +184,16 @@ html[data-theme] #board .cell.stone.legal:not(.target),#board .cell.stone.legal:
 /* vulture standing on a found egg: shrink the vulture to a corner so the egg shows */
 #board .cell.vfound .pc.pv,html[data-theme] #board .cell.vfound .pc.pv{left:0;top:0;width:55%;height:55%;z-index:5}
 #board .cell.vfound .ic-spot{transform:scale(1.15) translate(12%,12%)}
+/* guided hard stops: glowing path + pulsing goal + bold one-line prompt */
+html #board .cell.gpath::after,html #board .cell.gtarget::after,html #board .cell.gloud::after{content:'';position:absolute;inset:6%;border-radius:50%;pointer-events:none;z-index:45}
+html #board .cell.gpath::after{border:4px dashed #ffd23f;box-shadow:0 0 10px 2px rgba(255,210,63,.8);animation:gpath 1.2s ease-in-out infinite}
+html #board .cell.gtarget::after{inset:-4%;border:6px solid #ffd23f;box-shadow:0 0 18px 6px #ffd23f;animation:gpulse .9s ease-in-out infinite}
+@keyframes gpath{50%{opacity:.35}}
+@keyframes gpulse{50%{transform:scale(1.15);opacity:.7}}
+#hint.guide{background:#2f5a1e!important;color:#fff!important;border:3px solid #ffd23f!important;font:900 19px/1.2 system-ui,-apple-system,sans-serif!important;border-radius:14px;padding:8px 10px;text-align:center}
+#board .cell.gcool .wring{animation:gcool 1.8s ease-in-out infinite}
+@keyframes gcool{50%{opacity:.45}}
+html #board .cell.gloud::after{inset:-6%;border:6px solid #6fc8ff;box-shadow:0 0 20px 8px #6fc8ff;animation:gpulse .9s ease-in-out infinite}
+html #board .cell.gloud.urgent::after{border-color:#ff5a2a;box-shadow:0 0 24px 10px #ff5a2a;animation-duration:.55s}
+#hint.guide.cold{background:#0e4a73!important;border-color:#6fc8ff!important}
+#hint.guide.cold.urgent{background:#8a1d06!important;border-color:#ffb627!important}

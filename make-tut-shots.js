@@ -4,7 +4,7 @@ process.env.PORT = 3998; const server = require('./server.js');
 (async () => {
   const b = await webkit.launch();
   const mk = async () => { const c = await b.newContext({ ...devices['iPhone 13'] }); const p = await c.newPage();
-    await p.addInitScript(() => { localStorage.setItem('bo_tut_seen', '1'); localStorage.setItem('bo_walk_blue','1'); localStorage.setItem('bo_walk_red','1'); localStorage.setItem('bo_tut_blue', '1'); localStorage.setItem('bo_tut_red', '1'); }); return p; };
+    await p.addInitScript(() => { localStorage.setItem('bo_hs_off','1'); localStorage.setItem('bo_tut_seen', '1'); localStorage.setItem('bo_walk_blue','1'); localStorage.setItem('bo_walk_red','1'); localStorage.setItem('bo_tut_blue', '1'); localStorage.setItem('bo_tut_red', '1'); }); return p; };
   const A = await mk(), V = await mk(), U = 'http://localhost:3998/';
   const cell = (p, x, y) => p.locator('.cell').nth(y * 9 + x);
   const shot = (p, n) => p.screenshot({ path: 'public/tut/' + n + '.png' });

@@ -4,7 +4,7 @@ process.env.PORT = 3996; const server = require('./server.js');
 (async () => {
   const b = await webkit.launch(); const U = 'http://localhost:3996/', O = 'shots/onboarding/';
   const mk = async (seed) => { const c = await b.newContext({ ...devices['iPhone 13'] }); const p = await c.newPage();
-    await p.addInitScript(s => { for (const k of s) localStorage.setItem(k, '1'); }, seed); return p; };
+    await p.addInitScript(s => { localStorage.setItem('bo_hs_off','1'); for (const k of s) localStorage.setItem(k, '1'); }, seed); return p; };
   const tips = ['hit','feather','spotted','smell','fake','carry','setdown','fakebtn','vtracks','rocks'].map(t => 'bo_tip_' + t);
   const I = await mk([]); await I.goto(U); await I.waitForSelector('#tut:not(.hidden)');
   for (let k = 1; k <= 3; k++) { await I.waitForTimeout(150); await I.screenshot({ path: O + `intro-${k}.png` }); if (k < 3) await I.click('#tutNext'); }
