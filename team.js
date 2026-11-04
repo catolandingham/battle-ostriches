@@ -9,7 +9,7 @@ const mate = s => ({ o1: 'o2', o2: 'o1', v1: 'v2', v2: 'v1' })[s];
 function newTeam(n, kind, cfg = B.CONFIG, hstart) {
   const g = { team: true, n: n === 5 ? 5 : 4, cfg: { ...cfg, eggs: TM.eggs }, phase: 'setup', round: 1, turn: null, eggs: [], marks: {}, winner: null, winBy: null,
     order: n === 5 ? ['v1', 'o1', 'v2', 'o2', 'hunter'] : ['v1', 'o1', 'v2', 'o2'], b: {}, sniffs: {}, lastAction: null, lastCold: [], seq: 0, lastCatch: null, lost: null,
-    h: n === 5 ? { kind: kind === 'badger' || kind === 'hyena' ? kind : null, p: (hstart || TM.hStarts[Math.random() * 2 | 0]).slice(), burrowed: false, pounce: false,
+    h: n === 5 ? { kind: kind === 'badger' || kind === 'hyena' ? kind : null, p: (hstart || TM.hStarts[Math.random() * 2 | 0]).slice(), burrowed: false, dig: 0, pounce: false,
       sense: null, senseSeq: 0, kos: { o: 0, v: 0 }, last: null } : null };
   VS.forEach((s, i) => g.b[s] = { pos: TM.vStarts[i].slice(), stones: cfg.stones, out: false, why: null, catches: 0, skip: 0 });
   OS.forEach((s, i) => g.b[s] = { pos: null, nest: i, hunger: cfg.food, sitRun: 0, carrying: null, out: false, why: null, catches: 0, skip: 0 });
@@ -123,7 +123,7 @@ function hunterMoves(g) {
 function startHunter(g) { const h = g.h; h.pounce = false; h.sense = senses(g); h.senseSeq++; }
 function hunterMove(g, p) {
   if (!hunterMoves(g).some(q => K(q) === K(p))) return false;
-  const h = g.h, from = h.p.slice(), wasP = h.pounce; h.p = p.slice(); h.burrowed = false; let caught = false;
+  const h = g.h, from = h.p.slice(), wasP = h.pounce; h.p = p.slice(); h.burrowed = false; h.dig = 0; let caught = false;
   for (const s of birdsIn(g)) if (g.phase === 'play' && K(g.b[s].pos) === K(p)) { catchBird(g, s, [sgn(p[0] - from[0]), sgn(p[1] - from[1])]); caught = true; }
   h.last = { type: 'move', from, to: p.slice(), caught, pounce: wasP };
   if (g.phase === 'over') return true;
@@ -132,7 +132,7 @@ function hunterMove(g, p) {
 }
 function hunterStay(g) {
   if (!myTurn(g, 'hunter')) return false;
-  const h = g.h; if (!h.pounce && h.kind === 'badger') h.burrowed = true;
+  const h = g.h; if (!h.pounce && h.kind === 'badger') { h.dig = Math.min(2, (h.dig || 0) + 1); h.burrowed = h.dig >= 2; } // 2 still turns to dig in
   h.last = { type: h.pounce ? 'skip' : 'stay' }; h.pounce = false; next(g); return true;
 }
 // --- catches, knock-outs, game end ---

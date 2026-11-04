@@ -1,4 +1,4 @@
-// Guided ostrich hard stops: at start only moves toward an egg then Sit; first low food -> only moves toward a leaf; first cold egg -> only moves back to it. Once each.
+// Ostrich guides: start = one-time non-restrictive tip; first low food -> only moves toward a leaf; first cold egg -> only moves back to it. Once each.
 // Saves JPEG iPhone screenshots to shots/hardstop/.
 const { webkit, devices } = require('playwright-core');
 const assert = require('assert'), fs = require('fs');
@@ -9,7 +9,7 @@ const OUT = 'shots/hardstop/'; fs.mkdirSync(OUT, { recursive: true });
   const mk = async () => { const c = await b.newContext({ ...devices['iPhone 13'] }); const p = await c.newPage(); await p.addInitScript(() => { localStorage.setItem('bo_tut_seen', '1'); localStorage.setItem('bo_walk_blue','1'); localStorage.setItem('bo_walk_red','1'); localStorage.setItem('bo_tips_off','1'); ['blue', 'red'].forEach(r => localStorage.setItem('bo_cs_' + r, '9')); }); p.on('pageerror', e => errs.push(e.message)); return p; };
   const A = await mk(), V = await mk(); const U = 'http://localhost:3998/';
   const cell = (p, x, y) => p.locator('.cell').nth(y * 9 + x);
-  await A.goto(U); await A.click('#playFriend'); await A.click('#twoPhones'); await A.click('#roleBlue'); await A.waitForSelector('#shareCode:not(:empty)');
+  await A.goto(U); await A.click('#playFriend'); await A.click('#twoPhones'); await A.waitForSelector('#shareCode:not(:empty)');
   const link = await A.inputValue('#shareLink');
   await V.goto(link.replace(/^http:\/\/[^/]+/, 'http://localhost:3998')); await V.waitForSelector('#board .cell');
   await A.waitForFunction(() => document.getElementById('wait').classList.contains('hidden'));
@@ -20,16 +20,15 @@ const OUT = 'shots/hardstop/'; fs.mkdirSync(OUT, { recursive: true });
   const vfly = async (x, y) => { await V.waitForSelector('#actions.mine'); await cell(V, x, y).click(); await A.waitForSelector('#actions.mine'); await A.waitForTimeout(150); };
   await vfly(4, 2);
   assert.ok(!(await V.locator('#hint.guide').count()), 'vulture never guided');
-  // 1) start: only moves toward the nearest egg (6,2)
-  assert.match(await A.textContent('#hint'), /Go to your egg/); let L = await legal();
-  assert.ok(L.length >= 1 && L.every(p => [[3, 4], [6, 2], [2, 1]].some(e => gd(p, e) < gd([7, 5], e))), 'start: only closer moves ' + JSON.stringify(L));
-  assert.ok(await A.locator('.cell.gpath').count() >= 1 && await A.locator('.cell.gtarget').count() === 1, 'glowing path');
-  await shot('1-start-go-to-egg.jpg');
-  await cell(A, 6, 4).click(); await vfly(4, 1); await cell(A, 6, 3).click(); await vfly(4, 0); await cell(A, 6, 2).click(); await vfly(4, 1);
-  assert.match(await A.textContent('#hint'), /Sit on your egg/); assert.equal((await legal()).length, 0, 'on egg: no steps, only Sit');
-  assert.ok(await A.locator('#actions button:has-text("Carry")').isDisabled(), 'carry off'); await shot('2-start-sit-on-egg.jpg');
-  await A.click('#actions button:has-text("Sit")'); await vfly(4, 0);
-  assert.ok(!(await A.locator('#hint.guide').count()), 'start released after sitting'); assert.ok((await legal()).length >= 3, 'free play');
+  // 1) start: a one-time TIP only. No path/pulse toward any egg (would reveal it to an onlooker) and no move restriction.
+  assert.match(await A.textContent('#hint'), /sit on eggs to keep them warm/i); let L = await legal();
+  const allMoves = await A.evaluate(() => UI._S()._o ? UI._S()._o.m : UI._S().moves);
+  assert.deepEqual(L.map(String).sort(), allMoves.map(String).sort(), 'start tip does not restrict moves'); assert.ok(L.length >= 3, 'free moves ' + JSON.stringify(L));
+  assert.equal(await A.locator('.cell.gpath,.cell.gtarget').count(), 0, 'no path toward an egg');
+  await shot('1-start-tip.jpg');
+  await cell(A, 6, 4).click(); await vfly(4, 1);
+  assert.ok(!(await A.locator('#hint.guide').count()) || !/sit on eggs/i.test(await A.textContent('#hint')), 'tip shows once'); assert.ok((await legal()).length >= 3, 'free play');
+  await cell(A, 6, 3).click(); await vfly(4, 0);
   // 2) first low food: only moves toward the nearest leaf
   await A.evaluate(() => { UI._S().hungerLeft = 4; UI._rr(); }); assert.match(await A.textContent('#hint'), /hungry! Go eat/);
   const o = await A.evaluate(() => UI._S().ostrich), food = [[0, 0], [8, 6]].sort((a, b) => gd(a, o) - gd(b, o))[0];

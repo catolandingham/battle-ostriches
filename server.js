@@ -1,7 +1,7 @@
 // Battle Ostriches online server: serves public/ and runs authoritative games over WebSocket.
 const http = require('http'), fs = require('fs'), path = require('path');
 const { WebSocketServer } = require('ws');
-const B = require('./game.js'), AI = require('./ai.js'), T = require('./three.js');
+const B = require('./game.js'), AI = require('./ai.js'), T = require('./three.js'), HU = require('./hunt.js'), HA = require('./huntai.js');
 const PORT = process.env.PORT || 3000, PUB = path.join(__dirname, 'public');
 const TYPES = { '.html': 'text/html', '.css': 'text/css', '.js': 'application/javascript', '.svg': 'image/svg+xml', '.mp4': 'video/mp4', '.jpg': 'image/jpeg', '.png': 'image/png' };
 const server = http.createServer((req, res) => {
@@ -24,6 +24,7 @@ const rooms = new Map(); // code -> {g, players:{blue:{ws,token},red:{ws,token}}
 const code = () => { let c; do { c = Array.from({ length: 4 }, () => 'ABCDEFGHJKLMNPQRSTUVWXYZ'[Math.random() * 24 | 0]).join(''); } while (rooms.has(c)); return c; };
 const tok = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
 function view(room, role) {
+  if (room.hunt) return viewH(room, role);
   if (room.team) return viewT(room, role);
   if (room.three) return view3(room, role);
   const g = room.g, mine = g.phase === 'play' && g.turn === role, pub = AI.redView(g);
@@ -44,10 +45,11 @@ function view(room, role) {
   return v;
 }
 const active = g => g.phase === 'play' ? g.turn : 'blue'; // pass & play: whose hands the phone is in
-function broadcast(room) { if (room.team) return broadcastT(room); if (room.three) return broadcast3(room); schedAI(room);
+function broadcast(room) { if (room.hunt) return broadcastH(room); if (room.team) return broadcastT(room); if (room.three) return broadcast3(room); schedAI(room);
   if (room.pass) { const p = room.players.blue; if (p && p.ws && p.ws.readyState === 1) p.ws.send(JSON.stringify({ t: 'state', pass: true, active: active(room.g), views: { blue: view(room, 'blue'), red: view(room, 'red') } })); return; }
   for (const r of ['blue', 'red']) { const p = room.players[r]; if (p && p.ws && p.ws.readyState === 1) p.ws.send(JSON.stringify({ t: 'state', state: view(room, r) })); } }
 function act(room, role, m) {
+  if (room.hunt) return actH(room, role, m);
   if (room.team) return actT(room, role, m);
   if (room.three) return act3(room, role, m);
   const g = room.g, p = m.p;
@@ -100,7 +102,7 @@ function view3(room, role) {
     v = { role, code: room.code, phase: g.phase, turn: g.turn, round: g.round, cfg: g.cfg, winner: g.winner, winBy: g.winBy, eggsLeft: B.aliveEggs(g).length,
       marks: pub.marks, vulture: over ? g.vulture : T.OFF, ostrich: over ? g.ostrich : T.OFF, stones: g.stones, hungerLeft: g.hungerLeft, sniff: null, sitRun: 0, carried: false,
       lastAction: null, lastCold: 0, myTurn: mine, opponent: true, joined: SEATS3.every(s => room.players[s]), ai: null, pass: false,
-      hunter: t.h, kind: t.kind, sense: g.turn === 'hunter' || t.pounce ? t.sense : null, senseSeq: t.senseSeq, senseRange: T.T3.sense, pounce: t.pounce, burrowed: t.burrowed,
+      hunter: t.h, kind: t.kind, sense: g.turn === 'hunter' || t.pounce ? t.sense : null, senseSeq: t.senseSeq, senseRange: T.T3.sense, pounce: t.pounce, burrowed: t.burrowed, dig: t.dig || 0,
       hmoves: mine ? T.hunterMoves(g) : [], lastHunter: t.lastHunter };
     if (over) v.eggs = g.eggs.map(e => ({ pos: e.pos, alive: e.alive, coldIn: B.coldIn(g, e), carried: false }));
   } else {
@@ -196,7 +198,7 @@ function viewT(room, seat) {
     lastCold: (g.lastCold || []).length, myTurn: mine, opponent: true, joined: tseats(g).every(s => room.players[s]), ai: null, pass: false, three: true, h3 };
   if (seat === 'hunter') return Object.assign(base, { role: 'hunter', phase: setup ? 'setupEggs' : g.phase, cfg: g.cfg, vulture: TT.OFF, ostrich: TT.OFF, stones: Math.max(0, ...TT.VS.filter(x => !g.b[x].out).map(x => g.b[x].stones)), hungerLeft: Math.min(g.cfg.food, ...TT.OS.filter(x => !g.b[x].out).map(x => g.b[x].hunger)), sniff: null,
     sitRun: 0, carried: false, lastAction: null, hunter: g.h.p, kind: g.h.kind, sense: g.turn === 'hunter' || g.h.pounce ? g.h.sense : null, senseSeq: g.h.senseSeq,
-    senseRange: TT.TM.sense, pounce: g.h.pounce, burrowed: g.h.burrowed, hmoves: mine ? TT.hunterMoves(g) : [], lastHunter: g.h.last, eggs: over ? eggs() : undefined });
+    senseRange: TT.TM.sense, pounce: g.h.pounce, burrowed: g.h.burrowed, dig: g.h.dig || 0, hmoves: mine ? TT.hunterMoves(g) : [], lastHunter: g.h.last, eggs: over ? eggs() : undefined });
   const la = g.lastAction && (isO || over || g.lastAction.type !== 'throw' ? g.lastAction : { type: 'throw', from: g.lastAction.from, p: g.lastAction.p, result: g.lastAction.result, egg: !!g.lastAction.egg });
   const v = Object.assign(base, { role: isO ? 'blue' : 'red', phase: setup ? (isO ? (step === 'eggs' ? 'setupEggs' : step === 'ostrich' ? 'setupOstrich' : 'play') : 'setupEggs') : g.phase,
     cfg: { ...g.cfg, eggs: isO && setup ? g.eggs.length + (TT.TM.eggs - TT.nestOf(g, seat).length) : g.cfg.eggs * 2 },
@@ -249,6 +251,75 @@ function clockT(room) {
   room.deadline = Date.now() + ms;
   room.clockT = setTimeout(() => { if (room.clockKey !== k || room.g !== g) return; room.clockKey = null; TT.timeout(g); room.touched = Date.now(); broadcast(room); }, ms);
 }
+
+// ===== 4 players "Hunters": ostrich (blue) + vulture (red) + hyena + honey badger. Rules in hunt.js, bots in huntai.js. =====
+const SEATSH = ['blue', 'red', 'hyena', 'badger'];
+const startH = () => process.env.BO_H4START ? (a => [a.slice(0, 2), a.slice(2, 4)])(process.env.BO_H4START.split(',').map(Number)) : undefined;
+function createH(m, ws) {
+  const c = code(), role = SEATSH.includes(m.role) ? m.role : 'blue', token = tok();
+  const room = { code: c, hunt: true, g: HU.newHunt(undefined, startH()), players: { blue: null, red: null, hyena: null, badger: null }, bots: [],
+    level: m.level === 'easy' ? 'easy' : 'normal', mem: {}, touched: Date.now() };
+  room.players[role] = { ws, token };
+  for (const b of m.bots || []) if (SEATSH.includes(b) && b !== role) { room.bots.push(b); room.players[b] = { ws: null, token: tok(), bot: true }; }
+  rooms.set(c, room); return { room, role, token };
+}
+const readyH = room => SEATSH.every(s => room.players[s]);
+function viewH(room, seat) {
+  const g = room.g, t = g.hunt, over = g.phase === 'over', pub = AI.redView(g), mine = g.phase === 'play' && g.turn === seat && readyH(room), isH = HU.isH(seat);
+  const seats = Object.fromEntries(SEATSH.map(s => [s, room.bots.includes(s) ? 'bot' : room.players[s] ? (room.players[s].ws ? 'on' : 'off') : 'open']));
+  const lc = t.lastCatch && { bird: t.lastCatch.bird, by: t.lastCatch.by, ko: t.lastCatch.ko, seq: t.lastCatch.seq, round: t.lastCatch.round,
+    at: seat === t.lastCatch.bird || seat === t.lastCatch.by || over ? t.lastCatch.at : null, to: seat === t.lastCatch.bird || over ? t.lastCatch.to : null };
+  const hunters = HU.HUNTERS.filter(h => over || HU.seen(g, seat, h)).map(h => ({ kind: h, p: t.hs[h].p, burrowed: (h === seat || over) && t.hs[h].burrowed, me: h === seat }));
+  const rv = t.rival && { by: t.rival.by, seq: t.rival.seq, round: t.rival.round, to: isH || over ? t.rival.to : null };
+  const h3 = Object.assign(HU.statusH(g), { seats, ready: readyH(room), needKind: false, kind: isH ? seat : null, mySeat: seat, hunters, hunter: null, burrowed: false,
+    lastCatch: lc, rival: rv, lost: t.lost || null, clockLeft: room.deadline && g.phase === 'play' ? Math.max(0, room.deadline - Date.now()) : null, clockMs: HU.TH.clockMs,
+    senseRange: HU.TH.sense, range: 1 });
+  let v;
+  if (isH) { const x = t.hs[seat];
+    v = { role: 'hunter', code: room.code, phase: g.phase, turn: HU.isH(g.turn) ? (g.turn === seat ? 'hunter' : g.turn) : g.turn, round: g.round, cfg: g.cfg, winner: g.winner, winBy: g.winBy,
+      eggsLeft: B.aliveEggs(g).length, marks: pub.marks, vulture: over ? g.vulture : HU.OFF, ostrich: over ? g.ostrich : HU.OFF, stones: g.stones, hungerLeft: g.hungerLeft,
+      sniff: null, sitRun: 0, carried: false, lastAction: null, lastCold: 0, myTurn: mine, opponent: true, joined: readyH(room), ai: null, pass: false,
+      hunter: x.p, kind: seat, sense: g.turn === seat ? x.sense : null, senseSeq: x.senseSeq, senseRange: HU.TH.sense, pounce: x.pounce, burrowed: x.burrowed, dig: x.dig,
+      hmoves: mine ? HU.hunterMoves(g, seat) : [], lastHunter: x.last };
+    if (over) v.eggs = g.eggs.map(e => ({ pos: e.pos, alive: e.alive, coldIn: B.coldIn(g, e), carried: false }));
+  } else {
+    const sub = { ...room, hunt: false, three: false, ai: room.bots.length ? 'bot' : null, players: room.players };
+    v = view(sub, seat); v.myTurn = mine; v.joined = readyH(room); v.ai = null;
+    if (seat === 'blue' && !mine) { v.moves = []; v.carryMoves = []; v.can = { sit: false, carry: false }; }
+    if (seat === 'red' && !mine) { v.fly = []; v.throw = []; }
+    if (g.phase === 'play' && HU.isOut(g, seat)) { v.myTurn = false; v.moves = []; v.carryMoves = []; v.fly = []; v.throw = []; }
+  }
+  v.h3 = h3; v.three = true; return v;
+}
+function broadcastH(room) {
+  schedH(room); clockH(room);
+  for (const r of SEATSH) { const p = room.players[r]; if (p && p.ws && p.ws.readyState === 1) p.ws.send(JSON.stringify({ t: 'state', state: viewH(room, r) })); }
+}
+function actH(room, seat, m) {
+  const g = room.g;
+  if (m.a === 'rematch' && g.phase === 'over') { room.g = HU.newHunt(undefined, startH()); room.mem = {}; return true; }
+  if (g.phase === 'play' && !readyH(room)) return false;
+  if (seat !== 'blue' && g.phase !== 'play') return false;
+  return HA.act(g, seat, m);
+}
+function schedH(room) {
+  const g = room.g; if (room.aiT || !room.bots.length) return;
+  const r = g.phase.startsWith('setup') ? 'blue' : g.phase === 'play' ? g.turn : null;
+  if (!r || !room.bots.includes(r) || (g.phase === 'play' && !readyH(room))) return;
+  const key = g.phase + g.round + g.turn, delay = g.phase.startsWith('setup') ? 250 : (+process.env.BO_BOTMS || 800 + Math.random() * 700);
+  room.aiT = setTimeout(() => { room.aiT = null; if (!rooms.has(room.code) || room.g !== g || g.phase + g.round + g.turn !== key) return broadcast(room);
+    const m = HA.move(g, r, room.mem[r] || (room.mem[r] = {}), room.level);
+    if (!actH(room, r, m)) { console.error('AI hunt illegal move', r, m); if (g.phase === 'play') HU.timeout(g); }
+    room.touched = Date.now(); broadcast(room); }, delay);
+}
+function clockH(room) {
+  const g = room.g, k = g.phase === 'play' && readyH(room) ? g.round + ':' + g.turn + ':' + (HU.isH(g.turn) ? g.hunt.hs[g.turn].senseSeq : '') : null;
+  if (k === room.clockKey) return;
+  clearTimeout(room.clockT); room.clockKey = k; room.deadline = null; if (!k) return;
+  const ms = +process.env.BO_CLOCKMS || HU.TH.clockMs;
+  room.deadline = Date.now() + ms;
+  room.clockT = setTimeout(() => { if (room.clockKey !== k || room.g !== g) return; room.clockKey = null; HU.timeout(g); room.touched = Date.now(); broadcast(room); }, ms);
+}
 const wss = new WebSocketServer({ server, path: '/ws' });
 wss.on('connection', ws => {
   ws.isAlive = true; ws.on('pong', () => { ws.isAlive = true; });
@@ -257,6 +328,7 @@ wss.on('connection', ws => {
   ws.on('message', raw => {
     let m; try { m = JSON.parse(raw); } catch { return; }
     if (m.t === 'ping') return send({ t: 'pong' });
+    if (m.t === 'create' && m.hunt) { const rh = createH(m, ws); room = rh.room; role = rh.role; send({ t: 'joined', code: room.code, role: HU.isH(role) ? 'hunter' : role, token: rh.token, three: true }); return broadcast(room); }
     if (m.t === 'create' && m.team) { const rt = createT(m, ws); room = rt.room; role = rt.role; send({ t: 'joined', code: room.code, role, token: rt.token, team: room.n }); return broadcast(room); }
     if (m.t === 'create' && m.three) { const r3 = create3(m, ws); room = r3.room; role = r3.role; send({ t: 'joined', code: room.code, role, token: r3.token, three: true }); return broadcast(room); }
     if (m.t === 'create') {
@@ -270,24 +342,32 @@ wss.on('connection', ws => {
     if (m.t === 'join') {
       const r = rooms.get(String(m.code || '').toUpperCase()); if (!r) return send({ t: 'error', msg: 'No game with that code.' });
       // reconnect with token, else take the free seat
-      const SEATS = r.team ? ['o1', 'v1', 'o2', 'v2', 'hunter'].filter(x => x in r.players) : r.three ? ['blue', 'red', 'hunter'] : ['blue', 'red'];
+      const SEATS = r.hunt ? SEATSH : r.team ? ['o1', 'v1', 'o2', 'v2', 'hunter'].filter(x => x in r.players) : r.three ? ['blue', 'red', 'hunter'] : ['blue', 'red'];
       let seat = SEATS.find(s => r.players[s] && m.token && r.players[s].token === m.token);
       if (!seat) seat = SEATS.find(s => !r.players[s]);
-      if (!seat) return send({ t: 'error', msg: r.team ? `That game already has ${r.n} players.` : r.three ? 'That game already has three players.' : r.ai ? 'That is a single-player game.' : 'That game already has two players.' });
+      if (!seat) return send({ t: 'error', msg: r.hunt ? 'That game already has 4 players.' : r.team ? `That game already has ${r.n} players.` : r.three ? 'That game already has three players.' : r.ai ? 'That is a single-player game.' : 'That game already has two players.' });
       if (r.pass) { if (!m.token || r.players.blue.token !== m.token) return send({ t: 'error', msg: 'That is a pass & play game on another phone.' });
         room = r; role = 'blue'; r.players.blue.ws = r.players.red.ws = ws; r.touched = Date.now(); send({ t: 'joined', code: r.code, role, token: m.token, pass: true }); return broadcast(r); }
       room = r; role = seat; const token = r.players[seat] ? r.players[seat].token : tok();
       r.players[seat] = { ws, token }; r.touched = Date.now();
-      send({ t: 'joined', code: r.code, role, token }); return broadcast(r);
+      send({ t: 'joined', code: r.code, role: r.hunt && HU.isH(role) ? 'hunter' : role, token }); return broadcast(r);
+    }
+    // share first, pick a seat after: before anyone has moved, the creator may switch to any seat that is still open
+    if (m.t === 'seat' && room && !room.pass && !room.ai) {
+      const g = room.g, fresh = room.team ? g.phase === 'setup' && !g.eggs.length : g.phase === 'setupEggs' && !g.eggs.length;
+      const to = m.role; const SE = room.hunt ? SEATSH : room.team ? Object.keys(room.players) : room.three ? SEATS3 : ['blue', 'red'];
+      if (!fresh || !SE.includes(to) || room.players[to] || (room.bots || []).includes(to) || !room.players[role] || room.players[role].ws !== ws) return send({ t: 'error', msg: 'That seat is taken.', soft: true });
+      room.players[to] = room.players[role]; room.players[role] = null; role = to;
+      send({ t: 'joined', code: room.code, role: room.hunt && HU.isH(role) ? 'hunter' : role, token: room.players[to].token, seat: true }); room.touched = Date.now(); return broadcast(room);
     }
     if (m.t === 'act' && room) {
       if (act(room, room.pass ? (m.a === 'rematch' ? 'blue' : active(room.g)) : role, m)) { room.touched = Date.now(); broadcast(room); }
       else send({ t: 'error', msg: 'Not a legal move right now.', soft: true });
     }
   });
-  ws.on('close', () => { if (room && (room.three || room.team)) { if (room.players[role] && room.players[role].ws === ws) { room.players[role].ws = null; broadcast(room); } return; } if (room && room.pass) { for (const s of ['blue', 'red']) if (room.players[s].ws === ws) room.players[s].ws = null; return; } if (room && room.players[role] && room.players[role].ws === ws) { room.players[role].ws = null; broadcast(room); } });
+  ws.on('close', () => { if (room && (room.three || room.team || room.hunt)) { if (room.players[role] && room.players[role].ws === ws) { room.players[role].ws = null; broadcast(room); } return; } if (room && room.pass) { for (const s of ['blue', 'red']) if (room.players[s].ws === ws) room.players[s].ws = null; return; } if (room && room.players[role] && room.players[role].ws === ws) { room.players[role].ws = null; broadcast(room); } });
 });
 setInterval(() => { for (const c of wss.clients) { if (!c.isAlive) { c.terminate(); continue; } c.isAlive = false; try { c.ping(); } catch {} } }, 25000).unref();
 setInterval(() => { const now = Date.now(); for (const [c, r] of rooms) if (now - r.touched > 6 * 3600e3) rooms.delete(c); }, 600e3).unref();
 server.listen(PORT, () => console.log('Battle Ostriches on http://localhost:' + PORT));
-module.exports = server; server.view3 = view3; server.create3 = create3; server.viewT = viewT; server.createT = createT; server.rooms = rooms; server.broadcast = broadcast;
+module.exports = server; server.view3 = view3; server.create3 = create3; server.viewT = viewT; server.createT = createT; server.viewH = viewH; server.createH = createH; server.rooms = rooms; server.broadcast = broadcast;

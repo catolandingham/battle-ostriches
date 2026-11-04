@@ -7,7 +7,7 @@ const sgn = Math.sign;
 function newGame3(kind, cfg = B.CONFIG, start) {
   const g = B.newGame(cfg);
   g.three = { kind: kind === 'badger' ? 'badger' : kind === 'hyena' ? 'hyena' : null, h: (start || T3.starts[Math.random() * 2 | 0]).slice(),
-    burrowed: false, pounce: false, sense: null, senseSeq: 0, seq: 0, lastCatch: null, lastHunter: null,
+    burrowed: false, dig: 0, pounce: false, sense: null, senseSeq: 0, seq: 0, lastCatch: null, lastHunter: null,
     birds: { red: { out: false, catches: 0, skip: 0, why: null }, blue: { out: false, catches: 0, skip: 0, why: null } } };
   return g;
 }
@@ -95,7 +95,7 @@ function hunterMoves(g) {
 }
 function hunterMove(g, p) {
   if (!hunterMoves(g).some(q => K(q) === K(p))) return false;
-  const t = g.three, from = t.h.slice(), wasP = t.pounce; t.h = p.slice(); t.burrowed = false;
+  const t = g.three, from = t.h.slice(), wasP = t.pounce; t.h = p.slice(); t.burrowed = false; t.dig = 0;
   let caught = false;
   for (const b of BIRDS) if (g.phase === 'play' && !isOut(g, b) && K(pos(g, b)) === K(p)) { catchBird(g, b, [sgn(p[0] - from[0]), sgn(p[1] - from[1])]); caught = true; }
   t.lastHunter = { type: 'move', from, to: p.slice(), caught, pounce: wasP };
@@ -106,7 +106,7 @@ function hunterMove(g, p) {
 }
 function hunterStay(g) { // badger: staying still burrows it (invisible to birds). During a pounce: skip the extra move.
   if (g.phase !== 'play' || g.turn !== 'hunter') return false;
-  const t = g.three; if (!t.pounce && t.kind === 'badger') t.burrowed = true;
+  const t = g.three; if (!t.pounce && t.kind === 'badger') { t.dig = Math.min(2, (t.dig || 0) + 1); t.burrowed = t.dig >= 2; } // 2 still turns to dig in
   t.lastHunter = { type: t.pounce ? 'skip' : 'stay' }; endHunter(g); return true;
 }
 // shot clock ran out: the current player's turn ends (vulture passes, ostrich stays put, hunter stays put)

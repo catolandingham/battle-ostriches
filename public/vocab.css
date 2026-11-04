@@ -183,7 +183,6 @@ html[data-theme] #board .cell.stone.legal:not(.target),#board .cell.stone.legal:
 #board .cell.both .pc.po,html[data-theme] #board .cell.both .pc.po{left:40%;top:40%;width:60%;height:60%;z-index:6}
 /* vulture standing on a found egg: shrink the vulture to a corner so the egg shows */
 #board .cell.vfound .pc.pv,html[data-theme] #board .cell.vfound .pc.pv{left:0;top:0;width:55%;height:55%;z-index:5}
-#board .cell.vfound .ic-spot{transform:scale(1.15) translate(12%,12%)}
 /* guided hard stops: glowing path + pulsing goal + bold one-line prompt */
 html #board .cell.gpath::after,html #board .cell.gtarget::after,html #board .cell.gloud::after{content:'';position:absolute;inset:6%;border-radius:50%;pointer-events:none;z-index:45}
 html #board .cell.gpath::after{border:4px dashed #ffd23f;box-shadow:0 0 10px 2px rgba(255,210,63,.8);animation:gpath 1.2s ease-in-out infinite}
@@ -205,3 +204,15 @@ html #board .cell:is(.gloud,.gcool) .wnum,html[data-theme] #board .cell:is(.glou
 #hint.guide.cold{background:#0e4a73!important;border-color:#6fc8ff!important}
 #hint.guide.cold.urgent{background:#8a1d06!important;border-color:#ffb627!important}
 #hint .skipguide{display:block;margin:6px auto 0;background:rgba(255,255,255,.15)!important;color:#fff!important;border:2px solid rgba(255,255,255,.7)!important;border-radius:999px!important;font:800 14px/1 system-ui,-apple-system,sans-serif!important;padding:6px 12px!important;box-shadow:none!important;min-height:0!important;width:auto!important}
+/* reserved space: the hint box keeps 2 lines so banners/turn text never shift the board; the 3P+ clock keeps its slot when idle */
+#hint,#hint.guide{min-height:64px;display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:6px;box-sizing:border-box}
+body.three #clock3.hidden{display:block;visibility:hidden}
+body.red #banner.hidden,body.blue #banner.hidden,body.hunter #banner.hidden{display:block!important;visibility:hidden}
+body.red #banner,body.blue #banner,body.hunter #banner{min-height:44px;box-sizing:border-box}
+#board .cell.vfound .ic-myegg,#board .cell.vfound .ic-spot{position:absolute;left:38%;top:38%;width:62%;height:62%;transform:none!important;z-index:6}
+/* sitting ostrich protects its egg (ostrich's own view only) */
+#board .cell .shield{position:absolute;right:-4px;top:-6px;font-size:clamp(14px,4.6vw,22px);z-index:8;filter:drop-shadow(0 1px 0 #000);pointer-events:none}
+/* vulture out of stones: rock piles call out */
+#board .cell.rockcall{box-shadow:inset 0 0 0 4px #e6e9ee,0 0 14px 4px #e6e9ee!important;animation:rockc 1s ease-in-out infinite alternate}
+@keyframes rockc{to{box-shadow:inset 0 0 0 4px #fff,0 0 22px 8px #fff}}
+#hint.myturn{border-color:#ffd21f!important;box-shadow:0 0 0 3px #ffd21f,0 0 16px 2px #ffd21f88!important;animation:myturn 1.2s ease-in-out 2}@keyframes myturn{50%{box-shadow:0 0 0 5px #ffd21f,0 0 26px 6px #ffd21f}}

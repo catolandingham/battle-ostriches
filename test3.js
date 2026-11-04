@@ -14,7 +14,7 @@ t('hunter moves 1 square, cannot reach 2', () => { const g = setup(); T.vultureF
 t('sense: yes/no only when a bird is within 2', () => { const g = setup(); T.vultureFly3(g, [4, 1]); T.ostrichAct3(g, 'step', [5, 5]); assert.equal(g.three.sense, false);
   const h = setup(); T.vultureFly3(h, [6, 3]); T.ostrichAct3(h, 'step', [5, 5]); assert.equal(h.three.sense, true); });
 t('birds see the hunter only within 2; never a burrowed badger', () => { const g = setup('badger'); assert(!T.hunterSeenBy(g, 'red')); T.vultureFly3(g, [6, 3]); assert(T.hunterSeenBy(g, 'red'));
-  T.ostrichAct3(g, 'step', [7, 5]); assert(T.hunterSeenBy(g, 'blue')); assert(T.hunterStay(g)); assert(g.three.burrowed); assert(!T.hunterSeenBy(g, 'red')); assert(!T.hunterSeenBy(g, 'blue')); });
+  T.ostrichAct3(g, 'step', [7, 5]); assert(T.hunterSeenBy(g, 'blue')); g.three.dig = 1; assert(T.hunterStay(g)); assert(g.three.burrowed); assert(!T.hunterSeenBy(g, 'red')); assert(!T.hunterSeenBy(g, 'blue')); });
 t('hunter landing on a bird catches it: knocked back 2 away, loses its next turn', () => { const g = setup(); T.vultureFly3(g, [4, 1]); T.ostrichAct3(g, 'step', [7, 4]);
   assert(T.hunterMove(g, [7, 4])); const st = g.three.birds.blue; assert.equal(st.catches, 1); assert.deepEqual(g.ostrich, [5, 6]); assert.equal(B.dist(g.ostrich, [7, 4]), 2);
   assert.equal(g.three.lastCatch.bird, 'blue'); assert.equal(g.turn, 'red'); T.vultureFly3(g, [4, 3]); assert.equal(g.turn, 'hunter', 'ostrich turn lost'); assert.equal(st.skip, 0); });
@@ -34,7 +34,7 @@ t('hyena pounce: sense yes -> one extra 1-square move the same turn; sense no ->
   const h = setup('hyena', [8, 0]); T.vultureFly3(h, [4, 1]); T.ostrichAct3(h, 'step', [5, 5]); assert(!h.three.sense); T.hunterMove(h, [8, 1]); assert.equal(h.turn, 'red');
   const c = setup('hyena', [8, 3]); T.vultureFly3(c, [6, 3]); T.ostrichAct3(c, 'step', [5, 5]); T.hunterMove(c, [7, 3]); assert(T.hunterMove(c, [6, 3])); assert.equal(c.three.birds.red.catches, 1, 'pounce catches'); });
 t('badger burrow: stay burrows, moving pops up and can catch on that move', () => { const g = setup('badger', [8, 3]); T.vultureFly3(g, [4, 1]); T.ostrichAct3(g, 'step', [7, 5]);
-  T.hunterStay(g); assert(g.three.burrowed); T.vultureFly3(g, [4, 2]); T.ostrichAct3(g, 'step', [7, 4]); assert(!T.hunterSeenBy(g, 'blue')); assert(T.hunterMove(g, [7, 4])); assert(!g.three.burrowed); assert(T.isOut(g, 'blue'));
+  g.three.dig = 1; T.hunterStay(g); assert(g.three.burrowed); T.vultureFly3(g, [4, 2]); T.ostrichAct3(g, 'step', [7, 4]); assert(!T.hunterSeenBy(g, 'blue')); assert(T.hunterMove(g, [7, 4])); assert(!g.three.burrowed); assert(T.isOut(g, 'blue'));
   const h = setup('hyena'); T.vultureFly3(h, [4, 1]); T.ostrichAct3(h, 'step', [5, 5]); T.hunterStay(h); assert(!h.three.burrowed, 'hyenas never burrow'); });
 t('starved ostrich counts as out; vulture alone must still smash/outlast the eggs', () => { const g = setup('hyena', [0, 3]); g.hungerLeft = 1; T.vultureFly3(g, [4, 1]); T.ostrichAct3(g, 'step', [5, 5]);
   assert(T.isOut(g, 'blue')); assert.equal(g.three.birds.blue.why, 'starved'); assert.equal(g.phase, 'play'); assert.equal(g.turn, 'hunter'); assert(T.anyOut(g)); T.hunterStay(g);
@@ -44,7 +44,8 @@ t('time runs out: no winner if the lone bird missed its goal; ostrich wins if it
   const h = setup('hyena', [0, 3]); h.round = 30; h.eggs.forEach(e => e.lastWarm = 29); T.vultureFly3(h, [4, 1]); T.ostrichAct3(h, 'step', [5, 5]); assert.equal(h.winner, 'blue'); });
 t('shot clock timeout ends each turn (pass / stay put)', () => { const g = setup('badger'); assert(T.timeout(g)); assert.equal(g.turn, 'blue'); assert.equal(g.sniff, null);
   const hl = g.hungerLeft; assert(T.timeout(g)); assert.equal(g.turn, 'hunter'); assert.deepEqual(g.ostrich, [6, 5]); assert.equal(g.hungerLeft, hl - 1);
-  assert(T.timeout(g)); assert.equal(g.turn, 'red'); assert(g.three.burrowed, 'badger stayed put -> burrowed'); });
+  assert(T.timeout(g)); assert.equal(g.turn, 'red'); assert(!g.three.burrowed, 'one still turn: digging 1/2'); assert.equal(g.three.dig, 1);
+  T.timeout(g); T.timeout(g); T.timeout(g); assert(g.three.burrowed, 'two still turns in a row -> burrowed'); });
 t('server views: hunter sees no bird or egg positions; birds see the hunter only within 2', () => {
   process.env.PORT = 3989; const S = require('./server.js'); const { room } = S.create3({ role: 'blue', bots: ['red', 'hunter'], kind: 'hyena' }, null);
   room.g = setup('hyena', [8, 3]); const hv = S.view3(room, 'hunter'), js = JSON.stringify(hv);

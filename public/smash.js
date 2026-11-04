@@ -26,7 +26,7 @@ function reveal(has,x,y,w){const d=el('sm-reveal '+(has?'yes':'no'),`left:${x}px
  d.animate([{transform:'translate(-50%,-60%) scale(.3)',opacity:0},{transform:'translate(-50%,-60%) scale(1.1)',opacity:1,offset:.15},{transform:'translate(-50%,-60%) scale(1)',opacity:1,offset:.8},{transform:'translate(-50%,-60%) scale(1)',opacity:0}],{duration:2000,fill:'forwards'});kill(d,2050);}
 function dust(x,y,w,n,col){for(let i=0;i<n;i++){const d=el('sm-dust',`left:${x}px;top:${y}px;width:${w*.22}px;height:${w*.22}px;background:${col}`);
  const ang=Math.PI*(1+i/(n-1)),r=w*(.35+Math.random()*.3);d.animate([{transform:'translate(-50%,-50%) scale(.3)',opacity:.9},{transform:`translate(calc(-50% + ${Math.cos(ang)*r}px),calc(-50% + ${Math.sin(ang)*r*.6}px)) scale(1.6)`,opacity:0}],{duration:700,easing:'ease-out'});kill(d,720);}}
-function shake(){const b=document.getElementById('board');b&&b.animate([{transform:'translate(0,0)'},{transform:'translate(-4px,2px)'},{transform:'translate(4px,-2px)'},{transform:'translate(-2px,1px)'},{transform:'translate(0,0)'}],{duration:260});}
+function shake(){const n=Date.now();if(n-(window.__boShk||0)<400)return;window.__boShk=n;const b=document.getElementById('board');b&&b.animate([{transform:'translate(0,0)'},{transform:'translate(-2px,1px)'},{transform:'translate(2px,-1px)'},{transform:'translate(0,0)'}],{duration:160});}
 const kind=r=>r==='hit'?'hit':r==='miss'?'miss':'feather'; // 'bounce' (stone at the ostrich) must never play the egg-crack
 function impact(res,x,y,w,st,egg){res=kind(res);try{document.dispatchEvent(new CustomEvent('bo-impact',{detail:{x,y,w,res}}))}catch(e){}
  if(res==='feather'){window.SFX&&SFX.play('feather');const dx=w*.9;st.animate([{transform:st.style.transform||getComputedStyle(st).transform},{transform:`translate(${x+dx*.5-w*.17}px,${y-w*.8}px) rotate(700deg)`},{transform:`translate(${x+dx-w*.17}px,${y+w*.1}px) rotate(900deg)`,opacity:0}],{duration:520,easing:'ease-out',fill:'forwards'});kill(st,540);
@@ -35,7 +35,7 @@ function impact(res,x,y,w,st,egg){res=kind(res);try{document.dispatchEvent(new C
  if(res==='miss'){window.SFX&&SFX.play('thud');st.animate([{transform:getComputedStyle(st).transform},{transform:getComputedStyle(st).transform+' translateY(-6px)',offset:.4},{transform:getComputedStyle(st).transform,opacity:0}],{duration:600,fill:'forwards'});kill(st,620);
   dust(x,y+w*.15,w,7,'#c8b38a');return;}
  // hit: crack the egg
- window.SFX&&SFX.play('smash');st.remove();shake();
+ window.SFX&&SFX.play('smash');st.remove();setTimeout(shake,0);
  const fl=el('sm-flash',`left:${x}px;top:${y}px;width:${w*1.4}px;height:${w*1.4}px`);kill(fl,400);
  if(egg){egg.animate([{transform:'scale(1)'},{transform:'scale(1.15,.85) rotate(-6deg)'},{transform:'scale(.9,1.1) rotate(6deg)'}],{duration:120});setTimeout(()=>egg.remove(),110);}
  const yolk=el('sm-yolk',`left:${x}px;top:${y+w*.08}px;width:${w*.9}px;height:${w*.62}px`);

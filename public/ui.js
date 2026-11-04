@@ -62,7 +62,7 @@ function tapper(el,fn){let t=0;el.addEventListener('touchend',e=>{e.preventDefau
 let pickAI=false;
 let aiLvl=localStorage.getItem('bo_ailvl')||'normal';const lvlUI=()=>{$('lvlEasy').classList.toggle('on',aiLvl==='easy');$('lvlNormal').classList.toggle('on',aiLvl!=='easy');};lvlUI();
 function step(role,ai){pickAI=ai;$('friendStep').classList.toggle('hidden',role!=='f');$('homeStep').classList.toggle('hidden',!!role);if(role==='f')role=0;$('roleStep').classList.toggle('hidden',!role||role==='f');$('lvlRow').classList.toggle('hidden',!ai);status('');}
-tapper($('playFriend'),()=>step('f',false));tapper($('twoPhones'),()=>step(1,false));tapper($('friendBack'),()=>step(0,false));tapper($('playAI'),()=>step(1,true));tapper($('roleBack'),()=>step(pickAI?0:'f',false));
+tapper($('playFriend'),()=>step('f',false));tapper($('twoPhones'),()=>open({t:'create',role:'blue'})); /* share the code first, pick a side after */ tapper($('friendBack'),()=>step(0,false));tapper($('playAI'),()=>step(1,true));tapper($('roleBack'),()=>step(pickAI?0:'f',false));
 tapper($('haveCode'),()=>{const h=$('joinRow').classList.toggle('hidden');$('haveCode').setAttribute('aria-expanded',!h);if(!h)$('codeIn').focus();});
 tapper($('lvlEasy'),()=>{aiLvl='easy';localStorage.setItem('bo_ailvl',aiLvl);lvlUI();});tapper($('lvlNormal'),()=>{aiLvl='normal';localStorage.setItem('bo_ailvl',aiLvl);lvlUI();});
 tapper($('playPass'),()=>open({t:'create',pass:true}));
@@ -82,6 +82,7 @@ function passState(m){clearTimeout(hT);PV=m;const next=m.active,over=m.views.blu
 tapper($('hGo'),()=>{if(!PV)return;$('handoff').className='hidden';locked=false;const r=PV.active;showView(r,PV.views[r]);});
 tapper($('roleBlue'),()=>open(pickAI?{t:'create',role:'blue',ai:aiLvl}:{t:'create',role:'blue'}));tapper($('roleRed'),()=>open(pickAI?{t:'create',role:'red',ai:aiLvl}:{t:'create',role:'red'}));
 tapper($('joinBtn'),()=>open({t:'join',code:$('codeIn').value.trim(),token:me.code===$('codeIn').value.trim().toUpperCase()?me.token:undefined}));
+$('seatPick').addEventListener('click',e=>{const b=e.target.closest('button[data-seat]');if(b&&!b.classList.contains('on'))send({t:'seat',role:b.dataset.seat});});
 tapper($('inviteBtn'),()=>{sheetOpen=!sheetOpen;render();});tapper($('waitClose'),()=>{sheetOpen=false;render();});
 // invite popover closes on any tap outside it (or its chip)
 const outside=e=>{if(sheetOpen&&!e.target.closest('#wait,#inviteBtn')){sheetOpen=false;render();}};
@@ -163,23 +164,31 @@ function tap(x,y){if(!S||locked)return;if(Date.now()<sniffUntil){clearTimeout(ta
 function curMode(){if(!S.myTurn)return null;if(S.role==='hunter')return'hmove';if(S.role==='red')return mode||'fly';
  if(mode==='carry'&&S.can&&S.can.carry)return'carry';return S.moves.length?'step':null;}
 // --- GUIDED HARD STOPS (human ostrich only, client-side): once per device, the ostrich must DO the thing.
-// start: only moves toward an egg, then only Sit. hungry: only moves toward the nearest leaf until it eats. cold: only moves toward the coldest egg until it stands on it.
+// start: just a one-time tip, never restricts (Brian 11/4). hungry: only moves toward the nearest leaf until it eats. cold: only moves toward the coldest egg until it stands on it.
 // Server rules and the computer ostrich are untouched. Skip in tests: localStorage bo_hs_off=1.
 const gd=(a,b)=>Math.max(Math.abs(a[0]-b[0]),Math.abs(a[1]-b[1]));
 const gGet=id=>localStorage.getItem('bo_g_'+id),gSet=(id,v)=>localStorage.setItem('bo_g_'+id,v);
 let G=null;
-function guideNow(){G=null;if(!S||S.role!=='blue'||S.phase!=='play'||localStorage.getItem('bo_hs_off'))return null;const C=S.cfg,o=S.ostrich,eggs=(S.eggs||[]).map((e,i)=>Object.assign({i},e)).filter(e=>e.alive&&!e.carried&&e.pos);
+function guideNow(){G=null;
+ // vulture, first time out of stones only: a pointer + path to the nearest rock pile (never restricts, once per device, Skip guide turns it off)
+ if(S&&S.role==='red'&&S.phase==='play'&&!localStorage.getItem('bo_hs_off')){const g=gGet('stone');
+  if(g==='on'&&S.stones>0)gSet('stone','1');
+  if(!g&&S.myTurn&&S.stones<1)gSet('stone','on');
+  if(gGet('stone')==='on'&&S.myTurn){const v=S.vulture,r=S.cfg.rocks.slice().sort((a,b)=>gd(a,v)-gd(b,v))[0];return G={id:'stone',t:r,free:1,txt:'🪨 Out of stones: get one here (glowing rock pile)'};}
+  return null;}
+ if(!S||S.role!=='blue'||S.phase!=='play'||localStorage.getItem('bo_hs_off'))return null;const C=S.cfg,o=S.ostrich,eggs=(S.eggs||[]).map((e,i)=>Object.assign({i},e)).filter(e=>e.alive&&!e.carried&&e.pos);
  const near=ps=>ps.reduce((b,p)=>!b||gd(p,o)<gd(b,o)?p:b,null);
  // finish active guides
  if(gGet('hungry')==='on'&&isF(C,key(o)))gSet('hungry','1');
  const cv=gGet('cold');if(cv&&cv.startsWith('on:')){const e=S.eggs[+cv.slice(3)];if(!e||!e.alive||e.carried||key(e.pos)===key(o))gSet('cold','1');}
  if(!S.myTurn)return null;
  // start new ones (one at a time, start first)
- if(!gGet('start')&&eggs.length)gSet('start','on');
- if(gGet('start')!=='on'){const fd=gd(near(C.foods),o);if(!gGet('hungry')&&S.hungerLeft<=Math.max(4,fd+2))gSet('hungry','on');
-}
- if(gGet('start')==='on'){const t=eggs.find(e=>key(e.pos)===key(o));if(t)return G={id:'start',t:o,sit:1,txt:'Sit on your egg to warm it'};
-  return G={id:'start',t:near(eggs.map(e=>e.pos)),any:eggs.map(e=>e.pos),txt:'Go to your egg and sit on it'};}
+ // start: a one-time TIP only (no path, no pulse toward any egg, no move restriction): pointing at an egg would show the vulture where it is.
+ const st=gGet('start');if(!st&&eggs.length)gSet('start','on:'+S.round);
+ const st2=gGet('start');if(st2&&st2.startsWith('on:')&&S.round>+st2.slice(3))gSet('start','1');
+ if(gGet('start')!=='1'&&!(gGet('start')||'').startsWith('on:'))gSet('start','1');
+ if(gGet('start')!=='on'&&!(gGet('start')||'').startsWith('on:')){const fd=gd(near(C.foods),o);if(!gGet('hungry')&&S.hungerLeft<=Math.max(4,fd+2))gSet('hungry','on');}
+ if((gGet('start')||'').startsWith('on:'))return G={id:'start',tip:1,txt:'Tip: sit on eggs to keep them warm'};
  if(gGet('hungry')==='on')return G={id:'hungry',t:near(C.foods),txt:`You're hungry! Go eat (${S.hungerLeft} left)`};
  return null;}
 // cold egg: NOT forced. First time any egg has <=8 rounds left: loud pulse + one-line warning until it's warmed. Afterward: subtle ring pulse only.
@@ -188,11 +197,11 @@ function coolNow(){W=null;if(!S||S.role!=='blue'||S.phase!=='play')return;const 
  const off=localStorage.getItem('bo_hs_off'),cv=gGet('cold');if(off)return;
  if(cv&&cv.startsWith('on:')){const e=S.eggs[+cv.slice(3)];if(!e||!e.alive||e.carried||key(e.pos)===key(S.ostrich)||e.coldIn>COOL)gSet('cold','1');}
  const ce=eggs.slice().sort((a,b)=>a.coldIn-b.coldIn)[0];
- if(!off&&!gGet('cold')&&ce&&ce.coldIn<=COOL&&key(ce.pos)!==key(S.ostrich)&&gGet('start')!=='on')gSet('cold','on:'+ce.i);
+ if(!off&&!gGet('cold')&&ce&&ce.coldIn<=COOL&&key(ce.pos)!==key(S.ostrich)&&!(gGet('start')||'').startsWith('on:'))gSet('cold','on:'+ce.i);
  const c=gGet('cold');const loud=!off&&c&&c.startsWith('on:')?S.eggs[+c.slice(3)]:null;
  W={cool:new Set(eggs.filter(e=>e.coldIn<=COOL&&key(e.pos)!==key(S.ostrich)).map(e=>key(e.pos))),loud:loud?key(loud.pos):null,
   txt:loud?`Egg cooling — ${loud.coldIn} round${loud.coldIn===1?'':'s'} left!${loud.coldIn<=4?' Hurry back!':''}`:'',urgent:loud&&loud.coldIn<=4};}
-function guideApply(){if(S&&!S._o)S._o={m:S.moves,c:S.carryMoves,cc:S.can&&S.can.carry};else if(S){S.moves=S._o.m;S.carryMoves=S._o.c;if(S.can)S.can.carry=S._o.cc;}if(!G)return;const o=S.ostrich;if(!G.t)return;const tg=G.any||[G.t],f=ms=>{const r=(ms||[]).filter(p=>tg.some(t=>gd(p,t)<gd(o,t)));return r.length||!(ms||[]).length?r:ms;};
+function guideApply(){if(S&&!S._o)S._o={m:S.moves,c:S.carryMoves,cc:S.can&&S.can.carry};else if(S){S.moves=S._o.m;S.carryMoves=S._o.c;if(S.can)S.can.carry=S._o.cc;}if(!G)return;const o=G.id==='stone'?S.vulture:S.ostrich;if(!G.t)return;if(G.free){G.path=[];let p=o.slice();for(let k=0;k<20&&gd(p,G.t)>0;k++){p=[p[0]+Math.sign(G.t[0]-p[0]),p[1]+Math.sign(G.t[1]-p[1])];G.path.push(key(p));}return;}const tg=G.any||[G.t],f=ms=>{const r=(ms||[]).filter(p=>tg.some(t=>gd(p,t)<gd(o,t)));return r.length||!(ms||[]).length?r:ms;};
  if(G.sit&&S.can&&S.can.sit){S.moves=[];S.carryMoves=[];S.can.carry=false;}else{S.moves=f(S.moves);S.carryMoves=f(S.carryMoves);}
  G.path=[];let p=o.slice();for(let k=0;k<20&&gd(p,G.t)>0;k++){p=[p[0]+Math.sign(G.t[0]-p[0]),p[1]+Math.sign(G.t[1]-p[1])];G.path.push(key(p));}}
 function render(prev){
@@ -211,7 +220,14 @@ function render(prev){
  if(waiting){w.classList.remove('hidden','sheet');slot.appendChild(w);sheetOpen=false;}
  else if(sheetOpen&&!S.ai){w.classList.remove('hidden');w.classList.add('sheet');document.body.appendChild(w);} else{w.classList.add('hidden');w.classList.remove('sheet');sheetOpen=false;}
  w.firstElementChild.nextElementSibling.textContent=waiting?'Waiting for your opponent. Send them this link:':'Room code';
- $('inviteCode').textContent=S.code;$('inviteBtn').classList.toggle('hidden',waiting||!!S.ai||S.phase==='over');$('inviteBtn').setAttribute('aria-expanded',sheetOpen);
+ // share first: while nobody else has joined and nothing is placed yet, pick (or change) your side under the code
+ const sp=$('seatPick'),SNM={blue:'🐦 Ostrich',red:'🦅 Vulture',hunter:'🐾 Hunter',hyena:'🐾 Hyena',badger:'🦡 Honey badger',o1:'🐦 Ostrich 1',o2:'🐦 Ostrich 2',v1:'🦅 Vulture 1',v2:'🦅 Vulture 2'};
+ const mySeat=S.h3&&S.h3.mySeat||S.role,seatsAll=S.h3?Object.entries(S.h3.seats):[['blue',S.role==='blue'?'on':'open'],['red',S.role==='red'?'on':'open']];
+ const fresh=waiting&&(S.phase==='setupEggs'||S.phase==='setup')&&!(S.eggs||[]).length&&!(S.h3&&S.h3.setupStep&&S.h3.setupStep!=='eggs');
+ const choices=seatsAll.filter(([r,v])=>r===mySeat||v==='open').map(([r])=>r);
+ sp.classList.toggle('hidden',!fresh||choices.length<2);
+ if(fresh&&choices.length>1)sp.innerHTML='<div class="splbl">You play</div>'+choices.map(r=>`<button data-seat="${r}" class="${r===mySeat?'on':''}">${SNM[r]||r}</button>`).join('');
+ $('inviteCode').textContent='';$('inviteBtn').classList.toggle('hidden',waiting||!!S.ai||S.phase==='over');$('inviteBtn').setAttribute('aria-expanded',sheetOpen);
  guideNow();guideApply();coolNow();
  const M=curMode(),L=!S.myTurn?[]:S.role==='hunter'?(S.hmoves||[]):(blue?(M==='carry'?S.carryMoves:S.moves):(M==='throw'?S.throw:S.fly));
  const lk=new Set(L.map(key)),setup=blue&&(S.phase==='setupEggs'||S.phase==='setupOstrich');
@@ -226,7 +242,7 @@ function render(prev){
   const m=S.marks[k];if(m)d.classList.add(m);const tags=[],tip=[];
   const legal=lk.has(k)||(setup&&(S.phase==='setupOstrich'||legalNow().some(q=>key(q)===k)));
   if(W&&W.cool.has(k)){if(W.loud===k){d.classList.add('gloud');if(W.urgent)d.classList.add('urgent');}else d.classList.add('gcool');}
-  if(G&&G.path.includes(k))d.classList.add(k===key(G.t)?'gtarget':'gpath');
+  if(G&&G.path&&G.path.includes(k))d.classList.add(k===key(G.t)?'gtarget':'gpath');
   if(legal){d.classList.add('legal');if(throwing)d.classList.add('target');tags.push(throwing?'target':'legal');}
   const maybe=!found&&!blue&&sn&&sn.yes&&inSn(k)&&!m&&k!==ok&&!isF(C,k)&&!isR(C,k);
   if(blue&&sn&&sn.yes&&inSn(k)&&m!=='hit')d.classList.add('snseen');
@@ -243,11 +259,12 @@ function render(prev){
   else if(isF(C,k)){h=icon('food');tip.push(SHORT.food+': resets the ostrich\'s hunger to '+C.food);}
   else if(isR(C,k)){h=icon('rock');tip.push(SHORT.rock);}
   if(h)tags.push(h.match(/data-t="(\w+)"/)[1]);
+  if(!blue&&S.role==='red'&&S.phase==='play'&&G&&G.id==='stone'&&k===key(G.t))d.classList.add('rockcall');
   if(k===lastThrow&&(la.result==='miss'||la.result==='bounce')){d.classList.add(la.result==='bounce'?'bounce':'flash');}
-  if(k===vk&&m==='spotted'&&k!==ok)d.classList.add('vfound');
+  if(k===vk&&k!==ok&&(m==='spotted'||(blue&&e)))d.classList.add('vfound'); // vulture on a found egg: both show, corner layout
   if(k===vk&&k===ok){d.classList.add('both');tip.push('Vulture and ostrich share this square');}
   if(k===vk){h+=`<div class="pc pv">${VUL}</div>`;tip.push(blue?'The vulture':'You (vulture)');tags.push(blue?'vul':'me');}
-  if(k===ok){if(blue&&e)d.classList.add('sat');h+=`<div class="pc po">${OST}</div>`+(S.carried?'<span class="carry">'+MYEGG+'</span>':'');tip.push(blue?'You (ostrich)'+(S.carried?', carrying an egg':''):'The ostrich'+(S.carried?' (carrying something)':''));tags.push(blue?'me':'ost');
+  if(k===ok){if(blue&&e){d.classList.add('sat');h+='<span class="shield" title="Sitting: your egg is protected. Stones bounce off you.">🛡️</span>';tip.push('Protected: a stone thrown here bounces off you');}h+=`<div class="pc po">${OST}</div>`+(S.carried?'<span class="carry">'+MYEGG+'</span>':'');tip.push(blue?'You (ostrich)'+(S.carried?', carrying an egg':''):'The ostrich'+(S.carried?' (carrying something)':''));tags.push(blue?'me':'ost');
    if(blue&&S.carried&&S.eggs&&S.eggs[S.carrying])h+=warmRing(S.eggs[S.carrying].coldIn,C.warmth);}
   if(legal)tip.push(throwing?'Throw a stone here':setup?(S.phase==='setupEggs'?'Hide an egg here':'Start here'):blue?'Move here':'Fly here');
   d.innerHTML=h;d.dataset.tip=[...new Set(tip)].join(' · ');
@@ -308,6 +325,9 @@ function render(prev){
   if(an&&!an.disabled){an.classList.add('spot','pulse');}if(CM.at==='board'||(an&&!an.disabled))h=CM.txt+(h&&CM.at!=='board'?' — or '+h.charAt(0).toLowerCase()+h.slice(1):'');}
  if(S.three)window.T3UI.after(S,prev,board);
  if(S.role!=='hunter'){requestAnimationFrame(()=>window.FX&&FX.update(S,prev));window.SMASH&&SMASH.update(S,prev);}
+ // make 'your turn' + what to do impossible to miss (Brian playtest: a player missed the instructions)
+ const mt=S.phase==='play'&&S.myTurn&&!S.pass;$('hint').classList.toggle('myturn',!!mt);
+ if(mt&&!/your turn/i.test(h)){const what=S.role==='red'?'Tap a glowing square to fly'+(S.stones>0?', or Throw stone':''):S.role==='hunter'?'Tap a glowing square to move':'Tap a glowing square to step'+(S.can&&S.can.sit?', or tap Sit':'');h='YOUR TURN · '+(h&&!/turn…$/.test(h)?h:what);}
  $('hint').textContent=h;if(h&&(G||(W&&W.txt))){const sb=document.createElement('button');sb.className='skipguide';sb.id='skipGuide';sb.textContent='Skip guide';$('hint').appendChild(sb);tapper(sb,()=>{UI.guides(false)});}$('hint').classList.toggle('empty',!h);$('hint').classList.toggle('guide',!!G||!!(W&&W.txt));$('hint').classList.toggle('cold',!G&&!!(W&&W.txt));$('hint').classList.toggle('urgent',!G&&!!(W&&W.urgent));$('log').textContent=S.joined&&!S.opponent&&S.phase!=='over'?'Opponent offline… they can rejoin with the same link.':'';
  const o=$('over');if(S.phase==='over'&&S.three){o.classList.remove('hidden');o.innerHTML=window.T3UI.over(S);}
  else if(S.phase==='over'){const won=S.winner===S.role;o.classList.remove('hidden');

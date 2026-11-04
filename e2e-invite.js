@@ -9,7 +9,7 @@ const vis = p => p.evaluate(() => { const w = document.getElementById('wait'), r
   const cell = (p, x, y) => p.locator('.cell').nth(y * 9 + x);
   for (const th of (process.env.THEMES ? process.env.THEMES.split(',') : THEMES)) {
     const [A, cA] = await mk(), [V, cV] = await mk();
-    await A.goto(U + '?theme=' + th); await A.click('#playFriend'); await A.click('#twoPhones'); await A.click('#roleBlue'); await A.waitForSelector('#shareCode:not(:empty)');
+    await A.goto(U + '?theme=' + th); await A.click('#playFriend'); await A.click('#twoPhones'); await A.waitForSelector('#shareCode:not(:empty)');
     assert.ok(await vis(A) > 50, th + ': panel shown while waiting'); assert.ok(await A.locator('#inviteBtn').isHidden());
     const link = (await A.inputValue('#shareLink')).replace(/^http:\/\/[^/]+/, 'http://localhost:3998');
     for (const [x, y] of [[3, 4], [6, 2], [2, 5], [7, 2]]) { await cell(A, x, y).click(); await A.waitForTimeout(60); } // set up BEFORE opponent joins
@@ -24,7 +24,7 @@ const vis = p => p.evaluate(() => { const w = document.getElementById('wait'), r
     const [V2, cV2] = await mk(); await V2.goto(link + '&theme=' + th); await V2.waitForFunction(() => /two players/.test(document.getElementById('lobbyErr').textContent)); // seat stays reserved for the offline opponent
     await A.screenshot({ path: OUT + th + '-ingame.png' });
     await A.click('#inviteBtn'); await A.waitForTimeout(150); const h = await vis(A);
-    assert.ok(h > 50 && h < 300, th + ': popover ' + h); assert.equal(await A.textContent('#shareCode'), await A.textContent('#inviteCode'));
+    assert.ok(h > 50 && h < 300, th + ': popover ' + h); assert.ok(/^[A-Z]{4}$/.test(await A.textContent('#shareCode')), 'popover shows the code'); assert.equal((await A.textContent('#inviteBtn')).trim(), '🔗', 'no room code in the in-game header');
     await A.screenshot({ path: OUT + th + '-popover.png' });
     await A.touchscreen.tap(200, 600); await A.waitForTimeout(150); assert.equal(await vis(A), 0, th + ': closes on outside tap');
     console.log('ok', th); await cA.close(); await cV2.close();

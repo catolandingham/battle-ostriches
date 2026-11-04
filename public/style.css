@@ -196,3 +196,4 @@ body.coaching::before{content:"";position:fixed;inset:0;background:#000a;z-index
 #handoff h1{font-size:2rem;margin:.2em 0;color:#fff;text-shadow:none}
 #handoff p{font-size:1.05rem;opacity:.9;margin:.4em 0 1.4em;color:#fff}
 #handoff button{width:100%;font-size:1.15rem;min-height:56px;color:#111;background:#fff;border:0;border-radius:14px;font-weight:800}
+#seatPick{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:8px}#seatPick .splbl{width:100%;font-weight:900;font-size:13px}#seatPick button{font:inherit;font-weight:800;font-size:14px;border:3px solid #111;border-radius:12px;background:#fff;color:#111;padding:4px 10px}#seatPick button.on{background:#ffd21f}

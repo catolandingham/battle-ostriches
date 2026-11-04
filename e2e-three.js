@@ -10,7 +10,7 @@ const shot = (p, n) => p.screenshot({ path: OUT + n + '.jpg', type: 'jpeg', qual
     p.on('pageerror', e => errs.push(e.message)); return p; };
   const cell = (p, x, y) => p.locator('.cell').nth(y * 9 + x);
   const A = await mk(), V = await mk(), H = await mk();
-  await A.goto(U); await A.click('#pc3'); await A.click('#playFriend'); await A.waitForSelector('#threeStep:not(.hidden)');
+  await A.goto(U); await A.click('#moreP'); await A.click('#pc3'); await A.click('#playFriend'); await A.waitForSelector('#threeStep:not(.hidden)');
   await A.click('#threeStep [data-r="hunter"]'); await A.waitForSelector('.kindbtn'); await shot(A, '1-lobby');
   await A.click('#threeStep [data-r="blue"]'); assert.equal(await A.locator('.kindbtn').count(), 0, 'friend hunter picks their own animal');
   await A.click('#t3go'); await A.waitForSelector('#shareCode:not(:empty)');
@@ -40,7 +40,7 @@ const shot = (p, n) => p.screenshot({ path: OUT + n + '.jpg', type: 'jpeg', qual
   await H.locator('#actions button').click(); await V.waitForSelector('#actions.mine', { state: 'attached' });
   console.log('ok 3 phones');
   // 1 human hunter (honey badger) vs 2 computer birds
-  const P = await mk(); await P.goto(U); await P.click('#pc3'); await P.click('#playAI'); await P.click('#threeStep [data-r="hunter"]'); await P.click('[data-k="badger"]'); await P.click('#t3go');
+  const P = await mk(); await P.goto(U); await P.click('#moreP'); await P.click('#pc3'); await P.click('#playAI'); await P.click('#threeStep [data-r="hunter"]'); await P.click('[data-k="badger"]'); await P.click('#t3go');
   await P.waitForSelector('#actions.mine', { timeout: 15000 }); assert.ok(/BADGER/.test(await P.textContent('#turnTag')));
   await P.locator('#actions button').click(); await P.waitForSelector('.burtag'); await shot(P, '7-badger-burrowed');
   for (let i = 0; i < 4; i++) { await P.waitForSelector('#actions.mine, #over:not(.hidden)', { timeout: 15000 }); if (await P.locator('#over:not(.hidden)').count()) break;

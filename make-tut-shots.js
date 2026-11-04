@@ -12,7 +12,7 @@ process.env.PORT = 3998; const server = require('./server.js');
   const red = async (a, x, y) => { await myTurn(V, 'Throw'); await V.click(`#actions button:has-text("${a}")`); await cell(V, x, y).click(); };
   const blue = async (f) => { await myTurn(A, 'Step'); await f(); };
   await A.goto(U); await shot(A, 'lobby');
-  await A.click('#playFriend'); await A.click('#twoPhones'); await A.click('#roleBlue'); await A.waitForSelector('#shareCode:not(:empty)'); await shot(A, 'share');
+  await A.click('#playFriend'); await A.click('#twoPhones'); await A.waitForSelector('#shareCode:not(:empty)'); await shot(A, 'share');
   await V.goto(await A.inputValue('#shareLink')); await V.waitForSelector('#board .cell');
   await A.waitForFunction(() => document.getElementById('wait').classList.contains('hidden'));
   await cell(A, 0, 0).click(); await A.waitForTimeout(100); await cell(A, 8, 6).click(); await A.waitForTimeout(100); await shot(A, 'hide-eggs');

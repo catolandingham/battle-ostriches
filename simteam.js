@@ -1,7 +1,7 @@
 // bot-vs-bot sims for 4 players (2v2) and 5 players (2v2 + hunter). Usage: node simteam.js [games] [4|5] [hyena|badger]
 const T = require('./team.js'), TA = require('./teamai.js'), AI = require('./ai.js');
 function hunterView(g) { return { cfg: g.cfg, round: g.round, hunter: g.h.p, kind: g.h.kind, sense: g.h.sense, senseSeq: g.h.senseSeq, senseRange: T.TM.sense,
-  pounce: g.h.pounce, burrowed: g.h.burrowed, hmoves: T.hunterMoves(g), marks: Object.fromEntries(Object.entries(g.marks).filter(([, m]) => m !== 'spotted')) }; }
+  pounce: g.h.pounce, burrowed: g.h.burrowed, dig: g.h.dig, hmoves: T.hunterMoves(g), marks: Object.fromEntries(Object.entries(g.marks).filter(([, m]) => m !== 'spotted')) }; }
 function play(n, kind, level = 'normal') {
   const g = T.newTeam(n, kind), mem = {};
   for (let i = 0; i < 20 && g.phase === 'setup'; i++) for (const s of T.OS) { const st = T.setupStep(g, s); if (st !== 'done') { const m = TA.setup(g, s); if (!T.place(g, s, m.p)) throw new Error('bad setup ' + JSON.stringify(m)); } }
