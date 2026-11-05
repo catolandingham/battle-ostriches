@@ -18,7 +18,7 @@ const OUT = 'shots/hardstop/'; fs.mkdirSync(OUT, { recursive: true });
   const legal = () => A.evaluate(() => UI._legal());
   const shot = async n => { await A.waitForTimeout(300); await A.screenshot({ path: OUT + n, type: 'jpeg', quality: 88 }); };
   for (const [x, y] of [[3, 4], [6, 2], [2, 1], [7, 5]]) { await cell(A, x, y).click(); await A.waitForTimeout(120); }
-  const vfly = async (x, y) => { await V.waitForSelector('#actions.mine'); await cell(V, x, y).click(); await A.waitForSelector('#actions.mine'); await A.waitForTimeout(150); };
+  const vfly = async (x, y) => { await V.waitForSelector('#actions.mine', { state: 'attached' }); await cell(V, x, y).click(); await A.waitForSelector('#actions.mine', { state: 'attached' }); await A.waitForTimeout(150); };
   await vfly(4, 2);
   assert.ok(!(await V.locator('#hint.guide').count()), 'vulture never guided');
   // 1) start: a one-time TIP only. No path/pulse toward any egg (would reveal it to an onlooker) and no move restriction.

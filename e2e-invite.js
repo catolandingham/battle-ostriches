@@ -15,10 +15,10 @@ const vis = p => p.evaluate(() => { const w = document.getElementById('wait'), r
     await V.goto(link + '&theme=' + th); await V.waitForSelector('#roomLobby');
     await A.click('#startGame'); await A.waitForSelector('#board .cell'); await V.waitForSelector('#board .cell');
     for (const [x, y] of [[3, 4], [6, 2], [2, 5], [7, 2]]) { await cell(A, x, y).click(); await A.waitForTimeout(60); }
-    await V.waitForSelector('#actions.mine');
+    await V.waitForSelector('#actions.mine', { state: 'attached' });
     await A.waitForFunction(() => document.getElementById('wait').classList.contains('hidden'));
     assert.equal(await vis(A), 0, th + ': hidden after join'); assert.equal(await vis(V), 0);
-    await cell(V, 4, 2).click(); await A.waitForSelector('#actions.mine');
+    await cell(V, 4, 2).click(); await A.waitForSelector('#actions.mine', { state: 'attached' });
     await cV.close(); await A.waitForTimeout(400); // opponent phone goes away mid-game (the original bug)
     assert.equal(await vis(A), 0, th + ': hidden while opponent offline'); assert.ok(/offline/i.test(await A.textContent('#log')));
     await A.reload(); await A.waitForSelector('#board .cell'); await A.waitForTimeout(300);
@@ -38,10 +38,10 @@ const vis = p => p.evaluate(() => { const w = document.getElementById('wait'), r
     if (role === 'blue') for (const [x, y] of [[2, 2], [6, 2], [2, 5], [2, 2]]) { await cell(P, x, y).click(); await P.waitForTimeout(80); }
     let n = 0, t0 = Date.now(), shot = false;
     while (!(await P.locator('#over:not(.hidden)').count()) && n < 200) {
-      await P.waitForSelector('#actions.mine, #over:not(.hidden)', { timeout: 10000 }); if (await P.locator('#over:not(.hidden)').count()) break;
+      await P.waitForSelector('#actions.mine, #over:not(.hidden)', { state: 'attached',  timeout: 10000 }); if (await P.locator('#over:not(.hidden)').count()) break;
       if (!shot && n === 3) { await P.screenshot({ path: OUT + 'vsai-' + role + '.png' }); shot = true; }
-      if (role === 'blue') { const s = await P.locator('#actions button:has-text("Sit")'); if (await s.count() && await s.isEnabled() && n % 3) await s.click(); else await P.locator('.cell.legal').first().click(); }
-      else { const tb = P.locator('#actions button:has-text("Throw")'); if (n % 4 === 3 && await tb.isEnabled()) { await tb.click(); if (await P.locator('.cell.legal').count()) await P.locator('.cell.legal').first().click(); else { await P.click('#actions button:has-text("Fly")'); await P.locator('.cell.legal').first().click(); } } else await P.locator('.cell.legal').nth(n % 5).click(); }
+      if (role === 'blue') { const s = await P.locator('#actions button:has-text("Sit")'); if (await s.count() && await s.isEnabled() && n % 3) await s.click({ force: true }); else await P.locator('.cell.legal').first().click(); }
+      else { const tb = P.locator('#actions button:has-text("Throw")'); if (n % 4 === 3 && await tb.isEnabled()) { await tb.click({ force: true }); if (await P.locator('.cell.legal').count()) await P.locator('.cell.legal').first().click(); else { await P.click('#actions button:has-text("Fly")', { force: true }); await P.locator('.cell.legal').first().click(); } } else await P.locator('.cell.legal').nth(n % 5).click(); }
       await P.waitForFunction(() => !document.querySelector('#actions.mine') || document.querySelector('#over:not(.hidden)'), null, { timeout: 5000 }); n++; }
     const per = (Date.now() - t0) / n; console.log('vs AI', role, 'turns', n, 'ms/turn', per | 0, await P.textContent('#over h1'));
     assert.ok(await P.locator('#over:not(.hidden)').count(), 'game finished'); assert.ok(per > 800, 'AI delay');

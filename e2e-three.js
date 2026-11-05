@@ -37,13 +37,13 @@ const shot = (p, n) => p.screenshot({ path: OUT + n + '.jpg', type: 'jpeg', qual
   await V.waitForSelector('#actions.mine', { state: 'attached' }); await V.waitForTimeout(5500); await shot(V, '6-shot-clock');
   const t = await V.textContent('#clock3'); assert.ok(/[1-5]s/.test(t), 'countdown ' + t);
   await H.waitForSelector('#actions.mine', { state: 'attached', timeout: 9000 }); assert.ok(/lost this turn|Hyena/.test(await A.textContent('#hint')));
-  await H.locator('#actions button').click(); await V.waitForSelector('#actions.mine', { state: 'attached' });
+  await H.locator('#actions button').click({ force: true }); await V.waitForSelector('#actions.mine', { state: 'attached' });
   console.log('ok 3 phones');
   // 1 human hunter (honey badger) vs 2 computer birds
   const P = await mk(); await P.goto(U); await P.click('#playSolo'); await P.click('[data-bots="2"]'); await P.click('#soloGo'); await P.click('[data-role="hunter"]'); await P.click('[data-kind="badger"]'); await P.click('#startGame');
-  await P.waitForSelector('#actions.mine', { timeout: 15000 }); assert.ok(/BADGER/.test(await P.textContent('#turnTag')));
-  await P.locator('#actions button').click(); await P.waitForSelector('.burtag'); await shot(P, '7-badger-burrowed');
-  for (let i = 0; i < 4; i++) { await P.waitForSelector('#actions.mine, #over:not(.hidden)', { timeout: 15000 }); if (await P.locator('#over:not(.hidden)').count()) break;
+  await P.waitForSelector('#actions.mine', { state: 'attached', timeout: 15000 }); assert.ok(/BADGER/.test(await P.textContent('#turnTag')));
+  await P.locator('#actions button').click({ force: true }); await P.waitForSelector('.burtag'); await shot(P, '7-badger-burrowed');
+  for (let i = 0; i < 4; i++) { await P.waitForSelector('#actions.mine, #over:not(.hidden)', { state: 'attached', timeout: 15000 }); if (await P.locator('#over:not(.hidden)').count()) break;
     await P.waitForTimeout(1200); await P.locator('.cell.legal').first().click(); await P.waitForTimeout(300); }
   console.log('errors', errs); assert.equal(errs.length, 0);
   await b.close(); server.close(); console.log('PASS e2e-three'); process.exit(0);

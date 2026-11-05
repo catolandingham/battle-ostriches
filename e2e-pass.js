@@ -27,7 +27,7 @@ const OUT = 'shots/pass/'; fs.mkdirSync(OUT, { recursive: true });
     assert.equal(await P.locator('#board .ic-myegg').count(), 0, 'cover: nothing behind');
     const bg = await P.evaluate(() => getComputedStyle(document.getElementById('handoff')).backgroundImage); assert.ok(/gradient/.test(bg), 'opaque cover');
     if (shot) await P.screenshot({ path: OUT + 'handoff-vulture.jpg', type: 'jpeg', quality: 85 });
-    await P.click('#hGo'); await P.waitForSelector('#actions.mine');
+    await P.click('#hGo'); await P.waitForSelector('#actions.mine', { state: 'attached' });
     assert.equal(await P.evaluate(() => document.body.className), 'red');
     assert.equal(await P.locator('#board .ic-myegg').count(), 0, 'no egg positions leak to vulture');
     assert.equal(await P.locator('.wnum').count(), 0, 'no egg timers leak');
@@ -36,11 +36,11 @@ const OUT = 'shots/pass/'; fs.mkdirSync(OUT, { recursive: true });
     await P.waitForSelector('#handoff.blue'); assert.match(await P.textContent('#hGo'), /I'm the Ostrich/);
     assert.equal(await P.locator('#board .ic-myegg').count(), 0, 'cover: nothing behind');
     if (shot) await P.screenshot({ path: OUT + 'handoff-ostrich.jpg', type: 'jpeg', quality: 85 });
-    await P.click('#hGo'); await P.waitForSelector('#actions.mine');
+    await P.click('#hGo'); await P.waitForSelector('#actions.mine', { state: 'attached' });
     assert.equal(await P.locator('#banner.yes, #banner.no').count(), 0, 'sniff banner is vulture-only');
   };
   await vultureTurn(true);
-  await P.click('#actions button:has-text("Throw")'); await cell(3, 4).click(); // smash
+  await P.click('#actions button:has-text("Throw")', { force: true }); await cell(3, 4).click(); // smash
   await P.waitForTimeout(500); await P.screenshot({ path: OUT + 'vulture-smash.jpg', type: 'jpeg', quality: 85 });
   await ostrichTurn(true);
   assert.equal(await P.textContent('#eggsLeft'), '2'); assert.equal(await P.locator('.cell.hit').count(), 1);
@@ -49,7 +49,7 @@ const OUT = 'shots/pass/'; fs.mkdirSync(OUT, { recursive: true });
   let rounds = 0;
   while (!(await P.locator('#over:not(.hidden)').count()) && rounds < 60) {
     rounds++;
-    await P.click('#actions button:has-text("Step")').catch(() => {}); await P.locator('.cell.legal').first().click();
+    await P.click('#actions button:has-text("Step")', { force: true }).catch(() => {}); await P.locator('.cell.legal').first().click();
     await P.waitForFunction(() => !document.getElementById('handoff').classList.contains('hidden') || !document.getElementById('over').classList.contains('hidden'));
     if (await P.locator('#over:not(.hidden)').count()) break;
     await vultureTurn(false);

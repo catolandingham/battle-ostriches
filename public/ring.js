@@ -20,7 +20,8 @@
     if (stored === '1') return true;
     return !state || state.showTimers !== false;
   }
-  function legalActions(S) {
+  // On-animal actions only. Stepping and flying are the glowing squares, so they are not listed unless the player is in another mode and needs a way back.
+  function legalActions(S, mode) {
     if (!S || S.god || S.phase !== 'play' || !S.myTurn) return [];
     const C = S.cfg || {};
     if (S.role === 'hunter') {
@@ -34,20 +35,29 @@
       return [{ id: 'hstay', label: 'Stay', detail: 'Stay put and end your turn.', enabled: true, run: 'hstay' }];
     }
     if (S.role === 'blue') {
-      const items = [{ id: 'step', label: 'Step', detail: (S.moves && S.moves.length) ? 'Move 1 square. Tap a glowing square.' : 'No square to step to.', enabled: true, mode: 'step' }];
-      if (S.onEgg) {
-        const carryOk = !!(S.can && S.can.carry);
-        const sitOk = !!(S.can && S.can.sit);
-        items.push({ id: 'carry', label: 'Carry', detail: carryOk ? 'Carry the egg 1 square.' : 'Cannot carry the egg from here.', enabled: carryOk, mode: 'carry' });
-        items.push({ id: 'sit', label: 'Sit', detail: S.mustLeave ? `You sat ${C.maxSit} turns in a row. Step off this turn.` : sitOk ? `Warm the egg. ${Math.max(0, (C.maxSit || 0) - (S.sitRun || 0))} sits left.` : 'Sit only works while you stand on an egg.', enabled: sitOk, act: 'sit' });
-      }
+      const items = [];
+      if (mode === 'carry') items.push({ id: 'step', label: 'Move', detail: 'Tap a glowing square to step.', enabled: true, mode: 'step' });
+      if (S.onEgg && S.can && S.can.carry) items.push({ id: 'carry', label: 'Carry', detail: 'Carry the egg 1 square.', enabled: true, mode: 'carry' });
+      if (S.onEgg && S.can && S.can.sit) items.push({ id: 'sit', label: 'Sit', detail: `Warm the egg. ${Math.max(0, (C.maxSit || 0) - (S.sitRun || 0))} sits left.`, enabled: true, act: 'sit' });
       return items;
     }
+    const items = [];
     const stones = S.stones | 0;
-    return [
-      { id: 'fly', label: 'Fly', detail: `Fly up to ${C.vultureFly || 2} squares. Tap a glowing square.`, enabled: true, mode: 'fly' },
-      { id: 'throw', label: 'Throw', detail: stones < 1 ? 'No stone. Land on a rock pile to pick one up.' : `Throw at your square or one next to it. Stones ${stones}/${C.stones}.`, enabled: stones > 0, mode: 'throw' }
-    ];
+    if (mode === 'throw') items.push({ id: 'fly', label: 'Fly', detail: 'Tap a glowing square to fly.', enabled: true, mode: 'fly' });
+    if (stones > 0) items.push({ id: 'throw', label: 'Throw', detail: `Throw at your square or one next to it. Stones ${stones}/${C.stones}.`, enabled: true, mode: 'throw' });
+    return items;
+  }
+  function omittedNotes(S) {
+    if (!S || S.god || S.phase !== 'play' || !S.myTurn) return [];
+    const notes = [];
+    if (S.role === 'blue' && S.mustLeave) notes.push('Sit is used up. Step off this turn.');
+    if (S.role === 'red' && (S.stones | 0) < 1) notes.push('No stone. Land on a rock pile to pick one up.');
+    return notes;
+  }
+  function showSniffPop(blue, yes, found) {
+    if (found) return true;
+    if (blue && !yes) return false;
+    return true;
   }
   let open = false, turnKey = '';
   function clearRing() {
@@ -82,37 +92,42 @@
   }
   function draw(S, cell) {
     clearRing();
-    const items = legalActions(S).filter(it => IDS.includes(it.id));
+    const items = legalActions(S, selected()).filter(it => IDS.includes(it.id) && it.enabled);
     if (!items.length) { open = false; return; }
     const root = document.createElement('div');
     root.id = 'aring';
     root.setAttribute('role', 'menu');
     root.setAttribute('aria-label', 'Actions');
+    const board = document.getElementById('board');
     const r = cell.getBoundingClientRect();
-    const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
-    const radius = Math.max(56, Math.round(r.width * 1.15));
+    const br = board ? board.getBoundingClientRect() : { left: 0, top: 0, right: window.innerWidth, bottom: window.innerHeight };
+    const colW = 104, pillH = 44, gap = 8;
+    const colH = items.length * pillH + (items.length - 1) * gap;
+    const spaceR = br.right - r.right, spaceL = r.left - br.left;
+    let left = spaceR >= spaceL ? r.right + 8 : r.left - colW - 8;
+    left = Math.max(br.left + 4, Math.min(left, br.right - colW - 4));
+    let top = r.top + r.height / 2 - colH / 2;
+    top = Math.max(br.top + 4, Math.min(top, br.bottom - colH - 4));
+    const overlaps = left < r.right - 4 && left + colW > r.left + 4 && top < r.bottom - 4 && top + colH > r.top + 4;
+    if (overlaps) {
+      const above = r.top - br.top >= br.bottom - r.bottom;
+      top = above ? r.top - colH - 8 : r.bottom + 8;
+      top = Math.max(8, Math.min(top, window.innerHeight - colH - 8));
+      left = Math.max(br.left + 4, Math.min(r.left + r.width / 2 - colW / 2, br.right - colW - 4));
+    }
     const on = selected();
     items.forEach((it, i) => {
-      const ang = -Math.PI / 2 + (i * 2 * Math.PI / items.length);
-      let x = cx + Math.cos(ang) * radius, y = cy + Math.sin(ang) * radius;
-      x = Math.max(36, Math.min(window.innerWidth - 36, x));
-      y = Math.max(36, Math.min(window.innerHeight - 36, y));
       const b = document.createElement('button');
       b.type = 'button';
-      b.className = 'aring-btn' + (it.enabled ? '' : ' off') + (on === it.id ? ' on' : '');
+      b.className = 'aring-btn' + (on === it.id ? ' on' : '');
       b.textContent = it.label;
       b.title = it.detail;
       b.setAttribute('role', 'menuitem');
       b.setAttribute('aria-label', it.label + '. ' + it.detail);
-      if (!it.enabled) b.setAttribute('aria-disabled', 'true');
-      b.style.left = x + 'px';
-      b.style.top = y + 'px';
+      b.style.left = left + 'px';
+      b.style.top = (top + i * (pillH + gap)) + 'px';
+      b.style.width = colW + 'px';
       arm(b, () => {
-        if (!it.enabled) {
-          const h = document.getElementById('hint');
-          if (h) { h.textContent = it.detail; h.classList.remove('empty'); }
-          return;
-        }
         open = false;
         clearRing();
         if (!window.UI) return;
@@ -130,17 +145,23 @@
     const key = S ? (S.round + ':' + S.turn + ':' + (S.myTurn ? 1 : 0) + ':' + (S.pounce ? 1 : 0)) : '';
     if (key !== turnKey) { turnKey = key; open = false; }
     document.querySelectorAll('.ring-tap').forEach(n => n.remove());
-    const items = legalActions(S);
+    const items = legalActions(S, selected());
     const cell = items.length ? anchor(S) : null;
     if (!cell) { open = false; clearRing(); return; }
     const tap = document.createElement('button');
     tap.type = 'button';
     tap.className = 'ring-tap' + (open ? ' open' : '');
-    tap.textContent = open ? '✕' : '✦';
-    tap.setAttribute('aria-label', open ? 'Close actions' : 'Open actions');
+    tap.innerHTML = `<span class="ring-word">${open ? 'Close' : 'Actions'}</span>`;
+    tap.setAttribute('aria-label', open ? 'Close actions' : 'Actions');
     tap.setAttribute('aria-expanded', open ? 'true' : 'false');
     arm(tap, () => { open = !open; sync(S); });
     cell.appendChild(tap);
+    tap.style.pointerEvents = 'none';
+    const tr = tap.getBoundingClientRect();
+    const under = document.elementFromPoint(tr.left + tr.width / 2, tr.top + tr.height / 2);
+    tap.style.pointerEvents = '';
+    const other = under && under.closest && under.closest('.cell');
+    if (other && other !== cell && other.classList.contains('legal')) tap.classList.add('above');
     if (open) draw(S, cell); else clearRing();
   }
   function refreshTimers(S) {
@@ -170,7 +191,7 @@
         if (e.target.closest && e.target.closest('#aring, .ring-tap')) return;
         open = false;
         clearRing();
-        document.querySelectorAll('.ring-tap').forEach(n => { n.classList.remove('open'); n.textContent = '✦'; n.setAttribute('aria-expanded', 'false'); });
+        document.querySelectorAll('.ring-tap').forEach(n => { n.classList.remove('open'); const w = n.querySelector('.ring-word'); if (w) w.textContent = 'Actions'; n.setAttribute('aria-label', 'Actions'); n.setAttribute('aria-expanded', 'false'); });
       });
       window.addEventListener('resize', () => { if (open && window.UI && UI._S) sync(UI._S()); });
     }
@@ -180,5 +201,5 @@
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
     else init();
   }
-  return { legalActions, bearing, timersShown, sync, refreshTimers, IDS };
+  return { legalActions, omittedNotes, showSniffPop, bearing, timersShown, sync, refreshTimers, IDS };
 });

@@ -11,8 +11,8 @@ process.env.PORT = 3991; const server = require('./server.js');
   await A.click('#startGame'); await A.waitForSelector('#board .cell'); await V.waitForSelector('#board .cell');
   await A.waitForFunction(() => document.getElementById('wait').classList.contains('hidden'));
   for (const [x, y] of [[3, 4], [6, 2], [2, 1], [3, 4]]) { await cell(A, x, y).click(); await A.waitForTimeout(120); } // ostrich on its egg at (3,4)
-  await V.waitForSelector('#actions.mine'); await cell(V, 3, 4).click(); // vulture lands on the ostrich's square
-  await A.waitForSelector('#actions.mine');
+  await V.waitForSelector('#actions.mine', { state: 'attached' }); await cell(V, 3, 4).click(); // vulture lands on the ostrich's square
+  await A.waitForSelector('#actions.mine', { state: 'attached' });
   for (const [P, who] of [[A, 'ostrich'], [V, 'vulture']]) {
     const c = cell(P, 3, 4); assert.ok(await c.evaluate(e => e.classList.contains('both')), who + ': shared square marked');
     assert.equal(await c.locator('.pc').count(), 2, who + ': both birds drawn');
@@ -20,29 +20,29 @@ process.env.PORT = 3991; const server = require('./server.js');
     assert.ok(Math.abs(r1[0] - r2[0]) > 5 && Math.abs(r1[1] - r2[1]) > 5, who + ': birds offset, not stacked');
   }
   await V.screenshot({ path: 'shots/shared-square-vulture.png' });
-  await A.click('#actions button:has-text("Sit")'); await V.waitForSelector('#actions.mine');
+  await A.click('#actions button:has-text("Sit")', { force: true }); await V.waitForSelector('#actions.mine', { state: 'attached' });
   await V.evaluate(() => { window.__res = []; document.addEventListener('bo-impact', e => window.__res.push(e.detail.res)); });
-  await V.click('#actions button:has-text("Throw")'); await cell(V, 3, 4).click();
+  await V.click('#actions button:has-text("Throw")', { force: true }); await cell(V, 3, 4).click();
   await V.waitForSelector('.sm-reveal.yes', { timeout: 3000 }); await V.waitForTimeout(250);
   await V.screenshot({ path: 'shots/bounce-egg.jpg', type: 'jpeg', quality: 85 });
   assert.match(await V.textContent('#banner') + await V.textContent('body'), /Bounced! Egg under ostrich/);
-  await A.waitForSelector('#actions.mine'); await V.waitForTimeout(1500);
+  await A.waitForSelector('#actions.mine', { state: 'attached' }); await V.waitForTimeout(1500);
   assert.deepEqual(await V.evaluate(() => window.__res.map(r => window.SMASH.kind(r))), ['feather'], 'bounce animation, not a smash');
   assert.equal(await V.locator('.sm-yolk,.sm-half').count(), 0); assert.equal(await A.textContent('#eggsLeft'), '3'); assert.equal(await V.locator('.cell.hit').count(), 0);
   // sprite themes: both sprites visible and separated
   await V.evaluate(() => { document.documentElement.setAttribute('data-theme', 'nature'); });
-  await cell(A, 3, 3).click(); await V.waitForSelector('#actions.mine'); await cell(V, 3, 3).click(); await V.waitForTimeout(800);
+  await cell(A, 3, 3).click(); await V.waitForSelector('#actions.mine', { state: 'attached' }); await cell(V, 3, 3).click(); await V.waitForTimeout(800);
   const sp = await V.evaluate(() => [...document.querySelectorAll('#fx .spr')].map(e => { const r = e.getBoundingClientRect(); return [r.left, r.top, r.width]; }));
   if (sp.length === 2) assert.ok(Math.abs(sp[0][0] - sp[1][0]) > 5, 'sprites offset');
   // no-egg bounce: ostrich off its eggs, vulture refills at the rocks and throws at it
   await V.evaluate(() => document.documentElement.setAttribute('data-theme', 'classic'));
-  const turn = async (P, x, y, thr) => { await P.waitForSelector('#actions.mine'); if (thr) await P.click('#actions button:has-text("Throw")'); await cell(P, x, y).click(); };
+  const turn = async (P, x, y, thr) => { await P.waitForSelector('#actions.mine', { state: 'attached' }); if (thr) await P.click('#actions button:has-text("Throw")', { force: true }); await cell(P, x, y).click(); };
   await turn(A, 4, 4); await turn(V, 4, 5); await turn(A, 5, 4); await turn(V, 4, 6); await turn(A, 5, 5); await turn(V, 5, 5, true);
   await V.waitForSelector('.sm-reveal.no', { timeout: 3000 }); await V.waitForTimeout(250);
   await V.screenshot({ path: 'shots/bounce-noegg.jpg', type: 'jpeg', quality: 85 });
   assert.match(await V.textContent('body'), /Bounced! No egg/); assert.equal(await V.locator('.sm-yolk,.sm-half').count(), 0);
   // landing ON an unguarded egg says 'Found egg!' and shows it (no green maybe squares)
-  await turn(A, 6, 5); await turn(V, 3, 4); await A.waitForSelector('#actions.mine'); await V.waitForTimeout(400);
+  await turn(A, 6, 5); await turn(V, 3, 4); await A.waitForSelector('#actions.mine', { state: 'attached' }); await V.waitForTimeout(400);
   assert.match(await V.textContent('#banner'), /Found egg!/); assert.equal(await V.locator('.cell.maybe,.cell.snyes,.snwave').count(), 0);
   assert.equal(await cell(V, 3, 4).locator('.ic-spot').count(), 1); assert.ok(await cell(V, 3, 4).evaluate(e => e.classList.contains('vfound')));
   await V.screenshot({ path: 'shots/found-egg.jpg', type: 'jpeg', quality: 85 });

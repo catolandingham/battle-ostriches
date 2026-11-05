@@ -10,7 +10,7 @@ Games live in memory: a restart or free-tier sleep ends games in progress.
 Balanced CONFIG: rounds 30, warmth 20, maxSit 3, fly 2, throw adjacent (unlimited stones), smell 2 → Normal bots: vulture ~50%, avg ~25.5 rounds; Easy ~40%. Stone throws animate via public/smash.js (egg crack + yolk on a hit, dust on a miss, feather bounce when guarded).
 
 ## Gameplay UI
-The ✦ on your animal opens an action ring for the moves that are legal right now (Step, Carry, Sit, Fly, Throw, Stay, Burrow, Stop). Disabled choices stay visible with a reason. The buttons under the board are the keyboard path and still work. There is no separate Vulture's Eye Island screen in this repo; the ring floats on the existing board and does not move it.
+Tap your animal when it has something to do besides the glowing squares. That opens only the relevant actions next to it (Carry, Sit, Throw, Stay, Burrow, or Stop). Stepping and flying are the glowing squares themselves, so those are not listed again. Unavailable actions stay out of that list; the hint says why. The buttons under the board are off-screen until a keyboard user focuses one. There is no separate Vulture's Eye Island screen in this repo. The ostrich does not get a "Vulture smells nothing" popup. The vulture still sees its own sniff.
 
 Hyena sense is still only yes or no inside a 2-square box, diagonals included. North is the top of the board. The compass labels name that box. They do not point at a bird.
 

@@ -8,7 +8,7 @@ async function game(ctx, name) {
   const P = await ctx.newPage(), errs = [];
   P.on('pageerror', e => errs.push(e.message)); P.on('console', m => m.type() === 'error' && errs.push(m.text()));
   await P.addInitScript(init); await P.goto('http://localhost:3996/');
-  await P.click('#playSolo'); await P.click('[data-bots="1"]'); await P.click('#soloGo'); await P.click('[data-role="red"]'); await P.click('#startGame'); await P.waitForSelector('#actions.mine', { timeout: 15000 });
+  await P.click('#playSolo'); await P.click('[data-bots="1"]'); await P.click('#soloGo'); await P.click('[data-role="red"]'); await P.click('#startGame'); await P.waitForSelector('#actions.mine', { state: 'attached', timeout: 15000 });
   assert.equal(await P.locator('#keyBtn').count(), 0, 'map key button removed'); assert.ok(await P.isVisible('#helpBtn') || await P.locator('#helpBtn').count(), '? rules kept');
   // fly a few turns so footprints appear
   let markCell = null;
