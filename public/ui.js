@@ -123,7 +123,7 @@ const WALK={blue:[['🥚','Your goal','Hide '+C0.eggs+' eggs. Keep at least one 
   ['🪨','Stones','You carry 1 stone. Throw at your square or one next to it. A stone at the ostrich just bounces off. A missed stone stays on the board, and the ostrich won\'t carry an egg onto it. Land on a rock pile to pick up another.']]};
 let wi=0,wr='blue',wDone=null;
 function maybeWalk(r){if(!WALK[r]||localStorage.getItem('bo_walk_'+r))return;walk(r);}
-function walk(role,done){wr=role||(S?S.role:'blue');if(!WALK[wr])return;wi=0;wDone=done||null;drawWalk();$('walk').classList.remove('hidden');}
+function walk(role,done){wr=(role&&WALK[role]&&role)||(S&&WALK[S.role]&&S.role)||'blue';if(!WALK[wr])return;wi=0;wDone=done||null;drawWalk();$('walk').classList.remove('hidden');}
 function closeWalk(){$('walk').classList.add('hidden');localStorage.setItem('bo_walk_'+wr,'1');const d=wDone;wDone=null;d&&d();}
 function drawWalk(){const st=WALK[wr],cur=st[wi],W=$('walk');
  W.innerHTML=`<div class="wcard"><div class="wart"><span style="width:56px;height:56px;display:inline-block">${wr==='red'?VUL:OST}</span><span style="font-size:44px">${cur[0]}</span></div><h2>${cur[1]}</h2><p id="wText">${cur[2]}</p><div class="wdots">${st.map((_,k)=>`<span class="${k===wi?'on':''}"></span>`).join('')}</div><div class="wnav"><button id="wSkip">Skip</button><button id="wNext">${wi===st.length-1?"Let's play":'Next'}</button></div></div>`;
@@ -217,7 +217,7 @@ function guideApply(){if(S&&!S._o)S._o={m:S.moves,c:S.carryMoves,cc:S.can&&S.can
  if(G.sit&&S.can&&S.can.sit){S.moves=[];S.carryMoves=[];S.can.carry=false;}else{S.moves=f(S.moves);S.carryMoves=f(S.carryMoves);}
  G.path=[];let p=o.slice();for(let k=0;k<20&&gd(p,G.t)>0;k++){p=[p[0]+Math.sign(G.t[0]-p[0]),p[1]+Math.sign(G.t[1]-p[1])];G.path.push(key(p));}}
 function render(prev){
- $('lobby').classList.add('hidden');const C=S.cfg,blue=S.role==='blue',body=document.body;body.className=(S.role==='hunter'?'hunter':blue?'blue':'red')+(S.three?' three':'');
+ $('lobby').classList.add('hidden');const C=S.cfg,blue=S.role==='blue',body=document.body;body.className=(S.role==='hunter'?'hunter':blue?'blue':'red')+(S.three?' three':'')+(S.god?' godview':'');
  $('turnTag').innerHTML=S.role==='hunter'||(S.h3&&S.h3.team)?window.T3UI.tag(S):`<span style="display:inline-block;width:26px;height:26px;vertical-align:middle">${blue?OST:VUL}</span> ${blue?'OSTRICH':'VULTURE'}`;
  $('roundsLeft').textContent=C.rounds-S.round+1;$('eggsLeft').textContent=S.eggsLeft;
  // HUD: ostrich hunger (leaf + turns left) and vulture stones, both public
@@ -265,8 +265,8 @@ function render(prev){
   if(m==='hit'){h=icon('hit');tip.push(SHORT.hit);}
   else if(m==='stone'){h=icon('stone');tip.push(SHORT.stone);}
   else if(!blue&&m==='spotted'){h=icon('spot');tip.push(SHORT.spot);}
-  else if(blue&&e){h=`<span class="ic ic-myegg${m==='spotted'?' found':''}" data-t="myegg">${MYEGG}${S.phase==='play'?warmRing(e.coldIn,C.warmth):''}</span>`;
-   tip.push('Your egg: '+e.coldIn+' round'+(e.coldIn===1?'':'s')+' until cold'+(m==='spotted'?' · the vulture found it':''));}
+  else if((blue||S.god)&&e){h=`<span class="ic ic-myegg${m==='spotted'?' found':''}${S.god&&!blue?' godegg':''}" data-t="myegg">${MYEGG}${S.phase==='play'?warmRing(e.coldIn,C.warmth):''}</span>`;
+   tip.push((blue?'Your egg: ':'Egg: ')+e.coldIn+' round'+(e.coldIn===1?'':'s')+' until cold'+(m==='spotted'?' · the vulture found it':'')+(S.god&&!blue?' · watching':''));}
   else if(maybe){h=icon('maybe');}
   else if(isF(C,k)){h=icon('food');tip.push(SHORT.food+': resets the ostrich\'s hunger to '+C.food);}
   else if(isR(C,k)){h=icon('rock');tip.push(SHORT.rock);}
@@ -337,6 +337,7 @@ function render(prev){
  if(CM){let an=CM.at==='board'?null:[...a.querySelectorAll('button')].find(b=>(CM.at==='sit'?/Sit/:/Throw/).test(b.textContent));
   if(an&&!an.disabled){an.classList.add('spot','pulse');}if(CM.at==='board'||(an&&!an.disabled))h=CM.txt+(h&&CM.at!=='board'?' — or '+h.charAt(0).toLowerCase()+h.slice(1):'');}
  if(S.three)window.T3UI.after(S,prev,board);
+ if(window.BORing)BORing.sync(S);
  if(S.role!=='hunter'){requestAnimationFrame(()=>window.FX&&FX.update(S,prev));window.SMASH&&SMASH.update(S,prev);}
  // make 'your turn' + what to do impossible to miss (Brian playtest: a player missed the instructions)
  const mt=S.phase==='play'&&S.myTurn&&!S.pass;$('hint').classList.toggle('myturn',!!mt);
