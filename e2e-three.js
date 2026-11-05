@@ -10,14 +10,14 @@ const shot = (p, n) => p.screenshot({ path: OUT + n + '.jpg', type: 'jpeg', qual
     p.on('pageerror', e => errs.push(e.message)); return p; };
   const cell = (p, x, y) => p.locator('.cell').nth(y * 9 + x);
   const A = await mk(), V = await mk(), H = await mk();
-  await A.goto(U); await A.click('#moreP'); await A.click('#pc3'); await A.click('#playFriend'); await A.waitForSelector('#threeStep:not(.hidden)');
-  await A.click('#threeStep [data-r="hunter"]'); await A.waitForSelector('.kindbtn'); await shot(A, '1-lobby');
-  await A.click('#threeStep [data-r="blue"]'); assert.equal(await A.locator('.kindbtn').count(), 0, 'friend hunter picks their own animal');
-  await A.click('#t3go'); await A.waitForSelector('#shareCode:not(:empty)');
-  const link = (await A.inputValue('#shareLink')).replace(/^http:\/\/[^/]+/, 'http://localhost:3997');
-  assert.ok(/Vulture, Hunter/.test(await A.textContent('#wait')));
-  await V.goto(link); await V.waitForSelector('#board .cell'); await H.goto(link); await H.waitForSelector('#kindPick:not(.hidden)'); await shot(H, '2-hunter-pick');
-  await H.click('#pick-hyena'); await H.waitForSelector('#kindPick', { state: 'hidden' });
+  await A.goto(U); await A.click('#playFriend'); await A.waitForSelector('#lobbyCode:not(:empty)'); await shot(A, '1-lobby');
+  const link = (await A.inputValue('#lobbyLink')).replace(/^http:\/\/[^/]+/, 'http://localhost:3997');
+  await V.goto(link); await H.goto(link);
+  await A.waitForFunction(() => { const s = LobbyUI.get(); return s && s.setup === '3'; });
+  await A.click('[data-role="blue"]'); await V.click('[data-role="red"]');
+  await H.click('[data-role="hunter"]'); await H.waitForSelector('#kindSheet:not(.hidden)'); await shot(H, '2-hunter-pick');
+  await H.click('[data-kind="hyena"]'); await H.waitForSelector('#kindSheet', { state: 'hidden' });
+  await A.click('#startGame'); await A.waitForSelector('#board .cell'); await V.waitForSelector('#board .cell'); await H.waitForSelector('#board .cell');
   for (const [x, y] of [[2, 1], [6, 1], [2, 5], [7, 6]]) { await cell(A, x, y).click(); await A.waitForTimeout(120); }
   // round 1: vulture first, clock running
   await V.waitForSelector('#actions.mine', { state: 'attached' }); assert.ok(await V.locator('#clock3:not(.hidden)').count(), 'shot clock shown');
@@ -40,7 +40,7 @@ const shot = (p, n) => p.screenshot({ path: OUT + n + '.jpg', type: 'jpeg', qual
   await H.locator('#actions button').click(); await V.waitForSelector('#actions.mine', { state: 'attached' });
   console.log('ok 3 phones');
   // 1 human hunter (honey badger) vs 2 computer birds
-  const P = await mk(); await P.goto(U); await P.click('#moreP'); await P.click('#pc3'); await P.click('#playAI'); await P.click('#threeStep [data-r="hunter"]'); await P.click('[data-k="badger"]'); await P.click('#t3go');
+  const P = await mk(); await P.goto(U); await P.click('#playSolo'); await P.click('[data-bots="2"]'); await P.click('#soloGo'); await P.click('[data-role="hunter"]'); await P.click('[data-kind="badger"]'); await P.click('#startGame');
   await P.waitForSelector('#actions.mine', { timeout: 15000 }); assert.ok(/BADGER/.test(await P.textContent('#turnTag')));
   await P.locator('#actions button').click(); await P.waitForSelector('.burtag'); await shot(P, '7-badger-burrowed');
   for (let i = 0; i < 4; i++) { await P.waitForSelector('#actions.mine, #over:not(.hidden)', { timeout: 15000 }); if (await P.locator('#over:not(.hidden)').count()) break;

@@ -9,9 +9,10 @@ const OUT = 'shots/balanced/'; fs.mkdirSync(OUT + 'frames', { recursive: true })
   const mk = async () => { const c = await b.newContext({ ...devices['iPhone 13'] }); const p = await c.newPage(); await p.addInitScript(() => { localStorage.setItem('bo_hs_off','1'); localStorage.setItem('bo_tut_seen', '1'); localStorage.setItem('bo_walk_blue','1'); localStorage.setItem('bo_walk_red','1'); localStorage.setItem('bo_tips_off','1'); ['blue', 'red'].forEach(r => localStorage.setItem('bo_cs_' + r, '9')); }); p.on('pageerror', e => errs.push(e.message)); return p; };
   const A = await mk(), V = await mk(); const U = 'http://localhost:3999/';
   const cell = (p, x, y) => p.locator('.cell').nth(y * 9 + x);
-  await A.goto(U); await A.click('#playFriend'); await A.click('#twoPhones'); await A.waitForSelector('#shareCode:not(:empty)');
-  const link = await A.inputValue('#shareLink');
-  await V.goto(link.replace(/^http:\/\/[^/]+/, 'http://localhost:3999')); await V.waitForSelector('#board .cell');
+  await A.goto(U); await A.click('#playFriend'); await A.waitForSelector('#lobbyCode:not(:empty)');
+  const link = await A.inputValue('#lobbyLink');
+  await V.goto(link.replace(/^http:\/\/[^/]+/, 'http://localhost:3999')); await V.waitForSelector('#roomLobby');
+  await A.click('#startGame'); await A.waitForSelector('#board .cell'); await V.waitForSelector('#board .cell');
   await A.waitForFunction(() => document.getElementById('wait').classList.contains('hidden'));
   // eggs (3,4) (6,2) (2,1); ostrich starts at (7,2). Eggs can't go next to food: (1,1) is refused.
   await cell(A, 1, 1).click(); await A.waitForTimeout(150); assert.equal(await A.locator('.ic-myegg').count(), 0, 'no egg next to food');

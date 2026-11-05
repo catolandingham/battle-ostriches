@@ -6,8 +6,9 @@ process.env.PORT = 3991; const server = require('./server.js');
   const b = await webkit.launch(); const errs = [];
   const mk = async () => { const c = await b.newContext({ ...devices['iPhone 13'] }); const p = await c.newPage(); await p.addInitScript(() => { localStorage.setItem('bo_hs_off','1'); for (const k of ['bo_tut_seen','bo_walk_blue','bo_walk_red','bo_tips_off']) localStorage.setItem(k, '1'); ['blue', 'red'].forEach(r => localStorage.setItem('bo_cs_' + r, '9')); }); p.on('pageerror', e => errs.push(e.message)); return p; };
   const A = await mk(), V = await mk(); const U = 'http://localhost:3991/', cell = (p, x, y) => p.locator('.cell').nth(y * 9 + x);
-  await A.goto(U); await A.click('#playFriend'); await A.click('#twoPhones'); await A.waitForSelector('#shareCode:not(:empty)');
-  await V.goto((await A.inputValue('#shareLink')).replace(/^http:\/\/[^/]+/, 'http://localhost:3991')); await V.waitForSelector('#board .cell');
+  await A.goto(U); await A.click('#playFriend'); await A.waitForSelector('#lobbyCode:not(:empty)');
+  await V.goto((await A.inputValue('#lobbyLink')).replace(/^http:\/\/[^/]+/, 'http://localhost:3991')); await V.waitForSelector('#roomLobby');
+  await A.click('#startGame'); await A.waitForSelector('#board .cell'); await V.waitForSelector('#board .cell');
   await A.waitForFunction(() => document.getElementById('wait').classList.contains('hidden'));
   for (const [x, y] of [[3, 4], [6, 2], [2, 1], [3, 4]]) { await cell(A, x, y).click(); await A.waitForTimeout(120); } // ostrich on its egg at (3,4)
   await V.waitForSelector('#actions.mine'); await cell(V, 3, 4).click(); // vulture lands on the ostrich's square
