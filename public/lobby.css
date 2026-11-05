@@ -40,17 +40,43 @@
 #roomLobby .seat small{color:#4a6070;font-weight:700}
 #roomLobby .pill{font-size:13px;font-weight:800;border-radius:999px;padding:4px 8px;background:#eef5fb}
 #roomLobby .roles{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0}
-#roomLobby .rolecard{min-height:88px;padding:8px 6px;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+#roomLobby .rolecard{min-height:88px;padding:8px 6px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
 #roomLobby .rolecard .ra{width:42px;height:42px;display:block}
-#roomLobby .rolecard small{font-size:12px;font-weight:700;color:#4a6070}
-#roomLobby .rolecard.mine{outline:3px solid #2f7eb8}
-#roomLobby .rolecard.taken{opacity:.55}
-#roomLobby .setup-opt{width:100%;text-align:left;margin-top:6px;background:#fff}
-#roomLobby .setup-opt.on{outline:3px solid #2f7eb8}
+#roomLobby .rolecard small{font-size:12px;font-weight:700}
+#roomLobby .setup-opt{width:100%;text-align:left;margin-top:6px}
 #roomLobby .botpick{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:8px 0}
 #roomLobby .botpick button,#soloStep .botpick button{min-height:48px;font-size:20px}
 #soloStep .botpick{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
-.botpick button.on,#roomLobby .lvl button.on{outline:3px solid #1a2a3a}
+/* Cards stay dark-on-light in every theme. Global and theme button rules use white text and a cyan selected state. */
+#lobby :is(.rolecard,.setup-opt),
+#lobby :is(.rolecard,.setup-opt) :is(b,small){
+  background:#fff!important;color:#1a2a3a!important;opacity:1!important;
+  -webkit-text-fill-color:#1a2a3a!important;
+}
+#lobby :is(.rolecard,.setup-opt){border-color:#1a2a3a!important}
+#lobby :is(.rolecard,.setup-opt) small{color:#3e5568!important;-webkit-text-fill-color:#3e5568!important;background:transparent!important}
+#lobby :is(.rolecard.mine,.setup-opt.on),
+#lobby :is(.rolecard.mine,.setup-opt.on) :is(b,small){
+  background:#e7f3fb!important;color:#102433!important;-webkit-text-fill-color:#102433!important;
+}
+#lobby :is(.rolecard.mine,.setup-opt.on){outline:3px solid #1a5f8a;outline-offset:1px}
+#lobby :is(.rolecard.mine,.setup-opt.on) small{color:#1a4a68!important;-webkit-text-fill-color:#1a4a68!important;background:transparent!important}
+#lobby :is(.rolecard.taken,.rolecard:disabled),
+#lobby :is(.rolecard.taken,.rolecard:disabled) :is(b,small){
+  background:#f4f7fa!important;color:#1a2a3a!important;opacity:1!important;-webkit-text-fill-color:#1a2a3a!important;
+}
+#lobby :is(.rolecard.taken,.rolecard:disabled) small{color:#3e5568!important;-webkit-text-fill-color:#3e5568!important;background:transparent!important}
+#lobby .botpick button,#roomLobby .lvl button{
+  background:#fff!important;color:#1a2a3a!important;border:3px solid #1a2a3a!important;opacity:1!important;
+  -webkit-text-fill-color:#1a2a3a!important;box-shadow:none!important;
+}
+#lobby .botpick button.on,#roomLobby .lvl button.on{
+  background:#143a5c!important;color:#fff!important;border-color:#143a5c!important;
+  -webkit-text-fill-color:#fff!important;outline:3px solid #1a2a3a;outline-offset:1px;
+}
+#roomLobby .sheet button,#roomLobby .sheet button :is(b,small){
+  background:#fff!important;color:#1a2a3a!important;-webkit-text-fill-color:#1a2a3a!important;opacity:1!important;
+}
 #roomLobby .sheet{margin-top:8px;background:#fff;border:3px solid #1a2a3a;border-radius:16px;padding:10px}
 #roomLobby .sheet.hidden{display:none}
 #roomLobby .sheet button{width:100%;margin-top:6px;text-align:left}
