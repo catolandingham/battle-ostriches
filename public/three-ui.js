@@ -10,7 +10,7 @@ const CLAW='<svg viewBox="0 0 40 40" aria-hidden="true"><path d="M10 6 L18 34 M1
 const OSTI='<svg viewBox="0 0 40 40"><path d="M6 26 L18 18 L30 22 L24 32 L10 32 Z" fill="#38d6f0" stroke="#000" stroke-width="3" stroke-linejoin="round"/><path d="M26 22 L28 6 L34 7" fill="none" stroke="#000" stroke-width="4" stroke-linecap="round"/></svg>';
 const VULI='<svg viewBox="0 0 40 40"><path d="M4 18 L20 12 L36 18 L26 22 L20 32 L14 22 Z" fill="#2b3245" stroke="#000" stroke-width="3" stroke-linejoin="round"/><circle cx="20" cy="11" r="5" fill="#f3dfae" stroke="#000" stroke-width="2.5"/></svg>';
 const KIND={hyena:{n:'Hyena',art:HYENA,pw:'Pounce',pwTxt:'If your sense says a bird is within 2, you get one extra 1-square move that turn. A bird is out after 2 catches.'},
- badger:{n:'Honey badger',art:BADGER,pw:'Burrow',pwTxt:'Stay still 2 turns in a row to burrow: then the birds can never see you. Moving pops you up, and you can catch on that move. 1 catch knocks a bird out.'}};
+ badger:{n:'Honey badger',art:BADGER,pw:'Burrow',pwTxt:'Stay still to burrow. You usually hide at once; tough ground takes one more still turn. Birds cannot see you then. Moving pops you up, and you can catch on that move. 1 catch knocks a bird out.'}};
 const BN={blue:'Ostrich',red:'Vulture',hunter:'Hunter'};
 const hName=S=>S.h3&&S.h3.kind?KIND[S.h3.kind].n:'Hunter';
 const tname=(S,r)=>r==='hunter'?hName(S):r==='hyena'||r==='badger'?KIND[r].n:(S&&S.h3&&S.h3.team?{o1:'Ostrich 1',o2:'Ostrich 2',v1:'Vulture 1',v2:'Vulture 2'}[r]:0)||BN[r];
@@ -112,7 +112,7 @@ function hPieces(S,board){const h=S.h3,me=h.mySeat;
   pc.className='pc ph h'+x.kind+(bur?' bur':'')+(x.me?' mine':' rival');pc.innerHTML=bur?MOUND:KIND[x.kind].art;c.appendChild(pc);c.classList.add('hcell');
   c.dataset.tip=(c.dataset.tip?c.dataset.tip+' · ':'')+(x.me?(bur?'You, burrowed: nobody can see you':'You ('+KIND[x.kind].n+')'):me==='hyena'||me==='badger'?`Your rival, the ${KIND[x.kind].n}. ${x.kind==='badger'?'If it moves onto you, you are knocked back 2. If you move onto it, you bounce back 2.':'If you move onto it, it is knocked back 2.'}`:`${KIND[x.kind].n}! It catches a bird by landing on it (or if you step onto it)`);
   if(bur){const l=document.createElement('span');l.className='burtag';l.textContent='BURROWED';c.appendChild(l);}
-  else if(x.me&&x.kind==='badger'&&S.dig===1){const l=document.createElement('span');l.className='burtag dig';l.textContent='DIGGING 1/2';c.appendChild(l);c.dataset.tip+=' · Digging 1/2: stay still once more to burrow';}}
+  else if(x.me&&x.kind==='badger'&&S.dig===1){const l=document.createElement('span');l.className='burtag dig';l.textContent='TOUGH GROUND';c.appendChild(l);c.dataset.tip+=' · Tough ground: stay still once more to burrow';}}
  const rv=h.rival;if(rv&&rv.seq!==hPieces.rv){const fresh=hPieces.rv!==undefined;hPieces.rv=rv.seq;
   if(fresh){const t=cellAt(board,S,rv.to);t&&t.classList.add('h3kb');pop(board,rv.by==='badger'?'Badger shoved the hyena back 2!':'Hyena bounced off the badger!','catch');}}}
 function hOver(S){const h=S.h3,w=S.winner,me=h.mySeat,C=S.cfg;
@@ -129,9 +129,10 @@ function waitMsg(S){return `Wait, it's the ${tname(S,S.turn)}'s turn.`;}
 function nopeMsg(S){return `Move ${S.h3.range} square${S.h3.range>1?'s':''}: tap a glowing square.`;}
 function hint(S,a){if(S.h3.team&&!hint.in){hint.in=1;try{return tHint(S,a);}finally{hint.in=0;}}const r=S.role,t=S.turn;
  if(r==='hunter'&&S.myTurn){const k=S.h3.kind;
-  a.innerHTML=S.pounce?'<button class="on" onclick="UI.send({t:\'act\',a:\'hstay\'})">Stop here</button>':`<button onclick="UI.send({t:'act',a:'hstay'})">${k==='badger'?(S.burrowed?'Stay burrowed':S.dig===1?'Stay · dig 2/2':'Stay · dig 1/2'):'Stay put'}</button>`;
+  a.innerHTML=S.pounce?'<button class="on" onclick="UI.send({t:\'act\',a:\'hstay\'})">Stop here</button>':`<button onclick="UI.send({t:'act',a:'hstay'})">${k==='badger'?(S.burrowed?'Stay burrowed':S.dig===1?'Stay · finish burrow':'Stay · burrow'):'Stay put'}</button>`;
   if(S.pounce)return '🐾 POUNCE! One more square.';
-  return (k==='badger'&&!S.burrowed&&S.dig===1?'⛏ Digging 1/2: stay once more to burrow. ':'')+`Tap a glowing square to move ${S.h3.range}${S.h3.boost?' (boost!)':''}. ${S.sense?'A bird is within 2!':'No bird within 2.'}`;}
+  const burrowNote=k!=='badger'||S.burrowed?'':S.dig===1?'Tough ground: stay still once more to burrow. ':'Stay still to burrow. You usually hide at once. ';
+  return burrowNote+`Tap a glowing square to move ${S.h3.range}${S.h3.boost?' (boost!)':''}. ${S.sense?'A bird is within 2!':'No bird within 2.'}`;}
  if(!S.h3.ready)return S.h3.needKind?'Pick your hunter.':`Waiting for all ${S.h3.hunt?4:3} players…`;
  const lost=S.h3.lost;if(r!=='hunter'&&lost&&lost.bird===r&&lost.round>=S.round-1&&t!==r)return 'Caught! You lost this turn. '+tname(S,t)+'\'s turn…';
  if(r!=='hunter'&&S.h3.birds[r].out)return `You're out (${S.h3.birds[r].why==='starved'?'starved':'knocked out'}). ${tname(S,t)}'s turn…`;
@@ -161,7 +162,7 @@ function after(S,prev,board){chips(S);clock(S);kindPick(S);if(S.h3.team)tPieces(
  if(hc){const bur=me==='hunter'&&S.burrowed;const pc=document.createElement('div');pc.className='pc ph'+(bur?' bur':'');pc.innerHTML=bur?MOUND:KIND[k].art;hc.appendChild(pc);hc.classList.add('hcell');
   hc.dataset.tip=(hc.dataset.tip?hc.dataset.tip+' · ':'')+(me==='hunter'?(bur?'You, burrowed: the birds can\'t see you':'You ('+KIND[k].n+')'):`${KIND[k].n}! It catches a bird by landing on it (or if you step onto it)`);
   if(bur){const l=document.createElement('span');l.className='burtag';l.textContent='BURROWED';hc.appendChild(l);}
-  else if(me==='hunter'&&k==='badger'&&S.dig===1){const l=document.createElement('span');l.className='burtag dig';l.textContent='DIGGING 1/2';hc.appendChild(l);hc.dataset.tip+=' · Digging 1/2: stay still once more to burrow';}}
+  else if(me==='hunter'&&k==='badger'&&S.dig===1){const l=document.createElement('span');l.className='burtag dig';l.textContent='TOUGH GROUND';hc.appendChild(l);hc.dataset.tip+=' · Tough ground: stay still once more to burrow';}}
  // sense: hunter only - a pause and a wave from its square, plus the 2-square zone outlined (yes = amber, no = grey)
  if(me==='hunter'&&S.phase==='play'&&S.sense!=null&&S.myTurn){
   for(let y=0;y<S.cfg.rows;y++)for(let x=0;x<S.cfg.cols;x++)if(D([x,y],S.hunter)<=h.senseRange){const c=board.children[y*S.cfg.cols+x];c.classList.add('hzone',S.sense?'hyes':'hno');

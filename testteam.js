@@ -1,4 +1,5 @@
 // Unit tests: 4 players (2v2) and 5 players (2v2 + hunter). node testteam.js
+process.env.BO_TOUGH = process.env.BO_TOUGH || "1"; // same tough-ground path as test3.js and testhunt.js
 process.env.PORT = 0;
 const assert = require('assert'), T = require('./team.js'), SIM = require('./simteam.js');
 let n = 0; const ok = (name, f) => { f(); n++; console.log('ok', name); };
@@ -43,7 +44,7 @@ ok('5p: hunter wins only with an ostrich AND a vulture knocked out; boost 2 afte
   g.b.v2.pos = [5, 3]; T.hunterMove(g, [5, 3]); assert.equal(g.winner, 'hunter'); });
 ok('5p: two ostriches knocked out but no vulture -> vultures win, not the hunter', () => { const g = ready(5, 'badger'); T.knockout(g, 'o1', 'caught'); T.knockout(g, 'o2', 'caught'); assert.equal(g.winner, 'red'); });
 ok('5p: badger burrows by staying; birds never see a burrowed badger', () => { const g = ready(5, 'badger', [8, 3]); for (let i = 0; i < 4; i++) T.timeout(g);
-  g.b.o2.pos = [7, 2]; assert.equal(T.hunterSeenBy(g, 'o2'), true); T.hunterStay(g); assert.equal(g.h.burrowed, false, 'digging 1/2'); for (let i = 0; i < 4; i++) T.timeout(g); T.hunterStay(g); assert.equal(g.h.burrowed, true); assert.equal(T.hunterSeenBy(g, 'o2'), false); });
+  g.b.o2.pos = [7, 2]; assert.equal(T.hunterSeenBy(g, 'o2'), true); T.hunterStay(g); assert.equal(g.h.burrowed, false, 'tough ground: first still turn does not burrow'); for (let i = 0; i < 4; i++) T.timeout(g); T.hunterStay(g); assert.equal(g.h.burrowed, true); assert.equal(T.hunterSeenBy(g, 'o2'), false); });
 ok('shot clock timeouts: vulture passes, ostrich stays put (no warmth, hungrier), hunter stays', () => { const g = ready(5, 'hyena'); const h = g.b.o1.hunger;
   T.timeout(g); assert.equal(g.turn, 'o1'); T.timeout(g); assert.equal(g.b.o1.hunger, h - 1); assert.deepEqual(g.b.o1.pos, [1, 1]); T.timeout(g); T.timeout(g); assert.equal(g.turn, 'hunter'); T.timeout(g); assert.equal(g.turn, 'v1'); });
 ok('server views: vultures see no eggs; ostriches see all eggs; hunter sees no birds; teammates sniff shared', () => {
