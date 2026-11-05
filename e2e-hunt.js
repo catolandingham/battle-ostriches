@@ -1,5 +1,5 @@
 // 4-player Hunters mode + the new lobby on WebKit iPhone 13s: Classic default lobby, "More players" picker, Hunters setup,
-// a friend joining as the hyena by link, the badger's view with both hunters, badger digging 1/2, rivalry, game over.
+// a friend joining as the hyena by link, the badger's view with both hunters, tough-ground burrow text, rivalry, game over.
 process.env.PORT = 3995; process.env.BO_TOUGH = '1'; process.env.BO_H4START = '2,3,4,3'; process.env.BO_BOTMS = '200'; process.env.BO_CLOCKMS = '8000';
 const { webkit, devices } = require('playwright-core'); const assert = require('assert'), fs = require('fs');
 const server = require('./server.js'), H = require('./hunt.js'); const U = 'http://localhost:3995/', OUT = 'shots/hunt/'; fs.mkdirSync(OUT, { recursive: true });
@@ -27,11 +27,11 @@ const at = { state: 'attached' };
   await A.waitForSelector('#actions.mine', { ...at, timeout: 20000 }); assert.ok(/HONEY BADGER/.test(await A.textContent('#turnTag')));
   assert.equal(await A.locator('#h3bar .bchip').count(), 4); assert.ok(await A.locator('#clock3:not(.hidden)').count(), 'shot clock');
   assert.equal(await A.locator('.pc.ph').count(), 2, 'badger sees itself and the hyena (2 squares away)'); assert.equal(await A.locator('.pc.po, .pc.pv').count(), 0);
-  assert.ok(/dig 1\/2/.test(await A.textContent('#actions'))); await A.waitForTimeout(2300); await shot(A, '4-hunter-view-both-hunters');
-  await A.locator('#actions button').first().click(); // stay: digging 1/2
+  assert.ok(/Stay · burrow/.test(await A.textContent('#actions'))); await A.waitForTimeout(2300); await shot(A, '4-hunter-view-both-hunters');
+  await A.locator('#actions button').first().click(); // stay: tough ground (BO_TOUGH=1), not yet burrowed
   const room = [...server.rooms.values()].find(r => r.hunt); assert.equal(room.g.hunt.hs.badger.dig, 1); assert.equal(room.g.hunt.hs.badger.burrowed, false);
   await Y.waitForSelector('#actions.mine', { ...at, timeout: 20000 }); await Y.locator('#actions button').first().click();
-  await A.waitForSelector('#actions.mine', { ...at, timeout: 20000 }); await A.waitForSelector('.burtag.dig', at); assert.ok(/Digging 1\/2/.test(await A.textContent('#hint, #msg, body')));
+  await A.waitForSelector('#actions.mine', { ...at, timeout: 20000 }); await A.waitForSelector('.burtag.dig', at); assert.ok(/Tough ground/.test(await A.textContent('#hint'))); assert.ok(/finish burrow/.test(await A.textContent('#actions')));
   await A.waitForTimeout(2300); await shot(A, '5-badger-digging-1of2');
   await A.locator('#actions button').first().click(); assert.equal(room.g.hunt.hs.badger.burrowed, true, 'burrowed after 2 still turns');
   // rivalry: hyena moves onto the badger and bounces back 2
