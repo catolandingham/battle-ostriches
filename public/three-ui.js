@@ -69,7 +69,7 @@ function tTag(S){const r=S.h3.mySeat;if(r==='hunter')return tag(S);return `<span
 function tHint(S,a){const r=S.h3.mySeat,t=S.turn,h=S.h3;
   if(r==='hunter'&&S.myTurn)return hint(Object.assign({},S,{h3:h}),a);
  if(!h.ready)return h.needKind?'Pick your hunter.':`Waiting for all ${h.n} players…`;
- if(S.phase==='play'&&h.setupStep==='done')return 'Waiting for the other ostrich to hide its eggs…';
+ if(h.setupStep==='done'&&h.teamSetup&&h.teamSetup!=='done')return h.teamSetup==='eggs'?'Waiting for the other ostrich to hide eggs…':'Waiting for the other ostrich to finish placing.';
  const me=h.birds[r];if(me&&me.out)return `You're out (${me.why==='starved'?'starved':'knocked out'}). Watching the board — no moves.`;
  if(h.lost&&h.lost.bird===r&&h.lost.round>=S.round-1&&t!==r)return 'Caught! You lost this turn. '+tname(S,t)+'\'s turn…';
  const mt=t&&t!=='hunter'&&t[0]===r[0]?' (your teammate)':'';return `${tname(S,t)}'s turn${mt}…`;}
@@ -174,21 +174,17 @@ function after(S,prev,board){chips(S);clock(S);kindPick(S);if(S.h3.team)tPieces(
   hc.dataset.tip=(hc.dataset.tip?hc.dataset.tip+' · ':'')+(me==='hunter'?(bur?'You, burrowed: the birds can\'t see you':'You ('+KIND[k].n+')'):`${KIND[k].n}! It catches a bird by landing on it (or if you step onto it)`);
   if(bur){const l=document.createElement('span');l.className='burtag';l.textContent='BURROWED';hc.appendChild(l);}
   else if(me==='hunter'&&k==='badger'&&S.dig===1){const l=document.createElement('span');l.className='burtag dig';l.textContent='TOUGH GROUND';hc.appendChild(l);hc.dataset.tip+=' · Tough ground: stay still once more to burrow';}}
- // sense: hunter only. The box is Chebyshev distance 2 (diagonals count). Labels name the grid; they do not point at a bird.
+ // sense: hunter only. The shaded box is yes or no. It does not name a direction or draw a compass.
  if(me==='hunter'&&S.phase==='play'&&S.sense!=null&&S.myTurn){
   const hx=S.hunter[0],hy=S.hunter[1],range=h.senseRange;
   for(let y=0;y<S.cfg.rows;y++)for(let x=0;x<S.cfg.cols;x++){const dx=x-hx,dy=y-hy;if(Math.max(Math.abs(dx),Math.abs(dy))>range)continue;
    const c=board.children[y*S.cfg.cols+x];c.classList.add('hzone',S.sense?'hyes':'hno');
-   const br=window.BORing?BORing.bearing(dx,dy):{name:'here',key:''};
-   const where=br.name==='here'?'You are here':(br.name.charAt(0).toUpperCase()+br.name.slice(1)+' of you. North is the top of the board');
-   c.dataset.tip=(c.dataset.tip?c.dataset.tip+' · ':'')+(S.sense?'Sense yes: a bird is somewhere in this 2-square box. ':'Sense no: no bird in this 2-square box. ')+where+'. Northwest, northeast, southwest, and southeast count the same as north, south, east, and west. This does not point at the bird.';
-   if(br.name!=='here'&&Math.max(Math.abs(dx),Math.abs(dy))===range&&(dx===0||dy===0||Math.abs(dx)===Math.abs(dy))){const lab=document.createElement('span');lab.className='dirlab';lab.textContent=br.key;c.appendChild(lab);}}
+   c.dataset.tip=(c.dataset.tip?c.dataset.tip+' · ':'')+(S.sense?'Sense yes: a bird is somewhere in this 2-square box. This does not point at the bird.':'Sense no: no bird in this 2-square box.');}
   const sk=S.round+':'+S.senseSeq;if(sk!==lastSense){lastSense=sk;UI.pause(1100);
    if(hc){const w=document.createElement('div');w.className='h3wave '+(S.sense?'yes':'no');hc.appendChild(w);}
    pop(board,S.sense?(S.pounce?'Still close! Pounce!':'BIRD NEAR!'):'Nothing near',S.sense?'yes':'no');
    window.SFX&&SFX.play(S.sense?'sniffYes':'sniffNo');}
-  if(S.pounce)noteBanner('pounce','POUNCE: land on the bird to catch it.',true);
-  else noteBanner('sensekey','No arrow. North is up.',false);}
+  if(S.pounce)noteBanner('pounce','POUNCE: land on the bird to catch it.',true);}
  if(S.pounce&&S.myTurn&&me==='hunter'){const mine=board.querySelector('.pc.ph.mine');const cell=hc||(mine&&mine.closest('.cell'));
   if(cell&&!cell.querySelector('.pouncetag')){const t=document.createElement('span');t.className='pouncetag';t.textContent='CAN CATCH';cell.appendChild(t);}}
  // catch + knockback feedback

@@ -47,7 +47,7 @@
       const role = h.shown || label(h.animal || h.role, h.kind);
       return `<li><b>${esc(h.you ? 'You' : h.name)}</b>${h.host ? ' · host' : ''}${h.bench ? ' · waiting' : ''}<span>${esc(role)}</span></li>`;
     }).join('');
-    const roles = (s.roles || []).map(r => `<button type="button" class="rolecard${r.mine ? ' mine' : ''}${r.over ? ' over' : ''}${r.taken ? ' taken' : ''}" data-role="${esc(r.id)}" aria-pressed="${r.mine ? 'true' : 'false'}" ${r.taken ? 'disabled' : ''}><span class="ra">${art(r.id)}</span><b>${esc(r.name)}</b><small>${esc(r.mine ? 'YOU' : (r.who || r.sub))}</small></button>`).join('');
+    const roles = (s.roles || []).map(r => `<button type="button" class="rolecard${r.mine ? ' mine' : ''}${r.over ? ' over' : ''}${r.taken ? ' taken' : ''}" data-role="${esc(r.id)}" aria-pressed="${r.mine ? 'true' : 'false'}" ${r.taken ? 'disabled' : ''}><span class="ra">${art(r.id)}</span><b>${esc(r.name)}</b><small>${esc(r.mine ? 'YOU' : (r.takenBy || r.who || r.sub))}</small></button>`).join('');
     const max = s.maxBots || 0;
     const levels = (s.solo || s.botsWanted) ? `<div class="lvl"><span>Computer</span><button type="button" data-level="easy" class="${s.level === 'easy' ? 'on' : ''}">Easy</button><button type="button" data-level="normal" class="${s.level !== 'easy' ? 'on' : ''}">Normal</button></div>` : '';
     const sound = (window.SFX && SFX.muted) ? 'Sound off' : 'Sound on';
@@ -73,6 +73,7 @@
       <ul class="who" aria-label="Roster">${who}</ul>
       ${recover}
       ${roles ? `<div class="roles" aria-label="Roles">${roles}</div>` : ''}
+      ${s.computers ? `<p class="statusline">Computers: ${esc(s.computers)}</p>` : ''}
       ${s.showHunterKind ? `<p class="statusline">Computer hunter, if nobody claims it</p><div class="row hunterkind"><button type="button" data-hkind="hyena" class="${s.hunterKind === 'badger' ? '' : 'on'}" aria-pressed="${s.hunterKind === 'badger' ? 'false' : 'true'}">Hyena</button><button type="button" data-hkind="badger" class="${s.hunterKind === 'badger' ? 'on' : ''}" aria-pressed="${s.hunterKind === 'badger' ? 'true' : 'false'}">Honey Badger</button></div>` : ''}
       ${bots}
       ${s.host ? `<button type="button" class="big" id="startGame"${s.canStart ? '' : ' disabled'}>${esc(s.startLabel || 'Start game')}</button>` : '<p class="footnote">Waiting for the host to start.</p>'}`;

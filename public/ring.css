@@ -12,7 +12,6 @@ html[data-theme] #aring .aring-btn,html[data-theme] .ring-tap{animation:none!imp
 body.timers-off #clock3{visibility:hidden!important}
 body.timers-off #roundsLeft{visibility:hidden}
 #hud #timerToggle.on{background:#ffd21f;color:#111}
-.dirlab{position:absolute;top:0;left:1px;z-index:5;pointer-events:none;font:900 9px/1 system-ui,sans-serif;color:#111;background:#fff;border:1px solid #111;border-radius:3px;padding:0 2px}
 #banner.sensekey,#banner.pounce{font-size:12px!important;line-height:32px!important;padding:0 8px!important;white-space:nowrap;overflow:hidden;text-overflow:clip}
 #banner.sensekey,html[data-theme] #banner.sensekey{background:#1d3557!important;color:#fff!important}
 #banner.pounce,html[data-theme] #banner.pounce{background:#ffb000!important;color:#111!important}

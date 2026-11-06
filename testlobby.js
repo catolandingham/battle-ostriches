@@ -151,6 +151,55 @@ t('a late joiner that makes 4 players keeps Hunters when a hunter is already cla
   assert.equal(d.type, 'expand'); assert.equal(d.plan.setup, '4h');
   assert.equal(d.plan.assignments.find(a => a.seat === 'badger').human.id, 'd');
 });
+t('two humans can both be hunters once two computers take the birds', () => {
+  const r = humans(2);
+  assert.equal(LB.claim(r, 'h0', 'hyena').ok, true);
+  assert.equal(LB.claim(r, 'h1', 'badger').ok, true);
+  const blocked = LB.view(r, 'h0');
+  assert.match(blocked.hint, /Add 2 computers for the ostrich and the vulture/);
+  assert.equal(blocked.canStart, false);
+  assert.equal(blocked.showHunterKind, false);
+  LB.setBots(r, 2, 'h0');
+  const v = LB.view(r, 'h0');
+  assert.equal(v.canStart, true);
+  assert.equal(v.setup, '4h');
+  assert.equal(v.computers, 'Ostrich, Vulture');
+  const p = LB.plan(r);
+  assert.equal(p.assignments.find(a => a.seat === 'hyena').human.id, 'h0');
+  assert.equal(p.assignments.find(a => a.seat === 'badger').human.id, 'h1');
+  assert.deepEqual(p.botSeats.sort(), ['blue', 'red']);
+});
+t('a taken bird says who has it and points at another animal', () => {
+  const r = humans(2);
+  LB.claim(r, 'h0', 'blue');
+  const g = LB.view(r, 'h1');
+  const ostrich = g.roles.find(x => x.id === 'blue');
+  assert.equal(ostrich.taken, true);
+  assert.equal(ostrich.takenBy, 'Taken by Player 1');
+  assert.equal(g.hint, 'Choose another bird or hunter.');
+  assert.match(LB.claim(r, 'h1', 'blue').error, /Taken by Player 1/);
+});
+t('three humans do not show a computer hunter when nobody is a computer', () => {
+  const r = humans(3);
+  LB.claim(r, 'h0', 'blue'); LB.claim(r, 'h1', 'red'); LB.claim(r, 'h2', 'hyena');
+  const v = LB.view(r, 'h0');
+  assert.equal(v.setup, '3');
+  assert.equal(v.showHunterKind, false);
+  assert.equal(v.computers, '');
+  const badger = v.roles.find(x => x.id === 'badger');
+  assert.equal(badger.takenBy, 'Taken by Player 3');
+  assert.equal(v.startLabel, 'Start · 3 people');
+});
+t('two ostrich claims in a four-player room both keep a seat', () => {
+  const r = humans(4);
+  LB.claim(r, 'h0', 'ostrich'); LB.claim(r, 'h2', 'ostrich');
+  LB.claim(r, 'h1', 'vulture'); LB.claim(r, 'h3', 'vulture');
+  const p = LB.plan(r);
+  assert.equal(p.setup, '4');
+  assert.equal(p.assignments.find(a => a.seat === 'o1').human.id, 'h0');
+  assert.equal(p.assignments.find(a => a.seat === 'o2').human.id, 'h2');
+  assert.equal(p.botSeats.length, 0);
+});
 t('adding computers to two birds becomes 2 vs 2 without a setup button', () => {
   const r = humans(2); LB.claim(r, 'h0', 'blue'); LB.claim(r, 'h1', 'red');
   LB.setBots(r, 2, 'h0');

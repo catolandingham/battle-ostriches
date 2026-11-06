@@ -50,6 +50,22 @@ function shownAnimal(h) {
   const a = animalOf(h);
   return a === 'ostrich' ? 'Ostrich' : a === 'vulture' ? 'Vulture' : a === 'hyena' ? 'Hyena' : a === 'badger' ? 'Honey Badger' : 'Choosing';
 }
+function countAnimals(humans) {
+  const c = { ostrich: [], vulture: [], hyena: [], badger: [] };
+  for (const h of humans || []) { const a = animalOf(h); if (a && c[a]) c[a].push(h); }
+  return c;
+}
+function missingBirds(c) {
+  const m = [];
+  if (!c.ostrich.length) m.push('ostrich');
+  if (!c.vulture.length) m.push('vulture');
+  return m;
+}
+function birdComputerHint(missing, add) {
+  if (!missing.length || add < 1) return 'Add a computer for the open bird.';
+  const names = missing.length === 2 ? 'ostrich and the vulture' : missing[0];
+  return 'Add ' + add + ' computer' + (add === 1 ? '' : 's') + ' for the ' + names + '.';
+}
 function fourMode(humans) {
   const counts = { ostrich: 0, vulture: 0, hyena: 0, badger: 0 };
   for (const h of humans || []) { const a = animalOf(h); if (a) counts[a]++; }
@@ -97,10 +113,25 @@ function effective(room) {
   const max = maxBots(room);
   bots = room.solo ? Math.max(1, Math.min(max, bots || 1)) : Math.max(0, Math.min(max, bots));
   const total = nH + bots, inf = infer(total, room.humans);
-  const picked = room.humans.find(h => animalOf(h) === 'hyena' || animalOf(h) === 'badger');
-  if (picked && total < 3) {
-    return { humans: room.humans, bench: [], bots, total, ok: false, reason: 'need', preview: '3',
-      hint: 'YOU ARE ' + shownAnimal(picked) + '. A hunter game needs 3 players. Add a friend or a computer.' };
+  const counted = countAnimals(room.humans);
+  const twoHunters = counted.hyena.length > 0 && counted.badger.length > 0;
+  if (twoHunters && total < 4) {
+    const add = 4 - total;
+    return { humans: room.humans, bench: [], bots, total, ok: false, reason: 'need', preview: '4h',
+      hint: birdComputerHint(missingBirds(counted), add) };
+  }
+  if ((counted.hyena.length || counted.badger.length) && !twoHunters && total < 3) {
+    const missing = missingBirds(counted);
+    const open = room.humans.filter(h => !animalOf(h)).length;
+    const add = Math.max(0, missing.length - open);
+    const hint = open && missing.length > 1
+      ? 'Choose Ostrich or Vulture, or add computers for the birds.'
+      : birdComputerHint(missing, add || (3 - total));
+    return { humans: room.humans, bench: [], bots, total, ok: false, reason: 'need', preview: '3', hint };
+  }
+  if ((counted.hyena.length && counted.badger.length) && total === 5) {
+    return { humans: room.humans, bench: [], bots, total, ok: false, reason: 'mix', preview: '5',
+      hint: 'Five players have one hunter. One player keeps Hyena or Honey Badger.' };
   }
   if (!inf.ok && inf.reason === 'need' && !room.solo) inf.preview = '2';
   return { humans: room.humans, bench: [], bots, total, ...inf };
@@ -153,7 +184,11 @@ function reconcile(room) {
     if (bench.has(h.id)) { h.role = null; h.animal = null; h.kind = null; continue; }
     let role = h.role && seats.includes(h.role) && !used.has(h.role) ? h.role : null;
     if (!role && (h.role || h.animal)) role = prefer(h.role || (h.animal === 'hyena' || h.animal === 'badger' ? 'hunter' : h.animal === 'ostrich' ? 'blue' : h.animal === 'vulture' ? 'red' : null), h.kind).find(s => seats.includes(s) && !used.has(s)) || null;
-    if (!role) { h.role = null; h.kind = null; h.animal = null; continue; }
+    if (!role) {
+      const kept = animalOf(h);
+      if (kept === 'hyena' || kept === 'badger') { h.role = null; h.kind = kept; h.animal = kept; continue; }
+      h.role = null; h.kind = null; h.animal = null; continue;
+    }
     used.add(role); h.role = role;
     if (role === 'hyena' || role === 'badger') h.kind = role;
     else if (role !== 'hunter') h.kind = null;
@@ -169,6 +204,18 @@ function claim(room, hid, role, kind) {
   const animal = role === 'ostrich' || role === 'vulture' || role === 'hyena' || role === 'badger' ? role
     : role === 'blue' || role === 'o1' || role === 'o2' ? 'ostrich'
     : role === 'red' || role === 'v1' || role === 'v2' ? 'vulture' : null;
+  if (role === 'hyena' || role === 'badger') {
+    const same = room.humans.find(h => h !== me && animalOf(h) === role);
+    if (same) return { error: 'Taken by ' + same.name + '. Choose another bird or hunter.' };
+    const otherHunter = room.humans.find(h => h !== me && (animalOf(h) === 'hyena' || animalOf(h) === 'badger'));
+    const bodies = room.humans.length + (room.botsWanted | 0);
+    if (otherHunter && bodies !== 2 && bodies !== 4) return { error: 'Taken by ' + otherHunter.name + '. Choose another bird or hunter.' };
+    me.animal = role;
+    me.kind = role;
+    me.role = null;
+    reconcile(room);
+    return { ok: true };
+  }
   const four = p.total === 4 || p.reason === 'mix';
   if (four && animal && role !== 'hunter') {
     me.animal = animal;
@@ -180,22 +227,12 @@ function claim(room, hid, role, kind) {
     return { ok: true };
   }
   const seats = seatsNow(room);
-  if ((role === 'hyena' || role === 'badger') && !seats.includes(role)) {
-    const seat = seats.includes('hunter') ? 'hunter' : 'hunter';
-    const other = room.humans.find(h => h !== me && h.role && h.role !== 'blue' && h.role !== 'red' && h.role !== 'o1' && h.role !== 'o2' && h.role !== 'v1' && h.role !== 'v2' && (h.role === 'hunter' || h.role === 'hyena' || h.role === 'badger'));
-    if (other && seats.includes('hunter') && !seats.includes('hyena')) return { error: other.name + ' is the ' + shownAnimal(other) + '. This game has one hunter.' };
-    me.role = seats.includes('hyena') || seats.includes('badger') ? role : seat;
-    me.kind = role;
-    me.animal = animalOf(me);
-    if (me.role === 'hunter') room.hunterKind = role;
-    return { ok: true };
-  }
   if (!seats.length) {
     return { error: p.reason === 'unsupported' ? 'Choose how to continue before picking roles.' : 'Waiting for enough players.' };
   }
   if (!seats.includes(role)) return { error: 'That role is not in this setup.' };
   const other = room.humans.find(h => h !== me && h.role === role);
-  if (other) return { error: 'That role is taken.' };
+  if (other) return { error: 'Taken by ' + other.name + '. Choose another bird or hunter.' };
   if (kind && kind !== 'hyena' && kind !== 'badger') kind = null;
   me.role = role;
   if (role === 'hunter') {
@@ -286,10 +323,24 @@ function animalCards(humans, setup, hid) {
     const cap = capOf(id);
     return {
       id, name: ANIMAL[id].name, sub: holders.length ? holders.map(h => h.name).join(', ') : ANIMAL[id].sub,
-      taken: holders.length >= cap && !mine, mine, who: holders.map(h => h.name).join(', '),
+      taken: holders.length >= cap && !mine, takenBy: holders.length >= cap && !mine ? 'Taken by ' + holders.map(h => h.name).join(', ') : '', mine, who: holders.map(h => h.name).join(', '),
       cap, holders: holders.length, over: holders.length > cap, kind: id === 'hyena' || id === 'badger' ? id : null,
     };
   });
+}
+function computerSeatNames(room) {
+  const snap = room.humans.map(h => ({ role: h.role, kind: h.kind, animal: h.animal }));
+  let names = [];
+  try {
+    const planned = plan(room);
+    if (planned && planned.ok) {
+      const label = { blue: 'Ostrich', red: 'Vulture', o1: 'Ostrich', o2: 'Ostrich', v1: 'Vulture', v2: 'Vulture', hyena: 'Hyena', badger: 'Honey Badger' };
+      names = planned.botSeats.map(s => s === 'hunter' ? (planned.kind === 'badger' ? 'Honey Badger' : 'Hyena') : (label[s] || s));
+    }
+  } finally {
+    room.humans.forEach((h, i) => { h.role = snap[i].role; h.kind = snap[i].kind; h.animal = snap[i].animal; });
+  }
+  return names;
 }
 function view(room, hid) {
   const p = effective(room), setupId = p.ok ? p.setup : (p.reason === 'mix' ? p.setup : (p.preview || null));
@@ -299,30 +350,37 @@ function view(room, hid) {
   const playing = new Set(playingHumans.map(h => h.id));
   const seatCard = id => {
     const h = room.humans.find(x => x.role === id && playing.has(x.id));
-    return { id, name: META[id].name, sub: h && h.id === hid ? 'YOU' : (h ? h.name : META[id].sub), taken: !!(h && h.id !== hid), who: h ? h.name : '', mine: !!(h && h.id === hid), kind: h ? h.kind : null };
+    const mine = !!(h && h.id === hid);
+    const takenBy = h && !mine ? 'Taken by ' + h.name : '';
+    return { id, name: META[id].name, sub: mine ? 'YOU' : (takenBy || META[id].sub), taken: !!takenBy, takenBy, who: '', mine, kind: h ? h.kind : null };
   };
   const hunterCards = () => {
-    const holder = room.humans.find(x => playing.has(x.id) && (x.role === 'hunter' || x.role === 'hyena' || x.role === 'badger'));
+    const holder = playingHumans.find(x => animalOf(x) === 'hyena' || animalOf(x) === 'badger');
     const kind = holder ? animalOf(holder) : null;
+    const bodies = room.humans.length + (room.botsWanted | 0);
+    const singleSeat = bodies !== 2 && bodies !== 4;
     return ['hyena', 'badger'].map(id => {
       const mine = !!(holder && holder.id === hid && kind === id);
-      const blocked = !!(holder && holder.id !== hid);
+      const blocked = !!(holder && holder.id !== hid && (kind === id || singleSeat));
+      const takenBy = blocked ? 'Taken by ' + holder.name : '';
       return { id, name: id === 'badger' ? 'Honey Badger' : 'Hyena', kind: id,
-        mine, taken: blocked, who: blocked ? holder.name : '',
-        sub: mine ? 'YOU' : blocked ? (holder.name + ' is the hunter') : 'Open' };
+        mine, taken: blocked, takenBy, who: '', sub: mine ? 'YOU' : (takenBy || 'Open') };
     });
   };
-  const roles = (setupId === '4' || setupId === '4h') ? animalCards(playingHumans, setupId, hid)
+  let roles = (setupId === '4' || setupId === '4h') ? animalCards(playingHumans, setupId, hid)
     : (setupId === '3' || setupId === '5')
       ? seats.filter(id => id !== 'hunter').map(seatCard).concat(hunterCards())
       : seats.map(seatCard);
+  if (setupId === '2' && !room.solo && room.humans.length >= 2) roles = roles.concat(hunterCards());
   const needKind = !!(me && me.role === 'hunter' && me.kind !== 'hyena' && me.kind !== 'badger');
   const host = !!(me && me.host);
   const canStart = host && p.ok && !needKind;
   const alone = !room.solo && p.reason === 'need';
   const youAre = me && animalOf(me) ? 'YOU ARE ' + shownAnimal(me) : 'Choose an animal';
-  const status = p.hint ? p.hint : alone
-    ? 'Just you. Pick Ostrich or Vulture. A friend joins with this code, or add a computer. Start needs 2.'
+  const choose = me && !animalOf(me) && roles.some(r => r.taken) ? 'Choose another bird or hunter.' : '';
+  const status = p.hint ? p.hint
+    : choose ? choose
+    : alone ? 'Just you. Pick Ostrich or Vulture. A friend joins with this code, or add a computer. Start needs 2.'
     : (setupId && SETUPS[setupId] ? SETUPS[setupId].label : '');
   const people = room.humans.length;
   const startLabel = !p.ok ? 'Start game'
@@ -340,9 +398,10 @@ function view(room, hid) {
     })),
     botsWanted: p.bots, maxBots: maxBots(room), total: p.total, humanCount: room.humans.length,
     setup: p.ok ? p.setup : null, preview: setupId, setupLabel: status,
-    reason: p.ok ? null : p.reason, hint: p.reason === 'mix' ? p.hint : (p.hint || ''), recovery: room.recovery || null, roles, startLabel, youAre,
+    reason: p.ok ? null : p.reason, hint: p.reason === 'mix' ? p.hint : (p.hint || choose), recovery: room.recovery || null, roles, startLabel, youAre,
+    computers: p.bots > 0 ? computerSeatNames(room).join(', ') : '',
     hunterKind: room.hunterKind || null,
-    showHunterKind: (setupId === '3' || setupId === '5') && !roles.some(r => r.id === 'hunter' && r.taken),
+    showHunterKind: (setupId === '3' || setupId === '5') && p.bots > 0 && !room.humans.some(h => animalOf(h) === 'hyena' || animalOf(h) === 'badger'),
     needKind, canStart,
   };
 }
