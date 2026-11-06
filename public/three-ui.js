@@ -136,7 +136,7 @@ function hint(S,a){if(S.h3.team&&!hint.in){hint.in=1;try{return tHint(S,a);}fina
   a.innerHTML=S.pounce?'<button class="on" onclick="UI.send({t:\'act\',a:\'hstay\'})">Stop here</button>':`<button onclick="UI.send({t:'act',a:'hstay'})">${k==='badger'?(S.burrowed?'Stay burrowed':S.dig===1?'Stay · finish burrow':'Stay · burrow'):'Stay put'}</button>`;
   if(S.pounce)return 'POUNCE: a bird is within 2. Land on it to catch it — this extra move is still your turn.';
   const burrowNote=k!=='badger'||S.burrowed?'':S.dig===1?'Tough ground: stay still once more to burrow. ':'Stay still to burrow. You usually hide at once. ';
-  return burrowNote+`Tap a glowing square to move ${S.h3.range}${S.h3.boost?' (boost!)':''}. ${S.sense?'A bird is within 2!':'No bird within 2.'}`;}
+  return burrowNote+`Tap a glowing square to move ${S.h3.range}${S.h3.boost?' (boost!)':''}. ${S.sense?'A bird is within 2. It is not pointed at.':'No bird within 2, so no bird is drawn.'}`;}
  if(!S.h3.ready)return S.h3.needKind?'Pick your hunter.':`Waiting for all ${S.h3.hunt?4:3} players…`;
  const lost=S.h3.lost;if(r!=='hunter'&&lost&&lost.bird===r&&lost.round>=S.round-1&&t!==r)return 'Caught! You lost this turn. '+tname(S,t)+'\'s turn…';
  if(r!=='hunter'&&S.h3.birds[r]&&S.h3.birds[r].out)return `You're out (${S.h3.birds[r].why==='starved'?'starved':'knocked out'}). Watching the board — no moves.`;

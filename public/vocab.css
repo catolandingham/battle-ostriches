@@ -42,7 +42,7 @@ html[data-theme] #board .pc{filter:drop-shadow(0 0 2px #fff) drop-shadow(0 0 1px
 #walk .wdots{margin-bottom:10px}#walk .wdots span{display:inline-block;width:7px;height:7px;border-radius:50%;background:#ccc;margin:0 2px}#walk .wdots span.on{background:#111}
 #toast .tipoff{display:block;font-size:.8em;text-decoration:underline;margin-top:4px;background:none;border:0;color:inherit;padding:4px 0}
 #tipbar{margin:4px 10px 6px;padding:6px 10px;border-radius:10px;background:rgba(255,255,255,.92);color:#111;font:600 13px/1.3 system-ui,-apple-system,sans-serif;display:flex;align-items:center;align-content:center;flex-wrap:wrap;gap:8px;justify-content:space-between;box-sizing:border-box;height:7.5rem;min-height:7.5rem;max-height:7.5rem;overflow:auto;animation:tipin .3s}
-#tipbar.hidden{display:flex!important;visibility:hidden}#tipbar>span{flex:1 1 12rem}#tipbar .tipoff{background:none!important;border:0!important;box-shadow:none!important;color:#555!important;text-decoration:underline;font:600 12px system-ui!important;white-space:nowrap;padding:4px!important;min-height:32px;width:auto!important;flex:0 0 auto}
+#tipbar.hidden{display:none!important;height:0!important;min-height:0!important;max-height:0!important;margin:0!important;padding:0!important;visibility:hidden!important}#tipbar>span{flex:1 1 12rem}#tipbar .tipoff{background:none!important;border:0!important;box-shadow:none!important;color:#555!important;text-decoration:underline;font:600 12px system-ui!important;white-space:nowrap;padding:4px!important;min-height:32px;width:auto!important;flex:0 0 auto}
 #tipbar .mk{position:relative;left:auto;top:auto;right:auto;bottom:auto;transform:none;display:inline-flex;vertical-align:middle}
 @keyframes tipin{from{opacity:0}to{opacity:1}}
 #walk .wart{display:flex;align-items:center;justify-content:center;gap:10px;margin:6px 0}
@@ -205,7 +205,10 @@ html #board .cell:is(.gloud,.gcool) .wnum,html[data-theme] #board .cell:is(.glou
 #hint.guide.cold.urgent{background:#8a1d06!important;border-color:#ffb627!important}
 #hint .skipguide{display:block;margin:6px auto 0;background:rgba(255,255,255,.15)!important;color:#fff!important;border:2px solid rgba(255,255,255,.7)!important;border-radius:999px!important;font:800 14px/1 system-ui,-apple-system,sans-serif!important;padding:6px 12px!important;box-shadow:none!important;min-height:0!important;width:auto!important}
 /* Stable slot above the board: empty hints keep this height, and long turn text scrolls inside it instead of pushing the board. */
-#hint,#hint.guide,#hint.empty{height:8.5rem;min-height:8.5rem;max-height:8.5rem;overflow-x:hidden;overflow-y:auto;display:flex;flex-direction:column;justify-content:safe center;align-items:center;flex-wrap:nowrap;gap:6px;box-sizing:border-box}
+#hint,#hint.guide,#hint.empty{height:auto;min-height:42px;max-height:4.5rem;overflow-x:hidden;overflow-y:auto;display:flex;flex-direction:column;justify-content:safe center;align-items:center;flex-wrap:nowrap;gap:6px;box-sizing:border-box}
+#app{height:100vh;height:100dvh;max-height:100dvh;min-height:0;overflow:hidden}
+#app #board{flex:1 1 auto;min-height:0;overflow:auto}
+#app #actions,#app #log{flex:none}
 #hint .skipguide{flex:0 0 auto}
 body.three #clock3.hidden{display:block;visibility:hidden}
 body.red #banner.hidden,body.blue #banner.hidden,body.hunter #banner.hidden{display:block!important;visibility:hidden}

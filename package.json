@@ -7,7 +7,7 @@
     "start": "node server.js",
     "test:rest": "node test3.js && node e2e-three.js && node testteam.js && node e2e-team.js && node testhunt.js && node e2e-hunt.js && node e2e-badger-see.js && node e2e-share.js && node testrestore.js",
     "test:consistency": "node e2e-consistency.js",
-    "test": "node test.js && node testplay.js && node testlobby.js && node ai-test.js && node e2e.js && node e2e-lobby.js && node e2e-join-code.js && node e2e-two-start.js && node e2e-role-ring.js && node e2e-lobby-contrast.js && node e2e-invite.js && node e2e-pass.js && node e2e-shared.js && node e2e-hardstop.js && npm run test:rest"
+    "test": "node test.js && node testplay.js && node testlobby.js && node ai-test.js && node e2e.js && node e2e-lobby.js && node e2e-join-code.js && node e2e-two-start.js && node e2e-hunter-phone.js && node e2e-role-ring.js && node e2e-lobby-contrast.js && node e2e-invite.js && node e2e-pass.js && node e2e-shared.js && node e2e-hardstop.js && npm run test:rest"
   },
   "keywords": [],
   "author": "",
