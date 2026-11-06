@@ -148,6 +148,80 @@ ok('4h: eliminated vulture sees both hunters and the eggs; the living hyena does
   assert.ok(!js.includes('[6,5]')); assert.ok(!js.includes('[2,1]'));
 });
 
+ok('hunter near is a one-shot on entering sight, not while burrowed', () => {
+  assert.deepEqual(R.hunterAlerts([], ['hyena']), ['hyena']);
+  assert.deepEqual(R.hunterAlerts(['hyena'], ['hyena']), []);
+  assert.deepEqual(R.hunterAlerts(['hyena'], []), []);
+  assert.deepEqual(R.hunterAlerts([], ['badger']), ['badger']);
+  assert.equal(R.hunterNearLabel('hyena'), 'HYENA NEAR');
+  assert.equal(R.hunterNearLabel('badger'), 'HONEY BADGER NEAR');
+  assert.ok(!/\d|north|east|south|west/i.test(R.hunterNearLabel('hyena') + R.hunterNearLabel('badger')));
+  const bird = (extra) => Object.assign({ phase: 'play', role: 'blue', h3: { kind: 'hyena', hunter: null, burrowed: false, birds: { blue: { out: false } } } }, extra);
+  assert.deepEqual(R.seenHunterKinds(bird()), []);
+  assert.deepEqual(R.seenHunterKinds(bird({ h3: { kind: 'hyena', hunter: [2, 2], burrowed: false, birds: { blue: { out: false } } } })), ['hyena']);
+  assert.deepEqual(R.seenHunterKinds(bird({ h3: { kind: 'badger', hunter: [2, 2], burrowed: true, birds: { blue: { out: false } } } })), []);
+  assert.deepEqual(R.seenHunterKinds(bird({ god: true, h3: { kind: 'hyena', hunter: [2, 2], birds: { blue: { out: true } } } })), []);
+  assert.deepEqual(R.seenHunterKinds({ phase: 'play', role: 'hunter', h3: { kind: 'badger', hunter: [2, 2], burrowed: true, birds: {} } }), []);
+  const both = { phase: 'play', role: 'blue', h3: { hunt: true, hunters: [{ kind: 'hyena', p: [1, 1], me: false, burrowed: false }, { kind: 'badger', p: [8, 3], me: false, burrowed: true }], birds: { blue: { out: false } } } };
+  assert.deepEqual(R.seenHunterKinds(both), ['hyena']);
+});
+
+ok('burrowed or digging badger still receives its own position', () => {
+  const { room } = S.create3({ role: 'hunter', bots: ['blue', 'red'], kind: 'badger' }, null);
+  room.g = T.newGame3('badger', undefined, [8, 3]);
+  room.g.three.burrowed = false; room.g.three.dig = 1;
+  let v = S.view3(room, 'hunter');
+  assert.deepEqual(v.hunter, [8, 3]); assert.equal(v.dig, 1);
+  room.g.three.burrowed = true; room.g.three.dig = 2;
+  v = S.view3(room, 'hunter');
+  assert.deepEqual(v.hunter, [8, 3]); assert.equal(v.burrowed, true); assert.deepEqual(v.h3.hunter, [8, 3]);
+  const { room: h } = S.createH({ role: 'badger', bots: ['blue', 'red', 'hyena'] }, null);
+  h.g.phase = 'play'; h.g.hunt.hs.badger.p = [8, 3]; h.g.hunt.hs.badger.burrowed = true; h.g.hunt.hs.badger.dig = 2;
+  const bv = S.viewH(h, 'badger');
+  const me = bv.h3.hunters.find(x => x.kind === 'badger');
+  assert.ok(me && me.me && me.burrowed); assert.deepEqual(me.p, [8, 3]); assert.deepEqual(bv.hunter, [8, 3]);
+});
+
+ok('an eliminated bird leaves the egg and no longer blocks a smash', () => {
+  const stuck = T.newGame3('badger', undefined, [0, 3]);
+  for (const p of [[6, 1], [2, 1], [2, 5]]) assert(B.placeEgg(stuck, p));
+  assert(T.placeOstrich3(stuck, [6, 1]));
+  stuck.three.birds.blue.out = true; stuck.turn = 'red'; stuck.vulture = [6, 2]; stuck.stones = 1;
+  assert.equal(T.vultureThrow3(stuck, [6, 1]), 'hit');
+  assert.ok(stuck.ostrich[0] < 0); assert.equal(stuck.eggs[0].alive, false);
+  const ko = T.newGame3('badger', undefined, [6, 2]);
+  for (const p of [[6, 1], [2, 1], [2, 5]]) assert(B.placeEgg(ko, p));
+  assert(T.placeOstrich3(ko, [6, 1]));
+  assert(T.vultureFly3(ko, [4, 1])); assert(T.ostrichAct3(ko, 'sit')); assert(T.hunterMove(ko, [6, 1]));
+  assert.equal(ko.three.birds.blue.out, true); assert.ok(ko.ostrich[0] < 0); assert.equal(ko.turn, 'red');
+  ko.vulture = [5, 1]; ko.stones = 1; assert.equal(T.vultureThrow3(ko, [6, 1]), 'hit');
+  const live = T.newGame3('hyena', undefined, [0, 3]);
+  for (const p of [[6, 1], [2, 1], [2, 5]]) assert(B.placeEgg(live, p));
+  assert(T.placeOstrich3(live, [6, 1]));
+  live.vulture = [6, 2]; live.stones = 1; assert.equal(B.vultureThrow(live, [6, 1]), 'bounce'); assert.equal(live.eggs[0].alive, true);
+  const starved = T.newGame3('hyena', undefined, [0, 3]);
+  for (const p of [[6, 1], [2, 1], [2, 5]]) assert(B.placeEgg(starved, p));
+  assert(T.placeOstrich3(starved, [6, 1])); starved.hungerLeft = 1;
+  assert(T.vultureFly3(starved, [4, 1])); assert(T.ostrichAct3(starved, 'sit'));
+  assert.equal(starved.three.birds.blue.why, 'starved'); assert.ok(starved.ostrich[0] < 0);
+  for (let i = 0; i < 4 && starved.turn !== 'red'; i++) T.timeout(starved);
+  starved.vulture = [5, 1]; starved.stones = 1; assert.equal(starved.turn, 'red');
+  assert.equal(T.vultureThrow3(starved, [6, 1]), 'hit');
+  const team = TT.newTeam(4);
+  team.phase = 'play'; team.turn = 'v1';
+  team.b.o1.pos = [6, 1]; team.b.o1.out = true; team.b.o2.pos = [1, 1];
+  team.b.v1.pos = [6, 2]; team.b.v1.stones = 1; team.b.v2.pos = [4, 4];
+  team.eggs.push({ id: 0, nest: 0, pos: [6, 1], alive: true, lastWarm: 0 });
+  assert.equal(TT.vultureThrow(team, 'v1', [6, 1]), 'hit'); assert.ok(team.b.o1.pos[0] < 0);
+});
+
+ok('lobby clock off hides the timer and is not turned back on here', () => {
+  assert.equal(R.timersShown({ showTimers: true, clockStopped: true }, '1'), false);
+  const room = { code: 'ZZZZ', g: B.newGame(), players: { blue: {}, red: null }, clock: false };
+  const v = S.view(room, 'blue');
+  assert.equal(v.showTimers, false); assert.equal(v.clockStopped, true);
+});
+
 console.log(n + ' gameplay UI tests passed');
 S.close();
 process.exit(0);

@@ -249,7 +249,9 @@ function render(prev){
  const sn=S.phase==='play'&&S.sniff?S.sniff:null,snK=sn?sn.p+'|'+sn.yes:'',snNew=!!sn&&snK!==sniffSeen;sniffSeen=snK; // keyed by the sniff itself, not the round: the ostrich's own move bumps the round and used to replay it lateif(snNew)sniffUntil=Date.now()+1200;
  const found=!!sn&&key(sn.p)===key(S.vulture)&&S.marks[key(S.vulture)]==='spotted'; // landed ON an egg: that's a find, not a sniff
  const inSn=k=>{if(!sn)return false;const [a,b]=k.split(',').map(Number);return Math.max(Math.abs(a-sn.p[0]),Math.abs(b-sn.p[1]))<=1;};
- const throwing=!blue&&M==='throw',ok=key(S.ostrich||[-9,-9]),vk=key(S.vulture);
+ const birdGone=side=>{const b=S.h3&&S.h3.birds;if(!b)return false;if(S.h3.team){const me=S.h3.mySeat;return side==='o'?!!((me==='o1'||me==='o2')&&b[me]&&b[me].out):!!((me==='v1'||me==='v2')&&b[me]&&b[me].out);}return side==='o'?!!(b.blue&&b.blue.out):!!(b.red&&b.red.out);};
+ const onBoard=p=>p&&p[0]>=0&&p[1]>=0;
+ const throwing=!blue&&M==='throw',ok=onBoard(S.ostrich)&&!birdGone('o')?key(S.ostrich):'',vk=onBoard(S.vulture)&&!birdGone('v')?key(S.vulture):'';
  for(let y=0;y<C.rows;y++)for(let x=0;x<C.cols;x++){const k=x+','+y,d=document.createElement('div');d.className='cell';
   const m=S.marks[k];if(m)d.classList.add(m);const tags=[],tip=[];
   const legal=lk.has(k)||(setup&&(S.phase==='setupOstrich'||legalNow().some(q=>key(q)===k)));

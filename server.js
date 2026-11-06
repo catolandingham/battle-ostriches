@@ -27,7 +27,7 @@ const code = () => { let c; do { c = Array.from({ length: 4 }, () => 'ABCDEFGHJK
 const tok = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
 // Display preference only. Missing or any value other than false means the round counter and shot clock are shown.
 // The 10s clock still expires the turn when it is hidden. Lobby code can set this at create time via settings.showTimers.
-function timersOn(room) { return !(room.settings && room.settings.showTimers === false); }
+function timersOn(room) { if (room && room.clock === false) return false; return !(room && room.settings && room.settings.showTimers === false); }
 function eggView(g) { return g.eggs.map(e => ({ pos: e.pos, alive: e.alive, coldIn: B.coldIn(g, e), carried: g.carrying === e.id })); }
 function view(room, role) {
   if (room.hunt) return viewH(room, role);
@@ -351,6 +351,7 @@ function clockH(room) {
   room.clockT = setTimeout(() => { if (room.clockKey !== k || room.g !== g) return; room.clockKey = null; HU.timeout(g); room.touched = Date.now(); broadcast(room); }, ms);
 }
 function stamp(room, v) {
+  if (v) { v.showTimers = timersOn(room); v.clockStopped = !!(room && room.clock === false); }
   if (room && room.flow) {
     v.flow = 1;
     if (room.g && room.g.phase === 'over') v.arrivals = (room.arrivals || []).map(a => a.name).filter(Boolean);

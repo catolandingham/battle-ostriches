@@ -88,7 +88,9 @@ function throwTargets(g, s) {
   return r;
 }
 const smells = (g, p) => alive(g).some(e => { const q = eggPos(g, e); return q && D(q, p) <= g.cfg.smellRange; });
-function vultureFly(g, s, p) {
+function clearOut(g) { for (const s of OS.concat(VS)) { const b = g.b[s]; if (!b.out || !b.pos || b.pos[0] < 0) continue;
+  if (isO(s) && b.carrying != null) { const e = g.eggs[b.carrying]; b.carrying = null; if (e && e.alive) e.pos = b.pos.slice(); } b.pos = OFF.slice(); } }
+function vultureFly(g, s, p) { clearOut(g);
   if (!flyTargets(g, s).some(q => K(q) === K(p))) return false;
   const b = g.b[s], from = b.pos.slice(); b.pos = p.slice();
   g.lastAction = { seat: s, type: 'fly', from };
@@ -100,7 +102,7 @@ function vultureFly(g, s, p) {
   if (g.h && K(p) === K(g.h.p)) catchBird(g, s, [sgn(from[0] - p[0]), sgn(from[1] - p[1])]);
   next(g); return true;
 }
-function vultureThrow(g, s, p) {
+function vultureThrow(g, s, p) { clearOut(g);
   if (!throwTargets(g, s).some(q => K(q) === K(p))) return false;
   const b = g.b[s]; b.stones--; g.sniffs[s] = null;
   const e = eggAt(g, p), guard = OS.find(o => live(g, o) && K(g.b[o].pos) === K(p)); let result;

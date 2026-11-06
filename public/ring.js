@@ -16,6 +16,7 @@
   }
   // stored is localStorage bo_timers: '1' on, '0' off, missing follows the server (default on).
   function timersShown(state, stored) {
+    if (state && state.clockStopped) return false;
     if (stored === '0') return false;
     if (stored === '1') return true;
     return !state || state.showTimers !== false;
@@ -53,6 +54,19 @@
     if (S.role === 'blue' && S.mustLeave) notes.push('Sit is used up. Step off this turn.');
     if (S.role === 'red' && (S.stones | 0) < 1) notes.push('No stone. Land on a rock pile to pick one up.');
     return notes;
+  }
+  function hunterNearLabel(kind) { return kind === 'badger' ? 'HONEY BADGER NEAR' : 'HYENA NEAR'; }
+  function hunterAlerts(prevKinds, nowKinds) {
+    const prev = new Set(prevKinds || []);
+    return (nowKinds || []).filter(k => k && !prev.has(k));
+  }
+  function seenHunterKinds(S) {
+    if (!S || S.phase !== 'play' || S.god || S.role === 'hunter' || !S.h3) return [];
+    const h = S.h3, me = h.mySeat || S.role, b = h.birds && h.birds[me];
+    if (b && b.out) return [];
+    if (h.hunt) return (h.hunters || []).filter(x => x && !x.me && x.p && x.p[0] >= 0 && !(x.kind === 'badger' && x.burrowed)).map(x => x.kind);
+    if (h.hunter && h.hunter[0] >= 0 && !(h.kind === 'badger' && h.burrowed)) return [h.kind || 'hyena'];
+    return [];
   }
   function showSniffPop(blue, yes, found) {
     if (found) return true;
@@ -201,5 +215,5 @@
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
     else init();
   }
-  return { legalActions, omittedNotes, showSniffPop, bearing, timersShown, sync, refreshTimers, IDS };
+  return { legalActions, omittedNotes, showSniffPop, hunterAlerts, hunterNearLabel, seenHunterKinds, bearing, timersShown, sync, refreshTimers, IDS };
 });

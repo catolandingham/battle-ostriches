@@ -12,7 +12,9 @@ Balanced CONFIG: rounds 30, warmth 20, maxSit 3, fly 2, throw adjacent (unlimite
 ## Gameplay UI
 Tap your animal when it has something to do besides the glowing squares. That opens only the relevant actions next to it (Carry, Sit, Throw, Stay, Burrow, or Stop). Stepping and flying are the glowing squares themselves, so those are not listed again. Unavailable actions stay out of that list; the hint says why. The buttons under the board are off-screen until a keyboard user focuses one. There is no separate Vulture's Eye Island screen in this repo. The ostrich does not get a "Vulture smells nothing" popup. The vulture still sees its own sniff.
 
-Hyena sense is still only yes or no inside a 2-square box, diagonals included. North is the top of the board. The compass labels name that box. They do not point at a bird.
+Hyena sense is still only yes or no inside a 2-square box, diagonals included. North is the top of the board. The compass labels name that box. They do not point at a bird. When a living bird first sees a hunter, the board says HYENA NEAR or HONEY BADGER NEAR once. A burrowed badger does not trigger it and stays hidden. The badger still sees itself while burrowed.
+
+An eliminated bird is off the board. A stone on the egg it was covering smashes that egg. A living ostrich on an egg still makes the stone bounce.
 
 A catch that does not knock a bird out shows HURT on that animal. OUT means eliminated. An eliminated human bird then gets a read-only view of every animal and the eggs (`god: true`) and is sent no actions. Until that moment the old visibility rules apply, including a living hunter seeing no birds or eggs. Hunters are not eliminated mid-game, so they do not get that view before the game ends.
 
