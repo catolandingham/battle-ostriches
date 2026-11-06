@@ -6,7 +6,12 @@
     linear-gradient(180deg, #eef6ff 0%, #f7fbff 48%, #e8f4ea 100%);
   color:#1a2a3a;
 }
-#lobby.inroom{justify-content:flex-start;padding-top:calc(env(safe-area-inset-top) + 78px)}
+#lobby.inroom{justify-content:flex-start;padding-top:calc(env(safe-area-inset-top) + 64px)}
+#lobby.inroom .corner{display:none}
+.toolmenu{position:absolute;top:52px;right:0;background:#fff;color:#1a2a3a;border:2px solid #1a2a3a;border-radius:12px;padding:8px;display:flex;flex-direction:column;gap:6px;min-width:160px;z-index:5}
+.toolmenu.hidden{display:none}
+.toolmenu button{background:#fff!important;color:#1a2a3a!important;-webkit-text-fill-color:#1a2a3a!important;border:2px solid #1a2a3a!important;box-shadow:none!important}
+.visually-hidden{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
 #lobby h1,#lobby h2{color:#1a2a3a;text-shadow:none}
 #lobby .tag{color:#4a6070}
 #lobby #lobbyErr{color:#9a3412;min-height:1.2em}
@@ -25,9 +30,16 @@
 #roomLobby .switch.off{background:#b8c8d4}
 #roomLobby .switch::after{content:"";position:absolute;top:3px;left:23px;width:26px;height:26px;border-radius:50%;background:#fff}
 #roomLobby .switch.off::after{left:3px}
-#roomLobby .codebox{background:#fff;border:3px dashed #c2410c;border-radius:16px;padding:10px;text-align:center;margin:8px 0}
-#lobbyCode{font-size:2rem;font-weight:900;letter-spacing:.18em;color:#c2410c;margin:2px 0}
-#lobbyLink{width:100%;font-size:13px;margin-top:6px}
+#roomLobby .codebox{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:4px 0 8px}
+#lobbyCode{font-size:2.4rem;font-weight:900;letter-spacing:.18em;color:#c2410c!important;-webkit-text-fill-color:#c2410c!important;margin:0}
+#roomLobby #shareGo{flex:0 0 auto;min-width:96px;min-height:48px}
+#roomLobby .statusline{margin:0 0 8px;text-align:center;color:#1a2a3a;font-weight:800}
+#roomLobby .who{list-style:none;margin:0 0 8px;padding:0;display:flex;flex-wrap:wrap;gap:6px 14px}
+#roomLobby .who li{font-weight:700}
+#roomLobby .who span{margin-left:6px;color:#3e5568;font-weight:700}
+#roomLobby .botstep{display:flex;align-items:center;justify-content:center;gap:10px;margin:8px 0}
+#roomLobby .botstep button{flex:0 0 48px;min-height:48px;font-size:28px;line-height:1}
+#roomLobby #botCount{min-width:1.2em;text-align:center;font-size:1.4rem;color:#1a2a3a!important;-webkit-text-fill-color:#1a2a3a!important;background:#fff!important}
 #roomLobby .row{display:flex;gap:8px;justify-content:center;margin-top:8px}
 #roomLobby .row button{flex:1}
 #roomLobby .infer,#roomLobby .choose{border-radius:12px;padding:8px 10px;font-size:14px;font-weight:700;margin:8px 0}
@@ -66,10 +78,11 @@
   background:#f4f7fa!important;color:#1a2a3a!important;opacity:1!important;-webkit-text-fill-color:#1a2a3a!important;
 }
 #lobby :is(.rolecard.taken,.rolecard:disabled) small{color:#3e5568!important;-webkit-text-fill-color:#3e5568!important;background:transparent!important}
-#lobby .botpick button,#roomLobby .lvl button{
+#lobby .botpick button,#roomLobby .lvl button,#roomLobby .botstep button{
   background:#fff!important;color:#1a2a3a!important;border:3px solid #1a2a3a!important;opacity:1!important;
   -webkit-text-fill-color:#1a2a3a!important;box-shadow:none!important;
 }
+#roomLobby .botstep button:disabled{background:#f4f7fa!important;color:#1a2a3a!important;-webkit-text-fill-color:#1a2a3a!important;opacity:1!important}
 #lobby .botpick button.on,#roomLobby .lvl button.on{
   background:#143a5c!important;color:#fff!important;border-color:#143a5c!important;
   -webkit-text-fill-color:#fff!important;outline:3px solid #1a2a3a;outline-offset:1px;

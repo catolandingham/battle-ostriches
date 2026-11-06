@@ -54,19 +54,26 @@ t('solo bot count selects the setup', () => {
   r.botsWanted = 4; LB.clampBots(r); LB.reconcile(r);
   assert.equal(LB.plan(r).setup, '5');
 });
-t('4 players need an explicit 2v2 or Hunters choice', () => {
+t('4 players follow the roles: birds are 2v2, hunters are Hunters', () => {
   const r = humans(4);
-  assert.equal(LB.effective(r).reason, 'choice4');
-  assert.ok(LB.plan(r).error);
-  assert.ok(LB.setChoice(r, '4h', 'h1').error);
-  LB.setChoice(r, '4h', 'h0'); LB.claim(r, 'h0', 'badger'); LB.claim(r, 'h1', 'hyena');
-  const p = LB.plan(r);
+  assert.equal(LB.effective(r).setup, '4');
+  let p = LB.plan(r);
+  assert.equal(p.setup, '4');
+  assert.deepEqual(p.assignments.map(a => a.seat), ['o1', 'v1', 'o2', 'v2']);
+  LB.claim(r, 'h0', 'hyena'); LB.claim(r, 'h1', 'badger');
+  p = LB.plan(r);
   assert.equal(p.setup, '4h');
-  assert.equal(p.assignments.find(a => a.seat === 'badger').human.id, 'h0');
-  assert.equal(p.assignments.find(a => a.seat === 'hyena').human.id, 'h1');
-  assert.equal(p.botSeats.length, 0);
-  LB.setChoice(r, '4', 'h0');
-  assert.equal(LB.plan(r).setup, '4');
+  assert.equal(p.assignments.find(a => a.seat === 'hyena').human.id, 'h0');
+  assert.equal(p.assignments.find(a => a.seat === 'badger').human.id, 'h1');
+  assert.ok(LB.setChoice(r, '4', 'h0').error);
+});
+t('too many ostriches is recoverable and does not start', () => {
+  const r = humans(4);
+  LB.claim(r, 'h0', 'ostrich'); LB.claim(r, 'h1', 'ostrich'); LB.claim(r, 'h2', 'ostrich');
+  const v = LB.effective(r);
+  assert.equal(v.reason, 'mix');
+  assert.match(v.hint, /two ostriches/);
+  assert.ok(LB.plan(r).error);
 });
 t('6 players get a recovery choice, not a dead end', () => {
   const r = humans(6);
@@ -100,18 +107,21 @@ t('a late joiner expands a unique setup and keeps old roles', () => {
   assert.equal(d.plan.assignments.find(a => a.seat === 'blue').human.id, 'h0');
   assert.equal(d.plan.assignments.find(a => a.seat === 'hunter').human.id, 'h2');
 });
-t('a late joiner that makes 4 players returns to the setup choice', () => {
+t('a late joiner that makes 4 players keeps Hunters when a hunter is already claimed', () => {
   const d = LB.sameOrAdapt({
-    humans: [{ id: 'a', role: 'blue' }, { id: 'b', role: 'red' }, { id: 'c', role: 'hunter', kind: 'hyena' }],
+    humans: [{ id: 'a', role: 'blue', name: 'A' }, { id: 'b', role: 'red', name: 'B' }, { id: 'c', role: 'hunter', kind: 'hyena', name: 'C' }],
     bots: [], arrivals: [{ id: 'd', name: 'Player 4' }], setupChoice: null,
   });
-  assert.equal(d.type, 'lobby'); assert.equal(d.reason, 'choice4');
+  assert.equal(d.type, 'expand'); assert.equal(d.plan.setup, '4h');
+  assert.equal(d.plan.assignments.find(a => a.seat === 'badger').human.id, 'd');
 });
-t('changing setup remaps roles instead of wiping a still-valid bird', () => {
-  const r = humans(2); r.botsWanted = 1; LB.reconcile(r); LB.claim(r, 'h0', 'blue'); LB.claim(r, 'h1', 'red');
-  LB.setBots(r, 2, 'h0'); assert.equal(LB.effective(r).reason, 'choice4');
-  LB.setChoice(r, '4', 'h0');
+t('adding computers to two birds becomes 2 vs 2 without a setup button', () => {
+  const r = humans(2); LB.claim(r, 'h0', 'blue'); LB.claim(r, 'h1', 'red');
+  LB.setBots(r, 2, 'h0');
+  assert.equal(LB.effective(r).setup, '4');
   assert.equal(r.humans[0].role, 'o1'); assert.equal(r.humans[1].role, 'v1');
+  const p = LB.plan(r);
+  assert.deepEqual(p.botSeats, ['o2', 'v2']);
 });
 
 process.env.PORT = 3977; process.env.BO_NOSTORE = '1'; process.env.BO_CLOCKMS = '60000';
@@ -210,21 +220,18 @@ const roomOf = code => server.rooms.get(code);
   const hj = await wait(H, m => m.t === 'joined');
   const mates = [];
   for (let i = 0; i < 3; i++) { const c = await conn(); mates.push(c); c.send({ t: 'join', code: hj.code }); await wait(c, m => m.t === 'state' && m.lobby); }
-  const need = await wait(H, m => m.t === 'state' && m.lobby && m.state.reason === 'choice4');
-  assert.equal(need.state.humanCount, 4);
+  const four = await wait(H, m => m.t === 'state' && m.lobby && m.state.humanCount === 4 && m.state.setup === '4');
+  assert.ok(four.state.roles.some(r => r.id === 'hyena') && four.state.roles.some(r => r.id === 'ostrich'));
+  H.send({ t: 'lobby', a: 'role', role: 'hyena' });
+  await wait(H, m => m.t === 'state' && m.lobby && m.state.setup === '4h');
+  mates[0].send({ t: 'lobby', a: 'role', role: 'badger' });
+  await wait(H, m => m.t === 'state' && m.lobby && m.state.roles.some(r => r.id === 'badger' && r.taken && !r.mine));
   H.send({ t: 'lobby', a: 'start' });
-  const blocked = await wait(H, m => m.t === 'error' && /2 vs 2 or Hunters/.test(m.msg));
-  assert.ok(blocked);
-  H.send({ t: 'lobby', a: 'setup', setup: '4' });
-  await wait(H, m => m.t === 'state' && m.lobby && m.state.setup === '4');
-  H.send({ t: 'lobby', a: 'bots', n: 1 });
-  await wait(H, m => m.t === 'state' && m.lobby && m.state.setup === '5' && m.state.botsWanted === 1);
-  H.send({ t: 'lobby', a: 'start' });
-  const five = await wait(H, m => m.t === 'state' && !m.lobby && m.state.h3 && m.state.h3.team && m.state.h3.n === 5);
-  const fiveRoom = roomOf(five.state.code);
-  assert.equal(fiveRoom.bots.length, 1, 'the extra computer filled the last role');
-  assert.ok(fiveRoom.players.hunter && fiveRoom.players.hunter.bot);
-  console.log('ok 4p choice, then +1 bot becomes 5p and the bot fills hunter');
+  const hunt = await wait(H, m => m.t === 'state' && !m.lobby && m.state.role === 'hunter');
+  const huntRoom = roomOf(hunt.state.code);
+  assert.equal(huntRoom.hunt, true);
+  assert.equal(huntRoom.players.hyena.token, hj.token);
+  console.log('ok 4p roles choose Hunters without a setup step');
 
   console.log(n + ' lobby rule checks passed');
   server.close();

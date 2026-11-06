@@ -15,9 +15,9 @@ const at = { state: 'attached' };
   await A.goto(U); await A.click('#playFriend'); await A.waitForSelector('#lobbyCode:not(:empty)');
   const link = (await A.inputValue('#lobbyLink')).replace(/^http:\/\/[^/]+/, 'http://localhost:3996');
   await V.goto(link); await V.waitForSelector('#roomLobby');
-  await A.click('#addBotBtn'); await A.click('[data-add="2"]'); await A.waitForSelector('[data-setup="4"]'); await A.click('[data-setup="4"]');
-  await A.click('[data-role="o1"]'); await V.click('[data-role="v1"]');
-  await V.waitForFunction(() => { const s = LobbyUI.get(); return s && s.roles.some(r => r.id === 'v1' && r.mine); });
+  await A.click('#botPlus'); await A.click('#botPlus');
+  await A.waitForSelector('[data-role="ostrich"]'); await A.click('[data-role="ostrich"]'); await V.click('[data-role="vulture"]');
+  await V.waitForFunction(() => { const s = LobbyUI.get(); return s && s.roles.some(r => r.id === 'vulture' && r.mine); });
   await shot(A, '4p-1-lobby');
   await A.click('#startGame'); await A.waitForSelector('#board .cell'); await V.waitForSelector('#board .cell');
   for (const [x, y] of [[2, 1], [2, 4], [1, 2]]) { await cell(A, x, y).click(); await A.waitForTimeout(150); }

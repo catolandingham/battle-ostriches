@@ -77,6 +77,7 @@ tapper($('passGo'),()=>open({t:'create',pass:true}));
 tapper($('soloGo'),()=>open({t:'create',solo:1,bots:soloN}));
 $('botPick').addEventListener('click',e=>{const b=e.target.closest('[data-bots]');if(!b)return;soloN=+b.dataset.bots;[...$('botPick').children].forEach(x=>x.classList.toggle('on',x===b));soloHint();});
 tapper($('haveCode'),()=>{const h=$('joinRow').classList.toggle('hidden');$('haveCode').setAttribute('aria-expanded',!h);if(!h)$('codeIn').focus();});
+tapper($('homeGear'),()=>{const m=$('homeMenu'),closed=m.classList.toggle('hidden');$('homeGear').setAttribute('aria-expanded',String(!closed));});
 // --- pass & play: one phone, both sides. Only the side holding the phone is ever rendered; an opaque cover sits between turns ---
 const NAME={blue:'Ostrich',red:'Vulture'};let PV=null,holder=null,lastBy={},locked=false,hT=null;
 function showCover(r,first){const h=$('handoff');h.className=r;$('hArt').innerHTML=r==='blue'?OST:VUL;
@@ -97,7 +98,7 @@ tapper($('inviteBtn'),()=>{sheetOpen=!sheetOpen;render();});tapper($('waitClose'
 // invite popover closes on any tap outside it (or its chip)
 const outside=e=>{if(sheetOpen&&!e.target.closest('#wait,#inviteBtn')){sheetOpen=false;render();}};
 document.addEventListener('touchstart',outside,{passive:true,capture:true});document.addEventListener('mousedown',outside,true);tapper($('howBtn'),()=>UI.rules());tapper($('helpBtn'),()=>UI.rules());
-function muteLabel(){$('muteBtn').textContent=SFX.muted?'🔇':'🔊';$('muteBtn2').textContent=SFX.muted?'🔇':'🔊';}
+function muteLabel(){const t=SFX.muted?'Sound off':'Sound on';$('muteBtn').textContent=SFX.muted?'🔇':'🔊';$('muteBtn').setAttribute('aria-label',t);if($('muteBtn2')){$('muteBtn2').textContent=t;$('muteBtn2').setAttribute('aria-label',t);}}
 muteLabel();tapper($('muteBtn'),()=>{SFX.toggle();muteLabel();});tapper($('muteBtn2'),()=>{SFX.toggle();muteLabel();});
 function sounds(prev){if(!prev)return;const blue=S.role==='blue';
  if(S.phase==='over'&&prev.phase!=='over')return SFX.play(S.winner===S.role?'win':'lose');

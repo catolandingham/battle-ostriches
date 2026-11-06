@@ -387,7 +387,7 @@ function applyPlan(room, plan) {
 function toLobby(room, humans, opt) {
   stopClock(room); room.lobby = true; room.g = null; room.hunt = false; room.team = false; room.three = false; room.ai = null; room.pass = false;
   room.players = {}; room.bots = []; room.arrivals = []; room.botsWanted = 0; room.note = opt.note || '';
-  room.humans = humans.map(h => ({ id: h.id, token: h.token, ws: h.ws || null, name: h.name, host: !!h.host, role: opt.clear ? null : (h.role || null), kind: opt.clear ? null : (h.kind || null) }));
+  room.humans = humans.map(h => ({ id: h.id, token: h.token, ws: h.ws || null, name: h.name, host: !!h.host, role: opt.clear ? null : (h.role || null), kind: opt.clear ? null : (h.kind || null), animal: opt.clear ? null : (h.animal || null) }));
   if (!room.humans.some(h => h.host)) { const c = room.humans.find(h => h.ws && h.ws.readyState === 1) || room.humans[0]; if (c) c.host = true; }
   LB.clampBots(room); LB.reconcile(room);
   for (const h of room.humans) if (h.ws) h.ws._bo = { room, seat: null, hid: h.id };

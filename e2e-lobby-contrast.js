@@ -62,27 +62,28 @@ const parse = c => { const m = /rgba?\((\d+),\s*(\d+),\s*(\d+)/.exec(c); if (!m)
     await check(A, '[data-role="red"]:disabled b', th, 'vulture');
     await check(A, '[data-role="red"]:disabled small', th, 'player');
   }
-  if (await A.locator('#botBox.hidden').count()) await A.click('#addBotBtn');
-  await A.click('[data-add="2"]');
-  await A.waitForSelector('[data-setup="4"] b');
+  await A.click('#botPlus'); await A.click('#botPlus');
+  await A.waitForSelector('[data-role="hyena"] b');
   for (const th of THEMES) {
     await paint(A, th);
-    await check(A, '[data-setup="4"] b', th, '2 vs 2');
-    await check(A, '[data-setup="4"] small', th, 'ostriches');
-    await check(A, '[data-setup="4h"] b', th, 'hunters');
-    await check(A, '[data-setup="4h"] small', th, 'honey badger');
+    await check(A, '[data-role="ostrich"] b', th, 'ostrich');
+    await check(A, '[data-role="vulture"] b', th, 'vulture');
+    await check(A, '[data-role="hyena"] b', th, 'hyena');
+    await check(A, '[data-role="hyena"] small', th, 'pounce');
+    await check(A, '[data-role="badger"] b', th, 'honey badger');
+    await check(A, '[data-role="badger"] small', th, 'burrow');
+    await check(A, '#botMinus', th, '−');
+    await check(A, '#botPlus', th, '+');
+    await check(A, '#botCount', th, '2');
   }
-  await A.click('[data-setup="4h"]');
-  await A.waitForSelector('[data-setup="4h"].on');
-  if (await A.locator('#botBox.hidden').count()) await A.click('#addBotBtn');
-  await A.waitForSelector('[data-add="0"]');
+  await A.click('[data-role="hyena"]');
+  await A.waitForSelector('[data-role="hyena"].mine');
   for (const th of THEMES) {
     await paint(A, th);
-    await check(A, '[data-setup="4h"].on b', th, 'hunters');
-    await check(A, '[data-setup="4h"].on small', th, 'honey badger');
-    await check(A, '[data-setup="4"]:not(.on) b', th, '2 vs 2');
-    await check(A, '[data-add="2"].on', th, '+2');
-    await check(A, '[data-add="0"]:not(.on)', th, '0');
+    await check(A, '[data-role="hyena"].mine b', th, 'hyena');
+    await check(A, '[data-role="hyena"].mine small', th, 'you');
+    await check(A, '[data-role="ostrich"] b', th, 'ostrich');
+    await check(A, '[data-role="badger"] small', th, 'burrow');
   }
   console.log('errors', errs);
   assert.deepEqual(errs, []);

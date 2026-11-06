@@ -18,9 +18,8 @@ const at = { state: 'attached' };
   const link = (await A.inputValue('#lobbyLink')).replace(/^http:\/\/[^/]+/, 'http://localhost:3995');
   const Y = await mk(); await Y.goto(link); await Y.waitForSelector('#roomLobby');
   // ---- Hunters: 2 humans + 2 computers. Host is the badger, friend is the hyena. ----
-  await A.click('#addBotBtn'); await A.click('[data-add="2"]');
-  await A.waitForSelector('[data-setup="4h"]'); await A.click('[data-setup="4h"]');
-  await A.click('[data-role="badger"]'); await Y.click('[data-role="hyena"]');
+  await A.click('#botPlus'); await A.click('#botPlus');
+  await A.waitForSelector('[data-role="badger"]'); await A.click('[data-role="badger"]'); await Y.click('[data-role="hyena"]');
   await Y.waitForFunction(() => { const s = LobbyUI.get(); return s && s.roles.some(r => r.id === 'hyena' && r.mine); });
   await shot(A, '3-hunters-setup');
   await A.click('#startGame'); await Y.waitForSelector('#board .cell');
