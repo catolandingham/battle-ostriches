@@ -248,7 +248,7 @@ function render(prev){
   if(route&&route.len>0&&S.hungerLeft<=route.len+1&&route.next&&base.some(p=>key(p)===key(route.next))){if(!(S.moves||[]).some(p=>key(p)===key(route.next)))S.moves=(S.moves||[]).concat([route.next]);const arrow=window.BORing?BORing.arrowGlyph(route.next[0]-S.ostrich[0],route.next[1]-S.ostrich[1]):'';foodText=`Leaf ${arrow} in ${route.len} step${route.len===1?'':'s'} · ${S.hungerLeft} left`;foodLead=true;}}
  const L=!S.myTurn?[]:S.role==='hunter'?(S.hmoves||[]):(blue?(M==='carry'?S.carryMoves:S.moves):(M==='throw'?S.throw:S.fly));
  const lk=new Set(L.map(key)),setup=blue&&(S.phase==='setupEggs'||S.phase==='setupOstrich');
- const board=$('board');board.style.gridTemplateColumns=`repeat(${C.cols},minmax(0,1fr))`;board.innerHTML='';
+ const board=$('board');board.style.gridTemplateColumns=`repeat(${C.cols},minmax(0,1fr))`;board.style.alignContent='start';board.style.alignItems='start';board.innerHTML='';
  const la=S.lastAction,newTurn=!!(prev&&(prev.turn!==S.turn||prev.round!==S.round));
  const lastThrow=la&&la.type==='throw'&&la.p&&newTurn?key(la.p):null;const eggAt={};(S.eggs||[]).forEach(e=>{if(e.alive&&e.pos)eggAt[key(e.pos)]=e;});
  const sn=S.phase==='play'&&S.sniff?S.sniff:null,snK=sn?sn.p+'|'+sn.yes:'',snNew=!!sn&&snK!==sniffSeen;sniffSeen=snK; // keyed by the sniff itself, not the round: the ostrich's own move bumps the round and used to replay it lateif(snNew)sniffUntil=Date.now()+1200;
@@ -288,6 +288,7 @@ function render(prev){
   if(legal)tip.push(throwing?'Throw a stone here':setup?(S.phase==='setupEggs'?'Hide an egg here':'Start here'):blue?'Move here':'Fly here');
   d.innerHTML=h;d.dataset.tip=[...new Set(tip)].join(' · ');
   d.dataset.tags=tags.join(' ');d.onclick=()=>{if(Date.now()<noClick)return;tap(x,y);};board.appendChild(d);}
+ {const sample=board.children[0];if(sample){const w=sample.getBoundingClientRect().width;if(w>1)board.style.gridTemplateRows=`repeat(${C.rows},${w}px)`;}}
  if(snNew){const vc=board.children[sn.p[1]*C.cols+sn.p[0]];if(vc&&!found){const w=document.createElement('div');w.className='snwave '+(sn.yes?'yes':'no');vc.appendChild(w);}
   if(!window.BORing||BORing.showSniffPop(blue,!!sn.yes,found)){const o=document.createElement('div');o.id='snpop';o.className=(found?'yes found':sn.yes?'yes':'no')+(blue?' small':'');o.textContent=found?(blue?'Vulture found your egg!':'Found egg!'):sn.yes?(blue?'Vulture smells an egg nearby':'Egg nearby!'):'No egg nearby';board.appendChild(o);setTimeout(()=>o.remove(),1400);}}
  // sniff banner: yes/no for this turn only (vulture), plus hunger warning (ostrich)

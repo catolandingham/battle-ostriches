@@ -187,23 +187,10 @@
   function sync(S) {
     if (typeof document === 'undefined') return;
     refreshTimers(S);
-    const key = S ? (S.round + ':' + S.turn + ':' + (S.myTurn ? 1 : 0) + ':' + (S.pounce ? 1 : 0)) : '';
-    if (key !== turnKey) { turnKey = key; open = false; }
+    open = false;
+    turnKey = '';
+    clearRing();
     document.querySelectorAll('.ring-tap').forEach(n => n.remove());
-    const items = legalActions(S, selected());
-    const cell = items.length ? anchor(S) : null;
-    if (!cell) { open = false; clearRing(); return; }
-    const tap = document.createElement('button');
-    tap.type = 'button';
-    tap.className = 'ring-tap' + (open ? ' open' : '');
-    tap.innerHTML = `<span class="ring-word">${open ? 'Close' : 'Actions'}</span>`;
-    tap.setAttribute('aria-label', open ? 'Close actions' : 'Actions');
-    tap.setAttribute('aria-expanded', open ? 'true' : 'false');
-    arm(tap, () => { open = !open; sync(S); });
-    cell.appendChild(tap);
-    const cr = cell.getBoundingClientRect(), tr = tap.getBoundingClientRect();
-    if (tr.left < cr.left - 1 || tr.right > cr.right + 1 || tr.top < cr.top - 1 || tr.bottom > cr.bottom + 1) tap.remove();
-    if (open) draw(S, cell); else clearRing();
   }
   function refreshTimers(S) {
     if (typeof document === 'undefined') return;
@@ -213,7 +200,9 @@
     if (!b) return;
     b.setAttribute('aria-pressed', on ? 'true' : 'false');
     b.classList.toggle('on', on);
-    b.setAttribute('aria-label', (on ? 'Turn timer and round counter on' : 'Turn timer and round counter off') + '. Hiding them does not stop the clock.');
+    b.textContent = on ? 'Timer on' : 'Timer off';
+    b.setAttribute('aria-label', on ? 'Timer on. The 10 second clock still runs if you hide it.' : 'Timer off. The 10 second clock still runs.');
+    b.title = on ? 'Timer on' : 'Timer off';
   }
   function init() {
     const b = document.getElementById('timerToggle');

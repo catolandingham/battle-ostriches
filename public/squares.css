@@ -12,4 +12,8 @@ html[data-theme] #board .cell.legal{background-image:linear-gradient(rgba(255,22
 html[data-theme] #actions button:not(:disabled){opacity:1!important;filter:none!important;cursor:pointer}
 html[data-theme] #actions button.on{outline:3px solid #ffe14d!important;outline-offset:2px}
 html[data-theme] #actions button:disabled{opacity:.4!important;filter:grayscale(1)!important;animation:none!important;transform:none!important;box-shadow:none!important;cursor:not-allowed}
+/* Phone tiles stay small rectangles. A percentage radius on a non-square cell becomes a lens, and a sense ring larger than the tile draws a white arc across the board. */
+#board,html[data-theme] #board,body.hunter #board{transform:none!important;perspective:none!important}
+#board .cell,html[data-theme] #board .cell,body.hunter #board .cell{border-radius:4px!important;aspect-ratio:1/1;transform:none!important;overflow:hidden}
+#board .cell.legal,html[data-theme] #board .cell.legal,body.hunter .cell.legal{outline:none!important;border-radius:4px!important}
 #hint.nudge{animation:hnudge .35s}@keyframes hnudge{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}

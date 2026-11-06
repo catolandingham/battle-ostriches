@@ -133,7 +133,7 @@ function waitMsg(S){return `Wait, it's the ${tname(S,S.turn)}'s turn.`;}
 function nopeMsg(S){return `Move ${S.h3.range} square${S.h3.range>1?'s':''}: tap a glowing square.`;}
 function hint(S,a){if(S.h3.team&&!hint.in){hint.in=1;try{return tHint(S,a);}finally{hint.in=0;}}const r=S.role,t=S.turn;
  if(r==='hunter'&&S.myTurn){const k=S.h3.kind;
-  a.innerHTML=S.pounce?'<button class="on" onclick="UI.send({t:\'act\',a:\'hstay\'})">Stop here</button>':`<button onclick="UI.send({t:'act',a:'hstay'})">${k==='badger'?(S.burrowed?'Stay burrowed':S.dig===1?'Stay · finish burrow':'Stay · burrow'):'Stay put'}</button>`;
+  a.innerHTML=S.pounce?'<button class="on" title="Skip this extra move. You will not catch the bird." onclick="UI.send({t:\'act\',a:\'hstay\'})">Stop</button>':`<button title="${k==='badger'?(S.burrowed?'Stay burrowed. Birds still cannot see you.':S.dig===1?'Tough ground: stay still once more to finish the burrow.':'Stay still to burrow. You usually hide at once; tough ground takes one more still turn.'):'Stay put and end your turn.'}" onclick="UI.send({t:'act',a:'hstay'})">${k==='badger'?(S.burrowed?'Stay':S.dig===1?'Finish':'Burrow'):'Stay'}</button>`;
   if(S.pounce)return 'POUNCE: a bird is within 2. Land on it to catch it — this extra move is still your turn.';
   const burrowNote=k!=='badger'||S.burrowed?'':S.dig===1?'Tough ground: stay still once more to burrow. ':'Stay still to burrow. You usually hide at once. ';
   return burrowNote+`Tap a glowing square to move ${S.h3.range}${S.h3.boost?' (boost!)':''}. ${S.sense?'A bird is within 2. It is not pointed at.':'No bird within 2, so no bird is drawn.'}`;}
@@ -154,7 +154,7 @@ function clock(S){let c=$('clock3');if(!c){c=document.createElement('div');c.id=
  const tk=S.round+':'+S.turn+':'+S.h3.clockLeft;if(tk!==lastTurnKey){lastTurnKey=tk;deadline=Date.now()+S.h3.clockLeft;clockMs=S.h3.clockMs;}
  c.dataset.who=S.turn;c.classList.toggle('mine',!!S.myTurn);
  const tick=()=>{const left=Math.max(0,deadline-Date.now()),s=Math.ceil(left/1000);c.firstChild.style.width=(100*left/clockMs)+'%';
-  c.lastChild.textContent=`⏱ ${s}s · ${S.myTurn?'YOUR TURN':tname(S,S.turn)}`;c.classList.toggle('low',left<=4000);c.setAttribute('aria-label',s+' seconds left');if(left>0)raf=requestAnimationFrame(tick);};
+  c.lastChild.innerHTML='<svg class="clk" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 7.5V12l3 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> '+s+'s';c.classList.toggle('low',left<=4000);c.setAttribute('aria-label','Shot clock, '+s+' seconds');if(left>0)raf=requestAnimationFrame(tick);};
  cancelAnimationFrame(raf);tick();}
 function cellAt(board,S,p){return p&&p[0]>=0?board.children[p[1]*S.cfg.cols+p[0]]:null;}
 function noteBanner(cls,txt,force){const bn=$('banner');if(!bn)return;if(!force&&bn.textContent&&!bn.classList.contains('hidden'))return;bn.textContent=txt;bn.className=cls;}

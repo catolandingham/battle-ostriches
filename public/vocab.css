@@ -157,9 +157,9 @@ html[data-theme] #board .cell.stone,#board .cell.stone{background-image:radial-g
 @keyframes snno{10%{opacity:1}60%{opacity:1}100%{opacity:0}}
 #board .cell.snyes::before{content:'';position:absolute;inset:0;z-index:7;pointer-events:none;background:rgba(40,255,110,.8);animation:snyes 1s ease-out forwards;animation-delay:inherit;opacity:0}
 @keyframes snyes{15%{opacity:1}100%{opacity:0}}
-.snwave{position:absolute;left:50%;top:50%;width:300%;height:300%;margin:-150% 0 0 -150%;border-radius:50%;border:5px solid #fff;z-index:8;pointer-events:none;animation:snwave 1s ease-out forwards}
+.snwave{position:absolute;inset:0;width:auto;height:auto;margin:0;border-radius:4px;border:3px solid #fff;z-index:8;pointer-events:none;animation:snwave 1s ease-out forwards}
 .snwave.yes{border-color:#3dff7a;box-shadow:0 0 18px #3dff7a}.snwave.no{border-color:#bbb}
-@keyframes snwave{0%{transform:scale(.2);opacity:1}100%{transform:scale(1.05);opacity:0}}
+@keyframes snwave{0%{opacity:1}100%{opacity:0}}
 #board{position:relative}
 #snpop{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:50;pointer-events:none;font:900 clamp(22px,7vw,40px)/1.1 system-ui,sans-serif;padding:.35em .7em;border-radius:14px;border:4px solid #000;animation:snpop 1.4s ease-out forwards;white-space:nowrap}
 #snpop.yes{background:#14b84a;color:#fff}#snpop.no{background:#777;color:#fff}#snpop.small{font-size:clamp(14px,4vw,20px);top:12%}
@@ -209,8 +209,8 @@ html #board .cell:is(.gloud,.gcool) .wnum,html[data-theme] #board .cell:is(.glou
 /* Stable slot above the board: empty hints keep this height, and long turn text scrolls inside it instead of pushing the board. */
 #hint,#hint.guide,#hint.empty{height:auto;min-height:42px;max-height:4.5rem;overflow-x:hidden;overflow-y:auto;display:flex;flex-direction:column;justify-content:safe center;align-items:center;flex-wrap:nowrap;gap:6px;box-sizing:border-box}
 #app{height:100vh;height:100dvh;max-height:100dvh;min-height:0;overflow:hidden}
-#app #board{flex:1 1 auto;min-height:0;width:100%;max-width:100%;min-width:0;overflow-x:clip;overflow-y:auto}
-#board .cell{min-width:0}
+#app #board{flex:1 1 auto;min-height:0;width:100%;max-width:100%;min-width:0;overflow-x:clip;overflow-y:auto;align-content:start;align-items:start;justify-items:stretch}
+#board .cell{min-width:0;min-height:0;width:100%;height:auto;align-self:start}
 #app #actions,#app #log{flex:none}
 #hint .skipguide{flex:0 0 auto}
 body.three #clock3.hidden{display:block;visibility:hidden}

@@ -66,7 +66,7 @@ body.red button{background:#7a2626}button.on{background:#38d6f0;color:#000}body.
 /* original savanna twist */
 #hud{background:linear-gradient(180deg,#f6a93b,#e2672e);border:4px solid #000;border-radius:16px;padding:8px 12px;color:#1a1208;box-shadow:0 4px 0 #000}
 .logo::before{content:"☀️ "}.ctr .cy{color:#0d2a5c}.ctr .or{color:#fff;text-shadow:0 2px 0 #000}
-.cell{border-radius:30% 30% 8px 8px/20% 20% 8px 8px}
+.cell{border-radius:4px}
 #board{border-bottom:10px solid #c9a15a}
 body.red #board{border-bottom-color:#a86d3a}
 .logo{font-size:21px}
@@ -159,6 +159,7 @@ body.coaching::before{content:"";position:fixed;inset:0;background:#000a;z-index
 #hud #turnTag{padding:6px 8px!important;font-size:13px!important;min-width:0!important}
 #hud .iconbtn,#hud #helpBtn{width:30px!important;height:30px!important;min-width:30px!important;padding:0!important;font-size:15px!important;margin:0!important}
 #hud button.iconbtn,#hud button#helpBtn,#hud #themeBtn{width:32px!important;min-width:32px!important;max-width:32px!important;flex:0 0 32px!important;height:32px!important}
+#hud #timerToggle{width:auto!important;max-width:none!important;min-width:0!important;flex:0 0 auto!important;height:32px!important;padding:0 8px!important;font-size:12px!important;white-space:nowrap}
 [data-theme=nature] .cell.hit,[data-theme=nature] .cell.miss{background:transparent!important}
 #hud .ctr{white-space:normal!important;line-height:1.25}
 /* invite chip + popover (only after the opponent joined) */
