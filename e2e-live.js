@@ -28,12 +28,12 @@ const passed = []; const ok = (c, m) => { assert.ok(c, m); passed.push(m); conso
   await A.waitForSelector('#board .cell'); await V.waitForSelector('#board .cell'); await A.waitForFunction(() => document.getElementById('wait').classList.contains('hidden'));
   // ostrich hides 3 eggs then places itself (all from the real legal list)
   for (let i = 0; i < 4; i++) { const L = await A.evaluate(() => UI._legal()); const p = L[(i * 7 + 3) % L.length]; await cell(A, p[0], p[1]).click(); await A.waitForTimeout(250); }
-  await V.waitForSelector('#actions.mine', { timeout: 15000 }); await V.waitForTimeout(600);
+  await V.waitForSelector('#actions.mine', { state: 'attached',  timeout: 15000 }); await V.waitForTimeout(600);
   for (const P of [A, V]) ok(!(await P.textContent('#hud')).includes(code) && !(await P.isVisible('#wait')), 'no room code in in-game header (' + (P === A ? 'ostrich' : 'vulture') + ')');
   ok(await A.locator('#hud .hh .hbar i').count() === 1, 'ostrich hunger bar'); await shot(A, '7-hunger-bar-ostrich');
   const eggs = await A.evaluate(() => UI._S().eggs.map(e => e.pos)); let flyDev = 0, missDev = 0, bounced = false, smashed = false, smashDev = 0, fly = 0;
   for (let t = 0; t < 40 && !smashed; t++) {
-    await V.waitForSelector('#actions.mine', { timeout: 20000 }); await V.waitForTimeout(700);
+    await V.waitForSelector('#actions.mine', { state: 'attached',  timeout: 20000 }); await V.waitForTimeout(700);
     const S = await V.evaluate(() => { const S = UI._S(); return { v: S.vulture, o: S.ostrichSeen || null, st: S.stones, phase: S.phase, th: S.throw || [] }; });
     if (S.phase !== 'play') break;
     const live = await A.evaluate(() => UI._S().eggs.filter(e => e.alive && !e.carried).map(e => e.pos)), o = await A.evaluate(() => UI._S().ostrich);
@@ -48,10 +48,10 @@ const passed = []; const ok = (c, m) => { assert.ok(c, m); passed.push(m); conso
       flyDev = Math.max(flyDev, await watch(V, () => cell(V, p[0], p[1]).click(), 1300)); fly++; if (fly === 1) await shot(V, '3-vulture-after-fly');
     }
     // ostrich: step toward the vulture (to set up a bounce), else sit/anything legal
-    const myTurn = await A.waitForSelector('#actions.mine', { timeout: 20000 }).then(() => true).catch(() => false); if (!myTurn) continue; await A.waitForTimeout(400);
+    const myTurn = await A.waitForSelector('#actions.mine', { state: 'attached',  timeout: 20000 }).then(() => true).catch(() => false); if (!myTurn) continue; await A.waitForTimeout(400);
     if ((await A.evaluate(() => UI._S().phase)) !== 'play') break;
     const vv = await A.evaluate(() => UI._S().vulture); const L = await A.evaluate(() => UI._legal());
-    if (L.length) { const p = vv && !bounced ? L.sort((a, b) => gd(a, vv) - gd(b, vv))[0] : L[0]; await cell(A, p[0], p[1]).click(); } else await A.click('#actions button:has-text("Sit")').catch(() => {});
+    if (L.length) { const p = vv && !bounced ? L.sort((a, b) => gd(a, vv) - gd(b, vv))[0] : L[0]; await cell(A, p[0], p[1]).click(); } else await A.click('#actions button:has-text("Sit")', { force: true }).catch(() => {});
   }
   ok(fly > 0 && flyDev <= 1, `vulture fly: board never moved (max ${flyDev.toFixed(1)}px over ${fly} flies)`);
   if (bounced) ok(missDev <= 1, `bounce: no shake/jump (max ${missDev.toFixed(1)}px)`); else console.log('  (no bounce chance this game)');

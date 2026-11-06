@@ -72,9 +72,10 @@ window.FX={update(S,prev){const t=theme();ensure();layer.className=t||'';
  if(!TH[t]||!S||S.phase==='setupEggs'){for(const k in spr){spr[k].remove();delete spr[k];}return;}
  orientPrints(S);
  const sz=TH[t].sz;
- const both=S.ostrich&&S.vulture&&S.ostrich+''===S.vulture+''; // share a square: shrink both and offset so neither hides the other
- if(S.ostrich)sprite('o',SPR[t].o,S,S.ostrich,sz,both?1:0);else if(spr.o){spr.o.remove();delete spr.o;}
- if(S.vulture)sprite('v',SPR[t].v,S,S.vulture,S.role==='blue'?.8:sz,both?-1:0);
+ const onB=(p,side)=>{if(!p||p[0]<0||p[1]<0)return false;const b=S.h3&&S.h3.birds;if(!b)return true;if(S.h3.team){const me=S.h3.mySeat;if(side==='o'&&(me==='o1'||me==='o2')&&b[me]&&b[me].out)return false;if(side==='v'&&(me==='v1'||me==='v2')&&b[me]&&b[me].out)return false;return true;}if(side==='o'&&b.blue&&b.blue.out)return false;if(side==='v'&&b.red&&b.red.out)return false;return true;};
+ const both=onB(S.ostrich,'o')&&onB(S.vulture,'v')&&S.ostrich+''===S.vulture+''; // share a square: shrink both and offset so neither hides the other
+ if(onB(S.ostrich,'o'))sprite('o',SPR[t].o,S,S.ostrich,sz,both?1:0);else if(spr.o){spr.o.remove();delete spr.o;}
+ if(onB(S.vulture,'v'))sprite('v',SPR[t].v,S,S.vulture,S.role==='blue'?.8:sz,both?-1:0);else if(spr.v){spr.v.remove();delete spr.v;}
  const la=S.lastAction,sig=la&&JSON.stringify([S.round,S.turn,la]);
  if(prev&&la&&sig!==last.sig&&prev.turn==='red'&&S.turn==='blue'){
   if(la.type==='throw'&&!window.SMASH)throwFx(S,S.vulture,la.p,la.result);

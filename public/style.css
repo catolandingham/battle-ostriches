@@ -73,6 +73,8 @@ body.red #board{border-bottom-color:#a86d3a}
 #lobby h1,#over h1{font-size:44px;margin:0 0 6px;text-shadow:0 4px 0 #000}
 .bigost{width:130px;height:110px;margin:0 auto}
 button.ghost{background:transparent}
+/* Classic rules card is white and ghost buttons inherit white label text. Give those labels a light fill and dark text. Other themes set their own button colors. */
+html[data-theme=classic] #rules .card button.ghost{background:#eef3fb;color:#10233f;border-color:#10233f}
 .joinrow{display:flex;gap:8px;margin-top:14px}
 .joinrow input,#shareLink{flex:1;font:inherit;font-weight:900;font-size:22px;border:4px solid #000;border-radius:14px;padding:10px;text-align:center;text-transform:uppercase;min-width:0}
 #wait{background:#0d1f40;border:4px solid #000;border-radius:14px;padding:10px;text-align:center;font-weight:700;display:flex;flex-direction:column;gap:8px}
@@ -137,7 +139,7 @@ body.coaching::before{content:"";position:fixed;inset:0;background:#000a;z-index
 .pulse{animation:pul 1s ease-in-out infinite}@keyframes pul{50%{transform:scale(1.07)}}
 #actions button.on{box-shadow:0 0 0 3px #fff,0 0 16px currentColor!important;transform:translateY(-2px)}
 #actions button{font-size:20px;min-height:58px}
-#hint.empty{visibility:hidden;min-height:0}
+#hint.empty{visibility:hidden}
 .cell.sniff{animation:sniff 1.6s ease-out 1}@keyframes sniff{0%{box-shadow:inset 0 0 0 0 #ffd34d}40%{box-shadow:inset 0 0 0 6px #ffd34dcc}100%{box-shadow:inset 0 0 0 0 #0000}}
 .egg.seen{opacity:.85;outline:2px dashed transparent}
 .cell.spotted{box-shadow:none!important}.cell.spotted::after{content:none!important}
@@ -147,14 +149,14 @@ body.coaching::before{content:"";position:fixed;inset:0;background:#000a;z-index
 #wait.sheet{position:fixed;left:8px;right:8px;bottom:calc(env(safe-area-inset-bottom) + 8px);z-index:58;box-shadow:0 -6px 24px #0008}
 #wait.sheet #waitClose{display:block;position:absolute;right:6px;top:6px;padding:2px 8px;font-size:14px;flex:none}
 #inviteBtn.hidden{display:none}
-/* compact header so role tag + 4 icons fit a 390px phone */
-#hud{gap:6px}#hud>div:first-child{min-width:0;flex:1 1 auto}#hud>div:last-child{flex:0 0 auto;gap:4px;flex-wrap:wrap;justify-content:flex-end;max-width:52%}
-#hud .logo{font-size:clamp(14px,4.6vw,22px)!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* Title gets its own row so "BATTLE OSTRICHES" stays whole on a phone. Controls sit on the next row. */
+#hud{gap:6px;flex-wrap:wrap;align-items:center}
+#hud>div:first-child{min-width:0;flex:1 1 100%}
+#hud>div:last-child{flex:1 1 auto;gap:4px;flex-wrap:nowrap;justify-content:flex-end;max-width:none}
+#hud .logo{display:block!important;font-size:clamp(16px,4.8vw,22px)!important;line-height:1.15;letter-spacing:.02em;white-space:nowrap;overflow:visible;text-overflow:clip}
 #hud .ctr{font-size:clamp(11px,3.4vw,15px)!important;white-space:nowrap}
 #hud #turnTag{padding:6px 8px!important;font-size:13px!important;min-width:0!important}
 #hud .iconbtn,#hud #helpBtn{width:30px!important;height:30px!important;min-width:30px!important;padding:0!important;font-size:15px!important;margin:0!important}
-#hud>div:last-child{flex-wrap:nowrap!important;max-width:none!important}
-@media (max-width:440px){#hud .logo{display:none!important}}
 #hud button.iconbtn,#hud button#helpBtn,#hud #themeBtn{width:32px!important;min-width:32px!important;max-width:32px!important;flex:0 0 32px!important;height:32px!important}
 [data-theme=nature] .cell.hit,[data-theme=nature] .cell.miss{background:transparent!important}
 #hud .ctr{white-space:normal!important;line-height:1.25}

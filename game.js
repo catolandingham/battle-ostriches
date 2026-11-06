@@ -112,17 +112,31 @@ function vultureFly(g, p) {
   const from = g.vulture.slice();
   g.vulture = p.slice(); g.lastAction = { type: 'fly', from };
   const e = eggAt(g, p);
-  if (e && key(p) !== key(g.ostrich)) { g.marks[key(p)] = 'spotted'; g.lastAction.spotted = p.slice(); }
+  if (e && !ostrichGuards(g, p)) { g.marks[key(p)] = 'spotted'; g.lastAction.spotted = p.slice(); }
   if (isRock(g, p)) { g.lastAction.refill = g.stones < g.cfg.stones; g.stones = g.cfg.stones; }
   g.lastAction.smell = smellsEgg(g, p);
   g.sniff = { p: p.slice(), yes: g.lastAction.smell }; // shown until the vulture's next move
   g.turn = 'blue'; dropCarried(g); return true;
 }
+const onBoard = p => !!(p && p[0] >= 0 && p[1] >= 0);
+function parkEliminated(g) { // an OUT bird is off the board, even if a position was left on an egg
+  const off = [-99, -99];
+  const drop = () => { if (g.carrying !== null) { const e = g.eggs[g.carrying]; g.carrying = null; if (e && e.alive && onBoard(g.ostrich)) e.pos = g.ostrich.slice(); } };
+  if (g.three && g.three.birds) {
+    if (g.three.birds.blue.out && onBoard(g.ostrich)) { drop(); g.ostrich = off.slice(); }
+    if (g.three.birds.red.out && onBoard(g.vulture)) g.vulture = off.slice();
+  }
+  if (g.hunt && g.hunt.birds) {
+    if (g.hunt.birds.blue.out && onBoard(g.ostrich)) { drop(); g.ostrich = off.slice(); }
+    if (g.hunt.birds.red.out && onBoard(g.vulture)) g.vulture = off.slice();
+  }
+}
+function ostrichGuards(g, p) { parkEliminated(g); return onBoard(g.ostrich) && key(p) === key(g.ostrich); }
 function vultureThrow(g, p) {
   if (!throwTargets(g).some(q => key(q) === key(p))) return false;
   g.stones--; g.sniff = null;
   const e = eggAt(g, p); let result;
-  if (g.ostrich && key(p) === key(g.ostrich)) result = 'bounce'; // the ostrich protects the egg under it or in its beak
+  if (ostrichGuards(g, p)) result = 'bounce'; // a living ostrich protects the egg under it or in its beak
   else if (e) { e.alive = false; result = 'hit'; g.marks[key(p)] = 'hit'; } else { result = 'miss'; g.marks[key(p)] = 'stone'; } // a missed stone stays on the square for the rest of the game
   g.lastAction = { type: 'throw', from: g.vulture.slice(), p: p.slice(), result };
   if (result === 'bounce') g.lastAction.egg = !!(e || g.carrying !== null); // a bounce reveals whether the ostrich was guarding an egg (under it or in its beak) g.lastThrow = p.slice();
@@ -145,5 +159,5 @@ function visible(g) { return { marks: Object.fromEntries(Object.entries(g.marks)
 function coldIn(g, e) { return g.cfg.warmth - (g.round - e.lastWarm); } // rounds left before going cold
 
 const API = { CONFIG, newGame, canPlaceEgg, placeEgg, placeOstrich, ostrichMoves, ostrichStep, ostrichSit, canSit, canCarry, mustLeave, onEgg, dropCarried,
-  endRound, smellsEgg, flyTargets, throwTargets, vultureFly, vultureThrow, eggAt, aliveEggs, coldIn, key, dist, visible, isFood, isRock };
+  endRound, smellsEgg, flyTargets, throwTargets, vultureFly, vultureThrow, eggAt, aliveEggs, coldIn, key, dist, visible, isFood, isRock, parkEliminated, ostrichGuards };
 if (typeof module !== 'undefined') module.exports = API; else window.BO = API;

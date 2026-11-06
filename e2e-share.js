@@ -27,7 +27,7 @@ const OUT = 'shots/share/'; fs.mkdirSync(OUT, { recursive: true });
   await A.screenshot({ path: OUT + '3-ingame-no-code.jpg', type: 'jpeg', quality: 85 });
   // vulture on a found egg: egg + vulture both drawn INSIDE that one cell, in every theme (was offset onto the gridline crossing)
   for (const [x, y] of [[3, 4], [6, 2], [2, 1], [7, 5]]) { await V.locator('.cell').nth(y * 9 + x).click(); await V.waitForTimeout(150); }
-  await A.waitForSelector('#actions.mine'); await V.waitForTimeout(300);
+  await A.waitForSelector('#actions.mine', { state: 'attached' }); await V.waitForTimeout(300);
   for (const th of ['classic', 'arcade', 'comic', 'golden', 'nature', 'neon', 'notes', 'paper', 'pharaoh', 'storm', 'tactical', 'toybox', 'volcano']) {
     for (const [P, who] of [[A, 'vulture'], [V, 'ostrich']]) {
       const r = await P.evaluate(th => { if (th === 'classic') delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = th;

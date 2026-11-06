@@ -1,5 +1,5 @@
 /* ===== Six more presentations. Shared base for sprite themes; each theme sets its own look. ===== */
-:is([data-theme=notes],[data-theme=golden],[data-theme=paper],[data-theme=arcade],[data-theme=toybox],[data-theme=tactical]) .cell .pc{visibility:hidden}
+:is([data-theme=notes],[data-theme=golden],[data-theme=paper],[data-theme=arcade],[data-theme=toybox],[data-theme=tactical]) .cell .pc:not(.ph){visibility:hidden}
 :is([data-theme=notes],[data-theme=golden],[data-theme=paper],[data-theme=arcade],[data-theme=toybox],[data-theme=tactical]) :is(#board,body.red #board){gap:0!important;padding:0!important;border:0!important;overflow:hidden}
 :is([data-theme=notes],[data-theme=golden],[data-theme=paper],[data-theme=arcade],[data-theme=toybox],[data-theme=tactical]) :is(.cell,body.red .cell){background:transparent!important;box-shadow:none!important;border-radius:0!important;outline:none}
 :is([data-theme=notes],[data-theme=golden],[data-theme=paper],[data-theme=arcade],[data-theme=toybox],[data-theme=tactical]) .cell .num{font-size:0!important;position:absolute;inset:20%;background:no-repeat center/contain;transform:rotate(var(--prot,0deg))}

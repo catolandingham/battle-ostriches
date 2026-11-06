@@ -1,0 +1,28 @@
+/* Actions sit on the animal. The bar under the board stays in the tab order and appears only while a control inside it is focused. */
+#app #actions{position:absolute!important;width:1px!important;height:1px!important;margin:-1px!important;padding:0!important;overflow:hidden!important;clip:rect(0 0 0 0)!important;clip-path:inset(50%)!important;white-space:nowrap!important;border:0!important}
+#app #actions:focus-within{position:fixed!important;left:8px!important;right:8px!important;bottom:max(8px,env(safe-area-inset-bottom))!important;width:auto!important;height:auto!important;margin:0!important;padding:0!important;overflow:visible!important;clip:auto!important;clip-path:none!important;white-space:normal!important;z-index:45!important;display:flex!important;gap:8px}
+.ring-tap{position:absolute;z-index:9;left:50%;bottom:-38px;transform:translateX(-50%);width:auto;min-width:84px;height:36px;min-height:36px;padding:0 10px;flex:none;border:3px solid #111;border-radius:10px;background:#ffd21f;color:#111;font:900 15px/30px system-ui,sans-serif;box-shadow:0 2px 0 #111}
+.ring-tap.above{bottom:auto;top:-38px}
+.ring-tap .ring-word{position:static;transform:none;background:none;border:0;box-shadow:none;padding:0;font:inherit;color:inherit}
+.ring-tap.open{background:#111}
+.ring-tap.open .ring-word{color:#ffd21f}
+#aring{position:fixed;inset:0;z-index:40;pointer-events:none}
+#aring .aring-btn{position:fixed;transform:none;pointer-events:auto;width:104px;height:44px;min-height:44px;padding:0 8px;border:3px solid #111;border-radius:12px;background:#fff8e0;color:#111;font-size:16px;line-height:1;box-shadow:0 3px 0 #111;flex:none}
+#aring .aring-btn.on{background:#ffd21f}
+html[data-theme] #aring .aring-btn,html[data-theme] .ring-tap{animation:none!important;text-transform:none!important;letter-spacing:0!important}
+body.timers-off #clock3{visibility:hidden!important}
+body.timers-off #roundsLeft{visibility:hidden}
+#hud #timerToggle.on{background:#ffd21f;color:#111}
+.dirlab{position:absolute;top:0;left:1px;z-index:5;pointer-events:none;font:900 9px/1 system-ui,sans-serif;color:#111;background:#fff;border:1px solid #111;border-radius:3px;padding:0 2px}
+#banner.sensekey,#banner.pounce{font-size:12px!important;line-height:32px!important;padding:0 8px!important;white-space:nowrap;overflow:hidden;text-overflow:clip}
+#banner.sensekey,html[data-theme] #banner.sensekey{background:#1d3557!important;color:#fff!important}
+#banner.pounce,html[data-theme] #banner.pounce{background:#ffb000!important;color:#111!important}
+.cell.injured .pc{box-shadow:0 0 0 3px #ff2a6d}
+.hurtag{position:absolute;bottom:-1px;left:50%;transform:translateX(-50%);z-index:6;font:900 9px/1.1 system-ui,sans-serif;letter-spacing:.4px;
+ background:#ff2a6d;color:#fff;border:2px solid #111;border-radius:4px;padding:1px 3px;pointer-events:none;white-space:nowrap}
+.bchip.injured{box-shadow:inset 0 0 0 3px #ff2a6d}
+.bchip.out{background:#ffd0d4!important;filter:none;opacity:1}
+.bchip.out .ko{font-size:11px}
+.pouncetag{position:absolute;top:-2px;left:50%;transform:translateX(-50%);z-index:6;font:900 8px/1.1 system-ui,sans-serif;
+ background:#ffb000;color:#111;border:2px solid #111;border-radius:4px;padding:1px 3px;pointer-events:none;white-space:nowrap}
+body.godview #actions:empty{min-height:0}
