@@ -1,7 +1,7 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes"><title>Battle Ostriches</title>
-<link rel="stylesheet" href="style.css"><link rel="stylesheet" href="themes.css"><link rel="stylesheet" href="themes2.css"><link rel="stylesheet" href="themes3.css"><link rel="stylesheet" href="smash.css"><link rel="stylesheet" href="squares.css"><link rel="stylesheet" href="vocab.css"><link rel="stylesheet" href="three.css"><script src="theme.js"></script></head><body>
+<link rel="stylesheet" href="style.css"><link rel="stylesheet" href="themes.css"><link rel="stylesheet" href="themes2.css"><link rel="stylesheet" href="themes3.css"><link rel="stylesheet" href="smash.css"><link rel="stylesheet" href="squares.css"><link rel="stylesheet" href="vocab.css"><link rel="stylesheet" href="three.css"><link rel="stylesheet" href="lobby.css"><script src="theme.js"></script></head><body>
 <div id="app">
  <header id="hud"><div><h1 class="logo">BATTLE OSTRICHES</h1>
   <div class="ctr">ROUNDS <b id="roundsLeft" class="cy">30</b><span class="sep"> | </span><span class="eg">EGGS <b id="eggsLeft" class="or">3</b></span></div><div id="stats" class="hidden"></div></div><div style="display:flex;align-items:center"><div id="turnTag">BLUE</div><button id="inviteBtn" class="hidden" aria-label="Invite / room code" aria-expanded="false">🔗 <span id="inviteCode"></span></button><button id="helpBtn" aria-label="How to play">?</button><button id="muteBtn" class="iconbtn" aria-label="Sound">🔊</button><button id="themeBtn" class="iconbtn" aria-label="Theme">🎨</button></div></header>
@@ -11,21 +11,25 @@
  <div id="actions"></div>
  <div id="log"></div>
 </div>
-<div id="lobby" class="screen title"><div class="corner"><button class="iconbtn" id="howBtn" aria-label="How to play">?</button><button class="iconbtn" id="muteBtn2" aria-label="Sound">🔊</button><button class="iconbtn" id="themeBtn2" aria-label="Theme">🎨</button></div><div class="lobbybox">
+<div id="lobby" class="screen title"><div class="corner"><button class="iconbtn" id="homeGear" type="button" aria-expanded="false" aria-controls="homeMenu" aria-label="More">⚙</button><div id="homeMenu" class="toolmenu hidden" role="group" aria-label="Help and settings"><button type="button" id="howBtn">How to play</button><button type="button" id="muteBtn2">Sound on</button><button type="button" id="themeBtn2">Theme</button></div></div><div class="lobbybox">
  <div id="homeStep"><div class="bigost" id="lobbyArt"></div><h1>Battle<br>Ostriches</h1>
- <p class="tag">Hide your eggs. Outwit the vulture.</p>
- <button class="big" id="playFriend">👫 Play a friend</button>
- <button class="big alt" id="playAI">🤖 Play the computer</button>
+ <p class="tag">Hide your eggs. Outwit the hunters.</p>
+ <button class="big" id="playFriend">Play with friends</button>
+ <button class="big alt" id="playSolo">Play solo</button>
  <button class="linkbtn" id="haveCode" aria-expanded="false">Have a code?</button>
- <div class="joinrow hidden" id="joinRow"><input id="codeIn" maxlength="4" placeholder="CODE" autocapitalize="characters"><button id="joinBtn">Join</button></div></div>
- <div id="friendStep" class="hidden"><h2>How are you playing?</h2>
-  <button class="big" id="twoPhones">📱📱 Two phones</button>
-  <button class="big alt" id="playPass">📱 Pass &amp; play (one phone)</button>
-  <button class="linkbtn" id="friendBack">← Back</button></div>
- <div id="roleStep" class="hidden"><h2 id="roleQ">Be the Ostrich or the Vulture?</h2>
-  <div class="rolerow"><button class="rolebtn" id="roleBlue"><span class="ra" id="artBlue"></span>Ostrich<small>hide eggs</small></button><button class="rolebtn" id="roleRed"><span class="ra" id="artRed"></span>Vulture<small>hunt eggs</small></button></div>
-  <div class="airow lvl" id="lvlRow"><button id="lvlEasy">Easy</button><button id="lvlNormal" class="on">Normal</button></div>
-  <button class="linkbtn" id="roleBack">← Back</button></div>
+ <div class="joinrow hidden" id="joinRow"><input id="codeIn" maxlength="4" placeholder="CODE" autocapitalize="characters" aria-label="Room code"><button id="joinBtn">Join</button></div>
+ <p class="secondary-link"><button class="linkbtn" id="playPass">Pass &amp; Play on this device?</button></p></div>
+ <div id="passStep" class="hidden"><button class="linkbtn" id="passBack">← Home</button>
+  <h2>Pass &amp; Play</h2>
+  <p class="tag">One phone. Hand it over between turns. This stays a small extra way to play — friends use their own phones.</p>
+  <button class="big" id="passGo">Continue</button></div>
+ <div id="soloStep" class="hidden"><button class="linkbtn" id="soloBack">← Home</button>
+  <h2>Play solo</h2>
+  <p class="tag">How many computers are you playing against?</p>
+  <div class="botpick" id="botPick" role="group" aria-label="Computer count"><button type="button" data-bots="1">1</button><button type="button" data-bots="2" class="on">2</button><button type="button" data-bots="3">3</button><button type="button" data-bots="4">4</button></div>
+  <p class="tag" id="soloHint"></p>
+  <button class="big" id="soloGo">Continue</button></div>
+ <div id="roomLobby" class="hidden"></div>
  <p id="lobbyErr"></p></div></div>
 <div id="wait" class="hidden"><button id="waitClose" aria-label="Close">✕</button><div>Waiting for your opponent. Send them this link:</div><div id="shareCode"></div><input id="shareLink" readonly><button id="shareBtn">Share link</button><div id="seatPick" class="hidden"></div></div>
 <div id="handoff" class="hidden" role="dialog" aria-modal="true"><div class="hbox"><div class="hart" id="hArt"></div><h1 id="hTitle">Pass to the Vulture</h1><p id="hSub">No peeking!</p><button class="big" id="hGo">I'm the Vulture — tap to start</button></div></div>
@@ -58,4 +62,4 @@
  <button class="big ghost" onclick="UI.closeRules();TUT.show('intro')">Replay intro</button>
  <button class="big ghost" onclick="UI.closeRules();UI.walk()">Replay walkthrough</button>
  <button class="big ghost" onclick="UI.closeRules();UI.replayCoach()">Replay move hints &amp; tips</button><button class="big ghost" id="guideToggle" onclick="UI.guides(!!localStorage.getItem('bo_hs_off'))">Ostrich guides</button></div></div>
-<script src="game.js"></script><script src="sound.js"></script><script src="tutorial.js"></script><script src="fx.js"></script><script src="smash.js"></script><script src="juice.js"></script><script src="three-ui.js"></script><script src="ui.js"></script></body></html>
+<script src="game.js"></script><script src="sound.js"></script><script src="tutorial.js"></script><script src="fx.js"></script><script src="smash.js"></script><script src="juice.js"></script><script src="three-ui.js"></script><script src="lobby-ui.js"></script><script src="ui.js"></script></body></html>

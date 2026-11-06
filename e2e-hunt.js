@@ -9,19 +9,20 @@ const at = { state: 'attached' };
   const b = await webkit.launch(), errs = [];
   const mk = async () => { const c = await b.newContext({ ...devices['iPhone 13'] }); const p = await c.newPage(); await p.addInitScript(() => { for (const k of ['bo_hs_off', 'bo_tut_seen', 'bo_walk_blue', 'bo_walk_red', 'bo_walk_hunter', 'bo_tips_off']) localStorage.setItem(k, '1'); ['blue', 'red'].forEach(r => localStorage.setItem('bo_cs_' + r, '9')); });
     p.on('pageerror', e => errs.push(e.message)); return p; };
-  // ---- default lobby: Classic 2-player, the picker hidden behind a small link; multi-player rules hidden ----
-  const A = await mk(); await A.goto(U); await A.waitForSelector('#moreP');
-  assert.equal(await A.locator('#pcount.hidden').count(), 1, 'mode picker hidden by default'); assert.equal(await A.textContent('#moreP'), 'More players');
-  assert.equal(await A.locator('.mrules:not(.hidden)').count(), 0, 'multi-player rules hidden in Classic'); await shot(A, '1-default-lobby');
-  await A.click('#moreP'); assert.equal(await A.locator('#pcount:not(.hidden) button').count(), 5); assert.ok(/Classic/.test(await A.textContent('#pc2')));
-  await A.click('#pc4h'); assert.equal(await A.locator('.mrules:not(.hidden)').count(), 1); assert.equal(await A.getAttribute('.mrules:not(.hidden)', 'data-m'), '4h');
-  await shot(A, '2-more-players-picker');
-  // ---- Hunters setup: me = honey badger, a friend = hyena, computers = ostrich + vulture ----
-  await A.click('#playFriend'); await A.waitForSelector('#threeStep:not(.hidden)'); assert.equal(await A.locator('#t3roles .rolebtn').count(), 4);
-  await A.click('[data-r="badger"]'); await A.click('[data-seat="blue"][data-v="bot"]'); await A.click('[data-seat="red"][data-v="bot"]'); await shot(A, '3-hunters-setup');
-  await A.click('#t3go'); await A.waitForSelector('#shareCode:not(:empty)');
-  const link = (await A.inputValue('#shareLink')).replace(/^http:\/\/[^/]+/, 'http://localhost:3995');
-  const Y = await mk(); await Y.goto(link); await Y.waitForSelector('#board .cell');
+  // ---- home: two primary paths, no player-count picker ----
+  const A = await mk(); await A.goto(U);
+  assert.equal(await A.locator('#moreP').count(), 0, 'no player-count picker');
+  assert.ok(await A.isVisible('#playFriend') && await A.isVisible('#playSolo'));
+  assert.equal(await A.locator('.mrules:not(.hidden)').count(), 0, 'multi-player rules hidden on the home screen'); await shot(A, '1-default-lobby');
+  await A.click('#playFriend'); await A.waitForSelector('#lobbyCode:not(:empty)'); await shot(A, '2-more-players-picker');
+  const link = (await A.inputValue('#lobbyLink')).replace(/^http:\/\/[^/]+/, 'http://localhost:3995');
+  const Y = await mk(); await Y.goto(link); await Y.waitForSelector('#roomLobby');
+  // ---- Hunters: 2 humans + 2 computers. Host is the badger, friend is the hyena. ----
+  await A.click('#botPlus'); await A.click('#botPlus');
+  await A.waitForSelector('[data-role="badger"]'); await A.click('[data-role="badger"]'); await Y.click('[data-role="hyena"]');
+  await Y.waitForFunction(() => { const s = LobbyUI.get(); return s && s.roles.some(r => r.id === 'hyena' && r.mine); });
+  await shot(A, '3-hunters-setup');
+  await A.click('#startGame'); await Y.waitForSelector('#board .cell');
   await Y.waitForSelector('#actions.mine', { ...at, timeout: 20000 }); assert.ok(/HYENA/.test(await Y.textContent('#turnTag')));
   await Y.locator('#actions button').first().click(); // hyena stays put
   await A.waitForSelector('#actions.mine', { ...at, timeout: 20000 }); assert.ok(/HONEY BADGER/.test(await A.textContent('#turnTag')));
@@ -33,7 +34,9 @@ const at = { state: 'attached' };
   await Y.waitForSelector('#actions.mine', { ...at, timeout: 20000 }); await Y.locator('#actions button').first().click();
   await A.waitForSelector('#actions.mine', { ...at, timeout: 20000 }); await A.waitForSelector('.burtag.dig', at); assert.ok(/Digging 1\/2/.test(await A.textContent('#hint, #msg, body')));
   await A.waitForTimeout(2300); await shot(A, '5-badger-digging-1of2');
-  await A.locator('#actions button').first().click(); assert.equal(room.g.hunt.hs.badger.burrowed, true, 'burrowed after 2 still turns');
+  await A.locator('#actions button').first().click();
+  await A.waitForFunction(() => /burrowed/i.test(document.body.innerText), null, { timeout: 4000 });
+  assert.equal(room.g.hunt.hs.badger.burrowed, true, 'burrowed after 2 still turns');
   // rivalry: hyena moves onto the badger and bounces back 2
   await Y.waitForSelector('#actions.mine', { ...at, timeout: 20000 }); const hy = room.g.hunt.hs.hyena.p, bd = room.g.hunt.hs.badger.p;
   if (Math.max(Math.abs(hy[0] - bd[0]), Math.abs(hy[1] - bd[1])) === 1) { await Y.locator('.cell').nth(bd[1] * 9 + bd[0]).click(); await Y.waitForTimeout(500);

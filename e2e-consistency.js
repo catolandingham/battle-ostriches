@@ -11,8 +11,8 @@ let seed = 7; const rnd = n => { seed = (seed * 16807) % 2147483647; return seed
     await P.addInitScript(() => { localStorage.setItem('bo_hs_off','1'); localStorage.setItem('bo_tut_seen', '1'); localStorage.setItem('bo_walk_blue','1'); localStorage.setItem('bo_walk_red','1'); localStorage.removeItem('bo_cs_red'); localStorage.removeItem('bo_cs_blue'); });
     P.on('pageerror', e => errs.push(e.message));
     await P.goto('http://localhost:3992/?theme=' + theme);
-    if (kind === 'pass') { await P.click('#playFriend'); await P.click('#playPass'); await P.click('#hGo'); }
-    else { await P.click('#playAI'); await P.click(kind === 'ai-red' ? '#roleRed' : '#roleBlue'); }
+    if (kind === 'pass') { await P.click('#playPass'); await P.click('#passGo'); await P.click('#hGo'); }
+    else { await P.click('#playSolo'); await P.click('[data-bots="1"]'); await P.click('#soloGo'); if (kind === 'ai-red') await P.click('[data-role="red"]'); await P.click('#startGame'); }
     const cells = P.locator('#board .cell');
     for (let turn = 0; turn < 400; turn++) {
       await P.waitForFunction(() => { const S = UI._S(); return S && (S.phase === 'over' || ((S.myTurn || S.phase.startsWith('setup') && S.role === 'blue') && !UI._locked() && document.getElementById('handoff').classList.contains('hidden'))) || !document.getElementById('handoff').classList.contains('hidden'); }, null, { timeout: 15000 });

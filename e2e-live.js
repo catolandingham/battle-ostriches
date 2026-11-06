@@ -18,13 +18,14 @@ const passed = []; const ok = (c, m) => { assert.ok(c, m); passed.push(m); conso
   const A = await mk(), V = await mk();
   // --- lobby: Classic default, share first
   await A.goto(U); await shot(A, '1-lobby'); ok(await A.evaluate(() => SFX.muted) === false, 'sound not muted by default');
-  await A.click('#playFriend'); await A.click('#twoPhones'); await A.waitForSelector('#shareCode:not(:empty)', { timeout: 30000 });
-  ok(!(await A.isVisible('#roleBlue')), 'share code shown before any role pick');
-  await A.waitForSelector('#seatPick button[data-seat="red"]'); ok(true, 'side picker under the code');
+  await A.click('#playFriend'); await A.waitForSelector('#lobbyCode:not(:empty)', { timeout: 30000 });
+  ok(await A.locator('#moreP').count() === 0, 'share code shown with no player-count screen');
+  await A.waitForSelector('[data-role="red"]'); ok(true, 'roles under the code');
   await A.waitForTimeout(300); ok(await A.evaluate(() => SFX.state) === 'running', "AudioContext 'running' after a tap");
   await shot(A, '2-share-first');
-  const code = (await A.textContent('#shareCode')).trim(), link = await A.inputValue('#shareLink');
-  await V.goto(link); await V.waitForSelector('#board .cell'); await A.waitForFunction(() => document.getElementById('wait').classList.contains('hidden'));
+  const code = (await A.textContent('#lobbyCode')).trim(), link = await A.inputValue('#lobbyLink');
+  await V.goto(link); await V.waitForSelector('#roomLobby', { timeout: 30000 }); await A.click('#startGame');
+  await A.waitForSelector('#board .cell'); await V.waitForSelector('#board .cell'); await A.waitForFunction(() => document.getElementById('wait').classList.contains('hidden'));
   // ostrich hides 3 eggs then places itself (all from the real legal list)
   for (let i = 0; i < 4; i++) { const L = await A.evaluate(() => UI._legal()); const p = L[(i * 7 + 3) % L.length]; await cell(A, p[0], p[1]).click(); await A.waitForTimeout(250); }
   await V.waitForSelector('#actions.mine', { timeout: 15000 }); await V.waitForTimeout(600);
@@ -57,10 +58,10 @@ const passed = []; const ok = (c, m) => { assert.ok(c, m); passed.push(m); conso
   ok(smashed, 'egg smashed in a real game'); ok(smashDev <= 3.5, `smash shake is subtle (max ${smashDev.toFixed(1)}px)`);
   // --- 3 players by link
   const A3 = await mk(), V3 = await mk(), H3 = await mk();
-  await A3.goto(U); await A3.click('#moreP'); await A3.click('#pc3'); await shot(A3, '5-more-players'); await A3.click('#playFriend'); await A3.waitForSelector('#threeStep:not(.hidden)');
-  await A3.click('#threeStep [data-r="blue"]').catch(() => {}); await A3.click('#t3go'); await A3.waitForSelector('#shareCode:not(:empty)', { timeout: 30000 });
-  const l3 = await A3.inputValue('#shareLink'); await V3.goto(l3); await V3.waitForSelector('#board .cell'); await H3.goto(l3);
-  await H3.waitForSelector('#kindPick:not(.hidden)'); await H3.click('#pick-hyena'); await H3.waitForSelector('#kindPick', { state: 'hidden' });
+  await A3.goto(U); await A3.click('#playFriend'); await shot(A3, '5-more-players'); await A3.waitForSelector('#lobbyCode:not(:empty)', { timeout: 30000 });
+  const l3 = await A3.inputValue('#lobbyLink'); await V3.goto(l3); await H3.goto(l3); await A3.waitForFunction(() => LobbyUI.get() && LobbyUI.get().setup === '3');
+  await H3.click('[data-role="hunter"]'); await H3.click('[data-kind="hyena"]'); await A3.click('#startGame');
+  await V3.waitForSelector('#board .cell'); await H3.waitForSelector('#board .cell');
   for (let i = 0; i < 4; i++) { const L = await A3.evaluate(() => UI._legal()); const p = L[(i * 5 + 2) % L.length]; await cell(A3, p[0], p[1]).click(); await A3.waitForTimeout(250); }
   await V3.waitForSelector('#actions.mine', { state: 'attached', timeout: 15000 }); ok(await V3.locator('#clock3:not(.hidden)').count() > 0, '3p: shot clock on vulture turn');
   const L3 = await V3.evaluate(() => UI._legal()); const d3 = await watch(V3, () => cell(V3, L3[0][0], L3[0][1]).click(), 1300);

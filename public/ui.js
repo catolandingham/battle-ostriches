@@ -2,7 +2,7 @@
 const $=id=>document.getElementById(id);
 const OST='<svg viewBox="0 0 40 40" width="100%" height="100%"><path d="M6 26 L18 18 L30 22 L24 32 L10 32 Z" fill="#38d6f0" stroke="#000" stroke-width="2.5" stroke-linejoin="round"/><path d="M26 22 L28 6 L34 7" fill="none" stroke="#000" stroke-width="4" stroke-linecap="round"/><path d="M26 22 L28 6 L34 7" fill="none" stroke="#38d6f0" stroke-width="2" stroke-linecap="round"/><path d="M14 32 L12 38 M20 32 L22 38" stroke="#000" stroke-width="2.5"/></svg>';
 const VUL='<svg viewBox="0 0 40 40" width="100%" height="100%"><path d="M4 18 L20 12 L36 18 L26 22 L20 32 L14 22 Z" fill="#2b3245" stroke="#000" stroke-width="2.5" stroke-linejoin="round"/><circle cx="20" cy="11" r="5" fill="#f3dfae" stroke="#000" stroke-width="2.5"/><path d="M23 11 L28 13 L23 14Z" fill="#ffb347" stroke="#000" stroke-width="1.5"/></svg>';
-$('lobbyArt').innerHTML=OST;$('artBlue').innerHTML=OST;$('artRed').innerHTML=VUL;
+$('lobbyArt').innerHTML=OST;
 let ws,S=null,mode=null,me=JSON.parse(localStorage.getItem('bo_me')||'{}');
 const key=p=>p[0]+','+p[1];
 // Open-skies icon set: ONE big simple mark per square, no corner badges. Same in every theme (vocab.css).
@@ -42,36 +42,42 @@ function connect(){
  const sock=new WebSocket((location.protocol==='https:'?'wss://':'ws://')+location.host+'/ws');ws=sock;
  connTimer=setTimeout(()=>{if(sock.readyState!==1)retry();},6000);
  sock.onopen=()=>{clearTimeout(connTimer);lastPong=Date.now();startHB();
-  if(pending)sendPending();else if(S&&me.code)sock.send(JSON.stringify({t:'join',code:me.code,token:me.token}));};
+  if(pending)sendPending();else if(inRoom()&&me.code)sock.send(JSON.stringify({t:'join',code:me.code,token:me.token}));};
  sock.onerror=()=>{};
- sock.onclose=()=>{if(sock!==ws)return;stopHB();if(pending||S)retry();};
+ sock.onclose=()=>{if(sock!==ws)return;stopHB();if(pending||inRoom())retry();};
  sock.onmessage=ev=>{const m=JSON.parse(ev.data);lastPong=Date.now();
   if(m.t==='pong')return;
   if(m.t==='joined'){pending=null;clearTimeout(pendTimer);attempts=0;status('');me={code:m.code,token:m.token,role:m.role};localStorage.setItem('bo_me',JSON.stringify(me));history.replaceState(null,'','/?room='+m.code);}
+  if(m.t==='state'&&m.lobby){pending=null;clearTimeout(pendTimer);attempts=0;status('');S=null;window.LobbyUI&&LobbyUI.show(m.state);return;}
   if(m.t==='state'&&m.pass)return passState(m);
-  if(m.t==='state'){const prev=S;S=m.state;if(!prev||prev.turn!==S.turn||prev.phase!==S.phase)mode=null;render(prev);sounds(prev);if(!prev)maybeWalk(S.role);}
+  if(m.t==='state'){window.LobbyUI&&LobbyUI.hide();const prev=S;S=m.state;if(!prev||prev.turn!==S.turn||prev.phase!==S.phase)mode=null;render(prev);sounds(prev);if(!prev)maybeWalk(S.role);}
   if(m.t==='error'&&/No game with that code/.test(m.msg)&&(S||m.gone)){gameGone();return;}
   if(m.t==='error'){if(!S){pending=null;clearTimeout(pendTimer);attempts=0;status(m.msg,true);}else $('log').textContent=m.msg;}};
 }
+function inRoom(){const n=document.getElementById('roomLobby');return !!(S||(n&&!n.classList.contains('hidden')));}
 function retry(){
- if(attempts>=6&&!S){pending=null;clearTimeout(pendTimer);attempts=0;status('Could not reach the game server. Check your connection and tap again.',true);return;}
+ if(attempts>=6&&!inRoom()){pending=null;clearTimeout(pendTimer);attempts=0;status('Could not reach the game server. Check your connection and tap again.',true);return;}
  setTimeout(connect,Math.min(800*attempts,4000));
 }
 function sendPending(){ws.send(JSON.stringify(pending));clearTimeout(pendTimer);
  pendTimer=setTimeout(()=>{if(pending){status('Still waiting for the server… retrying');connect();}},5000);}
 function startHB(){stopHB();hb=setInterval(()=>{if(ws.readyState===1){ws.send('{"t":"ping"}');if(Date.now()-lastPong>45000){ws.close();}}},20000);}
 function stopHB(){clearInterval(hb);}
-document.addEventListener('visibilitychange',()=>{if(!document.hidden&&S&&(!ws||ws.readyState>1)){attempts=0;connect();}});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&inRoom()&&(!ws||ws.readyState>1)){attempts=0;connect();}});
 const send=o=>{try{tipBar(null)}catch(e){}return ws&&ws.readyState===1&&ws.send(JSON.stringify(o));};
 function open(msg){pending=msg;attempts=0;if(ws&&ws.readyState===1)sendPending();else connect();}
-function tapper(el,fn){let t=0;el.addEventListener('touchend',e=>{e.preventDefault();t=Date.now();fn();},{passive:false});el.addEventListener('click',()=>{if(Date.now()-t>600)fn();});}
-let pickAI=false;
-let aiLvl=localStorage.getItem('bo_ailvl')||'normal';const lvlUI=()=>{$('lvlEasy').classList.toggle('on',aiLvl==='easy');$('lvlNormal').classList.toggle('on',aiLvl!=='easy');};lvlUI();
-function step(role,ai){pickAI=ai;$('friendStep').classList.toggle('hidden',role!=='f');$('homeStep').classList.toggle('hidden',!!role);if(role==='f')role=0;$('roleStep').classList.toggle('hidden',!role||role==='f');$('lvlRow').classList.toggle('hidden',!ai);status('');}
-tapper($('playFriend'),()=>step('f',false));tapper($('twoPhones'),()=>open({t:'create',role:'blue'})); /* share the code first, pick a side after */ tapper($('friendBack'),()=>step(0,false));tapper($('playAI'),()=>step(1,true));tapper($('roleBack'),()=>step(pickAI?0:'f',false));
+function tapper(el,fn){if(!el)return;let t=0;el.addEventListener('touchend',e=>{e.preventDefault();t=Date.now();fn();},{passive:false});el.addEventListener('click',()=>{if(Date.now()-t>600)fn();});}
+function home(){$('homeStep').classList.remove('hidden');$('passStep').classList.add('hidden');$('soloStep').classList.add('hidden');$('roomLobby').classList.add('hidden');status('');}
+let soloN=2;const soloHint=()=>{const t={1:'You + 1 computer → Ostrich and Vulture',2:'You + 2 computers → Hunter',3:'You + 3 computers → choose 2 vs 2 or Hunters',4:'You + 4 computers → 2 vs 2 + hunter'};$('soloHint').textContent=t[soloN];};
+tapper($('playFriend'),()=>open({t:'create',friends:1}));
+tapper($('playSolo'),()=>{home();$('homeStep').classList.add('hidden');$('soloStep').classList.remove('hidden');soloHint();});
+tapper($('soloBack'),home);tapper($('passBack'),home);
+tapper($('playPass'),()=>{home();$('homeStep').classList.add('hidden');$('passStep').classList.remove('hidden');});
+tapper($('passGo'),()=>open({t:'create',pass:true}));
+tapper($('soloGo'),()=>open({t:'create',solo:1,bots:soloN}));
+$('botPick').addEventListener('click',e=>{const b=e.target.closest('[data-bots]');if(!b)return;soloN=+b.dataset.bots;[...$('botPick').children].forEach(x=>x.classList.toggle('on',x===b));soloHint();});
 tapper($('haveCode'),()=>{const h=$('joinRow').classList.toggle('hidden');$('haveCode').setAttribute('aria-expanded',!h);if(!h)$('codeIn').focus();});
-tapper($('lvlEasy'),()=>{aiLvl='easy';localStorage.setItem('bo_ailvl',aiLvl);lvlUI();});tapper($('lvlNormal'),()=>{aiLvl='normal';localStorage.setItem('bo_ailvl',aiLvl);lvlUI();});
-tapper($('playPass'),()=>open({t:'create',pass:true}));
+tapper($('homeGear'),()=>{const m=$('homeMenu'),closed=m.classList.toggle('hidden');$('homeGear').setAttribute('aria-expanded',String(!closed));});
 // --- pass & play: one phone, both sides. Only the side holding the phone is ever rendered; an opaque cover sits between turns ---
 const NAME={blue:'Ostrich',red:'Vulture'};let PV=null,holder=null,lastBy={},locked=false,hT=null;
 function showCover(r,first){const h=$('handoff');h.className=r;$('hArt').innerHTML=r==='blue'?OST:VUL;
@@ -86,14 +92,13 @@ function passState(m){clearTimeout(hT);PV=m;const next=m.active,over=m.views.blu
  // let the player who just moved see their own result (fly / throw / smash), then cover
  showView(holder,m.views[holder]);locked=true;hT=setTimeout(()=>showCover(next),1400);}
 tapper($('hGo'),()=>{if(!PV)return;$('handoff').className='hidden';locked=false;const r=PV.active;showView(r,PV.views[r]);});
-tapper($('roleBlue'),()=>open(pickAI?{t:'create',role:'blue',ai:aiLvl}:{t:'create',role:'blue'}));tapper($('roleRed'),()=>open(pickAI?{t:'create',role:'red',ai:aiLvl}:{t:'create',role:'red'}));
 tapper($('joinBtn'),()=>open({t:'join',code:$('codeIn').value.trim(),token:me.code===$('codeIn').value.trim().toUpperCase()?me.token:undefined}));
 $('seatPick').addEventListener('click',e=>{const b=e.target.closest('button[data-seat]');if(b&&!b.classList.contains('on'))send({t:'seat',role:b.dataset.seat});});
 tapper($('inviteBtn'),()=>{sheetOpen=!sheetOpen;render();});tapper($('waitClose'),()=>{sheetOpen=false;render();});
 // invite popover closes on any tap outside it (or its chip)
 const outside=e=>{if(sheetOpen&&!e.target.closest('#wait,#inviteBtn')){sheetOpen=false;render();}};
 document.addEventListener('touchstart',outside,{passive:true,capture:true});document.addEventListener('mousedown',outside,true);tapper($('howBtn'),()=>UI.rules());tapper($('helpBtn'),()=>UI.rules());
-function muteLabel(){$('muteBtn').textContent=SFX.muted?'🔇':'🔊';$('muteBtn2').textContent=SFX.muted?'🔇':'🔊';}
+function muteLabel(){const t=SFX.muted?'Sound off':'Sound on';$('muteBtn').textContent=SFX.muted?'🔇':'🔊';$('muteBtn').setAttribute('aria-label',t);if($('muteBtn2')){$('muteBtn2').textContent=t;$('muteBtn2').setAttribute('aria-label',t);}}
 muteLabel();tapper($('muteBtn'),()=>{SFX.toggle();muteLabel();});tapper($('muteBtn2'),()=>{SFX.toggle();muteLabel();});
 function sounds(prev){if(!prev)return;const blue=S.role==='blue';
  if(S.phase==='over'&&prev.phase!=='over')return SFX.play(S.winner===S.role?'win':'lose');
@@ -117,14 +122,14 @@ const WALK={blue:[['🥚','Your goal','Hide '+C0.eggs+' eggs. Keep at least one 
   ['👆','Your turn','Fly up to '+C0.vultureFly+' squares. Each landing tells you "Egg nearby!" or "No egg nearby" (within 1 square). Land on an egg to find it.'],
   ['🪨','Stones','You carry 1 stone. Throw at your square or one next to it. A stone at the ostrich just bounces off. A missed stone stays on the board, and the ostrich won\'t carry an egg onto it. Land on a rock pile to pick up another.']]};
 let wi=0,wr='blue',wDone=null;
-function maybeWalk(r){if(!localStorage.getItem('bo_walk_'+r))walk(r);}
-function walk(role,done){wr=role||(S?S.role:'blue');wi=0;wDone=done||null;drawWalk();$('walk').classList.remove('hidden');}
+function maybeWalk(r){if(!WALK[r]||localStorage.getItem('bo_walk_'+r))return;walk(r);}
+function walk(role,done){wr=role||(S?S.role:'blue');if(!WALK[wr])return;wi=0;wDone=done||null;drawWalk();$('walk').classList.remove('hidden');}
 function closeWalk(){$('walk').classList.add('hidden');localStorage.setItem('bo_walk_'+wr,'1');const d=wDone;wDone=null;d&&d();}
 function drawWalk(){const st=WALK[wr],cur=st[wi],W=$('walk');
  W.innerHTML=`<div class="wcard"><div class="wart"><span style="width:56px;height:56px;display:inline-block">${wr==='red'?VUL:OST}</span><span style="font-size:44px">${cur[0]}</span></div><h2>${cur[1]}</h2><p id="wText">${cur[2]}</p><div class="wdots">${st.map((_,k)=>`<span class="${k===wi?'on':''}"></span>`).join('')}</div><div class="wnav"><button id="wSkip">Skip</button><button id="wNext">${wi===st.length-1?"Let's play":'Next'}</button></div></div>`;
  tapper($('wSkip'),closeWalk);tapper($('wNext'),()=>{if(wi<st.length-1){wi++;drawWalk();}else closeWalk();});}
 window.UI={walk(){walk();},rules(){$('rules').classList.remove('hidden');const b=document.getElementById('guideToggle');if(b){const on=!localStorage.getItem('bo_hs_off');b.textContent=on?'Ostrich guides: ON (tap to turn off)':'Ostrich guides: OFF (tap to turn on)';}},closeRules(){$('rules').classList.add('hidden')},
- setMode(m){if(locked||!S||!S.myTurn)return;mode=m;if(m==='throw')coachDid('throw');render();},act(a){if(locked||!S||!S.myTurn)return;if(a==='sit'&&!(S.can&&S.can.sit))return nope(S.mustLeave?`You sat ${S.cfg.maxSit} turns in a row. Step off this turn.`:'Sit only works while you stand on an egg.');coachDid(a);if(a==='sit'&&G&&G.id==='start')gSet('start','1');send({t:'act',a})},guides(on){if(on)localStorage.removeItem('bo_hs_off');else localStorage.setItem('bo_hs_off','1');const b=document.getElementById('guideToggle');if(b)b.textContent=on?'Ostrich guides: ON (tap to turn off)':'Ostrich guides: OFF (tap to turn on)';if(S)render();},replayCoach(){Object.keys(localStorage).filter(k=>k.startsWith('bo_g_')).forEach(k=>localStorage.removeItem(k));['blue','red'].forEach(r=>localStorage.removeItem('bo_cs_'+r));localStorage.removeItem('bo_tips_off');Object.keys(localStorage).filter(k=>k.startsWith('bo_tip_')).forEach(k=>localStorage.removeItem(k));if(S)render();},rematch(){holder=null;lastBy={};send({t:'act',a:'rematch'})},
+ setMode(m){if(locked||!S||!S.myTurn)return;mode=m;if(m==='throw')coachDid('throw');render();},act(a){if(locked||!S||!S.myTurn)return;if(a==='sit'&&!(S.can&&S.can.sit))return nope(S.mustLeave?`You sat ${S.cfg.maxSit} turns in a row. Step off this turn.`:'Sit only works while you stand on an egg.');coachDid(a);if(a==='sit'&&G&&G.id==='start')gSet('start','1');send({t:'act',a})},guides(on){if(on)localStorage.removeItem('bo_hs_off');else localStorage.setItem('bo_hs_off','1');const b=document.getElementById('guideToggle');if(b)b.textContent=on?'Ostrich guides: ON (tap to turn off)':'Ostrich guides: OFF (tap to turn on)';if(S)render();},replayCoach(){Object.keys(localStorage).filter(k=>k.startsWith('bo_g_')).forEach(k=>localStorage.removeItem(k));['blue','red'].forEach(r=>localStorage.removeItem('bo_cs_'+r));localStorage.removeItem('bo_tips_off');Object.keys(localStorage).filter(k=>k.startsWith('bo_tip_')).forEach(k=>localStorage.removeItem(k));if(S)render();},rematch(how){holder=null;lastBy={};send({t:'act',a:'rematch',how:how||'same'})},
  _rr(){if(S)render();},open(m){open(m);},pause(ms){sniffUntil=Math.max(sniffUntil,Date.now()+ms);},send(o){send(o);},_tip:t=>tipBar(t),_S:()=>S,_legal:()=>legalNow(),_locked:()=>locked,menu(){S=null;localStorage.removeItem('bo_me');location.href='/';}};
 // --- learn-by-playing coach marks: one hint, anchored, everything else dimmed; advances when the player does it ---
 const COACH={blue:[
@@ -288,7 +293,7 @@ function render(prev){
  const a=$('actions');let h='';a.innerHTML='';const CM=coachNow(),coach=!!CM;
  const btn=(id,lbl,on,click,dis)=>`<button class="${on&&!dis?'on':''}" ${dis?'disabled aria-disabled="true"':''} ${on?'aria-pressed="true"':''} onclick="${click}">${on&&!dis?'✓ ':''}${lbl}</button>`;
  if(S.phase==='setupEggs')h=blue?`Tap a glowing square to hide an egg (${C.eggs-S.eggs.length} left). Not on rocks, or on or next to food.`:'The ostrich is hiding its eggs…';
- else if(S.phase==='setupOstrich')h=blue?'Tap a square to place your ostrich.':'The ostrich is hiding its eggs…';
+ else if(S.phase==='setupOstrich')h=blue?'Tap a glowing square to place your ostrich.':'The ostrich is hiding its eggs…';
  else if(S.phase==='play'&&S.three&&(!S.myTurn||S.role==='hunter'))h=window.T3UI.hint(S,a);
  else if(S.phase==='play'&&!S.myTurn)h=blue?'Vulture\'s turn…':'Ostrich\'s turn…';
  else if(S.phase==='play'&&blue){
@@ -339,7 +344,7 @@ function render(prev){
  $('hint').textContent=h;if(h&&(G||(W&&W.txt))){const sb=document.createElement('button');sb.className='skipguide';sb.id='skipGuide';sb.textContent='Skip guide';$('hint').appendChild(sb);tapper(sb,()=>{UI.guides(false)});}$('hint').classList.toggle('empty',!h);$('hint').classList.toggle('guide',!!G||!!(W&&W.txt));$('hint').classList.toggle('cold',!G&&!!(W&&W.txt));$('hint').classList.toggle('urgent',!G&&!!(W&&W.urgent));$('log').textContent=S.joined&&!S.opponent&&S.phase!=='over'?'Opponent offline… they can rejoin with the same link.':'';
  const o=$('over');if(S.phase==='over'&&S.three){o.classList.remove('hidden');o.innerHTML=window.T3UI.over(S);}
  else if(S.phase==='over'){const won=S.winner===S.role;o.classList.remove('hidden');
-  o.innerHTML=`<div class="lobbybox"><div class="bigost">${S.winner==='blue'?OST:VUL}</div><h1>${S.pass?(S.winner==='blue'?'Ostrich wins!':'Vulture wins!'):won?'You win!':'You lose'}</h1>${S.ai?`<p>vs computer (${S.ai})</p>`:''}<p>${S.winner==='blue'?`The ostrich kept ${S.eggsLeft} egg(s) alive for ${C.rounds} rounds.`:S.winBy==='starved'?`The ostrich starved in round ${S.round}.`:S.winBy==='cold'?`The last egg went cold in round ${S.round}.`:`The vulture smashed every egg by round ${S.round}.`}</p><button class="big" onclick="UI.rematch()">Rematch</button><button class="big ghost" onclick="UI.menu()">Menu</button></div>`;}
+  o.innerHTML=`<div class="lobbybox"><div class="bigost">${S.winner==='blue'?OST:VUL}</div><h1>${S.pass?(S.winner==='blue'?'Ostrich wins!':'Vulture wins!'):won?'You win!':'You lose'}</h1>${S.ai?`<p>vs computer (${S.ai})</p>`:''}<p>${S.winner==='blue'?`The ostrich kept ${S.eggsLeft} egg(s) alive for ${C.rounds} rounds.`:S.winBy==='starved'?`The ostrich starved in round ${S.round}.`:S.winBy==='cold'?`The last egg went cold in round ${S.round}.`:`The vulture smashed every egg by round ${S.round}.`}</p>${window.T3UI.endBits(S)}</div>`;}
  else o.classList.add('hidden');
 }
 })();

@@ -12,13 +12,14 @@ const at = { state: 'attached' };
   const cell = (p, x, y) => p.locator('.cell').nth(y * 9 + x);
   // ---- 4 players: me = Ostrich 1, a friend = Vulture 1, computers = Ostrich 2 + Vulture 2 ----
   const A = await mk(), V = await mk();
-  await A.goto(U); await A.click('#moreP'); await A.click('#pc4'); await A.click('#playFriend'); await A.waitForSelector('#threeStep:not(.hidden)');
-  assert.equal(await A.locator('#t3roles .rolebtn').count(), 4); await A.click('[data-r="o1"]');
-  await A.click('[data-seat="o2"][data-v="bot"]'); await A.click('[data-seat="v2"][data-v="bot"]'); await shot(A, '4p-1-lobby');
-  await A.click('#t3go'); await A.waitForSelector('#shareCode:not(:empty)');
-  const link = (await A.inputValue('#shareLink')).replace(/^http:\/\/[^/]+/, 'http://localhost:3996');
-  assert.ok(/Vulture 1/.test(await A.textContent('#wait')));
-  await V.goto(link); await V.waitForSelector('#board .cell');
+  await A.goto(U); await A.click('#playFriend'); await A.waitForSelector('#lobbyCode:not(:empty)');
+  const link = (await A.inputValue('#lobbyLink')).replace(/^http:\/\/[^/]+/, 'http://localhost:3996');
+  await V.goto(link); await V.waitForSelector('#roomLobby');
+  await A.click('#botPlus'); await A.click('#botPlus');
+  await A.waitForSelector('[data-role="ostrich"]'); await A.click('[data-role="ostrich"]'); await V.click('[data-role="vulture"]');
+  await V.waitForFunction(() => { const s = LobbyUI.get(); return s && s.roles.some(r => r.id === 'vulture' && r.mine); });
+  await shot(A, '4p-1-lobby');
+  await A.click('#startGame'); await A.waitForSelector('#board .cell'); await V.waitForSelector('#board .cell');
   for (const [x, y] of [[2, 1], [2, 4], [1, 2]]) { await cell(A, x, y).click(); await A.waitForTimeout(150); }
   await V.waitForSelector('#actions.mine', at); assert.ok(/VULTURE 1/.test(await V.textContent('#turnTag')));
   assert.equal(await V.locator('#h3bar .bchip').count(), 4, 'four birds in the header'); assert.ok(await V.locator('#clock3:not(.hidden)').count(), 'shot clock');
@@ -36,15 +37,15 @@ const at = { state: 'attached' };
   assert.ok(/Your team wins/.test(await V.textContent('#over'))); await shot(V, '4p-4-over');
   console.log('ok 4 players');
   // ---- 5 players: hunter (hyena) vs 4 computer birds ----
-  const H = await mk(); await H.goto(U); await H.click('#moreP'); await H.click('#pc5'); await H.click('#playAI'); await H.click('[data-r="hunter"]'); await H.click('[data-k="hyena"]'); await shot(H, '5p-1-lobby');
-  await H.click('#t3go'); await H.waitForSelector('#actions.mine', { ...at, timeout: 20000 }); assert.ok(/HYENA/.test(await H.textContent('#turnTag')));
+  const H = await mk(); await H.goto(U); await H.click('#playSolo'); await H.click('[data-bots="4"]'); await H.click('#soloGo'); await H.click('[data-role="hunter"]'); await H.click('[data-kind="hyena"]'); await shot(H, '5p-1-lobby');
+  await H.click('#startGame'); await H.waitForSelector('#actions.mine', { ...at, timeout: 20000 }); assert.ok(/HYENA/.test(await H.textContent('#turnTag')));
   assert.equal(await H.locator('.pc.po, .pc.pv').count(), 0, 'hunter sees no birds'); assert.equal(await H.locator('#h3bar .bchip').count(), 5);
   await H.waitForSelector('.h3wave', at); await shot(H, '5p-2-hunter-view');
   for (let i = 0; i < 3; i++) { await H.waitForSelector('#actions.mine, #over:not(.hidden)', { ...at, timeout: 20000 }); if (await H.locator('#over:not(.hidden)').count()) break;
     await H.waitForTimeout(1200); await H.locator('.cell.legal').first().click(); await H.waitForTimeout(400); }
   console.log('ok 5p hunter');
   // ---- 5 players: Ostrich 1 vs computers; stands next to the hunter, so it sees it ----
-  const O = await mk(); await O.goto(U); await O.click('#moreP'); await O.click('#pc5'); await O.click('#playAI'); await O.click('[data-r="o1"]'); await O.click('[data-k="badger"]'); await O.click('#t3go');
+  const O = await mk(); await O.goto(U); await O.click('#playSolo'); await O.click('[data-bots="4"]'); await O.click('#soloGo'); await O.click('[data-role="o1"]'); await O.click('[data-hkind="badger"]'); await O.click('#startGame');
   for (const [x, y] of [[6, 1], [6, 5], [7, 2]]) { await O.waitForTimeout(250); await cell(O, x, y).click(); }
   await O.waitForSelector('#actions.mine', { ...at, timeout: 20000 });
   const sees = await O.locator('.pc.ph').count(), room5 = [...server.rooms.values()].find(r => r.team && r.n === 5 && r.players.o1.ws);

@@ -27,7 +27,11 @@ const SUB={blue:'hide eggs',red:'hunt eggs',hunter:'catch birds',o1:'team ostric
 let mode='2',three=false;
 let myRole='blue',kind=localStorage.getItem('bo_kind')||'hyena',seat={};
 function rulesMode(m){document.querySelectorAll('.mrules').forEach(e=>e.classList.toggle('hidden',e.dataset.m!==m));}
-function lobby(){const home=$('homeStep');if(!home||$('moreP'))return;
+function endBits(S){const names=S&&S.arrivals||[];const note=names.length?`<p class="arrive">${names.map(n=>String(n).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))).join(', ')} joined — the next game adds them.</p>`:'';
+ const change=S&&S.flow?`<button class="big alt" id="rematchChange" onclick="UI.rematch('change')">Rematch · Change roles</button>`:'';
+ return `${note}<button class="big" id="rematchSame" onclick="UI.rematch('same')">Rematch · Same roles</button>${change}<button class="big ghost" id="newGame" onclick="UI.menu()">New Game</button>`;}
+function lobby(){return; /* roles and player count live in the pre-game lobby, not a count-first picker */}
+function lobbyRetired(){const home=$('homeStep');if(!home||$('moreP'))return;
  const more=document.createElement('button');more.id='moreP';more.className='linkbtn morep';more.setAttribute('aria-expanded','false');more.textContent='More players';
  const pc=document.createElement('div');pc.id='pcount';pc.className='pcount hidden';
  pc.innerHTML=MODES.map(([m,n,s])=>`<button id="pc${m}" data-m="${m}"><b>${n}</b><small>${s}</small></button>`).join('');
@@ -92,7 +96,7 @@ function tOver(S){const h=S.h3,w=S.winner,me=h.mySeat,C=S.cfg,mySide=me==='hunte
  const why=w==='hunter'?`The ${hName(S)} knocked out an ostrich and a vulture by round ${S.round}.`:w==='blue'?`The ostriches kept ${S.eggsLeft} egg(s) alive for ${C.rounds} rounds.`
   :w==='red'?(S.winBy==='cold'?`The last egg went cold in round ${S.round}.`:S.winBy==='ostriches-out'?'Both ostriches were out.':`The vultures smashed every egg by round ${S.round}.`)
   :'Every bird that could win was out.';
- return `<div class="lobbybox"><div class="bigost">${art}</div><h1>${title}</h1><p>${why}</p><button class="big" onclick="UI.rematch()">Rematch</button><button class="big ghost" onclick="UI.menu()">Menu</button></div>`;}
+ return `<div class="lobbybox"><div class="bigost">${art}</div><h1>${title}</h1><p>${why}</p>${endBits(S)}</div>`;}
 // --- 4 players "Hunters": ostrich + vulture + hyena + honey badger (rival hunters) ---
 function hChips(S){let bar=$('h3bar');if(!bar){bar=document.createElement('div');bar.id='h3bar';$('hud').after(bar);
   bar.addEventListener('click',e=>{const c=e.target.closest('[data-tip]');if(c&&UI._tip)UI._tip(c.dataset.tip);});}
@@ -117,7 +121,7 @@ function hOver(S){const h=S.h3,w=S.winner,me=h.mySeat,C=S.cfg;
  const ko=`Knock-outs: hyena ${h.hkos.hyena}, honey badger ${h.hkos.badger}.`;
  const why=w==='hyena'||w==='badger'?`Both birds were out. ${ko}${h.hkos.hyena===h.hkos.badger?' Tie: the last knock-out wins.':''}`:w==='blue'?`The ostrich kept ${S.eggsLeft} egg(s) alive for ${C.rounds} rounds.`
   :w==='red'?(S.winBy==='cold'?`The last egg went cold in round ${S.round}.`:S.winBy==='starved'?'The ostrich was out and no eggs were left.':`The vulture smashed every egg by round ${S.round}.`):`No hunter got a knock-out. ${ko}`;
- return `<div class="lobbybox"><div class="bigost">${art}</div><h1>${title}</h1><p>${why}</p><button class="big" onclick="UI.rematch()">Rematch</button><button class="big ghost" onclick="UI.menu()">Menu</button></div>`;}
+ return `<div class="lobbybox"><div class="bigost">${art}</div><h1>${title}</h1><p>${why}</p>${endBits(S)}</div>`;}
 // --- in game ---
 let lastSense='',lastCatch=0,deadline=0,clockMs=10000,raf=0,lastTurnKey='';
 function tag(S){if(S.h3&&S.h3.team&&S.h3.mySeat!=='hunter')return tTag(S);const k=S.h3&&S.h3.kind||'hyena';return `<span style="display:inline-block;width:30px;height:30px;vertical-align:middle">${KIND[k].art}</span> ${KIND[k].n.toUpperCase()}`;}
@@ -184,7 +188,7 @@ function over(S){if(S.h3.hunt)return hOver(S);if(S.h3.team)return tOver(S);const
  const why=w==='hunter'?`The ${hName(S)} knocked out both birds in round ${S.round}.`:w==='blue'?`The ostrich kept ${S.eggsLeft} egg(s) alive for ${C.rounds} rounds.`
   :w==='red'?(S.winBy==='cold'?`The last egg went cold in round ${S.round}.`:S.winBy==='starved'?'The ostrich was out and no eggs were left.':`The vulture smashed every egg by round ${S.round}.`)
   :S.winBy==='time'?'Time ran out: the ostrich was out and the vulture never got every egg.':'The eggs were lost, but the vulture was already out.';
- return `<div class="lobbybox"><div class="bigost">${art}</div><h1>${title}</h1><p>${why}</p><button class="big" onclick="UI.rematch()">Rematch</button><button class="big ghost" onclick="UI.menu()">Menu</button></div>`;}
-window.T3UI={after,hint,tag,waitMsg,nopeMsg,over,KIND};
+ return `<div class="lobbybox"><div class="bigost">${art}</div><h1>${title}</h1><p>${why}</p>${endBits(S)}</div>`;}
+window.T3UI={after,hint,tag,waitMsg,nopeMsg,over,endBits,KIND};
 document.readyState==='loading'?document.addEventListener('DOMContentLoaded',lobby):lobby();
 })();

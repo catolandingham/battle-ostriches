@@ -1,0 +1,116 @@
+// Friends / solo lobby. The board is unchanged; this only draws the room before Start and between games.
+(function () {
+  const $ = id => document.getElementById(id);
+  const OST = '<svg viewBox="0 0 40 40" width="100%" height="100%"><path d="M6 26 L18 18 L30 22 L24 32 L10 32 Z" fill="#38d6f0" stroke="#000" stroke-width="2.5" stroke-linejoin="round"/><path d="M26 22 L28 6 L34 7" fill="none" stroke="#000" stroke-width="4" stroke-linecap="round"/><path d="M14 32 L12 38 M20 32 L22 38" stroke="#000" stroke-width="2.5"/></svg>';
+  const VUL = '<svg viewBox="0 0 40 40" width="100%" height="100%"><path d="M4 18 L20 12 L36 18 L26 22 L20 32 L14 22 Z" fill="#2b3245" stroke="#000" stroke-width="2.5" stroke-linejoin="round"/><circle cx="20" cy="11" r="5" fill="#f3dfae" stroke="#000" stroke-width="2.5"/></svg>';
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const art = id => {
+    if (id === 'blue' || id === 'o1' || id === 'o2' || id === 'ostrich') return OST;
+    if (id === 'red' || id === 'v1' || id === 'v2' || id === 'vulture') return VUL;
+    const K = window.T3UI && T3UI.KIND;
+    if (id === 'hyena' && K) return K.hyena.art;
+    if (id === 'badger' && K) return K.badger.art;
+    if (id === 'hunter' && K) return K.hyena.art;
+    return '🐾';
+  };
+  const label = (role, kind) => {
+    if (!role) return 'Choosing';
+    if (role === 'hunter') return kind === 'badger' ? 'Honey Badger' : kind === 'hyena' ? 'Hyena' : 'Hunter';
+    const r = { blue: 'Ostrich', red: 'Vulture', o1: 'Ostrich 1', o2: 'Ostrich 2', v1: 'Vulture 1', v2: 'Vulture 2', hyena: 'Hyena', badger: 'Honey Badger' };
+    return r[role] || role;
+  };
+  let gear = false, botsOpen = false, kindOpen = false, st = null;
+  const send = o => window.UI && UI.send(o);
+  function show(state) {
+    st = state; $('lobby').classList.remove('hidden'); $('lobby').classList.add('inroom');
+    $('over').classList.add('hidden'); $('homeStep').classList.add('hidden');
+    $('soloStep').classList.add('hidden'); $('passStep').classList.add('hidden');
+    $('roomLobby').classList.remove('hidden');
+    if (state.needKind) kindOpen = true;
+    draw();
+  }
+  function hide() { const n = $('roomLobby'); if (n) n.classList.add('hidden'); const l = $('lobby'); if (l) l.classList.remove('inroom'); }
+  function draw() {
+    const s = st; if (!s) return;
+    const box = $('roomLobby');
+    const link = esc(location.origin + '/?room=' + s.code);
+    if (s.between) {
+      box.innerHTML = `<div class="toolbar"><button class="linkbtn" id="lobbyHome" type="button">← Home</button></div>
+        <h2>You're in</h2><p class="sub">${esc(s.note || 'The next game adds you.')}</p>
+        <div class="codebox"><div id="lobbyCode" aria-label="Room code ${esc(s.code)}">${esc(s.code)}</div>
+        <button type="button" id="shareGo" aria-label="Share room ${esc(s.code)}">Share</button>
+        <input id="lobbyLink" class="visually-hidden" readonly tabindex="0" aria-label="Room link" value="${link}"></div>
+        <p id="copyStatus" class="visually-hidden" aria-live="polite"></p>`;
+      return;
+    }
+    const who = (s.humans || []).map(h => {
+      const role = label(h.animal || h.role, h.kind);
+      return `<li><b>${esc(h.you ? 'You' : h.name)}</b>${h.host ? ' · host' : ''}${h.bench ? ' · waiting' : ''}<span>${esc(role === 'Choosing' ? 'Choosing' : role)}</span></li>`;
+    }).join('');
+    const roles = (s.roles || []).map(r => `<button type="button" class="rolecard${r.mine ? ' mine' : ''}${r.over ? ' over' : ''}${r.taken ? ' taken' : ''}" data-role="${esc(r.id)}" ${r.taken ? 'disabled' : ''}><span class="ra">${art(r.id)}</span><b>${esc(r.name)}</b><small>${esc(r.mine ? 'You' : (r.who || r.sub))}</small></button>`).join('');
+    const max = s.maxBots || 0;
+    const levels = (s.solo || s.botsWanted) ? `<div class="lvl"><span>Computer</span><button type="button" data-level="easy" class="${s.level === 'easy' ? 'on' : ''}">Easy</button><button type="button" data-level="normal" class="${s.level !== 'easy' ? 'on' : ''}">Normal</button></div>` : '';
+    const sound = (window.SFX && SFX.muted) ? 'Sound off' : 'Sound on';
+    const status = s.hint || s.note || (s.reason === 'unsupported' ? 'Too many players for one game.' : (!s.solo && s.setupLabel ? s.setupLabel : ''));
+    const recover = s.humanCount > 5 ? `<div class="choose"><button type="button" class="setup-opt${s.recovery === 'play5' ? ' on' : ''}" data-recovery="play5"><b>Play as 5</b><br><small>First 5 play. The rest wait.</small></button>
+      <button type="button" class="setup-opt${s.recovery === 'wait' ? ' on' : ''}" data-recovery="wait"><b>Wait</b><br><small>Until the room is 2 to 5.</small></button></div>` : '';
+    const share = s.solo ? '' : `<div class="codebox"><div id="lobbyCode" aria-label="Room code ${esc(s.code)}">${esc(s.code)}</div>
+      <button type="button" id="shareGo" aria-label="Share room ${esc(s.code)}">Share</button>
+      <input id="lobbyLink" class="visually-hidden" readonly tabindex="0" aria-label="Room link" value="${link}"></div>
+      <p id="copyStatus" class="visually-hidden" aria-live="polite"></p>`;
+    const bots = s.host && max ? `<div class="botstep"><span id="botLabel">Computers</span><button type="button" id="botMinus" aria-label="Fewer computers" ${s.botsWanted <= (s.solo ? 1 : 0) ? 'disabled' : ''}>−</button><b id="botCount" aria-live="polite">${s.botsWanted}</b><button type="button" id="botPlus" aria-label="More computers" ${s.botsWanted >= max ? 'disabled' : ''}>+</button></div>` : '';
+    box.innerHTML = `<div class="toolbar"><button class="linkbtn" id="lobbyHome" type="button">← Home</button><button class="gear" id="lobbyGear" type="button" aria-expanded="${gear}" aria-controls="lobbyMenu" aria-label="More">⚙</button></div>
+      <div class="menu${gear ? '' : ' hidden'}" id="lobbyMenu" role="group" aria-label="Help and settings">
+        <button type="button" data-tool="rules">How to play</button>
+        <button type="button" data-tool="sound">${sound}</button>
+        <button type="button" data-tool="theme">Theme</button>
+        <div class="toggle"><span>Turn timer</span><button type="button" class="switch${s.clock ? '' : ' off'}" id="clockToggle" aria-pressed="${s.clock ? 'true' : 'false'}" aria-label="Turn timer ${s.clock ? 'on' : 'off'}"></button></div>
+        ${levels}
+      </div>
+      ${share}
+      ${status ? `<p class="statusline" role="status">${esc(status)}</p>` : ''}
+      <ul class="who">${who}</ul>
+      ${recover}
+      ${roles ? `<div class="roles" aria-label="Roles">${roles}</div>` : ''}
+      ${s.showHunterKind ? `<div class="row hunterkind"><button type="button" data-hkind="hyena" class="${s.hunterKind === 'badger' ? '' : 'on'}">Hyena</button><button type="button" data-hkind="badger" class="${s.hunterKind === 'badger' ? 'on' : ''}">Honey Badger</button></div>` : ''}
+      ${bots}
+      ${s.host ? `<button type="button" class="big" id="startGame"${s.canStart ? '' : ' disabled'}>Start game</button>` : '<p class="footnote">Waiting for the host to start.</p>'}
+      <div class="sheet${kindOpen ? '' : ' hidden'}" id="kindSheet"><b>Which hunter?</b>
+        <button type="button" data-kind="hyena"><b>Hyena</b> — Pounce · 2 catches</button>
+        <button type="button" data-kind="badger"><b>Honey Badger</b> — Burrow · 1 catch</button>
+        <button type="button" class="linkbtn" id="kindCancel">Cancel</button></div>`;
+  }
+  document.addEventListener('click', e => {
+    const root = $('roomLobby'); if (!root || root.classList.contains('hidden') || !root.contains(e.target)) return;
+    const home = e.target.closest('#lobbyHome'); if (home) { UI.menu(); return; }
+    const gearBtn = e.target.closest('#lobbyGear'); if (gearBtn) { gear = !gear; draw(); return; }
+    const clock = e.target.closest('#clockToggle'); if (clock && st && st.host) { send({ t: 'lobby', a: 'clock', on: !st.clock }); return; }
+    const lvl = e.target.closest('[data-level]'); if (lvl && st && st.host) { send({ t: 'lobby', a: 'level', level: lvl.dataset.level }); return; }
+    const minus = e.target.closest('#botMinus'); if (minus && st && st.host && !minus.disabled) { send({ t: 'lobby', a: 'bots', n: st.botsWanted - 1 }); return; }
+    const plus = e.target.closest('#botPlus'); if (plus && st && st.host && !plus.disabled) { send({ t: 'lobby', a: 'bots', n: st.botsWanted + 1 }); return; }
+    const tool = e.target.closest('[data-tool]'); if (tool) {
+      if (tool.dataset.tool === 'rules' && window.UI) UI.rules();
+      else if (tool.dataset.tool === 'sound') { const b = $('muteBtn2'); if (b) b.click(); else if (window.SFX) SFX.toggle(); draw(); }
+      else if (tool.dataset.tool === 'theme' && window.THEME) THEME.next();
+      return;
+    }
+    const rec = e.target.closest('[data-recovery]'); if (rec && st && st.host) { send({ t: 'lobby', a: 'recovery', mode: rec.dataset.recovery }); return; }
+    const hk = e.target.closest('[data-hkind]'); if (hk && st && st.host) { send({ t: 'lobby', a: 'kind', kind: hk.dataset.hkind }); return; }
+    const cancel = e.target.closest('#kindCancel'); if (cancel) { kindOpen = false; draw(); return; }
+    const kind = e.target.closest('[data-kind]'); if (kind) { kindOpen = false; send({ t: 'lobby', a: 'role', role: 'hunter', kind: kind.dataset.kind }); return; }
+    const role = e.target.closest('[data-role]'); if (role && !role.disabled) {
+      if (role.dataset.role === 'hunter') { kindOpen = true; draw(); return; }
+      send({ t: 'lobby', a: 'role', role: role.dataset.role }); return;
+    }
+    const start = e.target.closest('#startGame'); if (start && st && st.host && st.canStart && !start.disabled) { send({ t: 'lobby', a: 'start' }); return; }
+    const share = e.target.closest('#shareGo'); if (share) {
+      const url = $('lobbyLink') ? $('lobbyLink').value : location.origin + '/?room=' + st.code;
+      const say = msg => { const n = $('copyStatus'); if (n) n.textContent = msg; share.textContent = msg; setTimeout(() => { if (st) share.textContent = 'Share'; }, 1600); };
+      if (navigator.share) navigator.share({ title: 'Battle Ostriches', text: 'Join my game. Code ' + st.code, url }).catch(err => { if (err && err.name === 'AbortError') return; if (navigator.clipboard) navigator.clipboard.writeText(url).then(() => say('Link copied')); });
+      else if (navigator.clipboard) navigator.clipboard.writeText(url).then(() => say('Link copied'));
+      else { const input = $('lobbyLink'); if (input) { input.focus(); input.select(); } say('Copy the link'); }
+      return;
+    }
+  });
+  window.LobbyUI = { show, hide, get: () => st };
+})();

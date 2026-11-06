@@ -9,11 +9,13 @@ const vis = p => p.evaluate(() => { const w = document.getElementById('wait'), r
   const cell = (p, x, y) => p.locator('.cell').nth(y * 9 + x);
   for (const th of (process.env.THEMES ? process.env.THEMES.split(',') : THEMES)) {
     const [A, cA] = await mk(), [V, cV] = await mk();
-    await A.goto(U + '?theme=' + th); await A.click('#playFriend'); await A.click('#twoPhones'); await A.waitForSelector('#shareCode:not(:empty)');
-    assert.ok(await vis(A) > 50, th + ': panel shown while waiting'); assert.ok(await A.locator('#inviteBtn').isHidden());
-    const link = (await A.inputValue('#shareLink')).replace(/^http:\/\/[^/]+/, 'http://localhost:3998');
-    for (const [x, y] of [[3, 4], [6, 2], [2, 5], [7, 2]]) { await cell(A, x, y).click(); await A.waitForTimeout(60); } // set up BEFORE opponent joins
-    await V.goto(link + '&theme=' + th); await V.waitForSelector('#actions.mine');
+    await A.goto(U + '?theme=' + th); await A.click('#playFriend'); await A.waitForSelector('#lobbyCode:not(:empty)');
+    assert.ok(await A.locator('#lobbyCode').isVisible(), th + ': code shown while waiting'); assert.ok(await A.locator('#inviteBtn').isHidden());
+    const link = (await A.inputValue('#lobbyLink')).replace(/^http:\/\/[^/]+/, 'http://localhost:3998');
+    await V.goto(link + '&theme=' + th); await V.waitForSelector('#roomLobby');
+    await A.click('#startGame'); await A.waitForSelector('#board .cell'); await V.waitForSelector('#board .cell');
+    for (const [x, y] of [[3, 4], [6, 2], [2, 5], [7, 2]]) { await cell(A, x, y).click(); await A.waitForTimeout(60); }
+    await V.waitForSelector('#actions.mine');
     await A.waitForFunction(() => document.getElementById('wait').classList.contains('hidden'));
     assert.equal(await vis(A), 0, th + ': hidden after join'); assert.equal(await vis(V), 0);
     await cell(V, 4, 2).click(); await A.waitForSelector('#actions.mine');
@@ -31,7 +33,7 @@ const vis = p => p.evaluate(() => { const w = document.getElementById('wait'), r
   }
   // vs computer, both roles, full games
   for (const role of ['blue', 'red']) {
-    const [P, c] = await mk(); await P.goto(U + '?theme=volcano'); await P.click('#playAI'); await P.click(role === 'blue' ? '#roleBlue' : '#roleRed');
+    const [P, c] = await mk(); await P.goto(U + '?theme=volcano'); await P.click('#playSolo'); await P.click('[data-bots="1"]'); await P.click('#soloGo'); await P.click(role === 'blue' ? '[data-role="blue"]' : '[data-role="red"]'); await P.click('#startGame');
     await P.waitForSelector('#board .cell'); assert.equal(await vis(P), 0, 'no share panel vs AI'); assert.ok(await P.locator('#inviteBtn').isHidden());
     if (role === 'blue') for (const [x, y] of [[2, 2], [6, 2], [2, 5], [2, 2]]) { await cell(P, x, y).click(); await P.waitForTimeout(80); }
     let n = 0, t0 = Date.now(), shot = false;
