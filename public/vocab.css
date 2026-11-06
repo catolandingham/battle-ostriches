@@ -108,6 +108,8 @@ html[data-theme] #board .cell.zone.legal{box-shadow:inset 0 0 0 3px #ffe14d,inse
   text-shadow:0 0 2px #fff,0 0 2px #fff!important;pointer-events:none;letter-spacing:0}
 #board .wnum.low{color:#0b3b66!important}
 #board .pc,html[data-theme] #board .pc{position:absolute;left:8%;top:8%;width:84%;height:84%;background:none!important;border:0!important;box-shadow:none!important;z-index:4;pointer-events:none}
+#board .pc.injured,html[data-theme] #board .pc.injured{outline:3px solid #ff2a6d!important;outline-offset:-3px}
+#board .pc.injured::after,html[data-theme] #board .pc.injured::after{content:'';position:absolute;left:10%;right:10%;top:46%;height:5px;background:#ff2a6d;border:1px solid #3a0010;transform:rotate(-16deg);border-radius:2px;pointer-events:none}
 #board .pc svg{width:100%;height:100%}
 #board .cell>.carry{position:absolute;right:2%;bottom:2%;width:36%;height:36%;z-index:6;pointer-events:none}
 /* legal = the yellow glow from squares.css; throw targets glow red-orange instead */
@@ -207,7 +209,8 @@ html #board .cell:is(.gloud,.gcool) .wnum,html[data-theme] #board .cell:is(.glou
 /* Stable slot above the board: empty hints keep this height, and long turn text scrolls inside it instead of pushing the board. */
 #hint,#hint.guide,#hint.empty{height:auto;min-height:42px;max-height:4.5rem;overflow-x:hidden;overflow-y:auto;display:flex;flex-direction:column;justify-content:safe center;align-items:center;flex-wrap:nowrap;gap:6px;box-sizing:border-box}
 #app{height:100vh;height:100dvh;max-height:100dvh;min-height:0;overflow:hidden}
-#app #board{flex:1 1 auto;min-height:0;overflow:auto}
+#app #board{flex:1 1 auto;min-height:0;width:100%;max-width:100%;min-width:0;overflow-x:clip;overflow-y:auto}
+#board .cell{min-width:0}
 #app #actions,#app #log{flex:none}
 #hint .skipguide{flex:0 0 auto}
 body.three #clock3.hidden{display:block;visibility:hidden}
