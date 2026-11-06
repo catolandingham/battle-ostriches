@@ -47,12 +47,12 @@ function connect(){
  sock.onclose=()=>{if(sock!==ws)return;stopHB();if(pending||inRoom())retry();};
  sock.onmessage=ev=>{const m=JSON.parse(ev.data);lastPong=Date.now();
   if(m.t==='pong')return;
-  if(m.t==='joined'){pending=null;clearTimeout(pendTimer);attempts=0;status('');me={code:m.code,token:m.token,role:m.role};localStorage.setItem('bo_me',JSON.stringify(me));history.replaceState(null,'','/?room='+m.code);}
-  if(m.t==='state'&&m.lobby){pending=null;clearTimeout(pendTimer);attempts=0;status('');S=null;window.LobbyUI&&LobbyUI.show(m.state);return;}
-  if(m.t==='state'&&m.pass)return passState(m);
-  if(m.t==='state'){window.LobbyUI&&LobbyUI.hide();const prev=S;S=m.state;if(!prev||prev.turn!==S.turn||prev.phase!==S.phase)mode=null;render(prev);sounds(prev);if(!prev)maybeWalk(S.role);}
-  if(m.t==='error'&&/No game with that code/.test(m.msg)&&(S||m.gone)){gameGone();return;}
-  if(m.t==='error'){if(!S){pending=null;clearTimeout(pendTimer);attempts=0;status(m.msg,true);}else $('log').textContent=m.msg;}};
+  if(m.t==='joined'){pending=null;clearTimeout(pendTimer);attempts=0;status('');me={code:m.code,token:m.token,role:m.role};localStorage.setItem('bo_me',JSON.stringify(me));history.replaceState(null,'','/?room='+m.code);return;}
+  if(m.t==='state'&&m.lobby){if(S&&S.phase&&S.phase!=='over')return;pending=null;clearTimeout(pendTimer);attempts=0;status('');S=null;window.LobbyUI&&LobbyUI.show(m.state);return;}
+  else if(m.t==='state'&&m.pass)return passState(m);
+  else if(m.t==='state'){window.LobbyUI&&LobbyUI.hide();const prev=S;S=m.state;if(!prev||prev.turn!==S.turn||prev.phase!==S.phase)mode=null;render(prev);sounds(prev);if(!prev)maybeWalk(S.role);return;}
+  else if(m.t==='error'&&/No game with that code/.test(m.msg)&&(S||m.gone)){gameGone();return;}
+  else if(m.t==='error'){if(!S){pending=null;clearTimeout(pendTimer);attempts=0;status(m.msg,true);}else $('log').textContent=m.msg;}};
 }
 function inRoom(){const n=document.getElementById('roomLobby');return !!(S||(n&&!n.classList.contains('hidden')));}
 function retry(){
