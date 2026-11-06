@@ -18,20 +18,6 @@
     const x = Math.sign(dx), y = Math.sign(dy);
     return { '0,-1': '↑', '1,-1': '↗', '1,0': '→', '1,1': '↘', '0,1': '↓', '-1,1': '↙', '-1,0': '←', '-1,-1': '↖' }[x + ',' + y] || '';
   }
-  // Only birds already on this seat's board, and only inside the existing sight range. Off-board positions are hidden and are ignored.
-  function nearestVisibleBird(hunter, birds, range) {
-    if (!hunter || hunter[0] < 0) return null;
-    let best = null;
-    for (const b of birds || []) {
-      const p = b && b.p;
-      if (!p || p[0] < 0 || p[1] < 0) continue;
-      const dx = p[0] - hunter[0], dy = p[1] - hunter[1];
-      const d = Math.max(Math.abs(dx), Math.abs(dy));
-      if (!d || d > range) continue;
-      if (!best || d < best.d) best = { name: b.name, p: p.slice(), d, dx, dy, arrow: arrowGlyph(dx, dy) };
-    }
-    return best;
-  }
   // stored is localStorage bo_timers: '1' on, '0' off, missing follows the server (default on).
   function timersShown(state, stored) {
     if (state && state.clockStopped) return false;
@@ -256,5 +242,5 @@
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
     else init();
   }
-  return { legalActions, omittedNotes, showSniffPop, hunterAlerts, hunterNearLabel, seenHunterKinds, bearing, arrowGlyph, nearestVisibleBird, timersShown, sync, refreshTimers, IDS };
+  return { legalActions, omittedNotes, showSniffPop, hunterAlerts, hunterNearLabel, seenHunterKinds, bearing, arrowGlyph, timersShown, sync, refreshTimers, IDS };
 });
