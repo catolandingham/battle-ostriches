@@ -7,24 +7,25 @@ const S = require('./server.js');
 let n = 0; const ok = (name, f) => { f(); n++; console.log('ok', name); };
 const ids = a => a.map(x => x.id);
 
-ok('ring: only relevant actions, not the glowing-square move', () => {
+ok('ring: Step and Fly can be selected, and the squares still do the move', () => {
   assert.deepEqual(ids(R.legalActions(null)), []);
   assert.deepEqual(ids(R.legalActions({ phase: 'play', myTurn: false, role: 'blue', onEgg: true, can: { sit: true, carry: true } })), []);
   assert.deepEqual(ids(R.legalActions({ phase: 'setupEggs', myTurn: true, role: 'blue' })), []);
   assert.deepEqual(ids(R.legalActions({ phase: 'play', myTurn: true, god: true, role: 'blue', onEgg: true, can: { sit: true, carry: true } })), []);
   const step = R.legalActions({ phase: 'play', myTurn: true, role: 'blue', onEgg: false, moves: [[1, 1]], cfg: { maxSit: 3 }, can: { sit: false, carry: false } });
-  assert.deepEqual(ids(step), []);
+  assert.deepEqual(ids(step), ['step']);
+  assert.equal(step[0].label, 'Step');
   const back = R.legalActions({ phase: 'play', myTurn: true, role: 'blue', onEgg: true, moves: [[1, 1]], cfg: { maxSit: 3 }, can: { sit: true, carry: true } }, 'carry');
   assert.deepEqual(ids(back), ['step', 'carry', 'sit']);
   const on = R.legalActions({ phase: 'play', myTurn: true, role: 'blue', onEgg: true, moves: [[1, 1]], cfg: { maxSit: 3 }, sitRun: 3, mustLeave: true, can: { sit: false, carry: true } });
-  assert.deepEqual(ids(on), ['carry']);
+  assert.deepEqual(ids(on), ['step', 'carry']);
   assert.ok(on.every(a => a.enabled));
   assert.match(R.omittedNotes({ phase: 'play', myTurn: true, role: 'blue', mustLeave: true })[0], /step off/i);
   const vul = R.legalActions({ phase: 'play', myTurn: true, role: 'red', stones: 0, cfg: { vultureFly: 2, stones: 1 }, fly: [[1, 1]] });
-  assert.deepEqual(ids(vul), []);
+  assert.deepEqual(ids(vul), ['fly']);
   assert.match(R.omittedNotes({ phase: 'play', myTurn: true, role: 'red', stones: 0 })[0], /rock pile/i);
   const full = R.legalActions({ phase: 'play', myTurn: true, role: 'red', stones: 1, cfg: { vultureFly: 2, stones: 1 } });
-  assert.deepEqual(ids(full), ['throw']);
+  assert.deepEqual(ids(full), ['fly', 'throw']);
   const aimed = R.legalActions({ phase: 'play', myTurn: true, role: 'red', stones: 1, cfg: { vultureFly: 2, stones: 1 } }, 'throw');
   assert.deepEqual(ids(aimed), ['fly', 'throw']);
   const pounce = R.legalActions({ phase: 'play', myTurn: true, role: 'hunter', pounce: true, h3: { kind: 'hyena' } });

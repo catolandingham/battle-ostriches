@@ -15,8 +15,7 @@ const shot = (p, n) => p.screenshot({ path: OUT + n + '.jpg', type: 'jpeg', qual
   await V.goto(link); await H.goto(link);
   await A.waitForFunction(() => { const s = LobbyUI.get(); return s && s.setup === '3'; });
   await A.click('[data-role="blue"]'); await V.click('[data-role="red"]');
-  await H.click('[data-role="hunter"]'); await H.waitForSelector('#kindSheet:not(.hidden)'); await shot(H, '2-hunter-pick');
-  await H.click('[data-kind="hyena"]'); await H.waitForSelector('#kindSheet', { state: 'hidden' });
+  await H.click('[data-role="hyena"]'); await H.waitForFunction(() => /YOU ARE Hyena/.test(document.body.innerText)); await shot(H, '2-hunter-pick');
   await A.click('#startGame'); await A.waitForSelector('#board .cell'); await V.waitForSelector('#board .cell'); await H.waitForSelector('#board .cell');
   for (const [x, y] of [[2, 1], [6, 1], [2, 5], [7, 6]]) { await cell(A, x, y).click(); await A.waitForTimeout(120); }
   // round 1: vulture first, clock running
@@ -40,7 +39,7 @@ const shot = (p, n) => p.screenshot({ path: OUT + n + '.jpg', type: 'jpeg', qual
   await H.locator('#actions button').click({ force: true }); await V.waitForSelector('#actions.mine', { state: 'attached' });
   console.log('ok 3 phones');
   // 1 human hunter (honey badger) vs 2 computer birds
-  const P = await mk(); await P.goto(U); await P.click('#playSolo'); await P.click('[data-bots="2"]'); await P.click('#soloGo'); await P.click('[data-role="hunter"]'); await P.click('[data-kind="badger"]'); await P.click('#startGame');
+  const P = await mk(); await P.goto(U); await P.click('#playSolo'); await P.click('[data-bots="2"]'); await P.click('#soloGo'); await P.click('[data-role="badger"]'); await P.click('#startGame');
   await P.waitForSelector('#actions.mine', { state: 'attached', timeout: 15000 }); assert.ok(/BADGER/.test(await P.textContent('#turnTag')));
   await P.locator('#actions button').click({ force: true }); await P.waitForSelector('.burtag'); await shot(P, '7-badger-burrowed');
   for (let i = 0; i < 4; i++) { await P.waitForSelector('#actions.mine, #over:not(.hidden)', { state: 'attached', timeout: 15000 }); if (await P.locator('#over:not(.hidden)').count()) break;

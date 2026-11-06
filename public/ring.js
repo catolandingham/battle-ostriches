@@ -21,7 +21,7 @@
     if (stored === '1') return true;
     return !state || state.showTimers !== false;
   }
-  // On-animal actions only. Stepping and flying are the glowing squares, so they are not listed unless the player is in another mode and needs a way back.
+  // Step and Fly stay on the ring so the default action can be selected. The glowing squares still do the move.
   function legalActions(S, mode) {
     if (!S || S.god || S.phase !== 'play' || !S.myTurn) return [];
     const C = S.cfg || {};
@@ -38,13 +38,14 @@
     if (S.role === 'blue') {
       const items = [];
       if (mode === 'carry') items.push({ id: 'step', label: 'Move', detail: 'Tap a glowing square to step.', enabled: true, mode: 'step' });
+      else if ((S.moves || []).length) items.push({ id: 'step', label: 'Step', detail: 'Step is selected. Tap a glowing square.', enabled: true, mode: 'step' });
       if (S.onEgg && S.can && S.can.carry) items.push({ id: 'carry', label: 'Carry', detail: 'Carry the egg 1 square.', enabled: true, mode: 'carry' });
       if (S.onEgg && S.can && S.can.sit) items.push({ id: 'sit', label: 'Sit', detail: `Warm the egg. ${Math.max(0, (C.maxSit || 0) - (S.sitRun || 0))} sits left.`, enabled: true, act: 'sit' });
       return items;
     }
     const items = [];
     const stones = S.stones | 0;
-    if (mode === 'throw') items.push({ id: 'fly', label: 'Fly', detail: 'Tap a glowing square to fly.', enabled: true, mode: 'fly' });
+    items.push({ id: 'fly', label: 'Fly', detail: 'Fly is selected. Tap a glowing square.', enabled: true, mode: 'fly' });
     if (stones > 0) items.push({ id: 'throw', label: 'Throw', detail: `Throw at your square or one next to it. Stones ${stones}/${C.stones}.`, enabled: true, mode: 'throw' });
     return items;
   }
@@ -112,22 +113,47 @@
     root.id = 'aring';
     root.setAttribute('role', 'menu');
     root.setAttribute('aria-label', 'Actions');
+    root.style.pointerEvents = 'none';
     const board = document.getElementById('board');
     const r = cell.getBoundingClientRect();
     const br = board ? board.getBoundingClientRect() : { left: 0, top: 0, right: window.innerWidth, bottom: window.innerHeight };
     const colW = 104, pillH = 44, gap = 8;
     const colH = items.length * pillH + (items.length - 1) * gap;
-    const spaceR = br.right - r.right, spaceL = r.left - br.left;
-    let left = spaceR >= spaceL ? r.right + 8 : r.left - colW - 8;
-    left = Math.max(br.left + 4, Math.min(left, br.right - colW - 4));
-    let top = r.top + r.height / 2 - colH / 2;
-    top = Math.max(br.top + 4, Math.min(top, br.bottom - colH - 4));
-    const overlaps = left < r.right - 4 && left + colW > r.left + 4 && top < r.bottom - 4 && top + colH > r.top + 4;
-    if (overlaps) {
-      const above = r.top - br.top >= br.bottom - r.bottom;
-      top = above ? r.top - colH - 8 : r.bottom + 8;
-      top = Math.max(8, Math.min(top, window.innerHeight - colH - 8));
-      left = Math.max(br.left + 4, Math.min(r.left + r.width / 2 - colW / 2, br.right - colW - 4));
+    const vw = window.innerWidth, vh = window.innerHeight;
+    const blocksMove = (x, y, w, h) => {
+      const nodes = document.querySelectorAll('#board .cell.legal');
+      for (const n of nodes) {
+        const b = n.getBoundingClientRect();
+        if (x < b.right - 0.5 && x + w > b.left + 0.5 && y < b.bottom - 0.5 && y + h > b.top + 0.5) return true;
+      }
+      return x < r.right - 0.5 && x + w > r.left + 0.5 && y < r.bottom - 0.5 && y + h > r.top + 0.5;
+    };
+    const spots = [
+      [br.right + 8, r.top],
+      [br.left - colW - 8, r.top],
+      [br.left, br.bottom + 8],
+      [vw - colW - 8, br.bottom + 8],
+      [4, br.top - colH - 8],
+      [vw - colW - 8, 4],
+      [4, vh - colH - 8],
+    ];
+    let left = 4, top = 4, placed = false;
+    for (const [x0, y0] of spots) {
+      const x = Math.max(4, Math.min(x0, vw - colW - 4));
+      const y = Math.max(4, Math.min(y0, vh - colH - 4));
+      if (!blocksMove(x, y, colW, colH)) { left = x; top = y; placed = true; break; }
+    }
+    if (!placed) {
+      open = false;
+      const tap = cell.querySelector('.ring-tap');
+      if (tap) {
+        tap.classList.remove('open');
+        const word = tap.querySelector('.ring-word');
+        if (word) word.textContent = 'Actions';
+        tap.setAttribute('aria-label', 'Actions');
+        tap.setAttribute('aria-expanded', 'false');
+      }
+      return;
     }
     const on = selected();
     items.forEach((it, i) => {
@@ -141,6 +167,7 @@
       b.style.left = left + 'px';
       b.style.top = (top + i * (pillH + gap)) + 'px';
       b.style.width = colW + 'px';
+      b.style.pointerEvents = 'auto';
       arm(b, () => {
         open = false;
         clearRing();
@@ -170,12 +197,8 @@
     tap.setAttribute('aria-expanded', open ? 'true' : 'false');
     arm(tap, () => { open = !open; sync(S); });
     cell.appendChild(tap);
-    tap.style.pointerEvents = 'none';
-    const tr = tap.getBoundingClientRect();
-    const under = document.elementFromPoint(tr.left + tr.width / 2, tr.top + tr.height / 2);
-    tap.style.pointerEvents = '';
-    const other = under && under.closest && under.closest('.cell');
-    if (other && other !== cell && other.classList.contains('legal')) tap.classList.add('above');
+    const cr = cell.getBoundingClientRect(), tr = tap.getBoundingClientRect();
+    if (tr.left < cr.left - 1 || tr.right > cr.right + 1 || tr.top < cr.top - 1 || tr.bottom > cr.bottom + 1) tap.remove();
     if (open) draw(S, cell); else clearRing();
   }
   function refreshTimers(S) {

@@ -44,10 +44,10 @@
       return;
     }
     const who = (s.humans || []).map(h => {
-      const role = label(h.animal || h.role, h.kind);
-      return `<li><b>${esc(h.you ? 'You' : h.name)}</b>${h.host ? ' · host' : ''}${h.bench ? ' · waiting' : ''}<span>${esc(role === 'Choosing' ? 'Choosing' : role)}</span></li>`;
+      const role = h.shown || label(h.animal || h.role, h.kind);
+      return `<li><b>${esc(h.you ? 'You' : h.name)}</b>${h.host ? ' · host' : ''}${h.bench ? ' · waiting' : ''}<span>${esc(role)}</span></li>`;
     }).join('');
-    const roles = (s.roles || []).map(r => `<button type="button" class="rolecard${r.mine ? ' mine' : ''}${r.over ? ' over' : ''}${r.taken ? ' taken' : ''}" data-role="${esc(r.id)}" ${r.taken ? 'disabled' : ''}><span class="ra">${art(r.id)}</span><b>${esc(r.name)}</b><small>${esc(r.mine ? 'You' : (r.who || r.sub))}</small></button>`).join('');
+    const roles = (s.roles || []).map(r => `<button type="button" class="rolecard${r.mine ? ' mine' : ''}${r.over ? ' over' : ''}${r.taken ? ' taken' : ''}" data-role="${esc(r.id)}" aria-pressed="${r.mine ? 'true' : 'false'}" ${r.taken ? 'disabled' : ''}><span class="ra">${art(r.id)}</span><b>${esc(r.name)}</b><small>${esc(r.mine ? 'YOU' : (r.who || r.sub))}</small></button>`).join('');
     const max = s.maxBots || 0;
     const levels = (s.solo || s.botsWanted) ? `<div class="lvl"><span>Computer</span><button type="button" data-level="easy" class="${s.level === 'easy' ? 'on' : ''}">Easy</button><button type="button" data-level="normal" class="${s.level !== 'easy' ? 'on' : ''}">Normal</button></div>` : '';
     const sound = (window.SFX && SFX.muted) ? 'Sound off' : 'Sound on';
@@ -68,17 +68,14 @@
         ${levels}
       </div>
       ${share}
+      <p class="youare" role="status">${esc(s.youAre || 'Choose an animal')}</p>
       ${status ? `<p class="statusline" role="status">${esc(status)}</p>` : ''}
-      <ul class="who">${who}</ul>
+      <ul class="who" aria-label="Roster">${who}</ul>
       ${recover}
       ${roles ? `<div class="roles" aria-label="Roles">${roles}</div>` : ''}
-      ${s.showHunterKind ? `<div class="row hunterkind"><button type="button" data-hkind="hyena" class="${s.hunterKind === 'badger' ? '' : 'on'}">Hyena</button><button type="button" data-hkind="badger" class="${s.hunterKind === 'badger' ? 'on' : ''}">Honey Badger</button></div>` : ''}
+      ${s.showHunterKind ? `<p class="statusline">Computer hunter, if nobody claims it</p><div class="row hunterkind"><button type="button" data-hkind="hyena" class="${s.hunterKind === 'badger' ? '' : 'on'}" aria-pressed="${s.hunterKind === 'badger' ? 'false' : 'true'}">Hyena</button><button type="button" data-hkind="badger" class="${s.hunterKind === 'badger' ? 'on' : ''}" aria-pressed="${s.hunterKind === 'badger' ? 'true' : 'false'}">Honey Badger</button></div>` : ''}
       ${bots}
-      ${s.host ? `<button type="button" class="big" id="startGame"${s.canStart ? '' : ' disabled'}>Start game</button>` : '<p class="footnote">Waiting for the host to start.</p>'}
-      <div class="sheet${kindOpen ? '' : ' hidden'}" id="kindSheet"><b>Which hunter?</b>
-        <button type="button" data-kind="hyena"><b>Hyena</b> — Pounce · 2 catches</button>
-        <button type="button" data-kind="badger"><b>Honey Badger</b> — Burrow · 1 catch</button>
-        <button type="button" class="linkbtn" id="kindCancel">Cancel</button></div>`;
+      ${s.host ? `<button type="button" class="big" id="startGame"${s.canStart ? '' : ' disabled'}>${esc(s.startLabel || 'Start game')}</button>` : '<p class="footnote">Waiting for the host to start.</p>'}`;
   }
   document.addEventListener('click', e => {
     const root = $('roomLobby'); if (!root || root.classList.contains('hidden') || !root.contains(e.target)) return;
@@ -96,11 +93,9 @@
     }
     const rec = e.target.closest('[data-recovery]'); if (rec && st && st.host) { send({ t: 'lobby', a: 'recovery', mode: rec.dataset.recovery }); return; }
     const hk = e.target.closest('[data-hkind]'); if (hk && st && st.host) { send({ t: 'lobby', a: 'kind', kind: hk.dataset.hkind }); return; }
-    const cancel = e.target.closest('#kindCancel'); if (cancel) { kindOpen = false; draw(); return; }
-    const kind = e.target.closest('[data-kind]'); if (kind) { kindOpen = false; send({ t: 'lobby', a: 'role', role: 'hunter', kind: kind.dataset.kind }); return; }
     const role = e.target.closest('[data-role]'); if (role && !role.disabled) {
-      if (role.dataset.role === 'hunter') { kindOpen = true; draw(); return; }
-      send({ t: 'lobby', a: 'role', role: role.dataset.role }); return;
+      const id = role.dataset.role;
+      send({ t: 'lobby', a: 'role', role: id, kind: id === 'hyena' || id === 'badger' ? id : undefined }); return;
     }
     const start = e.target.closest('#startGame'); if (start && st && st.host && st.canStart && !start.disabled) { send({ t: 'lobby', a: 'start' }); return; }
     const share = e.target.closest('#shareGo'); if (share) {

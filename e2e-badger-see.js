@@ -146,9 +146,7 @@ function contrast(a, b) {
   await B.click('[data-bots="2"]');
   await B.click('#soloGo');
   await B.waitForSelector('#roomLobby:not(.hidden)');
-  await B.click('[data-role="hunter"]');
-  await B.waitForSelector('#kindSheet:not(.hidden)');
-  await B.click('[data-kind="badger"]');
+  await B.click('[data-role="badger"]');
   await B.click('#startGame');
   await B.waitForSelector('.pc.ph.hbadger.mine', { timeout: 15000 });
   await B.waitForFunction(() => UI._S() && UI._S().phase === 'play');

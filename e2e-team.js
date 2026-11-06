@@ -37,7 +37,7 @@ const at = { state: 'attached' };
   assert.ok(/Your team wins/.test(await V.textContent('#over'))); await shot(V, '4p-4-over');
   console.log('ok 4 players');
   // ---- 5 players: hunter (hyena) vs 4 computer birds ----
-  const H = await mk(); await H.goto(U); await H.click('#playSolo'); await H.click('[data-bots="4"]'); await H.click('#soloGo'); await H.click('[data-role="hunter"]'); await H.click('[data-kind="hyena"]'); await shot(H, '5p-1-lobby');
+  const H = await mk(); await H.goto(U); await H.click('#playSolo'); await H.click('[data-bots="4"]'); await H.click('#soloGo'); await H.click('[data-role="hyena"]'); await shot(H, '5p-1-lobby');
   await H.click('#startGame'); await H.waitForSelector('#actions.mine', { ...at, timeout: 20000 }); assert.ok(/HYENA/.test(await H.textContent('#turnTag')));
   assert.equal(await H.locator('.pc.po, .pc.pv').count(), 0, 'hunter sees no birds'); assert.equal(await H.locator('#h3bar .bchip').count(), 5);
   await H.waitForSelector('.h3wave', at); await shot(H, '5p-2-hunter-view');

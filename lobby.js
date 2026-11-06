@@ -39,12 +39,16 @@ const ANIMAL = {
 };
 function animalOf(h) {
   if (!h) return null;
-  if (h.animal === 'ostrich' || h.animal === 'vulture' || h.animal === 'hyena' || h.animal === 'badger') return h.animal;
   if (h.role === 'hyena' || h.role === 'badger') return h.role;
-  if (h.role === 'hunter') return h.kind === 'badger' ? 'badger' : 'hyena';
+  if (h.role === 'hunter') return h.kind === 'badger' ? 'badger' : (h.kind === 'hyena' ? 'hyena' : (h.animal === 'badger' || h.animal === 'hyena' ? h.animal : null));
   if (h.role === 'blue' || h.role === 'o1' || h.role === 'o2') return 'ostrich';
   if (h.role === 'red' || h.role === 'v1' || h.role === 'v2') return 'vulture';
+  if (h.animal === 'ostrich' || h.animal === 'vulture' || h.animal === 'hyena' || h.animal === 'badger') return h.animal;
   return null;
+}
+function shownAnimal(h) {
+  const a = animalOf(h);
+  return a === 'ostrich' ? 'Ostrich' : a === 'vulture' ? 'Vulture' : a === 'hyena' ? 'Hyena' : a === 'badger' ? 'Honey Badger' : 'Choosing';
 }
 function fourMode(humans) {
   const counts = { ostrich: 0, vulture: 0, hyena: 0, badger: 0 };
@@ -93,6 +97,11 @@ function effective(room) {
   const max = maxBots(room);
   bots = room.solo ? Math.max(1, Math.min(max, bots || 1)) : Math.max(0, Math.min(max, bots));
   const total = nH + bots, inf = infer(total, room.humans);
+  const picked = room.humans.find(h => animalOf(h) === 'hyena' || animalOf(h) === 'badger');
+  if (picked && total < 3) {
+    return { humans: room.humans, bench: [], bots, total, ok: false, reason: 'need', preview: '3',
+      hint: 'YOU ARE ' + shownAnimal(picked) + '. A hunter game needs 3 players. Add a friend or a computer.' };
+  }
   if (!inf.ok && inf.reason === 'need' && !room.solo) inf.preview = '2';
   return { humans: room.humans, bench: [], bots, total, ...inf };
 }
@@ -171,6 +180,16 @@ function claim(room, hid, role, kind) {
     return { ok: true };
   }
   const seats = seatsNow(room);
+  if ((role === 'hyena' || role === 'badger') && !seats.includes(role)) {
+    const seat = seats.includes('hunter') ? 'hunter' : 'hunter';
+    const other = room.humans.find(h => h !== me && h.role && h.role !== 'blue' && h.role !== 'red' && h.role !== 'o1' && h.role !== 'o2' && h.role !== 'v1' && h.role !== 'v2' && (h.role === 'hunter' || h.role === 'hyena' || h.role === 'badger'));
+    if (other && seats.includes('hunter') && !seats.includes('hyena')) return { error: other.name + ' is the ' + shownAnimal(other) + '. This game has one hunter.' };
+    me.role = seats.includes('hyena') || seats.includes('badger') ? role : seat;
+    me.kind = role;
+    me.animal = animalOf(me);
+    if (me.role === 'hunter') room.hunterKind = role;
+    return { ok: true };
+  }
   if (!seats.length) {
     return { error: p.reason === 'unsupported' ? 'Choose how to continue before picking roles.' : 'Waiting for enough players.' };
   }
@@ -180,9 +199,8 @@ function claim(room, hid, role, kind) {
   if (kind && kind !== 'hyena' && kind !== 'badger') kind = null;
   me.role = role;
   if (role === 'hunter') {
-    if (kind) me.kind = kind;
-    else if (me.kind !== 'hyena' && me.kind !== 'badger') me.kind = null;
-    if (me.kind) room.hunterKind = me.kind;
+    me.kind = kind === 'badger' ? 'badger' : 'hyena';
+    room.hunterKind = me.kind;
   } else if (role === 'hyena' || role === 'badger') me.kind = role;
   else me.kind = null;
   me.animal = animalOf(me);
@@ -279,25 +297,50 @@ function view(room, hid) {
   const me = room.humans.find(h => h.id === hid);
   const playingHumans = p.humans.filter(h => !(p.bench || []).includes(h));
   const playing = new Set(playingHumans.map(h => h.id));
-  const roles = (setupId === '4' || setupId === '4h') ? animalCards(playingHumans, setupId, hid) : seats.map(id => {
+  const seatCard = id => {
     const h = room.humans.find(x => x.role === id && playing.has(x.id));
-    return { id, name: META[id].name, sub: META[id].sub, taken: !!h, who: h ? h.name : '', mine: !!(h && h.id === hid), kind: h ? h.kind : null };
-  });
+    return { id, name: META[id].name, sub: h && h.id === hid ? 'YOU' : (h ? h.name : META[id].sub), taken: !!(h && h.id !== hid), who: h ? h.name : '', mine: !!(h && h.id === hid), kind: h ? h.kind : null };
+  };
+  const hunterCards = () => {
+    const holder = room.humans.find(x => playing.has(x.id) && (x.role === 'hunter' || x.role === 'hyena' || x.role === 'badger'));
+    const kind = holder ? animalOf(holder) : null;
+    return ['hyena', 'badger'].map(id => {
+      const mine = !!(holder && holder.id === hid && kind === id);
+      const blocked = !!(holder && holder.id !== hid);
+      return { id, name: id === 'badger' ? 'Honey Badger' : 'Hyena', kind: id,
+        mine, taken: blocked, who: blocked ? holder.name : '',
+        sub: mine ? 'YOU' : blocked ? (holder.name + ' is the hunter') : 'Open' };
+    });
+  };
+  const roles = (setupId === '4' || setupId === '4h') ? animalCards(playingHumans, setupId, hid)
+    : (setupId === '3' || setupId === '5')
+      ? seats.filter(id => id !== 'hunter').map(seatCard).concat(hunterCards())
+      : seats.map(seatCard);
   const needKind = !!(me && me.role === 'hunter' && me.kind !== 'hyena' && me.kind !== 'badger');
   const host = !!(me && me.host);
   const canStart = host && p.ok && !needKind;
-  const status = p.hint || (setupId && SETUPS[setupId] ? SETUPS[setupId].label : (p.reason === 'need' && !room.solo ? 'Waiting for a friend' : ''));
+  const alone = !room.solo && p.reason === 'need';
+  const youAre = me && animalOf(me) ? 'YOU ARE ' + shownAnimal(me) : 'Choose an animal';
+  const status = p.hint ? p.hint : alone
+    ? 'Just you. Pick Ostrich or Vulture. A friend joins with this code, or add a computer. Start needs 2.'
+    : (setupId && SETUPS[setupId] ? SETUPS[setupId].label : '');
+  const people = room.humans.length;
+  const startLabel = !p.ok ? 'Start game'
+    : (!room.solo && people === 1 && p.bots > 0) ? 'Start with computers'
+    : (people >= 2 && p.bots === 0) ? 'Start · ' + people + ' people'
+    : 'Start game';
   return {
     lobby: true, code: room.code, solo: !!room.solo, between: false, note: room.note || '',
     you: me ? me.name : '', host, clock: room.clock !== false, level: room.level === 'easy' ? 'easy' : 'normal',
     humans: room.humans.map(h => ({
       id: h.id, name: h.name, you: h.id === hid, host: !!h.host, connected: !!(h.ws && h.ws.readyState === 1),
       role: playing.has(h.id) ? (h.role || null) : null, animal: playing.has(h.id) ? animalOf(h) : null, kind: h.kind || null,
+      shown: playing.has(h.id) ? shownAnimal(h) : 'Waiting',
       bench: !!(p.bench && p.bench.includes(h)),
     })),
     botsWanted: p.bots, maxBots: maxBots(room), total: p.total, humanCount: room.humans.length,
     setup: p.ok ? p.setup : null, preview: setupId, setupLabel: status,
-    reason: p.ok ? null : p.reason, hint: p.reason === 'mix' ? p.hint : '', recovery: room.recovery || null, roles,
+    reason: p.ok ? null : p.reason, hint: p.reason === 'mix' ? p.hint : (p.hint || ''), recovery: room.recovery || null, roles, startLabel, youAre,
     hunterKind: room.hunterKind || null,
     showHunterKind: (setupId === '3' || setupId === '5') && !roles.some(r => r.id === 'hunter' && r.taken),
     needKind, canStart,

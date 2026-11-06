@@ -64,6 +64,8 @@ function sendPending(){ws.send(JSON.stringify(pending));clearTimeout(pendTimer);
 function startHB(){stopHB();hb=setInterval(()=>{if(ws.readyState===1){ws.send('{"t":"ping"}');if(Date.now()-lastPong>45000){ws.close();}}},20000);}
 function stopHB(){clearInterval(hb);}
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&inRoom()&&(!ws||ws.readyState>1)){attempts=0;connect();}});
+let fitAt=0;function fitPhone(){const now=Date.now();if(now-fitAt<250)return;fitAt=now;const vv=window.visualViewport,h=Math.round(vv?vv.height:innerHeight)+'px',top=Math.round(Math.max(0,vv?vv.offsetTop:0))+'px',root=document.documentElement;root.style.setProperty('--vvh',h);root.style.setProperty('--vvo',top);}
+fitPhone();if(window.visualViewport)visualViewport.addEventListener('resize',fitPhone);window.addEventListener('resize',fitPhone);
 const send=o=>{try{tipBar(null)}catch(e){}return ws&&ws.readyState===1&&ws.send(JSON.stringify(o));};
 function open(msg){pending=msg;attempts=0;if(ws&&ws.readyState===1)sendPending();else connect();}
 function tapper(el,fn){if(!el)return;let t=0;el.addEventListener('touchend',e=>{e.preventDefault();t=Date.now();fn();},{passive:false});el.addEventListener('click',()=>{if(Date.now()-t>600)fn();});}
@@ -76,7 +78,6 @@ tapper($('playPass'),()=>{home();$('homeStep').classList.add('hidden');$('passSt
 tapper($('passGo'),()=>open({t:'create',pass:true}));
 tapper($('soloGo'),()=>open({t:'create',solo:1,bots:soloN}));
 $('botPick').addEventListener('click',e=>{const b=e.target.closest('[data-bots]');if(!b)return;soloN=+b.dataset.bots;[...$('botPick').children].forEach(x=>x.classList.toggle('on',x===b));soloHint();});
-tapper($('haveCode'),()=>{const h=$('joinRow').classList.toggle('hidden');$('haveCode').setAttribute('aria-expanded',!h);if(!h)$('codeIn').focus();});
 tapper($('homeGear'),()=>{const m=$('homeMenu'),closed=m.classList.toggle('hidden');$('homeGear').setAttribute('aria-expanded',String(!closed));});
 // --- pass & play: one phone, both sides. Only the side holding the phone is ever rendered; an opaque cover sits between turns ---
 const NAME={blue:'Ostrich',red:'Vulture'};let PV=null,holder=null,lastBy={},locked=false,hT=null;
@@ -112,7 +113,7 @@ function sounds(prev){if(!prev)return;const blue=S.role==='blue';
  if(!blue&&la&&la.type==='fly'&&prev.turn==='red'&&S.turn==='blue')setTimeout(()=>SFX.play(la.smell?'sniffYes':'sniffNo'),350);}
 const roomQ=new URLSearchParams(location.search).get('room');
 if(!roomQ)TUT.firstVisit();
-if(roomQ){$('codeIn').value=roomQ;$('joinRow').classList.remove('hidden');open({t:'join',code:roomQ,token:me.code===roomQ.toUpperCase()?me.token:undefined});}
+if(roomQ){$('codeIn').value=roomQ;open({t:'join',code:roomQ,token:me.code===roomQ.toUpperCase()?me.token:undefined});}
 $('shareBtn').onclick=()=>{const u=$('shareLink').value;if(navigator.share)navigator.share({title:'Battle Ostriches',text:'Play Battle Ostriches with me! Code '+S.code,url:u}).catch(()=>{});else{navigator.clipboard&&navigator.clipboard.writeText(u);$('shareBtn').textContent='Copied!';}};
 // --- walkthrough (same chips as the board) ---
 const WALK={blue:[['🥚','Your goal','Hide '+C0.eggs+' eggs. Keep at least one alive for '+C0.rounds+' rounds. The vulture sees you, but not your eggs.'],
