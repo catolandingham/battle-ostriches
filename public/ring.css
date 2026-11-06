@@ -11,14 +11,8 @@
 html[data-theme] #aring .aring-btn,html[data-theme] .ring-tap{animation:none!important;text-transform:none!important;letter-spacing:0!important}
 body.timers-off #clock3{visibility:hidden!important}
 #hud #timerToggle{display:none}
-body.three #hud #timerToggle.timerswitch{display:inline-flex;align-items:center;gap:3px;flex:0 0 auto;width:auto;max-width:none;min-width:0;height:28px;min-height:28px;padding:0 6px;margin:0;border:2px solid #111;border-radius:999px;background:#243044;color:#fff;font:800 11px/1 system-ui,-apple-system,sans-serif;box-shadow:none;touch-action:manipulation;letter-spacing:0;text-transform:none}
-body.three #hud #timerToggle.timerswitch.on{background:#ffd21f;color:#111}
-#hud #timerToggle .clk{font-size:13px;line-height:1;flex:none}
-#hud #timerToggle .sw{position:relative;width:18px;height:10px;border-radius:999px;background:#5c6772;border:1px solid #111;flex:none}
-#hud #timerToggle .sw i{position:absolute;top:0;left:0;width:8px;height:8px;border-radius:50%;background:#fff}
-#hud #timerToggle.on .sw{background:#111}
-#hud #timerToggle.on .sw i{left:8px}
-#hud #timerToggle:active{transform:translateY(1px)}
+body.three #hud #timerToggle{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;width:auto;max-width:none;min-width:0;height:28px;min-height:28px;padding:0 8px;margin:0;border:2px solid #111;border-radius:8px;background:#243044;color:#fff;font:800 11px/1 system-ui,-apple-system,sans-serif;box-shadow:none;touch-action:manipulation;letter-spacing:0;text-transform:none;white-space:nowrap}
+body.three #hud #timerToggle.on{background:#ffd21f;color:#111}
 #hud #timerToggle:focus-visible{outline:2px solid #fff;outline-offset:2px}
 #clock3 .clk{display:inline-block;width:16px;height:16px;vertical-align:-3px}
 #banner.sensekey,#banner.pounce{font-size:12px!important;line-height:32px!important;padding:0 8px!important;white-space:nowrap;overflow:hidden;text-overflow:clip}
