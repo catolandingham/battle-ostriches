@@ -23,7 +23,7 @@
 #clock3.hidden{display:none}#clock3 .cfill{position:absolute;inset:0 auto 0 0;background:#38d66b;transition:background .3s}
 #clock3.low .cfill{background:#ff3b2f;animation:pul .5s infinite}#clock3 .ctxt{position:relative;display:block;text-align:center;font-weight:900;color:#fff;line-height:22px;font-size:15px;text-shadow:0 2px 0 #000,0 0 3px #000}
 #clock3.mine{border-color:#ffd21f}
-.cell .pc.ph{position:absolute;inset:4%;z-index:3;filter:drop-shadow(0 2px 0 rgba(0,0,0,.6))}.cell .pc.ph svg{width:100%;height:100%}
+.cell .pc.ph,html[data-theme] #board .cell .pc.ph{position:absolute;inset:4%;z-index:6;visibility:visible;filter:drop-shadow(0 0 1.5px #fff) drop-shadow(0 1px 0 #111)}.cell .pc.ph svg{width:100%;height:100%}
 .cell .pc.ph.bur{opacity:.95}.cell.hcell{box-shadow:inset 0 0 0 3px #ff2a6d}
 .burtag{position:absolute;bottom:-2px;left:50%;transform:translateX(-50%);z-index:4;font-size:8px;font-weight:900;background:#2a1606;color:#ffd21f;border-radius:4px;padding:0 3px;letter-spacing:.5px;white-space:nowrap}
 .cell.hzone{box-shadow:inset 0 0 0 3px #ffb000}.cell.hzone.hno{box-shadow:inset 0 0 0 3px #9aa1ab;filter:saturate(.6)}
