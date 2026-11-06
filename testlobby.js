@@ -302,7 +302,15 @@ const roomOf = code => server.rooms.get(code);
   soloRoom.clock = true; soloRoom.clockKey = null;
   server.broadcast(soloRoom);
   assert.ok(soloRoom.deadline, 'timer on arms the shot clock');
-  clearTimeout(soloRoom.clockT); clearTimeout(soloRoom.aiT);
+  clearTimeout(soloRoom.clockT); soloRoom.clockKey = null;
+  S.send({ t: 'lobby', a: 'clock', on: false });
+  const stopped = await wait(S, m => m.t === 'state' && !m.lobby && m.state.clockStopped === true && m.state.host === true);
+  assert.equal(roomOf(stopped.state.code).deadline, null);
+  S.send({ t: 'lobby', a: 'clock', on: true });
+  const resumed = await wait(S, m => m.t === 'state' && m.state.clockStopped === false && m.state.h3 && m.state.h3.clockLeft > 0);
+  assert.equal(resumed.state.h3.clockMs, 10000);
+  assert.equal(roomOf(resumed.state.code).clock, true);
+  clearTimeout(roomOf(resumed.state.code).clockT); clearTimeout(roomOf(resumed.state.code).aiT);
   console.log('ok solo bot count, level, and turn timer');
 
   const H = await conn();

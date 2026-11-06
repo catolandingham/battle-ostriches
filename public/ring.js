@@ -194,24 +194,32 @@
   }
   function refreshTimers(S) {
     if (typeof document === 'undefined') return;
-    const on = timersShown(S, localStorage.getItem('bo_timers'));
+    const stopped = !!(S && S.clockStopped);
+    const on = S ? !stopped && S.showTimers !== false : timersShown(S, localStorage.getItem('bo_timers'));
     document.body.classList.toggle('timers-off', !on);
     const b = document.getElementById('timerToggle');
     if (!b) return;
+    const host = !S || S.host !== false;
+    b.disabled = !host;
     b.setAttribute('aria-pressed', on ? 'true' : 'false');
     b.classList.toggle('on', on);
-    b.textContent = on ? 'Timer on' : 'Timer off';
-    b.setAttribute('aria-label', on ? 'Timer on. The 10 second clock still runs if you hide it.' : 'Timer off. The 10 second clock still runs.');
-    b.title = on ? 'Timer on' : 'Timer off';
+    const word = b.querySelector('.tw');
+    if (word) word.textContent = on ? 'Timer on' : 'Timer off';
+    const action = host ? (on ? 'Turn turn timer off' : 'Turn turn timer on') : (on ? 'Timer on. The host turns the turn timer off.' : 'Timer off. The host turns the turn timer on.');
+    b.setAttribute('aria-label', action);
+    b.title = action;
   }
   function init() {
     const b = document.getElementById('timerToggle');
     if (b && !b.dataset.wired) {
       b.dataset.wired = '1';
       arm(b, () => {
-        const on = !document.body.classList.contains('timers-off');
+        const S = window.UI && UI._S ? UI._S() : null;
+        if (S && S.host === false) return;
+        const on = b.classList.contains('on');
         localStorage.setItem('bo_timers', on ? '0' : '1');
-        refreshTimers(window.UI && UI._S ? UI._S() : null);
+        if (window.UI && UI.send) UI.send({ t: 'lobby', a: 'clock', on: !on });
+        refreshTimers(S ? Object.assign({}, S, { clockStopped: on, showTimers: !on }) : S);
       });
     }
     if (!document.body.dataset.ringDoc) {

@@ -10,8 +10,21 @@
 #aring .aring-btn.on{background:#ffd21f}
 html[data-theme] #aring .aring-btn,html[data-theme] .ring-tap{animation:none!important;text-transform:none!important;letter-spacing:0!important}
 body.timers-off #clock3{visibility:hidden!important}
-#hud #timerToggle.on{background:#ffd21f;color:#111}
-#hud #timerToggle .clk,#clock3 .clk{display:inline-block;width:16px;height:16px;vertical-align:-3px}
+#timerDock{display:none;flex:none;justify-content:center;padding:4px 8px 2px}
+body.three #timerDock{display:flex}
+#timerToggle.timerswitch{display:flex;align-items:center;gap:8px;flex:0 0 auto;width:auto;min-height:44px;height:44px;padding:0 12px 0 8px;border:3px solid #111;border-radius:999px;background:#243044;color:#fff;font:800 14px/1 system-ui,-apple-system,sans-serif;box-shadow:0 3px 0 #111;touch-action:manipulation}
+#timerToggle.timerswitch.on{background:#ffd21f;color:#111}
+#timerToggle.timerswitch .clk{width:22px;height:22px;flex:none}
+#timerToggle.timerswitch .slash{display:none}
+#timerToggle.timerswitch:not(.on) .slash{display:block}
+#timerToggle.timerswitch .sw{position:relative;width:42px;height:24px;border-radius:999px;background:#5c6772;border:2px solid #111;flex:none}
+#timerToggle.timerswitch .sw i{position:absolute;top:1px;left:1px;width:18px;height:18px;border-radius:50%;background:#fff}
+#timerToggle.timerswitch.on .sw{background:#111}
+#timerToggle.timerswitch.on .sw i{left:19px}
+#timerToggle.timerswitch:active{transform:translateY(2px);box-shadow:0 1px 0 #111}
+#timerToggle.timerswitch:focus-visible{outline:3px solid #fff;outline-offset:2px}
+#timerToggle.timerswitch:disabled{cursor:default}
+#clock3 .clk{display:inline-block;width:16px;height:16px;vertical-align:-3px}
 #banner.sensekey,#banner.pounce{font-size:12px!important;line-height:32px!important;padding:0 8px!important;white-space:nowrap;overflow:hidden;text-overflow:clip}
 #banner.sensekey,html[data-theme] #banner.sensekey{background:#1d3557!important;color:#fff!important}
 #banner.pounce,html[data-theme] #banner.pounce{background:#ffb000!important;color:#111!important}

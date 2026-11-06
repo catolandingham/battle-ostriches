@@ -159,7 +159,6 @@ body.coaching::before{content:"";position:fixed;inset:0;background:#000a;z-index
 #hud #turnTag{padding:6px 8px!important;font-size:13px!important;min-width:0!important}
 #hud .iconbtn,#hud #helpBtn{width:30px!important;height:30px!important;min-width:30px!important;padding:0!important;font-size:15px!important;margin:0!important}
 #hud button.iconbtn,#hud button#helpBtn,#hud #themeBtn{width:32px!important;min-width:32px!important;max-width:32px!important;flex:0 0 32px!important;height:32px!important}
-#hud #timerToggle{width:auto!important;max-width:none!important;min-width:0!important;flex:0 0 auto!important;height:32px!important;padding:0 8px!important;font-size:12px!important;white-space:nowrap}
 [data-theme=nature] .cell.hit,[data-theme=nature] .cell.miss{background:transparent!important}
 #hud .ctr{white-space:normal!important;line-height:1.25}
 /* invite chip + popover (only after the opponent joined) */
