@@ -200,12 +200,13 @@
     const b = document.getElementById('timerToggle');
     if (!b) return;
     const host = !S || S.host !== false;
-    b.disabled = !host;
+    b.disabled = false;
+    b.removeAttribute('aria-disabled');
     b.setAttribute('aria-pressed', on ? 'true' : 'false');
     b.classList.toggle('on', on);
     const word = b.querySelector('.tw');
-    if (word) word.textContent = on ? 'Timer on' : 'Timer off';
-    const action = host ? (on ? 'Turn turn timer off' : 'Turn turn timer on') : (on ? 'Timer on. The host turns the turn timer off.' : 'Timer off. The host turns the turn timer on.');
+    if (word) word.textContent = on ? 'on' : 'off';
+    const action = host ? (on ? 'Turn turn timer off' : 'Turn turn timer on') : (on ? 'Timer on' : 'Timer off');
     b.setAttribute('aria-label', action);
     b.title = action;
   }
