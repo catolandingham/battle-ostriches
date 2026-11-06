@@ -47,6 +47,10 @@ ok('compass names the grid, including diagonals, with north toward the top', () 
   assert.equal(R.bearing(2, -1).name, 'northeast'); assert.equal(R.bearing(2, -1).key, 'NE');
   assert.equal(R.bearing(1, 1).name, 'southeast'); assert.equal(R.bearing(-1, 1).name, 'southwest');
   assert.equal(R.bearing(0, 0).name, 'here');
+  assert.equal(R.arrowGlyph(0, -1), '↑'); assert.equal(R.arrowGlyph(1, 1), '↘');
+  assert.equal(R.nearestVisibleBird([4, 3], [{ name: 'ostrich', p: [-99, -99] }, { name: 'vulture', p: [8, 6] }], 2), null);
+  const near = R.nearestVisibleBird([4, 3], [{ name: 'ostrich', p: [4, 4] }, { name: 'vulture', p: [6, 3] }], 2);
+  assert.equal(near.name, 'ostrich'); assert.equal(near.arrow, '↓'); assert.equal(near.d, 1);
 });
 
 ok('turn timer defaults on and can be turned off without changing the stored rule', () => {

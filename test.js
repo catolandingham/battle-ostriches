@@ -38,4 +38,20 @@ t('regression (Brian r28): vulture on the ostrich square throws -> bounce, egg s
  assert.equal(w.SMASH.kind('bounce'),'feather');assert.equal(w.SMASH.kind('hit'),'hit');assert.equal(w.SMASH.kind('miss'),'miss');});
 t('regression (Brian): landing ON an unguarded egg = found (spotted), not just a sniff',()=>{const AI=require('./ai.js');const g=setup();B.ostrichStep(g,[1,1]);assert(B.vultureFly(g,[6,2]));
  assert.deepEqual(g.lastAction.spotted,[6,2]);const v=AI.redView(g);assert.equal(v.marks['6,2'],'spotted');assert.deepEqual(v.lastAction.spotted,[6,2]);assert.deepEqual(v.sniff.p,[6,2]);});
+t('food path counts steps around smashed squares, and the warning is path + 1 spare turn',()=>{
+ const open=B.foodRoute(C,[4,3],{});
+ assert.equal(open.len,4); assert.deepEqual(open.food,[0,0]);
+ const warn=(h,r,legal)=>!!(r&&r.len>0&&h<=r.len+1&&r.next&&legal.has(r.next.join(',')));
+ assert.equal(warn(6,open,new Set([open.next.join(',')])),false);
+ assert.equal(warn(5,open,new Set([open.next.join(',')])),true);
+ assert.equal(warn(4,open,new Set(['9,9'])),false);
+ const marks={'1,0':'hit','1,1':'hit'};
+ const around=B.foodRoute(C,[2,0],marks);
+ assert.ok(around.len>B.dist([2,0],[0,0]));
+ assert.equal(warn(around.len+2,around,new Set([around.next.join(',')])),false);
+ assert.equal(warn(around.len+1,around,new Set([around.next.join(',')])),true);
+ assert.equal(B.foodRoute(C,[0,0],{}).len,0);
+ const box={}; for(let dx=-1;dx<=1;dx++)for(let dy=-1;dy<=1;dy++) if(dx||dy) box[(4+dx)+','+(3+dy)]='hit';
+ assert.equal(B.foodRoute(C,[4,3],box),null);
+});
 console.log(n+' tests passed');

@@ -157,7 +157,31 @@ function endRound(g) {
 // What the vulture may see: found eggs ('spotted') and smashed squares ('hit'). Nothing else persists.
 function visible(g) { return { marks: Object.fromEntries(Object.entries(g.marks).filter(([, m]) => m === 'spotted' || m === 'hit' || m === 'stone')) }; }
 function coldIn(g, e) { return g.cfg.warmth - (g.round - e.lastWarm); } // rounds left before going cold
+// Shortest ostrich walk to a visible leaf. Each step is one square, including diagonals. Smashed squares are blocked. Landing on the leaf is the eat; it is included in len, not an extra turn.
+function foodRoute(cfg, pos, marks) {
+  if (!cfg || !pos || pos[0] < 0 || pos[1] < 0) return null;
+  const foods = new Set((cfg.foods || []).map(key));
+  if (foods.has(key(pos))) return { len: 0, next: null, food: pos.slice() };
+  const blocked = new Set();
+  for (const [k, v] of Object.entries(marks || {})) if (v === 'hit') blocked.add(k);
+  const seen = new Set([key(pos)]), q = [[pos.slice(), 0, null]];
+  while (q.length) {
+    const [p, d, first] = q.shift();
+    for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) {
+      if (!dx && !dy) continue;
+      const n = [p[0] + dx, p[1] + dy];
+      if (n[0] < 0 || n[1] < 0 || n[0] >= cfg.cols || n[1] >= cfg.rows) continue;
+      const id = key(n);
+      if (seen.has(id) || blocked.has(id)) continue;
+      seen.add(id);
+      const step = first || n.slice();
+      if (foods.has(id)) return { len: d + 1, next: step.slice(), food: n.slice() };
+      q.push([n, d + 1, step]);
+    }
+  }
+  return null;
+}
 
 const API = { CONFIG, newGame, canPlaceEgg, placeEgg, placeOstrich, ostrichMoves, ostrichStep, ostrichSit, canSit, canCarry, mustLeave, onEgg, dropCarried,
-  endRound, smellsEgg, flyTargets, throwTargets, vultureFly, vultureThrow, eggAt, aliveEggs, coldIn, key, dist, visible, isFood, isRock, parkEliminated, ostrichGuards };
+  endRound, smellsEgg, flyTargets, throwTargets, vultureFly, vultureThrow, eggAt, aliveEggs, coldIn, key, dist, visible, isFood, isRock, parkEliminated, ostrichGuards, foodRoute };
 if (typeof module !== 'undefined') module.exports = API; else window.BO = API;

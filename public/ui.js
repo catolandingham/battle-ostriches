@@ -289,7 +289,9 @@ function render(prev){
  // sniff banner: yes/no for this turn only (vulture), plus hunger warning (ostrich)
  const bn=$('banner');let bt='',bc='';
  if(S.phase==='play'&&!blue&&S.sniff){bt=S.marks[key(S.vulture)]==='spotted'&&key(S.sniff.p)===key(S.vulture)?'Found egg!':S.sniff.yes?'Egg nearby!':'No egg nearby';bc=S.sniff.yes?'yes':'no';}
- if(S.phase==='play'&&blue&&S.hungerLeft<=3){bt=`Hungry! ${S.hungerLeft} turn${S.hungerLeft===1?'':'s'} to reach food`;bc='hungry';}
+ if(S.phase==='play'&&blue&&S.ostrich&&S.ostrich[0]>=0){const route=BO.foodRoute(C,S.ostrich,S.marks);const legal=new Set((S.moves||[]).map(key));
+  if(route&&route.len>0&&S.hungerLeft<=route.len+1&&route.next&&legal.has(key(route.next))){const arrow=window.BORing?BORing.arrowGlyph(route.next[0]-S.ostrich[0],route.next[1]-S.ostrich[1]):'';bt=`Leaf ${arrow} in ${route.len} step${route.len===1?'':'s'} · ${S.hungerLeft} left`;bc='hungry';}
+  else if(!route&&S.hungerLeft<=2){bt=`Hungry! ${S.hungerLeft} left, no open path to a leaf`;bc='hungry';}}
  {const left=C.rounds-S.round+1;if(S.phase==='play'&&left<=3&&!bt){bt=left===1?'⏳ Last round!':`⏳ Final ${left} rounds!`;bc='final';}}
  if(bn){bn.textContent=bt;bn.className=bt?bc:'hidden';}
  $('warm').innerHTML='';

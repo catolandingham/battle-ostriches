@@ -76,6 +76,8 @@ const phone = { viewport: { width: 390, height: 844 } };
   const desk = await lay(H);
   assert.ok(desk.legal >= 3, 'hunter has steps ' + desk.legal);
   assert.match(desk.hint, /no bird is drawn|not pointed at/);
+  assert.equal(await H.locator('.dirlab').count(), 0, 'no compass letters on the tiles');
+  assert.match(await H.textContent('#banner'), /No bird within 2|A bird is within 2|↑|↗|→|↘|↓|↙|←|↖/);
   assert.ok(desk.tipH < 2, 'hidden tip does not reserve a band');
   assert.ok(desk.gap < 90, 'gap under the hint is ' + desk.gap);
   assert.equal(desk.overlap, false);
