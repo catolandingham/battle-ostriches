@@ -14,7 +14,7 @@ function play(kind, opt = {}) {
       const m = AI.hunter(hview(g), mem.hunter); ok = m.a === 'hmove' ? T.hunterMove(g, m.p) : T.hunterStay(g); }
     else if (r === 'red') { const v = AI.redView(g), m = AI.dodge(AI.vulture(v, 'normal', mem.red), g.vulture, v.fly.map(p => ({ a: 'fly', p })), hv, reach);
       ok = m.a === 'fly' ? T.vultureFly3(g, m.p) : T.vultureThrow3(g, m.p); }
-    else { let m = AI.ostrich(g); const fd = Math.min(...g.cfg.foods.map(f => B.dist(f, g.ostrich)));
+    else { let m = AI.ostrich(g); const fd = AI.foodTurns(g.cfg, g.ostrich);
       if (g.hungerLeft - fd > 1) m = AI.dodge(m, g.ostrich, (B.canCarry(g) ? B.ostrichMoves(g, true).map(p => ({ a: 'carry', p })) : []).concat(B.ostrichMoves(g).map(p => ({ a: 'step', p }))), hv, reach);
       ok = T.ostrichAct3(g, m.a, m.p); }
     if (!ok) throw new Error('illegal ' + r);

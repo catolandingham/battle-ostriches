@@ -7,7 +7,26 @@ t('config: open-skies ruleset',()=>{assert.equal(C.rounds,30);assert.equal(C.egg
  assert.equal(C.stones,1);assert(C.food>=8&&C.food<=14);assert(C.warmth>=12&&C.warmth<=28);assert.equal(C.foods.length,2);assert.equal(C.rocks.length,2);});
 t('setup: vulture opens; no egg under vulture, on/next to food, or on rocks',()=>{const g=setup();assert.equal(g.turn,'blue');const h=B.newGame();
  assert(!B.placeEgg(h,[4,3]));assert(!B.placeEgg(h,[0,0]));assert(!B.placeEgg(h,[1,1]));assert(!B.placeEgg(h,[7,5]));assert(!B.placeEgg(h,[4,0]));assert(B.placeEgg(h,[2,0]));});
-t('ostrich steps 1 square',()=>{const g=setup();assert(!B.ostrichStep(g,[4,4]));assert(B.ostrichStep(g,[3,3]));assert.equal(g.turn,'red')});
+t('ostrich walks up to 2 squares, and only 1 when it carries an egg',()=>{const g=setup();assert.equal(C.ostrichWalk,2);assert.equal(C.carryWalk,1);
+ assert(!B.ostrichStep(g,[5,5]),'3 squares is too far');assert(!B.ostrichStep(g,[2,2]),'not its own square');
+ const mv=B.ostrichMoves(g).map(String);assert(mv.includes('4,4')&&mv.includes('3,3')&&mv.includes('0,0')&&mv.includes('4,2'));assert(!mv.includes('5,2')&&!mv.includes('2,2'));
+ const cm=B.ostrichMoves(g,true).map(String);assert(cm.includes('3,3')&&!cm.includes('4,4')&&!cm.includes('0,0'),'carrying: 1 square only');
+ assert(B.ostrichStep(g,[4,4]));assert.equal(g.turn,'red');assert.deepEqual(g.ostrich,[4,4]);
+ const h=setup();assert(B.ostrichStep(h,[3,3],true));assert.equal(h.carrying,0);assert.deepEqual(h.ostrich,[3,3]);
+ const k=setup();assert(!B.ostrichStep(k,[4,4],true),'a carried egg moves 1 square, not 2');});
+t('a 2-square walk needs a free middle square: smashed squares block the way and the landing',()=>{
+ const g=setup();g.marks['3,3']='hit';
+ assert(!B.ostrichMoves(g).map(String).includes('4,4'),'the only way to (4,4) runs through the smashed (3,3)');assert(B.ostrichMoves(g).map(String).includes('4,3'),'(4,3) can be reached through (3,2)');assert(!B.ostrichMoves(g).map(String).includes('3,3'),'and (3,3) itself is blocked');
+ const m=B.walkSquares(g.cfg,{'3,2':'hit','3,3':'hit','3,1':'hit','2,3':'hit','2,1':'hit','1,1':'hit','1,2':'hit','1,3':'hit'},[2,2],2).map(String);
+ assert.deepEqual(m,[],'a ring of smashed squares around the ostrich leaves no move');
+ const wall={'3,1':'hit','3,2':'hit','3,3':'hit'};
+ const w=B.walkSquares(g.cfg,wall,[2,2],2).map(String);
+ assert(!w.includes('3,2')&&!w.includes('3,1')&&!w.includes('3,3'),'never lands on a smashed square');
+ const wall2={'3,1':'hit','3,2':'hit','3,3':'hit','2,1':'hit','2,3':'hit','1,1':'hit','1,2':'hit','1,3':'hit'};assert.equal(B.walkSquares(g.cfg,wall2,[2,2],2).length,0);
+ const half={'3,2':'hit'};const hs=B.walkSquares(g.cfg,half,[2,2],2).map(String);assert(hs.includes('4,2'),'(4,2) is still reachable through (3,1) or (3,3)');
+ const only={'3,1':'hit','3,3':'hit','3,2':'hit'};assert(!B.walkSquares(g.cfg,only,[2,2],2).map(String).includes('4,2'),'(4,2) is cut off when every middle square is smashed');
+ const edge=B.walkSquares(g.cfg,{},[0,0],2).map(String);assert.equal(edge.length,8,'a corner has 8 squares within 2');assert(!edge.some(s=>s.includes('-')));
+ assert.equal(B.walkSquares(g.cfg,{},[4,3],2).length,24,'an open middle square has all 24 squares within 2');});
 t('sit only on an egg, 3 in a row max',()=>{const g=setup();for(let i=0;i<3;i++){assert(B.ostrichSit(g));fl(g);}
  assert(!B.canSit(g));assert(B.mustLeave(g));assert(B.ostrichStep(g,[2,1]));fl(g);assert(!B.canSit(g));assert(B.ostrichStep(g,[2,2]));fl(g);assert(B.canSit(g));});
 t('carry 1 square, set down next turn; not onto egg/food/rocks',()=>{const g=setup();assert(B.ostrichStep(g,[3,3],true));assert.equal(g.carrying,0);fl(g);assert.deepEqual(g.eggs[0].pos,[3,3]);
@@ -38,14 +57,14 @@ t('regression (Brian r28): vulture on the ostrich square throws -> bounce, egg s
  assert.equal(w.SMASH.kind('bounce'),'feather');assert.equal(w.SMASH.kind('hit'),'hit');assert.equal(w.SMASH.kind('miss'),'miss');});
 t('regression (Brian): landing ON an unguarded egg = found (spotted), not just a sniff',()=>{const AI=require('./ai.js');const g=setup();B.ostrichStep(g,[1,1]);assert(B.vultureFly(g,[6,2]));
  assert.deepEqual(g.lastAction.spotted,[6,2]);const v=AI.redView(g);assert.equal(v.marks['6,2'],'spotted');assert.deepEqual(v.lastAction.spotted,[6,2]);assert.deepEqual(v.sniff.p,[6,2]);});
-t('food path counts steps around smashed squares, and the warning is path + 1 spare turn',()=>{
+t('food path counts moves (2 squares each) around smashed squares, and the warning is path + 1 spare turn',()=>{
  const open=B.foodRoute(C,[4,3],{});
- assert.equal(open.len,4); assert.deepEqual(open.food,[0,0]);
+ assert.equal(open.len,2); assert.deepEqual(open.food,[0,0]); // 4 squares, 2 per move
  const warn=(h,r,legal)=>!!(r&&r.len>0&&h<=r.len+1&&r.next&&legal.has(r.next.join(',')));
- assert.equal(warn(6,open,new Set([open.next.join(',')])),false);
- assert.equal(warn(5,open,new Set([open.next.join(',')])),true);
- assert.equal(warn(4,open,new Set(['9,9'])),false);
- const marks={'1,0':'hit','1,1':'hit'};
+ assert.equal(warn(4,open,new Set([open.next.join(',')])),false);
+ assert.equal(warn(3,open,new Set([open.next.join(',')])),true);
+ assert.equal(warn(2,open,new Set(['9,9'])),false);
+ const marks={'1,0':'hit','1,1':'hit','1,2':'hit','1,3':'hit'};
  const around=B.foodRoute(C,[2,0],marks);
  assert.ok(around.len>B.dist([2,0],[0,0]));
  assert.equal(warn(around.len+2,around,new Set([around.next.join(',')])),false);

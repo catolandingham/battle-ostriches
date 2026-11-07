@@ -12,7 +12,7 @@ function move(g, r, mem, level = 'normal') {
     return AI.hunter(hunterView(g, r), mem); }
   if (r === 'blue') {
     if (g.phase !== 'play') { let m = AI.ostrich(g, level); if (g.phase === 'setupOstrich' && H.hunterAt(g, m.p)) m = { a: 'place', p: g.eggs[1].pos.slice() }; return m; }
-    const { hv, reach } = threat(g, 'blue'), m = AI.ostrich(g, level), fd = Math.min(...g.cfg.foods.map(f => B.dist(f, g.ostrich)));
+    const { hv, reach } = threat(g, 'blue'), m = AI.ostrich(g, level), fd = AI.foodTurns(g.cfg, g.ostrich);
     if (g.hungerLeft - fd <= 1) return m;
     const alts = (B.canCarry(g) ? B.ostrichMoves(g, true).map(p => ({ a: 'carry', p })) : []).concat(B.ostrichMoves(g).map(p => ({ a: 'step', p })));
     return AI.dodge(m, g.ostrich, alts, hv, reach); }

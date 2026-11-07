@@ -6,6 +6,8 @@ const CONFIG = {
   rounds: 30,          // ostrich wins if any egg survives this many rounds
   warmth: 24,          // an egg goes cold unless the ostrich is on it (or carrying it) at least once every N rounds
   maxSit: 3,           // max consecutive Sit turns; then the ostrich must step off for at least one turn
+  ostrichWalk: 2,      // the ostrich walks up to N squares (king-move distance; a 2-square walk needs a middle square that is not smashed)...
+  carryWalk: 1,        // ...but only 1 square while it carries an egg
   vultureFly: 2,       // vulture flies up to N squares (king-move distance)
   throwRange: 1,       // vulture throws at its own square or one next to it...
   vultureStart: [4, 3],
@@ -56,18 +58,28 @@ function dropCarried(g) {
   if (e.alive) e.pos = g.ostrich.slice();
 }
 function onEgg(g) { return !!(g.ostrich && g.carrying === null && eggAt(g, g.ostrich)); }
+// Every square within `range` king-moves of p that a walker can reach: in bounds, never a smashed square, and a longer walk
+// needs a free (not smashed) square to pass through. Pieces and eggs do not block a walk; callers add their own landing rules.
+function walkSquares(cfg, marks, p, range) {
+  const seen = new Set([key(p)]), out = []; let edge = [p];
+  for (let i = 0; i < range; i++) {
+    const next = [];
+    for (const q of edge) for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) {
+      if (!dx && !dy) continue;
+      const n = [q[0] + dx, q[1] + dy], id = key(n);
+      if (seen.has(id) || !inB(n, cfg) || (marks && marks[id] === 'hit')) continue;
+      seen.add(id); out.push(n); next.push(n);
+    }
+    edge = next;
+  }
+  return out;
+}
 function ostrichMoves(g, carry = false) {
   if (!myTurn(g, 'blue')) return [];
   if (carry && !canCarry(g)) return [];
-  const res = [];
-  for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) {
-    if (!dx && !dy) continue;
-    const p = [g.ostrich[0] + dx, g.ostrich[1] + dy];
-    if (!inB(p, g.cfg) || smashed(g, p)) continue;  // smashed squares are blocked
-    if (carry && (eggAt(g, p) || isFood(g, p) || isRock(g, p) || g.marks[key(p)] === 'stone')) continue; // the ostrich won't carry an egg onto a stone-marked square (afraid) // can't carry onto another egg, food or rocks
-    res.push(p);
-  }
-  return res;
+  const res = walkSquares(g.cfg, g.marks, g.ostrich, carry ? g.cfg.carryWalk : g.cfg.ostrichWalk); // smashed squares are blocked
+  // the ostrich won't carry an egg onto a stone-marked square (afraid), onto another egg, food or rocks
+  return carry ? res.filter(p => !(eggAt(g, p) || isFood(g, p) || isRock(g, p) || g.marks[key(p)] === 'stone')) : res;
 }
 function canSit(g) { return myTurn(g, 'blue') && onEgg(g) && g.sitRun < g.cfg.maxSit; }
 function canCarry(g) { return myTurn(g, 'blue') && onEgg(g); }
@@ -159,22 +171,17 @@ function endRound(g) {
 // What the vulture may see: found eggs ('spotted') and smashed squares ('hit'). Nothing else persists.
 function visible(g) { return { marks: Object.fromEntries(Object.entries(g.marks).filter(([, m]) => m === 'spotted' || m === 'hit' || m === 'stone')) }; }
 function coldIn(g, e) { return g.cfg.warmth - (g.round - e.lastWarm); } // rounds left before going cold
-// Shortest ostrich walk to a visible leaf. Each step is one square, including diagonals. Smashed squares are blocked. Landing on the leaf is the eat; it is included in len, not an extra turn.
+// Shortest ostrich walk to a visible leaf, counted in moves (each move is up to cfg.ostrichWalk squares). Smashed squares are blocked. Landing on the leaf is the eat; it is included in len, not an extra turn.
 function foodRoute(cfg, pos, marks) {
   if (!cfg || !pos || pos[0] < 0 || pos[1] < 0) return null;
   const foods = new Set((cfg.foods || []).map(key));
   if (foods.has(key(pos))) return { len: 0, next: null, food: pos.slice() };
-  const blocked = new Set();
-  for (const [k, v] of Object.entries(marks || {})) if (v === 'hit') blocked.add(k);
-  const seen = new Set([key(pos)]), q = [[pos.slice(), 0, null]];
+  const seen = new Set([key(pos)]), q = [[pos.slice(), 0, null]], walk = cfg.ostrichWalk || 1;
   while (q.length) {
     const [p, d, first] = q.shift();
-    for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) {
-      if (!dx && !dy) continue;
-      const n = [p[0] + dx, p[1] + dy];
-      if (n[0] < 0 || n[1] < 0 || n[0] >= cfg.cols || n[1] >= cfg.rows) continue;
+    for (const n of walkSquares(cfg, marks, p, walk)) {
       const id = key(n);
-      if (seen.has(id) || blocked.has(id)) continue;
+      if (seen.has(id)) continue;
       seen.add(id);
       const step = first || n.slice();
       if (foods.has(id)) return { len: d + 1, next: step.slice(), food: n.slice() };
@@ -205,5 +212,5 @@ function sniffAnnounce(v, role) {
 }
 
 const API = { CONFIG, newGame, canPlaceEgg, placeEgg, placeOstrich, ostrichMoves, ostrichStep, ostrichSit, canSit, canCarry, mustLeave, onEgg, dropCarried,
-  endRound, smellsEgg, flyTargets, throwTargets, vultureFly, vultureThrow, eggAt, aliveEggs, coldIn, sniffFresh, sniffAnnounce, key, dist, visible, isFood, isRock, parkEliminated, ostrichGuards, foodRoute };
+  endRound, walkSquares, smellsEgg, flyTargets, throwTargets, vultureFly, vultureThrow, eggAt, aliveEggs, coldIn, sniffFresh, sniffAnnounce, key, dist, visible, isFood, isRock, parkEliminated, ostrichGuards, foodRoute };
 if (typeof module !== 'undefined') module.exports = API; else window.BO = API;

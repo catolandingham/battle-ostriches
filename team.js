@@ -45,11 +45,8 @@ const canCarry = (g, s) => myTurn(g, s) && onEgg(g, s);
 const mustLeave = (g, s) => myTurn(g, s) && onEgg(g, s) && g.b[s].sitRun >= g.cfg.maxSit;
 function ostrichMoves(g, s, carry = false) {
   if (!myTurn(g, s) || !isO(s) || (carry && !canCarry(g, s))) return [];
-  const o = g.b[s].pos, m = g.b[mate(s)], r = [];
-  for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) { if (!dx && !dy) continue; const p = [o[0] + dx, o[1] + dy];
-    if (!inB(g, p) || g.marks[K(p)] === 'hit' || (!m.out && m.pos && K(m.pos) === K(p))) continue;
-    if (carry && (eggAt(g, p) || B.isFood(g, p) || B.isRock(g, p) || g.marks[K(p)] === 'stone')) continue; r.push(p); }
-  return r;
+  const m = g.b[mate(s)], res = B.walkSquares(g.cfg, g.marks, g.b[s].pos, carry ? g.cfg.carryWalk : g.cfg.ostrichWalk).filter(p => m.out || !m.pos || K(m.pos) !== K(p));
+  return carry ? res.filter(p => !(eggAt(g, p) || B.isFood(g, p) || B.isRock(g, p) || g.marks[K(p)] === 'stone')) : res;
 }
 function feed(g, s) { // after an ostrich's move or stay: food resets hunger, else it gets hungrier and may starve (out; its partner plays on)
   const b = g.b[s];

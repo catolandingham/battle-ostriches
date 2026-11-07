@@ -8,7 +8,7 @@
     const B = require('../game.js'), T = require('../three.js'), H = require('../hunt.js'), M = require('../team.js'), C = B.CONFIG;
     const pick = (t) => ({ ko: { hyena: t.ko.hyena, badger: t.ko.badger }, sense: t.sense });
     return {
-      cfg: { eggs: C.eggs, rounds: C.rounds, warmth: C.warmth, food: C.food, stones: C.stones, fly: C.vultureFly, throwRange: C.throwRange, smell: C.smellRange },
+      cfg: { eggs: C.eggs, rounds: C.rounds, warmth: C.warmth, food: C.food, stones: C.stones, fly: C.vultureFly, throwRange: C.throwRange, smell: C.smellRange, walk: C.ostrichWalk, carryWalk: C.carryWalk },
       modes: { '3': pick(T.T3), '4h': pick(H.TH), '4': pick(M.TM), '5': pick(M.TM) },
     };
   }
@@ -23,6 +23,7 @@
     if (role === 'hunter') return kind === 'badger' ? 'badger' : 'hyena';
     return BIRD_SEAT[role] || null;
   }
+  const squares = (n) => n === 1 ? '1 square' : n + ' squares';
   const times = (n) => n === 1 ? 'once' : n + ' times';
   const catches = (n) => n === 1 ? '1 catch' : n + ' catches';
 
@@ -42,7 +43,7 @@
     if (team) return {
       title: 'You are an Ostrich',
       goal: `Goal: Keep at least one of your team's eggs alive for ${c.rounds} rounds.`,
-      moves: ['Step 1 square, or sit on an egg to keep it warm. Either ostrich can warm any egg.',
+      moves: [`Walk up to ${squares(c.walk)} (${squares(c.carryWalk)} if you carry an egg), or sit on an egg to keep it warm. Either ostrich can warm any egg.`,
         `An egg goes cold if no ostrich visits it within ${c.warmth} rounds.`,
         `Eat at a green leaf at least every ${c.food} turns.`],
       lose: 'Your team loses if every egg is smashed or cold.',
@@ -51,7 +52,7 @@
     return {
       title: 'You are the Ostrich',
       goal: `Goal: Keep one of your ${c.eggs} eggs alive for ${c.rounds} rounds.`,
-      moves: ['Step 1 square, or sit on an egg to keep it warm.',
+      moves: [`Walk up to ${squares(c.walk)} (${squares(c.carryWalk)} if you carry an egg), or sit on an egg to keep it warm.`,
         `Visit each egg within ${c.warmth} rounds or it goes cold.`,
         `Eat at a green leaf at least every ${c.food} turns.`],
       lose: loseList('You lose', ['every egg is smashed or cold', 'you starve'].concat(hl)),

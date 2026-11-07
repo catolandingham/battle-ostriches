@@ -151,7 +151,7 @@ function botMove3(room, r) {
   if (r === 'hunter') { const v = view3(room, 'hunter'); if (g.three.lastCatch && mem.seenCatch !== g.three.lastCatch.seq) { mem.seenCatch = g.three.lastCatch.seq; mem.reset = true; mem.lastCatch = g.three.h.slice(); } return AI.hunter(v, mem); }
   const hv = T.hunterSeenBy(g, r) ? g.three.h : null, reach = T.hunterRange(g) + (g.three.kind === 'hyena' ? 1 : 0);
   if (r === 'blue') { if (g.phase !== 'play') { let m = AI.ostrich(g, room.level); if (g.phase === 'setupOstrich' && B.key(m.p) === B.key(g.three.h)) m = { a: 'place', p: g.eggs[1].pos.slice() }; return m; }
-    const m = AI.ostrich(g, room.level), fd = Math.min(...g.cfg.foods.map(f => B.dist(f, g.ostrich)));
+    const m = AI.ostrich(g, room.level), fd = AI.foodTurns(g.cfg, g.ostrich);
     if (g.hungerLeft - fd <= 1) return m;
     const alts = (B.canCarry(g) ? B.ostrichMoves(g, true).map(p => ({ a: 'carry', p })) : []).concat(B.ostrichMoves(g).map(p => ({ a: 'step', p })));
     return AI.dodge(m, g.ostrich, alts, hv, reach); }

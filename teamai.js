@@ -23,7 +23,7 @@ function ostrich(g, s, level, hv, reach) {
   const ok = m => m && (m.a === 'sit' ? T.canSit(g, s) : legal.some(x => x.a === m.a && K(x.p) === K(m.p)));
   let m; try { m = AI.ostrich(oView(g, s), level); } catch { m = null; }
   if (!ok(m)) m = T.canSit(g, s) && !T.mustLeave(g, s) && Math.random() < .3 ? { a: 'sit' } : R(legal.filter(x => x.a === 'step')) || R(legal) || { a: 'sit' };
-  const fd = Math.min(...g.cfg.foods.map(f => D(f, g.b[s].pos)));
+  const fd = AI.foodTurns(g.cfg, g.b[s].pos);
   return g.b[s].hunger - fd <= 1 ? m : AI.dodge(m, g.b[s].pos, legal, hv, reach);
 }
 function vView(g, s) {

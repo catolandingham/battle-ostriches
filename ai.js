@@ -15,7 +15,7 @@ function ostrich(g, lvl = 'normal') {
     for (;;) { const p = [Math.random() * C.cols | 0, Math.random() * C.rows | 0]; if (B.canPlaceEgg(g, p)) return { a: 'place', p }; } }
   if (g.phase === 'setupOstrich') return { a: 'place', p: g.eggs[0].pos.slice() };
   const o = g.ostrich, v = g.vulture, vd = D(v, o), alive = B.aliveEggs(g);
-  const fd = near(o, C.foods), slack = g.hungerLeft - D(fd, o);
+  const fd = near(o, C.foods), W = C.ostrichWalk || 1, tt = d => Math.ceil(d / W), slack = g.hungerLeft - tt(D(fd, o)); // turns, not squares: the ostrich walks up to W squares a turn
   const toward = (t, carry) => { const mv = B.ostrichMoves(g, carry); if (!mv.length) return null;
     return { a: carry ? 'carry' : 'step', p: sortBy(mv, q => D(q, t) + (Math.random() - .5) * .4 - D(q, v) * .05)[0] }; };
   // Plan: food and each egg are deadlines (food: hungerLeft moves; egg: coldIn rounds). Try every visiting order and
@@ -23,7 +23,7 @@ function ostrich(g, lvl = 'normal') {
   const goals = [{ p: fd, d: g.hungerLeft, food: 1 }].concat(alive.filter(e => e.pos && K(e.pos) !== K(o)).map(e => ({ p: e.pos, d: B.coldIn(g, e) })));
   let plan = null;
   const perm = (left, at, t, minS, first) => { if (!left.length || t > 14) { if (!plan || minS > plan.s) plan = { s: minS, first }; return; }
-    left.forEach((q, i) => { const tt = t + Math.max(1, D(at, q.p)); const extra = q.food ? 0 : 0; perm(left.filter((_, j) => j !== i), q.p, tt, Math.min(minS, q.d - tt + extra), first || q); }); };
+    left.forEach((q, i) => { const t2 = t + Math.max(1, tt(D(at, q.p))); perm(left.filter((_, j) => j !== i), q.p, t2, Math.min(minS, q.d - t2), first || q); }); };
   perm(goals, o, 0, 99, null);
   if (slack <= 1) return toward(fd) || { a: 'step', p: R(B.ostrichMoves(g)) };           // starving: eat now
   // relocate: on an egg the vulture found or is sniffing around -> carry it away from the vulture (or sit if it's right on top)
@@ -121,4 +121,6 @@ function dodge(m, at, moves, hv, reach, notice = .85) {
   if (!bad(tgt)) return m;
   const alt = moves.filter(x => !bad(x.p)); return alt.length ? R(alt) : m;
 }
-module.exports = { ostrich, vulture, redView, hunter, dodge };
+// Turns the ostrich needs to walk d squares (it walks up to cfg.ostrichWalk a turn).
+const foodTurns = (cfg, at) => Math.ceil(Math.min(...cfg.foods.map(f => D(f, at))) / (cfg.ostrichWalk || 1));
+module.exports = { foodTurns, ostrich, vulture, redView, hunter, dodge };

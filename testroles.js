@@ -17,7 +17,7 @@ const ALL = [
 
 ok('rules from the modules are plain numbers and nothing else (no start squares)', () => {
   const r = R.rulesFromModules();
-  assert.deepEqual(r.cfg, { eggs: C.eggs, rounds: C.rounds, warmth: C.warmth, food: C.food, stones: C.stones, fly: C.vultureFly, throwRange: C.throwRange, smell: C.smellRange });
+  assert.deepEqual(r.cfg, { eggs: C.eggs, rounds: C.rounds, warmth: C.warmth, food: C.food, stones: C.stones, fly: C.vultureFly, throwRange: C.throwRange, smell: C.smellRange, walk: C.ostrichWalk, carryWalk: C.carryWalk });
   assert.deepEqual(r.modes['3'], { ko: T.T3.ko, sense: T.T3.sense });
   assert.deepEqual(r.modes['4h'], { ko: H.TH.ko, sense: H.TH.sense });
   assert.deepEqual(r.modes['5'], { ko: TT.TM.ko, sense: TT.TM.sense });
@@ -73,16 +73,16 @@ ok('numbers on the cards equal the rules constants', () => {
 
 ok('change every constant: every number on every card follows, and no other number appears', () => {
   // odd values that cannot be mistaken for a typed 1, 2 or 3
-  const X = { cfg: { eggs: 7, rounds: 41, warmth: 19, food: 11, stones: 5, fly: 6, throwRange: 4, smell: 8 },
+  const X = { cfg: { eggs: 7, rounds: 41, warmth: 19, food: 11, stones: 5, fly: 6, throwRange: 4, smell: 8, walk: 9, carryWalk: 10 },
     modes: { '3': { ko: { hyena: 12, badger: 13 }, sense: 14 }, '4h': { ko: { hyena: 15, badger: 16 }, sense: 17 }, '4': { ko: { hyena: 18, badger: 21 }, sense: 22 }, '5': { ko: { hyena: 23, badger: 24 }, sense: 25 } } };
   const allowed = new Set(); (function walk(o) { for (const v of Object.values(o)) typeof v === 'object' ? walk(v) : allowed.add(String(v)); })(X);
   for (const [role, kind, mode] of ALL) {
     const c = R.roleCard(role, kind, mode, X), at = `${role}/${kind}/${mode}`;
-    // the only numbers that are not rules are the one-square steps ("Step 1 square", "Move 1 square")
-    const bare = text(c).replace(/(Step|Move) 1 square/g, '$1 one-square');
+    // the only numbers that are not rules are the hunters' one-square moves ("Move 1 square")
+    const bare = text(c).replace(/Move 1 square/g, 'Move one-square');
     for (const d of bare.match(/\d+/g) || []) assert.ok(allowed.has(d), `${at}: the number ${d} is not from the rules: ${bare}`);
   }
-  const o = R.roleCard('blue', null, '2', X); assert.ok(o.goal.includes('7 eggs') && o.goal.includes('41 rounds') && o.moves[1].includes('19 rounds') && o.moves[2].includes('11 turns'), text(o));
+  const o = R.roleCard('blue', null, '2', X); assert.ok(o.moves[0].includes('Walk up to 9 squares (10 squares if you carry an egg)'), o.moves[0]); assert.ok(o.goal.includes('7 eggs') && o.goal.includes('41 rounds') && o.moves[1].includes('19 rounds') && o.moves[2].includes('11 turns'), text(o));
   const v = R.roleCard('red', null, '2', X); assert.ok(v.moves[0].includes('6 squares') && v.moves[0].includes('8 squares') && v.moves[1].includes('5 stones') && v.moves[2].includes('within 4 of you'), text(v));
   assert.ok(R.roleCard('hunter', 'hyena', '3', X).moves.join(' ').includes('after 12 catches') && R.roleCard('hunter', 'badger', '3', X).moves.join(' ').includes('after 13 catches'));
   assert.ok(R.roleCard('hunter', 'hyena', '3', X).moves[0].includes('within 14 squares'));

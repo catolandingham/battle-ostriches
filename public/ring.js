@@ -40,8 +40,8 @@
     }
     if (S.role === 'blue') {
       const items = [];
-      if (mode === 'carry') items.push({ id: 'step', label: 'Move', detail: 'Tap a glowing square to step.', enabled: true, mode: 'step' });
-      else if ((S.moves || []).length) items.push({ id: 'step', label: 'Step', detail: 'Step is selected. Tap a glowing square.', enabled: true, mode: 'step' });
+      if (mode === 'carry') items.push({ id: 'step', label: 'Move', detail: 'Tap a glowing square to walk.', enabled: true, mode: 'step' });
+      else if ((S.moves || []).length) items.push({ id: 'step', label: 'Walk', detail: 'Walk is selected. Tap a glowing square.', enabled: true, mode: 'step' });
       if (S.onEgg && S.can && S.can.carry) items.push({ id: 'carry', label: 'Carry', detail: 'Carry the egg 1 square.', enabled: true, mode: 'carry' });
       if (S.onEgg && S.can && S.can.sit) items.push({ id: 'sit', label: 'Sit', detail: `Warm the egg. ${Math.max(0, (C.maxSit || 0) - (S.sitRun || 0))} sits left.`, enabled: true, act: 'sit' });
       return items;
@@ -95,7 +95,7 @@
     const b = document.querySelector('#actions button.on');
     if (!b) return '';
     const t = b.textContent.replace(/^✓\s*/, '').toLowerCase();
-    if (t.startsWith('step')) return 'step';
+    if (t.startsWith('walk')) return 'step';
     if (t.startsWith('carry') || t.startsWith('🥚')) return 'carry';
     if (t.startsWith('fly')) return 'fly';
     if (t.startsWith('throw')) return 'throw';

@@ -14,7 +14,7 @@ ok('ring: Step and Fly can be selected, and the squares still do the move', () =
   assert.deepEqual(ids(R.legalActions({ phase: 'play', myTurn: true, god: true, role: 'blue', onEgg: true, can: { sit: true, carry: true } })), []);
   const step = R.legalActions({ phase: 'play', myTurn: true, role: 'blue', onEgg: false, moves: [[1, 1]], cfg: { maxSit: 3 }, can: { sit: false, carry: false } });
   assert.deepEqual(ids(step), ['step']);
-  assert.equal(step[0].label, 'Step');
+  assert.equal(step[0].label, 'Walk');
   const back = R.legalActions({ phase: 'play', myTurn: true, role: 'blue', onEgg: true, moves: [[1, 1]], cfg: { maxSit: 3 }, can: { sit: true, carry: true } }, 'carry');
   assert.deepEqual(ids(back), ['step', 'carry', 'sit']);
   const on = R.legalActions({ phase: 'play', myTurn: true, role: 'blue', onEgg: true, moves: [[1, 1]], cfg: { maxSit: 3 }, sitRun: 3, mustLeave: true, can: { sit: false, carry: true } });
