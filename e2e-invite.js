@@ -23,7 +23,7 @@ const vis = p => p.evaluate(() => { const w = document.getElementById('wait'), r
     assert.equal(await vis(A), 0, th + ': hidden while opponent offline'); assert.ok(/offline/i.test(await A.textContent('#log')));
     await A.reload(); await A.waitForSelector('#board .cell'); await A.waitForTimeout(300);
     assert.equal(await vis(A), 0, th + ': hidden after refresh');
-    const [V2, cV2] = await mk(); await V2.goto(link + '&theme=' + th); await V2.waitForFunction(() => /two players/.test(document.getElementById('lobbyErr').textContent)); // seat stays reserved for the offline opponent
+    const [V2, cV2] = await mk(); await V2.goto(link + '&theme=' + th); await V2.waitForFunction(() => /already running/.test(document.getElementById('roomLobby').textContent)); // a third phone waits for the next game; the offline opponent's seat stays reserved
     await A.screenshot({ path: OUT + th + '-ingame.png' });
     await A.click('#inviteBtn'); await A.waitForTimeout(150); const h = await vis(A);
     assert.ok(h > 50 && h < 300, th + ': popover ' + h); assert.ok(/^[A-Z]{4}$/.test(await A.textContent('#shareCode')), 'popover shows the code'); assert.equal((await A.textContent('#inviteBtn')).trim(), '🔗', 'no room code in the in-game header');

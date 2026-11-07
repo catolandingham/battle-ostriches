@@ -342,12 +342,6 @@ const roomOf = code => server.rooms.get(code);
   assert.ok(!live.players.blue.bot && !live.players.red.bot, 'no bot left waiting for a human');
   console.log('ok ws role switch, dynamic 2p, host start');
 
-  const C = await conn();
-  C.send({ t: 'join', code });
-  const full = await wait(C, m => m.t === 'error');
-  assert.match(full.msg, /two players/);
-  console.log('ok full game rejects a third seat');
-
   live.g.phase = 'over'; live.g.winner = 'blue';
   from(A);
   const D = await conn();
@@ -361,6 +355,7 @@ const roomOf = code => server.rooms.get(code);
   assert.equal(stillBlue.state.role, 'blue');
   console.log('ok late joiner expands 2p into hunter and keeps roles');
 
+  roomOf(code).g.phase = 'over'; // Change roles is on the end screen
   from(A);
   A.send({ t: 'act', a: 'rematch', how: 'change' });
   const back = await wait(A, m => m.t === 'state' && m.lobby && m.state.humanCount === 3 && !m.state.roles.some(r => r.mine));
@@ -454,6 +449,85 @@ const roomOf = code => server.rooms.get(code);
   const sg = await wait(SO, m => m.t === 'state' && !m.lobby && m.state.role === 'hunter');
   assert.equal(sg.state.kind, 'badger'); assert.equal(sg.state.picked, false);
   console.log('ok T7 picked reaches the game view, and solo refuses a start with no pick');
+
+  // ---- T5: a friend who types the code mid-game waits for the next game (Nov 4 playtest, A11) ----
+  const LATE = "You're in. This game is already running. You'll play in the next one.";
+  const twoPlayers = async () => {
+    const a = await conn(); a.send({ t: 'create', friends: 1 });
+    const aj = await wait(a, m => m.t === 'joined' && m.lobby);
+    const b = await conn(); b.send({ t: 'join', code: aj.code });
+    await wait(a, m => m.t === 'state' && m.lobby && m.state.humanCount === 2);
+    a.send({ t: 'lobby', a: 'start' });
+    await wait(a, m => m.t === 'state' && !m.lobby && m.state.phase === 'setupEggs');
+    await wait(b, m => m.t === 'state' && !m.lobby && m.state.phase === 'setupEggs');
+    return { a, b, code: aj.code, live: roomOf(aj.code) };
+  };
+  const quiet = c => c.q.filter(m => m.t !== 'pong').length;
+  const lateJoin = async (g) => {
+    const na = quiet(g.a), nb = quiet(g.b), turn = g.live.g.turn, phase = g.live.g.phase;
+    const c = await conn(); c.send({ t: 'join', code: g.code });
+    const joined = await wait(c, m => m.t === 'joined');
+    assert.equal(joined.lobby, true); assert.equal(joined.role, null);
+    const bench = await wait(c, m => m.t === 'state' && m.lobby && m.state.between);
+    assert.equal(bench.state.note, LATE);
+    assert.equal(bench.state.canStart, false); assert.equal(bench.state.host, false);
+    await new Promise(r => setTimeout(r, 250));
+    assert.equal(quiet(g.a), na, 'the first player gets no message when a friend waits'); assert.equal(quiet(g.b), nb, 'the second player gets no message either');
+    assert.equal(g.live.g.turn, turn); assert.equal(g.live.g.phase, phase); assert.equal(g.live.g.eggs.length, 0, 'the game was not reset');
+    assert.equal(g.live.arrivals.length, 1);
+    return { c, token: joined.token };
+  };
+  const keepPlaying = async (g) => {
+    from(g.a); g.a.send({ t: 'act', a: 'egg', p: [2, 2] });
+    const st = await wait(g.a, m => m.t === 'state' && !m.lobby && m.state.eggs && m.state.eggs.length === 1);
+    assert.equal(st.state.eggs.length, 1);
+  };
+
+  const g1 = await twoPlayers();
+  const late1 = await lateJoin(g1);
+  await keepPlaying(g1);
+  // nobody can reset a running game: a waiting friend's game actions are ignored, and a player's rematch waits for the end
+  const phaseBefore = g1.live.g.phase;
+  late1.c.send({ t: 'act', a: 'rematch', how: 'change' }); late1.c.send({ t: 'act', a: 'rematch', how: 'same' });
+  from(g1.a); g1.a.send({ t: 'act', a: 'rematch', how: 'change' });
+  const early = await wait(g1.a, m => m.t === 'error');
+  assert.match(early.msg, /Not a legal move/);
+  assert.equal(g1.live.g.phase, phaseBefore, 'the running game was not reset'); assert.ok(!g1.live.lobby, 'still in the game, not the lobby');
+  console.log('ok T5 a waiting friend or an early rematch cannot reset a running game');
+
+  // a waiting friend who reloads the page is still recognised, with the same note
+  late1.c.w.close();
+  const c1b = await conn(); c1b.send({ t: 'join', code: g1.code, token: late1.token });
+  const reloaded = await wait(c1b, m => m.t === 'state' && m.lobby && m.state.between);
+  assert.equal(reloaded.state.note, LATE); assert.equal(g1.live.arrivals.length, 1, 'reloading did not add a second arrival');
+  console.log('ok T5 mid-game joiner waits on the bench, players unaffected, reload recognised');
+
+  g1.live.g.phase = 'over'; g1.live.g.winner = 'blue';
+  from(g1.a); from(c1b);
+  g1.a.send({ t: 'act', a: 'rematch', how: 'change' });
+  const roomView = await wait(g1.a, m => m.t === 'state' && m.lobby && m.state.humanCount === 3);
+  assert.equal(roomView.state.setup, '3');
+  await wait(c1b, m => m.t === 'state' && m.lobby && m.state.humanCount === 3);
+  console.log('ok T5 Change roles shows the mid-game joiner in the room');
+
+  const g2 = await twoPlayers();
+  const late2 = await lateJoin(g2);
+  g2.live.g.phase = 'over'; g2.live.g.winner = 'red';
+  g2.a.send({ t: 'act', a: 'rematch', how: 'same' });
+  const seated = await wait(late2.c, m => m.t === 'state' && !m.lobby && m.state.role === 'hunter');
+  assert.equal(seated.state.phase, 'setupEggs');
+  await wait(g2.a, m => m.t === 'state' && !m.lobby && m.state.role === 'blue' && m.state.h3);
+  console.log('ok T5 Same roles seats the mid-game joiner');
+
+  const o1 = await conn(); o1.send({ t: 'create' });
+  const oj = await wait(o1, m => m.t === 'joined');
+  const o2 = await conn(); o2.send({ t: 'join', code: oj.code });
+  await wait(o2, m => m.t === 'joined' && m.role);
+  const o3 = await conn(); o3.send({ t: 'join', code: oj.code });
+  const refusal = await wait(o3, m => m.t === 'error');
+  assert.equal(refusal.msg, 'That game is full and already started. Ask for a new code.');
+  assert.equal((roomOf(oj.code).arrivals || []).length, 0);
+  console.log('ok T5 an old direct room keeps its refusal with the clearer message');
 
   console.log(n + ' lobby rule checks passed');
   server.close();

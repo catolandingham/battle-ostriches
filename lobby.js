@@ -428,9 +428,10 @@ function view(room, hid) {
   };
 }
 function benchView(room, a) {
+  const running = !!(a.late && room.g && room.g.phase !== 'over');
   return {
     lobby: true, between: true, code: room.code, solo: false, you: a.name, host: false,
-    note: 'You are in the room. The next game adds you.', clock: room.clock !== false, level: room.level || 'normal',
+    note: running ? "You're in. This game is already running. You'll play in the next one." : 'You are in the room. The next game adds you.', clock: room.clock !== false, level: room.level || 'normal',
     humans: [], roles: [], canStart: false, reason: null, botsWanted: 0, maxBots: 0, total: 0,
   };
 }
