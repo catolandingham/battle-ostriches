@@ -30,6 +30,11 @@ ok('rivalry: hyena moves onto the badger -> hyena bounces back 2 (badger stays, 
   assert.equal(g.hunt.hs.badger.burrowed, false); assert.equal(g.turn, 'badger', 'no pounce after a bounce'); });
 ok('a bird stepping onto a hunter is caught by that hunter', () => { const g = ready(); toTurn(g, 'red'); g.vulture = [2, 3]; g.hunt.hs.badger.p = [3, 3];
   H.vultureFlyH(g, [3, 3]); assert.equal(g.hunt.birds.red.out, true); assert.equal(g.hunt.hs.badger.kos, 1); });
+ok('lastCatch.walked: true when a bird stepped onto a hunter, absent when a hunter landed on the bird', () => {
+  const v = ready(); toTurn(v, 'red'); v.vulture = [2, 3]; v.hunt.hs.hyena.p = [3, 3]; H.vultureFlyH(v, [3, 3]); assert.equal(v.hunt.lastCatch.bird, 'red'); assert.equal(v.hunt.lastCatch.by, 'hyena'); assert.strictEqual(v.hunt.lastCatch.walked, true);
+  const o = ready(); toTurn(o, 'blue'); o.ostrich = [4, 6]; o.hunt.hs.badger.p = [5, 6]; assert.ok(H.ostrichActH(o, 'step', [5, 6])); assert.equal(o.hunt.lastCatch.bird, 'blue'); assert.equal(o.hunt.lastCatch.by, 'badger'); assert.strictEqual(o.hunt.lastCatch.ko, true); assert.strictEqual(o.hunt.lastCatch.walked, true);
+  const h = ready(); toTurn(h, 'hyena'); h.vulture = [1, 3]; H.hunterMove(h, [1, 3]); assert.equal(h.hunt.lastCatch.bird, 'red'); assert(!h.hunt.lastCatch.walked, 'hyena landed on the vulture');
+  const b = ready(); toTurn(b, 'badger'); b.ostrich = [7, 3]; H.hunterMove(b, [7, 3]); assert.equal(b.hunt.lastCatch.ko, true); assert(!b.hunt.lastCatch.walked, 'badger landed on the ostrich'); });
 ok('both birds out: more KOs wins', () => { const g = ready(); H.knockout(g, 'red', 'caught', 'hyena'); assert.equal(g.phase, 'play'); g.hunt.hs.badger.kos = 0;
   H.knockout(g, 'blue', 'caught', 'hyena'); assert.equal(g.winner, 'hyena'); assert.equal(g.winBy, 'ko'); });
 ok('KO tie goes to whoever got the last KO', () => { const g = ready(); H.knockout(g, 'red', 'caught', 'hyena'); H.knockout(g, 'blue', 'caught', 'badger'); assert.equal(g.winner, 'badger');

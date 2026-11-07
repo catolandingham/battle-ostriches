@@ -94,5 +94,11 @@ t('badger is not burrowed before it stays still', () => {
   assert.equal(g.three.burrowed, false);
   assert.equal(g.three.dig, 0);
 });
+t('lastCatch.walked: true when the bird stepped onto the hunter, absent when the hunter landed on the bird', () => {
+  const o = setup('hyena', [7, 4]); T.vultureFly3(o, [4, 1]); assert(T.ostrichAct3(o, 'step', [7, 4])); assert.equal(o.three.lastCatch.bird, 'blue'); assert.strictEqual(o.three.lastCatch.walked, true);
+  const v = setup('hyena', [4, 5]); assert(T.vultureFly3(v, [4, 5])); assert.equal(v.three.lastCatch.bird, 'red'); assert.strictEqual(v.three.lastCatch.walked, true);
+  const k = setup('badger', [7, 4]); T.vultureFly3(k, [4, 1]); assert(T.ostrichAct3(k, 'step', [7, 4])); assert.strictEqual(k.three.lastCatch.ko, true); assert.strictEqual(k.three.lastCatch.walked, true, 'a walked-in knock-out is still walked');
+  const h = setup(); T.vultureFly3(h, [4, 1]); T.ostrichAct3(h, 'step', [7, 4]); assert(T.hunterMove(h, [7, 4])); assert.equal(h.three.lastCatch.bird, 'blue'); assert(!h.three.lastCatch.walked, 'hunter landed on the ostrich');
+  const hv = setup('hyena', [4, 3]); T.vultureFly3(hv, [4, 2]); T.ostrichAct3(hv, 'step', [5, 5]); assert(T.hunterMove(hv, [4, 2])); assert.equal(hv.three.lastCatch.bird, 'red'); assert(!hv.three.lastCatch.walked, 'hunter landed on the vulture'); });
 t('2-player games carry no 3-player state', () => { const g = B.newGame(); assert(!('three' in g)); });
 console.log(n + ' 3-player tests passed'); process.exit(0);
