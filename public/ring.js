@@ -34,8 +34,7 @@
       if (S.pounce) return [{ id: 'hstay', label: 'Stop', detail: 'Skip this extra move. You will not catch the bird.', enabled: true, run: 'hstay' }];
       if (k === 'badger') {
         if (S.burrowed) return [{ id: 'hstay', label: 'Stay', detail: 'Stay burrowed. Birds still cannot see you.', enabled: true, run: 'hstay' }];
-        if (S.dig === 1) return [{ id: 'hstay', label: 'Finish', detail: 'Tough ground: stay still once more to finish the burrow.', enabled: true, run: 'hstay' }];
-        return [{ id: 'hstay', label: 'Burrow', detail: 'Stay still to burrow. You usually hide at once; tough ground takes one more still turn.', enabled: true, run: 'hstay' }];
+        return [{ id: 'hstay', label: 'Burrow', detail: 'Stay still to burrow.', enabled: true, run: 'hstay' }];
       }
       return [{ id: 'hstay', label: 'Stay', detail: 'Stay put and end your turn.', enabled: true, run: 'hstay' }];
     }

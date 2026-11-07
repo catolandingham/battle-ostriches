@@ -104,7 +104,6 @@ function hunter(v, mem = {}) {
     sq.forEach(p => { const inR = D(p, h) <= v.senseRange; mem.bel[K(p)] *= v.sense ? (inR ? 4 : .3) : (inR ? 0 : 1); });
     mem.bel[K(h)] = v.sense ? mem.bel[K(h)] : 0; }
   if (v.kind === 'badger' && !v.pounce) { // burrow when something is near and we're not already hidden; ambush, then pop up
-    if (v.dig === 1 && Math.random() < .75) return { a: 'hstay' }; // finish digging in (2 still turns)
     if (v.sense && !v.burrowed && Math.random() < .6) return { a: 'hstay' };
     if (v.burrowed && v.sense && Math.random() < .35) return { a: 'hstay' }; }
   if (!v.hmoves.length) return { a: 'hstay' };

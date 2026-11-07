@@ -1,5 +1,4 @@
 // 3-player mode: ostrich (blue) + vulture (red) + a hunter (hyena or honey badger). Wraps the 2-player rules in game.js
-const TOUGH3 = typeof process !== 'undefined' && process.env.BO_TOUGH ? +process.env.BO_TOUGH : 0.15; // share of badger digs that hit tough ground (2 still turns instead of 1)
 // without changing them. Turn order each round: vulture, ostrich, hunter. All tuning lives in T3.
 const B = require('./game.js'), K = B.key, D = B.dist;
 const T3 = { sense: 2, see: 2, knock: 2, clockMs: 10000, ko: { hyena: 2, badger: 2 }, boost: 2, starts: [[0, 3], [8, 3]] };
@@ -107,7 +106,7 @@ function hunterMove(g, p) {
 }
 function hunterStay(g) { // badger: staying still burrows it (invisible to birds). During a pounce: skip the extra move.
   if (g.phase !== 'play' || g.turn !== 'hunter') return false;
-  const t = g.three; if (!t.pounce && t.kind === 'badger') { t.dig = t.dig ? 2 : (Math.random() < TOUGH3 ? 1 : 2); t.burrowed = t.dig >= 2; } // tough ground: some digs take 2 still turns
+  const t = g.three; if (!t.pounce && t.kind === 'badger') { t.dig = 2; t.burrowed = true; } // one still turn always burrows
   t.lastHunter = { type: t.pounce ? 'skip' : 'stay' }; endHunter(g); return true;
 }
 // shot clock ran out: the current player's turn ends (vulture passes, ostrich stays put, hunter stays put)

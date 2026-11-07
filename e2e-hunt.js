@@ -1,6 +1,6 @@
 // 4-player Hunters mode + the new lobby on WebKit iPhone 13s: Classic default lobby, "More players" picker, Hunters setup,
-// a friend joining as the hyena by link, the badger's view with both hunters, tough-ground burrow text, rivalry, game over.
-process.env.PORT = 3995; process.env.BO_TOUGH = '1'; process.env.BO_H4START = '2,3,4,3'; process.env.BO_BOTMS = '200'; process.env.BO_CLOCKMS = '8000';
+// a friend joining as the hyena by link, the badger's view with both hunters, one-turn burrow, rivalry, game over.
+process.env.PORT = 3995; process.env.BO_H4START = '2,3,4,3'; process.env.BO_BOTMS = '200'; process.env.BO_CLOCKMS = '8000';
 const { webkit, devices } = require('playwright-core'); const assert = require('assert'), fs = require('fs');
 const server = require('./server.js'), H = require('./hunt.js'); const U = 'http://localhost:3995/', OUT = 'shots/hunt/'; fs.mkdirSync(OUT, { recursive: true });
 const shot = (p, n) => p.screenshot({ path: OUT + n + '.jpg', type: 'jpeg', quality: 85 });
@@ -29,14 +29,11 @@ const at = { state: 'attached' };
   assert.equal(await A.locator('#h3bar .bchip').count(), 4); assert.ok(await A.locator('#clock3:not(.hidden)').count(), 'shot clock');
   assert.equal(await A.locator('.pc.ph').count(), 2, 'badger sees itself and the hyena (2 squares away)'); assert.equal(await A.locator('.pc.po, .pc.pv').count(), 0);
   assert.equal((await A.textContent('#actions')).trim(), 'Burrow'); await A.waitForTimeout(2300); await shot(A, '4-hunter-view-both-hunters');
-  await A.locator('#actions button').first().click({ force: true }); // stay: tough ground (BO_TOUGH=1), not yet burrowed
-  const room = [...server.rooms.values()].find(r => r.hunt); assert.equal(room.g.hunt.hs.badger.dig, 1); assert.equal(room.g.hunt.hs.badger.burrowed, false);
-  await Y.waitForSelector('#actions.mine', { state: 'attached',  ...at, timeout: 20000 }); await Y.locator('#actions button').first().click({ force: true });
-  await A.waitForSelector('#actions.mine', { state: 'attached',  ...at, timeout: 20000 }); await A.waitForSelector('.burtag.dig', at); assert.ok(/Tough ground/.test(await A.textContent('#hint'))); assert.equal((await A.textContent('#actions')).trim(), 'Finish');
-  await A.waitForTimeout(2300); await shot(A, '5-badger-digging-1of2');
-  await A.locator('#actions button').first().click({ force: true });
-  await A.waitForFunction(() => /burrowed/i.test(document.body.innerText), null, { timeout: 4000 });
-  assert.equal(room.g.hunt.hs.badger.burrowed, true, 'burrowed after 2 still turns');
+  assert.ok(!/tough ground|one more still turn/i.test(await A.textContent('#hint') + await A.locator('#actions button').first().getAttribute('title')), 'no tough-ground wording');
+  await A.locator('#actions button').first().click({ force: true }); // stay: one still turn always burrows
+  const room = [...server.rooms.values()].find(r => r.hunt); assert.equal(room.g.hunt.hs.badger.burrowed, true, 'burrowed after 1 still turn'); assert.equal(room.g.hunt.hs.badger.dig, 2);
+  await A.waitForFunction(() => /burrowed/i.test(document.body.innerText), null, { timeout: 4000 }); assert.equal(await A.locator('.burtag.dig').count(), 0, 'no tough-ground tag');
+  await A.waitForTimeout(1000); await shot(A, '5-badger-burrowed');
   // rivalry: hyena moves onto the badger and bounces back 2
   await Y.waitForSelector('#actions.mine', { state: 'attached',  ...at, timeout: 20000 }); const hy = room.g.hunt.hs.hyena.p, bd = room.g.hunt.hs.badger.p;
   if (Math.max(Math.abs(hy[0] - bd[0]), Math.abs(hy[1] - bd[1])) === 1) { await Y.locator('.cell').nth(bd[1] * 9 + bd[0]).click(); await Y.waitForTimeout(500);

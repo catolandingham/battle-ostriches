@@ -1,4 +1,3 @@
-process.env.BO_TOUGH = process.env.BO_TOUGH || "1"; // exercise the 2-turn (tough ground) dig path
 // Unit tests: 4-player Hunters mode (ostrich + vulture + hyena + honey badger). node testhunt.js
 process.env.PORT = 0;
 const assert = require('assert'), H = require('./hunt.js'), HA = require('./huntai.js'), SIM = require('./simhunt.js'), B = require('./game.js');
@@ -19,10 +18,9 @@ ok('honey badger: 2 catches knock a bird out; first catch knocks back 2, costs a
   H.hunterMove(g, [7, 3]); assert.equal(g.hunt.birds.blue.catches, 1); assert.equal(g.hunt.lastCatch.ko, false); assert.equal(g.hunt.birds.blue.out, false); assert.equal(g.hunt.hs.badger.kos, 0);
   assert.deepEqual(g.ostrich, [5, 3]); assert.equal(g.hunt.birds.blue.skip, 1); toTurn(g, 'badger'); g.ostrich = [6, 3]; H.hunterMove(g, [6, 3]);
   assert.equal(g.hunt.birds.blue.catches, 2); assert.equal(g.hunt.lastCatch.ko, true); assert.equal(g.hunt.birds.blue.out, true); assert.equal(g.hunt.hs.badger.kos, 1); assert.equal(H.TH.ko.badger, H.TH.ko.hyena); });
-ok('honey badger: staying still burrows (birds can not see it)', () => { const g = ready(); toTurn(g, 'badger'); H.hunterStay(g); assert.equal(g.hunt.hs.badger.burrowed, false); assert.equal(g.hunt.hs.badger.dig, 1); toTurn(g, 'badger'); H.hunterStay(g);
-  assert.equal(g.hunt.hs.badger.burrowed, true); g.vulture = [6, 3]; assert.equal(H.seen(g, 'red', 'badger'), false); });
-ok('badger digs in over 2 still turns; moving resets the dig', () => { const g = ready(); toTurn(g, 'badger'); H.hunterStay(g); assert.equal(g.hunt.hs.badger.dig, 1);
-  toTurn(g, 'badger'); H.hunterMove(g, [7, 2]); assert.equal(g.hunt.hs.badger.dig, 0); toTurn(g, 'badger'); H.hunterStay(g); assert.equal(g.hunt.hs.badger.burrowed, false); });
+ok('badger: one still turn always burrows (birds can not see it); moving pops it up', () => { for (let i = 0; i < 20; i++) { const g = ready(); toTurn(g, 'badger'); H.hunterStay(g);
+    assert.equal(g.hunt.hs.badger.burrowed, true); g.vulture = [6, 3]; assert.equal(H.seen(g, 'red', 'badger'), false);
+    toTurn(g, 'badger'); H.hunterMove(g, [7, 2]); assert.equal(g.hunt.hs.badger.dig, 0); assert.equal(g.hunt.hs.badger.burrowed, false); } });
 ok('hyena pounce: sense yes -> one extra square', () => { const g = ready(); g.vulture = [2, 4]; toTurn(g, 'hyena'); g.vulture = [2, 4]; g.hunt.hs.hyena.sense = true;
   H.hunterMove(g, [1, 3]); assert.equal(g.turn, 'hyena'); assert.equal(g.hunt.hs.hyena.pounce, true); H.hunterMove(g, [2, 4]); assert.equal(g.hunt.birds.red.catches, 1); });
 ok('rivalry: badger moves onto the hyena -> hyena knocked back 2; nobody hurt', () => { const g = ready(); toTurn(g, 'badger'); g.hunt.hs.hyena.p = [4, 3]; g.hunt.hs.badger.p = [5, 3];

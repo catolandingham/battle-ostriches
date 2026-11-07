@@ -30,8 +30,8 @@ ok('ring: Step and Fly can be selected, and the squares still do the move', () =
   assert.deepEqual(ids(aimed), ['fly', 'throw']);
   const pounce = R.legalActions({ phase: 'play', myTurn: true, role: 'hunter', pounce: true, h3: { kind: 'hyena' } });
   assert.deepEqual(ids(pounce), ['hstay']); assert.match(pounce[0].detail, /catch/i);
-  const dig = R.legalActions({ phase: 'play', myTurn: true, role: 'hunter', h3: { kind: 'badger' }, dig: 1 });
-  assert.equal(dig[0].label, 'Finish'); assert.match(dig[0].detail, /tough ground/i);
+  const dig = R.legalActions({ phase: 'play', myTurn: true, role: 'hunter', h3: { kind: 'badger' }, dig: 0 });
+  assert.equal(dig[0].label, 'Burrow'); assert.doesNotMatch(dig[0].detail, /tough ground|usually|one more/i);
   for (const item of back.concat(on, full, aimed, pounce, dig)) assert.equal(item.enabled, true);
   assert.equal(R.showSniffPop(true, false, false), false);
   assert.equal(R.showSniffPop(true, true, false), true);
@@ -171,9 +171,9 @@ ok('hunter near is a one-shot on entering sight, not while burrowed', () => {
 ok('burrowed badger still receives its own position', () => {
   const { room } = S.create3({ role: 'hunter', bots: ['blue', 'red'], kind: 'badger' }, null);
   room.g = T.newGame3('badger', undefined, [8, 3]);
-  room.g.three.burrowed = false; room.g.three.dig = 1;
+  room.g.three.burrowed = false; room.g.three.dig = 0;
   let v = S.view3(room, 'hunter');
-  assert.deepEqual(v.hunter, [8, 3]); assert.equal(v.dig, 1);
+  assert.deepEqual(v.hunter, [8, 3]); assert.equal(v.dig, 0);
   room.g.three.burrowed = true; room.g.three.dig = 2;
   v = S.view3(room, 'hunter');
   assert.deepEqual(v.hunter, [8, 3]); assert.equal(v.burrowed, true); assert.deepEqual(v.h3.hunter, [8, 3]);

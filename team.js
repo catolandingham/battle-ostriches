@@ -1,5 +1,4 @@
 // 4-player (2v2) and 5-player (2v2 + hunter) modes. Two ostriches (o1, o2), each with its own 2-egg nest, against two
-const TOUGH5 = typeof process !== 'undefined' && process.env.BO_TOUGH ? +process.env.BO_TOUGH : 0.4; // share of badger digs that hit tough ground (2 still turns instead of 1)
 // vultures (v1, v2); in 5 players a hunter (hyena / honey badger) moves last. Turn order: V1, O1, V2, O2 (, hunter).
 // Reuses the 2-player CONFIG and the 3-player hunter rules (sense, pounce, burrow, catches, knock-back, boost).
 const B = require('./game.js'), K = B.key, D = B.dist;
@@ -135,7 +134,7 @@ function hunterMove(g, p) {
 }
 function hunterStay(g) {
   if (!myTurn(g, 'hunter')) return false;
-  const h = g.h; if (!h.pounce && h.kind === 'badger') { h.dig = h.dig ? 2 : (Math.random() < TOUGH5 ? 1 : 2); h.burrowed = h.dig >= 2; } // tough ground: some digs take 2 still turns
+  const h = g.h; if (!h.pounce && h.kind === 'badger') { h.dig = 2; h.burrowed = true; } // one still turn always burrows
   h.last = { type: h.pounce ? 'skip' : 'stay' }; h.pounce = false; next(g); return true;
 }
 // --- catches, knock-outs, game end ---
