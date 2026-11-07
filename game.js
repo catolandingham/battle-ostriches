@@ -124,8 +124,8 @@ function canKick(g) { return myTurn(g, 'blue') && g.carrying === null; }
 function kickable(g) { return g.ostrich && g.ostrich[0] >= 0 && g.vulture && g.vulture[0] >= 0 && dist(g.vulture, g.ostrich) === 1 ? [g.vulture.slice()] : []; }
 function kickTargets(g) { return canKick(g) ? kickable(g) : []; }
 // Records the kick, then the ostrich's turn ends like a stay that still warms an egg under it and still counts for hunger.
-function kickDone(g, who, from, to) {
-  g.lastKick = { seq: ++g.kickSeq, who, from: from.slice(), to: to.slice(), round: g.round };
+function kickDone(g, who, from, to, n) {
+  g.lastKick = { seq: ++g.kickSeq, who, from: from.slice(), to: to.slice(), round: g.round, tried: n };
   g.lastAction = { type: 'kick', who, from: from.slice(), to: to.slice() };
   endOstrich(g);
 }

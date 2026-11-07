@@ -1,7 +1,7 @@
 // 3-player mode: ostrich (blue) + vulture (red) + a hunter (hyena or honey badger). Wraps the 2-player rules in game.js
 // without changing them. Turn order each round: vulture, ostrich, hunter. All tuning lives in T3.
 const B = require('./game.js'), K = B.key, D = B.dist;
-const T3 = { sense: 2, see: 2, knock: 2, clockMs: 10000, ko: { hyena: 2, badger: 2 }, starts: [[0, 3], [8, 3]] };
+const T3 = { sense: 2, see: 2, walk: 2, pounce: 1, knock: 2, clockMs: 10000, ko: { hyena: 2, badger: 2 }, starts: [[0, 3], [8, 3]] };
 const OFF = [-99, -99], BIRDS = ['red', 'blue'], NAME = { red: 'vulture', blue: 'ostrich', hunter: 'hunter' };
 const sgn = Math.sign;
 function newGame3(kind, cfg = B.CONFIG, start) {
@@ -21,32 +21,40 @@ const ambushSight = g => { const t = g.three; if (t.kind !== 'badger' || !t.burr
   return BIRDS.filter(b => !isOut(g, b) && pos(g, b) && pos(g, b)[0] >= 0 && D(pos(g, b), t.h) === 1).map(b => ({ seat: b, type: b === 'blue' ? 'o' : 'v', p: pos(g, b).slice() })); };
 // a bird sees the hunter only within 2 squares of itself, and never a burrowed badger
 const hunterSeenBy = (g, b) => !!(BIRDS.includes(b) && !isOut(g, b) && pos(g, b) && !g.three.burrowed && D(pos(g, b), g.three.h) <= T3.see);
-function finish(g) { // map a 2-player game end into 3-player outcomes (a bird left alone still has to meet its own goal)
-  const t = g.three; if (g.phase !== 'over' || t.final) return g.phase === 'over';
-  t.final = true;
-  if (g.winBy === 'smashed' || g.winBy === 'cold') { if (isOut(g, 'red')) { g.winner = 'none'; g.winBy = 'eggs-lost'; } }
-  else if (g.winBy === 'survived') { if (isOut(g, 'blue')) { g.winner = 'none'; g.winBy = 'time'; } }
-  return true;
+const hunterName = g => (g.three.kind === 'badger' ? 'honey badger' : 'hyena');
+// Endings (rules 9). Called when the classic rules ended the game (smashed, cold, survived) or after a knock-out. Returns true when the game is over.
+// A side is out when all its birds are knocked out or it can no longer meet its goal; a side that meets its goal wins; the last side in wins; time with no goal met is a draw.
+function settle(g) {
+  const t = g.three; if (t.final && g.phase === 'over') return true;
+  const timeUp = g.phase === 'over' && g.winBy === 'survived', eggs = B.aliveEggs(g).length, vIn = !isOut(g, 'red'), oIn = !isOut(g, 'blue') && eggs > 0;
+  const all = BIRDS.every(b => isOut(g, b)), first = B.HUNTER_GOAL() === 'first' && BIRDS.some(b => t.birds[b].why === 'caught'), nm = hunterName(g);
+  let w = null, by = null, why = null;
+  if (all || first) { w = 'hunter'; by = 'ko'; why = all ? `The ${nm} knocked out both birds.` : `The ${nm} knocked out a bird, and that was its goal.`; }
+  else if (eggs === 0 && vIn) { w = 'red'; by = g.winBy === 'cold' ? 'cold' : 'smashed'; why = g.winBy === 'cold' ? 'The last egg went cold, so the vulture wins.' : 'The vulture smashed every egg.'; }
+  else if (timeUp && oIn) { w = 'blue'; by = 'survived'; why = `An egg was still alive after round ${g.cfg.rounds}, so the ostrich wins.`; }
+  else if (!vIn && !oIn) { w = 'hunter'; by = 'last'; why = `Both birds are out of the game, so the ${nm} wins.`; }
+  else if (timeUp) { w = 'none'; by = 'time'; why = 'Time ran out and nobody met their goal.'; }
+  if (!w) return false;
+  g.phase = 'over'; g.winner = w; g.winBy = by; g.endWhy = why; t.final = true; return true;
 }
+const finish = settle;
 function knockout(g, b, why) {
   const t = g.three, st = t.birds[b]; st.out = true; st.why = why; st.skip = 0;
   if (b === 'blue') { if (g.carrying !== null) { const e = g.eggs[g.carrying]; g.carrying = null; if (e.alive) e.pos = g.ostrich.slice(); } g.ostrich = OFF.slice(); }
   else g.vulture = OFF.slice();
-  if (BIRDS.every(x => isOut(g, x))) { g.phase = 'over'; g.winner = 'hunter'; g.winBy = 'ko'; t.final = true; return; }
-  if (b === 'blue' && !B.aliveEggs(g).length) { g.phase = 'over'; g.winner = 'red'; g.winBy = 'starved'; t.final = true; }
+  settle(g);
 }
-function catchBird(g, b, dir) {
+// A caught bird scrambles 2 squares in a random open direction chosen by the game (rule 4.2). No missed turn. If it cannot move at all, whoever moved this turn goes back (back()).
+function catchBird(g, b, back) {
   const t = g.three, st = t.birds[b], at = pos(g, b).slice();
   st.catches++;
   if (b === 'blue' && g.carrying !== null) { const e = g.eggs[g.carrying]; g.carrying = null; if (e.alive) e.pos = at.slice(); } // the egg drops where it was caught
   if (st.catches >= koAt(g)) { t.lastCatch = { bird: b, at, to: null, ko: true, seq: ++t.seq, round: g.round }; knockout(g, b, 'caught'); return; }
-  st.skip = 1;
-  let [dx, dy] = dir; if (!dx && !dy) { dx = at[0] < g.cfg.cols / 2 ? -1 : 1; dy = at[1] < g.cfg.rows / 2 ? -1 : 1; }
-  let q = at.slice();
-  for (let i = 0; i < T3.knock; i++) { const n = [q[0] + dx, q[1] + dy];
-    if (n[0] < 0 || n[1] < 0 || n[0] >= g.cfg.cols || n[1] >= g.cfg.rows || K(n) === K(t.h) || (b === 'blue' && g.marks[K(n)] === 'hit')) break; q = n; }
-  if (b === 'blue') { g.ostrich = q; g.sitRun = 0; } else g.vulture = q;
-  t.lastCatch = { bird: b, at, to: q.slice(), ko: false, seq: ++t.seq, round: g.round };
+  const other = BIRDS.find(x => x !== b);
+  const q = B.scrambleTo(g.cfg, at, m => !B.wrecked(g, m) && !(liveAt(g, other) && K(pos(g, other)) === K(m)) && !(K(t.h) === K(m) && !(t.kind === 'badger' && t.burrowed)), T3.knock);
+  if (q) { if (b === 'blue') { g.ostrich = q; } else g.vulture = q; } else if (back) back();
+  if (t.burrowed && K(t.h) === K(at)) { t.burrowed = false; t.dig = 0; }
+  t.lastCatch = { bird: b, at, to: (q || pos(g, b)).slice(), ko: false, seq: ++t.seq, round: g.round };
 }
 // --- whose turn: skip birds that are out or knocked back (they lose their next turn) ---
 function ostrichStay(g) { // shot clock ran out or turn lost: the ostrich stays put (no sit, no warmth), still gets hungry
@@ -71,16 +79,22 @@ function advance(g) {
     return; // the hunter never loses a turn
   }
 }
-function startHunter(g) { const t = g.three; t.pounce = false; t.sense = senses(g); t.senseSeq++; t.senseAt = t.h.slice(); }
+function startHunter(g) { const t = g.three; t.pounce = false; t.first = null; t.sense = senses(g); t.senseSeq++; t.senseAt = t.h.slice(); }
 function endHunter(g) { const t = g.three; t.pounce = false; g.turn = 'red'; advance(g); }
 // --- actions ---
 function placeOstrich3(g, p) { if (p && K(p) === K(g.three.h)) return false; return B.placeOstrich(g, p); }
 function vultureFly3(g, p) {
   const from = g.vulture.slice(); if (!B.vultureFly(g, p)) return false;
-  if (K(p) === K(g.three.h)) { catchBird(g, 'red', [sgn(from[0] - p[0]), sgn(from[1] - p[1])]); g.three.lastCatch.walked = true; } // the vulture flew onto the hunter
+  if (K(p) === K(g.three.h)) { catchBird(g, 'red', () => { g.vulture = from.slice(); }); g.three.lastCatch.walked = true; } // the vulture flew onto the buried badger (birds may not land on a hunter they can see)
   if (!finish(g)) advance(g); return true;
 }
-function vultureThrow3(g, p) { const r = B.vultureThrow(g, p); if (!r) return false; if (!finish(g)) advance(g); return r; }
+// The stone resolver's view of this mode: the hunter is pushed 2 away from the vulture and a buried badger comes up.
+const stoneW3 = g => { const t = g.three; return { thrower: () => g.vulture.slice(), setThrower: q => { g.vulture = q.slice(); },
+  ostrichAt: p => liveAt(g, 'blue') && K(p) === K(g.ostrich), eggAt: p => B.eggAt(g, p),
+  pushAt: (p, dir, n) => { if (K(t.h) !== K(p)) return []; const from = t.h.slice(); t.burrowed = false; t.dig = 0; t.popout = { seq: t.popSeq = (t.popSeq || 0) + 1, round: g.round };
+    t.h = B.slide(g.cfg, from, dir, n, m => (liveAt(g, 'blue') && K(m) === K(g.ostrich)) || (liveAt(g, 'red') && K(m) === K(g.vulture)), g.marks); return [{ kind: t.kind || 'hyena', from, to: t.h.slice() }]; },
+  open: q => !B.wrecked(g, q) && !(liveAt(g, 'blue') && K(q) === K(g.ostrich)) && !(K(q) === K(t.h) && !(t.kind === 'badger' && t.burrowed)), ostrichPos: () => g.ostrich }; };
+function vultureThrow3(g, p) { const r = B.vultureThrow(g, p, stoneW3); if (!r) return false; if (!finish(g)) advance(g); return r; }
 // --- Kick (rules in game.js): the ostrich may kick the vulture or the hunter next to it. A burrowed badger can't be seen, so it can't be kicked.
 const liveAt = (g, b) => !isOut(g, b) && pos(g, b) && pos(g, b)[0] >= 0;
 function kickable3(g) {
@@ -93,11 +107,11 @@ function kickable3(g) {
 const kickTargets3 = g => B.canKick(g) ? kickable3(g) : [];
 function ostrichKick3(g, p) {
   if (!kickTargets3(g).some(q => K(q) === K(p))) return false;
-  const t = g.three, hunter = K(p) === K(t.h), from = p.slice();
-  // a pushed animal stops before the board edge or another piece: a kicked hunter is stopped by the vulture, a kicked vulture by the hunter
-  const to = B.slide(g.cfg, from, B.awayFrom(g.ostrich, p), g.cfg.kickPush, m => hunter ? liveAt(g, 'red') && K(m) === K(g.vulture) : K(m) === K(t.h));
+  const t = g.three, hunter = K(p) === K(t.h), from = p.slice(), n = hunter && t.kind === 'badger' ? g.cfg.kickPushBadger : g.cfg.kickPush;
+  // a pushed animal stops before a wrecked square or an animal that is up; at the board edge it wraps around
+  const to = B.slide(g.cfg, from, B.awayFrom(g.ostrich, p), n, m => hunter ? liveAt(g, 'red') && K(m) === K(g.vulture) : (K(m) === K(t.h) && !(t.kind === 'badger' && t.burrowed)), g.marks, true);
   if (hunter) t.h = to; else g.vulture = to;
-  B.kickDone(g, hunter ? (t.kind || 'hyena') : 'vulture', from, to);
+  B.kickDone(g, hunter ? (t.kind || 'hyena') : 'vulture', from, to, n);
   afterOstrich(g); return true;
 }
 function ostrichAct3(g, a, p) {
@@ -105,27 +119,30 @@ function ostrichAct3(g, a, p) {
   const from = g.ostrich.slice(); let ok;
   if (a === 'sit') ok = B.ostrichSit(g); else ok = B.ostrichStep(g, p, a === 'carry');
   if (!ok) return false;
-  if (!(g.phase === 'over' && g.winBy === 'starved') && a !== 'sit' && K(g.ostrich) === K(g.three.h)) { catchBird(g, 'blue', [sgn(from[0] - p[0]), sgn(from[1] - p[1])]); g.three.lastCatch.walked = true; } // the ostrich stepped onto the hunter
+  if (!(g.phase === 'over' && g.winBy === 'starved') && a !== 'sit' && K(g.ostrich) === K(g.three.h)) { catchBird(g, 'blue', () => { g.ostrich = from.slice(); }); g.three.lastCatch.walked = true; } // the ostrich stepped onto the buried badger
   afterOstrich(g); return true;
 }
-function hunterRange(g) { return 1; } // the hunter always moves 1 square (no speed-up after a knock-out)
+// Hunters walk T3.walk squares; the Pounce extra step is T3.pounce. They may pass over anything and land anywhere that is not wrecked.
+function hunterRange(g) { return g.three.pounce ? T3.pounce : T3.walk; }
+// the farthest this hunter can reach on any turn (what a bird has to stay out of)
+const hunterReach = g => T3.walk + (g.three.kind === 'hyena' ? T3.pounce : 0);
 function hunterMoves(g) {
   if (g.phase !== 'play' || g.turn !== 'hunter') return [];
   const h = g.three.h, n = hunterRange(g), r = [];
-  for (let x = 0; x < g.cfg.cols; x++) for (let y = 0; y < g.cfg.rows; y++) { const d = D([x, y], h); if (d >= 1 && d <= n) r.push([x, y]); }
+  for (let x = 0; x < g.cfg.cols; x++) for (let y = 0; y < g.cfg.rows; y++) { const d = D([x, y], h); if (d >= 1 && d <= n && !B.wrecked(g, [x, y])) r.push([x, y]); }
   return r;
 }
 function hunterMove(g, p) {
   if (!hunterMoves(g).some(q => K(q) === K(p))) return false;
   const t = g.three, from = t.h.slice(), wasP = t.pounce, wasBur = t.burrowed; t.h = p.slice(); t.burrowed = false; t.dig = 0;
   let caught = false;
-  for (const b of BIRDS) if (g.phase === 'play' && !isOut(g, b) && K(pos(g, b)) === K(p)) { catchBird(g, b, [sgn(p[0] - from[0]), sgn(p[1] - from[1])]); caught = true; }
+  for (const b of BIRDS) if (g.phase === 'play' && !isOut(g, b) && K(pos(g, b)) === K(p)) { catchBird(g, b, () => { t.h = from.slice(); }); caught = true; }
   if (caught && wasBur && t.lastCatch) t.lastCatch.ambush = true; // the badger jumped out of its burrow onto the bird
   t.popout = !caught && wasBur ? { seq: t.popSeq = (t.popSeq || 0) + 1, round: g.round } : null; // popped out of the burrow without a catch (shown only to who can see the badger)
   t.lastHunter = { type: 'move', from, to: p.slice(), caught, pounce: wasP };
   if (g.phase === 'over') return true;
-  // Hyena Pounce: its sense said a bird is within 2 -> one extra 1-square move this same turn
-  if (!caught && !wasP && t.kind === 'hyena' && t.sense) { t.pounce = true; t.sense = senses(g); t.senseSeq++; t.senseAt = t.h.slice(); return true; }
+  // Pounce (rule 7.3): a hyena that sensed a bird at the start of its turn and did not catch senses again and may take one more step
+  if (!caught && !wasP && t.kind === 'hyena' && t.sense) { t.pounce = true; t.first = t.sense; t.sense = senses(g); t.senseSeq++; t.senseAt = t.h.slice(); return true; }
   endHunter(g); return true;
 }
 function hunterStay(g) { // badger: staying still burrows it (invisible to birds). During a pounce: skip the extra move.
