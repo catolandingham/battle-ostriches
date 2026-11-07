@@ -101,6 +101,8 @@ function contrast(a, b) {
     assert.ok(c >= 3, label + ' body does not stand off the hunter cell (' + c.toFixed(2) + ':1, fill ' + info.fill + ')');
   }
 
+  // The mound fades in over 0.8 s when the badger burrows. Wait for that to finish, then measure.
+  const settled = (page, sel) => page.waitForFunction(s => { const e = document.querySelector(s); return !!e && e.getAnimations().length === 0 && parseFloat(getComputedStyle(e).opacity) >= 0.9; }, sel, { timeout: 5000 });
   const A = await open();
   await A.goto('http://127.0.0.1:3977/');
   await A.click('#playFriend');
@@ -128,7 +130,7 @@ function contrast(a, b) {
   await A.evaluate(() => document.documentElement.setAttribute('data-theme', 'classic'));
   room.g.hunt.hs.badger.burrowed = true; room.g.hunt.hs.badger.dig = 2;
   server.broadcast(room);
-  await A.waitForSelector('.pc.ph.hbadger.bur.mine');
+  await A.waitForSelector('.pc.ph.hbadger.bur.mine'); await settled(A, '.pc.ph.hbadger.bur.mine');
   const bur = await graphic(A, '.pc.ph.hbadger.bur.mine');
   assert.equal(await A.evaluate(() => UI._S().burrowed), true);
   assertOwn(bur, '4h burrowed');
@@ -146,9 +148,7 @@ function contrast(a, b) {
   await B.click('[data-bots="2"]');
   await B.click('#soloGo');
   await B.waitForSelector('#roomLobby:not(.hidden)');
-  await B.click('[data-role="hunter"]');
-  await B.waitForSelector('#kindSheet:not(.hidden)');
-  await B.click('[data-kind="badger"]');
+  await B.click('[data-role="badger"]');
   await B.click('#startGame');
   await B.waitForSelector('.pc.ph.hbadger.mine', { timeout: 15000 });
   await B.waitForFunction(() => UI._S() && UI._S().phase === 'play');
@@ -159,7 +159,7 @@ function contrast(a, b) {
   assertOwn(await graphic(B, '.pc.ph.hbadger.mine'), '3p unburrowed');
   room3.g.three.burrowed = true; room3.g.three.dig = 2; room3.g.three.kind = 'badger';
   server.broadcast(room3);
-  await B.waitForSelector('.pc.ph.hbadger.bur.mine');
+  await B.waitForSelector('.pc.ph.hbadger.bur.mine'); await settled(B, '.pc.ph.hbadger.bur.mine');
   assertOwn(await graphic(B, '.pc.ph.hbadger.bur.mine'), '3p burrowed');
 
   assert.equal(errs.length, 0, errs.join('\n'));

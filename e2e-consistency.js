@@ -26,15 +26,17 @@ let seed = 7; const rnd = n => { seed = (seed * 16807) % 2147483647; return seed
       const want = st.legal.map(p => p[1] * st.cols + p[0]).sort((a, b) => a - b);
       assert.deepEqual(st.dom.sort((a, b) => a - b), want, `${theme} glowing squares == legal (${st.role} ${st.phase})`);
       assert.ok(st.legal.length > 0, 'a turn always has targets');
-      assert.ok(/glowing square/i.test(st.hint), `${theme} hint names the glowing squares: "${st.hint}"`);
+      // A vulture with no stone is told to fly to a rock pile (open-skies hint, 4355d99); every other turn names the glowing squares.
+      assert.ok(/glowing square/i.test(st.hint) || /No stone: fly to a rock pile/.test(st.hint), `${theme} hint names the glowing squares: "${st.hint}"`);
       assert.deepEqual(st.bad, [], 'no highlighted/pulsing disabled control');
       if (st.phase === 'play') {
         assert.equal(st.btns.filter(x => x.on).length, 1, 'exactly one mode is selected: ' + JSON.stringify(st.btns));
         // every enabled mode button does something visible
         for (const bt of st.btns.filter(x => !x.dis && !/Sit/.test(x.t))) {
+          // a selected + Carry button is disabled, so it has no 'on' class; aria-pressed marks every selected mode
           const i = st.btns.indexOf(bt); await P.locator('#actions button').nth(i).click({ force: true });
-          const after = await P.evaluate(() => ({ on: [...document.querySelectorAll('#actions button')].findIndex(x => x.classList.contains('on')), n: document.querySelectorAll('.cell.legal').length, hint: document.getElementById('hint').textContent }));
-          assert.equal(after.on, i, 'tapped mode becomes selected'); assert.ok(after.n > 0 && /glowing/.test(after.hint), 'mode shows targets + hint');
+          const after = await P.evaluate(() => ({ on: [...document.querySelectorAll('#actions button')].findIndex(x => x.getAttribute('aria-pressed') === 'true'), n: document.querySelectorAll('.cell.legal').length, hint: document.getElementById('hint').textContent }));
+          assert.equal(after.on, i, 'tapped mode becomes selected'); assert.ok(after.n > 0 && /glowing|red-orange|No stone: fly to a rock pile/.test(after.hint), 'mode shows targets + hint: ' + after.hint); // throw mode names its targets "red-orange squares", not "glowing"; this wording dates from 3eb803b
         }
       }
       // tap a non-glowing square: explained locally, no server error

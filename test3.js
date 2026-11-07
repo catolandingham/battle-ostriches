@@ -54,5 +54,45 @@ t('server views: hunter sees no bird or egg positions; birds see the hunter only
   assert.equal(S.view3(room, 'red').h3.hunter, null); assert.deepEqual(S.view3(room, 'blue').h3.hunter, [8, 3]); T.vultureFly3(room.g, [6, 3]); assert.deepEqual(S.view3(room, 'red').h3.hunter, [8, 3]);
   room.g.three.burrowed = true; assert.equal(S.view3(room, 'red').h3.hunter, null); assert.equal(S.view3(room, 'red').h3.burrowed, false); assert.equal(S.view3(room, 'hunter').h3.burrowed, true); S.close(); });
 t('hunter bot only plays legal moves; bot games finish', () => { const play = require('./sim3.js'); for (let i = 0; i < 40; i++) for (const k of ['hyena', 'badger']) { const g = play(k, { timeout: i % 2 ? .05 : 0 }); assert.equal(g.phase, 'over'); assert(['blue', 'red', 'hunter', 'none'].includes(g.winner)); } });
+t('hyena: first catch hurts, the next catch on that bird knocks it out', () => {
+  const g = setup('hyena', [7, 4]);
+  T.vultureFly3(g, [4, 1]);
+  assert(T.ostrichAct3(g, 'step', [7, 4]));
+  assert.equal(g.three.birds.blue.catches, 1);
+  assert.equal(g.three.lastCatch.ko, false);
+  assert.equal(g.three.birds.blue.out, false);
+  assert.notDeepEqual(g.ostrich, T.OFF);
+  assert.equal(g.turn, 'hunter');
+  assert(T.hunterMove(g, [6, 5]));
+  assert.equal(g.turn, 'hunter');
+  assert(T.hunterMove(g, [5, 6]));
+  assert.equal(g.three.birds.blue.catches, 2);
+  assert.equal(g.three.lastCatch.ko, true);
+  assert(T.isOut(g, 'blue'));
+  assert.deepEqual(g.ostrich, T.OFF);
+});
+t('a bird sees the hunter enter 2 squares and not after the hunter leaves', () => {
+  const g = setup('hyena', [8, 3]);
+  assert(!T.hunterSeenBy(g, 'red'));
+  T.vultureFly3(g, [6, 3]);
+  assert(T.hunterSeenBy(g, 'red'));
+  T.ostrichAct3(g, 'step', [5, 5]);
+  assert(T.hunterMove(g, [8, 4]));
+  assert(g.three.pounce);
+  assert(T.hunterMove(g, [8, 5]));
+  assert(T.hunterSeenBy(g, 'red'));
+  T.vultureFly3(g, [6, 2]);
+  T.ostrichAct3(g, 'step', [5, 4]);
+  assert(T.hunterMove(g, [8, 6]));
+  assert(!T.hunterSeenBy(g, 'red'));
+});
+t('badger is not burrowed before it stays still', () => {
+  const g = setup('badger', [8, 3]);
+  T.vultureFly3(g, [4, 1]);
+  T.ostrichAct3(g, 'step', [7, 5]);
+  assert.equal(g.turn, 'hunter');
+  assert.equal(g.three.burrowed, false);
+  assert.equal(g.three.dig, 0);
+});
 t('2-player games carry no 3-player state', () => { const g = B.newGame(); assert(!('three' in g)); });
 console.log(n + ' 3-player tests passed'); process.exit(0);

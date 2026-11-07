@@ -37,7 +37,10 @@ const OUT = 'shots/pass/'; fs.mkdirSync(OUT, { recursive: true });
     assert.equal(await P.locator('#board .ic-myegg').count(), 0, 'cover: nothing behind');
     if (shot) await P.screenshot({ path: OUT + 'handoff-ostrich.jpg', type: 'jpeg', quality: 85 });
     await P.click('#hGo'); await P.waitForSelector('#actions.mine', { state: 'attached' });
-    assert.equal(await P.locator('#banner.yes, #banner.no').count(), 0, 'sniff banner is vulture-only');
+    // The banner's yes/no styling is also used for public events the ostrich may see (Smash, An egg went cold, Ate the leaf),
+    // so check what the banner says, not its colour class.
+    const bnText = await P.textContent('#banner');
+    assert.ok(!/egg nearby|found egg/i.test(bnText), 'sniff banner is vulture-only: ostrich banner says "' + bnText + '"');
   };
   await vultureTurn(true);
   await P.click('#actions button:has-text("Throw")', { force: true }); await cell(3, 4).click(); // smash

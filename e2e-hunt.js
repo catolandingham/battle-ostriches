@@ -28,11 +28,11 @@ const at = { state: 'attached' };
   await A.waitForSelector('#actions.mine', { ...at, timeout: 20000 }); assert.ok(/HONEY BADGER/.test(await A.textContent('#turnTag')));
   assert.equal(await A.locator('#h3bar .bchip').count(), 4); assert.ok(await A.locator('#clock3:not(.hidden)').count(), 'shot clock');
   assert.equal(await A.locator('.pc.ph').count(), 2, 'badger sees itself and the hyena (2 squares away)'); assert.equal(await A.locator('.pc.po, .pc.pv').count(), 0);
-  assert.ok(/Stay · burrow/.test(await A.textContent('#actions'))); await A.waitForTimeout(2300); await shot(A, '4-hunter-view-both-hunters');
+  assert.equal((await A.textContent('#actions')).trim(), 'Burrow'); await A.waitForTimeout(2300); await shot(A, '4-hunter-view-both-hunters');
   await A.locator('#actions button').first().click({ force: true }); // stay: tough ground (BO_TOUGH=1), not yet burrowed
   const room = [...server.rooms.values()].find(r => r.hunt); assert.equal(room.g.hunt.hs.badger.dig, 1); assert.equal(room.g.hunt.hs.badger.burrowed, false);
   await Y.waitForSelector('#actions.mine', { state: 'attached',  ...at, timeout: 20000 }); await Y.locator('#actions button').first().click({ force: true });
-  await A.waitForSelector('#actions.mine', { state: 'attached',  ...at, timeout: 20000 }); await A.waitForSelector('.burtag.dig', at); assert.ok(/Tough ground/.test(await A.textContent('#hint'))); assert.ok(/finish burrow/.test(await A.textContent('#actions')));
+  await A.waitForSelector('#actions.mine', { state: 'attached',  ...at, timeout: 20000 }); await A.waitForSelector('.burtag.dig', at); assert.ok(/Tough ground/.test(await A.textContent('#hint'))); assert.equal((await A.textContent('#actions')).trim(), 'Finish');
   await A.waitForTimeout(2300); await shot(A, '5-badger-digging-1of2');
   await A.locator('#actions button').first().click({ force: true });
   await A.waitForFunction(() => /burrowed/i.test(document.body.innerText), null, { timeout: 4000 });

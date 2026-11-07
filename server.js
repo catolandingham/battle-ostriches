@@ -204,7 +204,8 @@ function viewT(room, seat) {
   // other birds on the board: birds always see each other (vultures don't see where the ostriches start until play begins); the hunter sees none
   const pieces = seat === 'hunter' && !over ? [] : TT.OS.concat(TT.VS).filter(s => s !== seat && TT.live(g, s) && !(setup && isV && TT.isO(s)))
     .map(s => ({ seat: s, type: TT.isO(s) ? 'o' : 'v', p: g.b[s].pos, mate: (TT.isO(s) && isO) || (TT.isV(s) && isV), carrying: isO && TT.isO(s) && g.b[s].carrying != null }));
-  const h3 = Object.assign(TT.status(g), { team: true, seats, ready, needKind: seat === 'hunter' && g.h && !g.h.kind, lastCatch: lc, lost: g.lost, mySeat: seat, pieces, setupStep: step,
+  const teamSetup = !setup ? null : TT.OS.some(o => TT.setupStep(g, o) === 'eggs') ? 'eggs' : TT.OS.some(o => TT.setupStep(g, o) === 'ostrich') ? 'ostrich' : 'done';
+  const h3 = Object.assign(TT.status(g), { team: true, seats, ready, needKind: seat === 'hunter' && g.h && !g.h.kind, lastCatch: lc, lost: g.lost, mySeat: seat, pieces, setupStep: step, teamSetup, eggsToPlace: isO && setup ? Math.max(0, TT.TM.eggs - TT.nestOf(g, seat).length) : null,
     clockLeft: room.deadline && g.phase === 'play' ? Math.max(0, room.deadline - Date.now()) : null, clockMs: TT.TM.clockMs, senseRange: TT.TM.sense,
     hunter: g.h && (over || seat === 'hunter' || TT.hunterSeenBy(g, seat)) ? g.h.p : null, burrowed: g.h && (seat === 'hunter' || over) ? g.h.burrowed : false, range: TT.hunterRange(g),
     block: TT.TM.vStarts.concat(g.h ? [g.h.p] : []), mateSniff: isV && g.phase === 'play' ? g.sniffs[TT.mate(seat)] || null : null, eggsTotal: g.eggs.length });
@@ -350,8 +351,13 @@ function clockH(room) {
   room.deadline = Date.now() + ms;
   room.clockT = setTimeout(() => { if (room.clockKey !== k || room.g !== g) return; room.clockKey = null; HU.timeout(g); room.touched = Date.now(); broadcast(room); }, ms);
 }
+function viewerIsHost(room, v) {
+  const roster = room && room.roster || [];
+  if (!v || !roster.length) return !roster.length;
+  return roster.some(r => r.host && (r.role === v.role || (v.role === 'hunter' && (r.role === v.kind || r.role === 'hunter'))));
+}
 function stamp(room, v) {
-  if (v) { v.showTimers = timersOn(room); v.clockStopped = !!(room && room.clock === false); }
+  if (v) { v.showTimers = timersOn(room); v.clockStopped = !!(room && room.clock === false); v.host = viewerIsHost(room, v); }
   if (room && room.flow) {
     v.flow = 1;
     if (room.g && room.g.phase === 'over') v.arrivals = (room.arrivals || []).map(a => a.name).filter(Boolean);
@@ -472,8 +478,16 @@ wss.on('connection', ws => {
       ws._bo = { room, seat: role, hid: null }; send({ t: 'joined', code: c, role, token }); return broadcast(room);
     }
     if (m.t === 'lobby') {
-      const b = ws._bo; if (!b || !b.room.lobby) return send({ t: 'error', msg: 'No open lobby.', soft: true });
-      const room = b.room; let res;
+      const b = ws._bo; if (!b) return send({ t: 'error', msg: 'No open lobby.', soft: true });
+      const room = b.room;
+      if (!room.lobby && m.a === 'clock') {
+        const res = LB.setClock(room, m.on, b.hid);
+        if (res && res.error) return send({ t: 'error', msg: res.error, soft: true });
+        if (room.three) clock3(room); else if (room.hunt) clockH(room); else if (room.team) clockT(room);
+        room.touched = Date.now(); return broadcast(room);
+      }
+      if (!room.lobby) return send({ t: 'error', msg: 'No open lobby.', soft: true });
+      let res;
       if (m.a === 'role') res = LB.claim(room, b.hid, m.role, m.kind);
       else if (m.a === 'bots') res = LB.setBots(room, m.n, b.hid);
       else if (m.a === 'setup') res = LB.setChoice(room, m.setup, b.hid);

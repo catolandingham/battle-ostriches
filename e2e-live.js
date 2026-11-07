@@ -60,7 +60,7 @@ const passed = []; const ok = (c, m) => { assert.ok(c, m); passed.push(m); conso
   const A3 = await mk(), V3 = await mk(), H3 = await mk();
   await A3.goto(U); await A3.click('#playFriend'); await shot(A3, '5-more-players'); await A3.waitForSelector('#lobbyCode:not(:empty)', { timeout: 30000 });
   const l3 = await A3.inputValue('#lobbyLink'); await V3.goto(l3); await H3.goto(l3); await A3.waitForFunction(() => LobbyUI.get() && LobbyUI.get().setup === '3');
-  await H3.click('[data-role="hunter"]'); await H3.click('[data-kind="hyena"]'); await A3.click('#startGame');
+  await H3.click('[data-role="hyena"]'); await A3.click('#startGame');
   await V3.waitForSelector('#board .cell'); await H3.waitForSelector('#board .cell');
   for (let i = 0; i < 4; i++) { const L = await A3.evaluate(() => UI._legal()); const p = L[(i * 5 + 2) % L.length]; await cell(A3, p[0], p[1]).click(); await A3.waitForTimeout(250); }
   await V3.waitForSelector('#actions.mine', { state: 'attached', timeout: 15000 }); ok(await V3.locator('#clock3:not(.hidden)').count() > 0, '3p: shot clock on vulture turn');

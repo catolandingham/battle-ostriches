@@ -33,6 +33,7 @@ button.on{background:#ffe14d}button:disabled{opacity:.35}
 button.big{width:100%;font-size:22px;padding:16px;margin-top:10px}
 #log{font-size:13px;text-align:center;font-weight:700;min-height:18px}
 .screen{position:fixed;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;padding:20px;flex-direction:column;text-align:center;overflow:auto}
+#lobby.screen{top:max(0px, var(--vvo, 0px));height:100vh;height:100dvh;max-height:var(--vvh, 100dvh);bottom:auto}
 .hidden{display:none!important}
 #cover{background:var(--navy);color:#fff}#cover.red{background:var(--red)}#cover.title{background:var(--sand);color:var(--ink)}
 #cover h1{font-size:44px;margin:0 0 10px;-webkit-text-stroke:2px var(--ink);color:#fff;text-shadow:0 5px 0 var(--ink)}
@@ -65,7 +66,7 @@ body.red button{background:#7a2626}button.on{background:#38d6f0;color:#000}body.
 /* original savanna twist */
 #hud{background:linear-gradient(180deg,#f6a93b,#e2672e);border:4px solid #000;border-radius:16px;padding:8px 12px;color:#1a1208;box-shadow:0 4px 0 #000}
 .logo::before{content:"☀️ "}.ctr .cy{color:#0d2a5c}.ctr .or{color:#fff;text-shadow:0 2px 0 #000}
-.cell{border-radius:30% 30% 8px 8px/20% 20% 8px 8px}
+.cell{border-radius:4px}
 #board{border-bottom:10px solid #c9a15a}
 body.red #board{border-bottom-color:#a86d3a}
 .logo{font-size:21px}

@@ -4,10 +4,10 @@
 <link rel="stylesheet" href="style.css"><link rel="stylesheet" href="themes.css"><link rel="stylesheet" href="themes2.css"><link rel="stylesheet" href="themes3.css"><link rel="stylesheet" href="smash.css"><link rel="stylesheet" href="squares.css"><link rel="stylesheet" href="vocab.css"><link rel="stylesheet" href="three.css"><link rel="stylesheet" href="lobby.css"><link rel="stylesheet" href="ring.css"><script src="theme.js"></script></head><body>
 <div id="app">
  <header id="hud"><div><h1 class="logo">BATTLE OSTRICHES</h1>
-  <div class="ctr">ROUNDS <b id="roundsLeft" class="cy">30</b><span class="sep"> | </span><span class="eg">EGGS <b id="eggsLeft" class="or">3</b></span></div><div id="stats" class="hidden"></div></div><div style="display:flex;align-items:center"><div id="turnTag">BLUE</div><button id="inviteBtn" class="hidden" aria-label="Invite / room code" aria-expanded="false">🔗 <span id="inviteCode"></span></button><button id="helpBtn" aria-label="How to play">?</button><button id="muteBtn" class="iconbtn" aria-label="Sound">🔊</button><button id="themeBtn" class="iconbtn" aria-label="Theme">🎨</button><button id="timerToggle" class="iconbtn" type="button" aria-pressed="true" aria-label="Turn timer and round counter on. Hiding them does not stop the clock." title="Turn timer and round counter. On by default.">⏱</button></div></header>
+  <div class="ctr">ROUNDS <b id="roundsLeft" class="cy">30</b><span class="sep"> | </span><span class="eg">EGGS <b id="eggsLeft" class="or">3</b></span></div><div id="stats" class="hidden"></div></div><div style="display:flex;align-items:center"><div id="turnTag">BLUE</div><button id="inviteBtn" class="hidden" aria-label="Invite / room code" aria-expanded="false">🔗 <span id="inviteCode"></span></button><button id="helpBtn" aria-label="How to play">?</button><button id="muteBtn" class="iconbtn" aria-label="Sound">🔊</button><button id="themeBtn" class="iconbtn" aria-label="Theme">🎨</button><button id="timerToggle" class="on" type="button" aria-pressed="true" aria-label="Turn timer off" title="Turn timer off">Timer on</button></div></header>
  <div id="warm"></div>
  <div id="wait-slot"></div><div id="hint">Hint</div><div id="tipbar" class="hidden" aria-live="polite"></div>
- <div id="banner" class="hidden" aria-live="polite"></div><div id="board"></div>
+ <div id="banner" class="hidden" aria-live="polite"></div><div id="markkey" hidden><span class="klegal">Legal step</span><span class="kmaybe">Bird may be here</span></div><div id="board"></div>
  <div id="actions" aria-label="Game actions"></div>
  <div id="log"></div>
 </div>
@@ -16,8 +16,8 @@
  <p class="tag">Hide your eggs. Outwit the hunters.</p>
  <button class="big" id="playFriend">Play with friends</button>
  <button class="big alt" id="playSolo">Play solo</button>
- <button class="linkbtn" id="haveCode" aria-expanded="false">Have a code?</button>
- <div class="joinrow hidden" id="joinRow"><input id="codeIn" maxlength="4" placeholder="CODE" autocapitalize="characters" aria-label="Room code"><button id="joinBtn">Join</button></div>
+ <p class="joinlabel" id="haveCode">Have a code? Type it here to join.</p>
+ <div class="joinrow" id="joinRow"><input id="codeIn" maxlength="4" placeholder="CODE" autocapitalize="characters" aria-label="Room code"><button id="joinBtn">Join</button></div>
  <p class="secondary-link"><button class="linkbtn" id="playPass">Pass &amp; Play on this device?</button></p></div>
  <div id="passStep" class="hidden"><button class="linkbtn" id="passBack">← Home</button>
   <h2>Pass &amp; Play</h2>
@@ -38,17 +38,18 @@
 <div id="rules" class="screen hidden"><div class="card">
  <h2>How to play</h2>
  <h3>🐦 Ostrich</h3><ul>
- <li>Hide <span class="c-eggs"></span> eggs. Keep one alive for <span class="c-rounds"></span> rounds. Both birds are always visible; your eggs are not.</li>
+ <li><b>Goal:</b> hide <span class="c-eggs"></span> eggs and keep one alive for <span class="c-rounds"></span> rounds. Both birds are always visible; your eggs are not.</li>
  <li>Each turn: <b>Step</b> 1 square, <b>Sit</b> on an egg (max <span class="c-sit"></span> in a row), or <b>Carry egg</b> 1 square.</li>
  <li>The ring on each egg drains as it cools; the number is rounds left. Stand on it within <span class="c-warm"></span> rounds or it goes cold.</li>
  <li>Step on a green leaf at least every <span class="c-food"></span> turns or you starve.</li>
  <li>A stone thrown at you just bounces off: your square (and an egg you carry) is always safe. Squares next to you are not. You can't carry an egg onto a gray stone mark. Smashed squares (red X) are blocked.</li></ul>
  <h3>🦅 Vulture</h3><ul>
- <li>Smash every egg (or outlast them: cold eggs and a starved ostrich count too).</li>
+ <li><b>Goal:</b> smash every egg, or outlast them. Cold eggs and a starved ostrich count too.</li>
  <li>Each turn: <b>Fly</b> up to <span class="c-fly"></span> squares, or <b>Throw stone</b> at your square or one next to it. A stone at the ostrich just bounces off (it protects its egg). A miss leaves a gray stone mark for the rest of the game; the ostrich won't carry an egg onto it. The vulture eats eggs and never needs food.</li>
- <li>After each landing you learn <b>Egg nearby!</b> or <b>No egg nearby</b> (within <span class="c-smell"></span> square). This turn only.</li>
+ <li>Each landing tells you <b>Egg nearby!</b> or <b>No egg nearby</b> (within <span class="c-smell"></span> square). That result stays until you fly again. It is not a live view of the eggs.</li>
  <li>You hold <span class="c-stones"></span> stone. Land on a gray rock pile to pick one up. Landing on an egg finds it (big yellow egg).</li></ul>
  <div class="mrules hidden" data-m="3"><h3>🐾 3 players</h3><ul>
+ <li><b>Hunter goal:</b> catch both birds. Hyena: 2 catches, one after another. Honey badger: 1 catch. A caught bird is knocked back and misses its next turn; the last catch removes it.</li>
  <li>Turn order: vulture, ostrich, hunter. Each turn has a 10-second shot clock; if it runs out the turn ends (pass or stay put).</li>
  <li>The hunter (hyena or honey badger) moves 1 square and only learns yes/no whether a bird is within 2 squares. North is the top of the board. Northwest, northeast, southwest, and southeast are the diagonals, and they count the same as north, south, east, and west. The sense does not point at the bird. Birds see the hunter only within 2 squares (never a burrowed badger). The honey badger burrows by staying still. It usually hides at once. Tough ground means stay still one more time. Moving pops it up.</li>
  <li>Landing on a bird catches it (so does a bird stepping onto the hunter): it is knocked back 2 squares and loses its next turn. That bird is hurt until it is knocked out. Hyena: 2 catches knock a bird out. When its sense says yes, Pounce is one extra 1-square move on the same turn, and landing on the bird catches it. Honey badger: 1 catch; stay still to Burrow.</li>

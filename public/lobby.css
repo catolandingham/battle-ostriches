@@ -15,6 +15,7 @@
 #lobby h1,#lobby h2{color:#1a2a3a;text-shadow:none}
 #lobby .tag{color:#4a6070}
 #lobby #lobbyErr{color:#9a3412;min-height:1.2em}
+#lobby .joinlabel{margin:12px 0 6px;font-weight:800;font-size:16px;text-align:center;color:#1a2a3a}
 #lobby .secondary-link{margin:2px 0 0}
 #lobby .secondary-link .linkbtn{font-size:15px;padding:8px}
 #lobby button.big.alt{background:#fff;color:#1a2a3a}
@@ -33,7 +34,9 @@
 #roomLobby .codebox{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:4px 0 8px}
 #lobbyCode{font-size:2.4rem;font-weight:900;letter-spacing:.18em;color:#c2410c!important;-webkit-text-fill-color:#c2410c!important;margin:0}
 #roomLobby #shareGo{flex:0 0 auto;min-width:96px;min-height:48px}
+#roomLobby .youare{margin:0 0 6px;text-align:center;font-weight:900;font-size:20px;color:#102433}
 #roomLobby .statusline{margin:0 0 8px;text-align:center;color:#1a2a3a;font-weight:800}
+#roomLobby .rolecard[aria-pressed="true"]{outline:3px solid #1a5f8a;outline-offset:1px}
 #roomLobby .who{list-style:none;margin:0 0 8px;padding:0;display:flex;flex-wrap:wrap;gap:6px 14px}
 #roomLobby .who li{font-weight:700}
 #roomLobby .who span{margin-left:6px;color:#3e5568;font-weight:700}
