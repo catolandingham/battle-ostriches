@@ -14,7 +14,7 @@ const THEMES = ['classic', 'nature', 'notes', 'golden', 'paper', 'arcade', 'toyb
 (async () => {
   const b = await webkit.launch(), errs = [];
   const c = await b.newContext({ ...devices['iPhone 13'] }), P = await c.newPage();
-  await P.addInitScript(() => { localStorage.setItem('bo_tut_seen', '1'); localStorage.setItem('bo_walk_blue', '1'); localStorage.setItem('bo_walk_red', '1'); localStorage.setItem('bo_tips_off', '1'); ['blue', 'red'].forEach(r => localStorage.setItem('bo_cs_' + r, '9')); });
+  await P.addInitScript(() => { localStorage.setItem('bo_card_off','1'); localStorage.setItem('bo_tut_seen', '1'); localStorage.setItem('bo_walk_blue', '1'); localStorage.setItem('bo_walk_red', '1'); localStorage.setItem('bo_tips_off', '1'); ['blue', 'red'].forEach(r => localStorage.setItem('bo_cs_' + r, '9')); });
   P.on('pageerror', e => errs.push(e.message));
   await P.goto(U);
   await P.click('#playSolo'); await P.click('[data-bots="1"]'); await P.click('#soloGo');

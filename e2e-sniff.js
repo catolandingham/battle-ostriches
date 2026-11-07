@@ -13,7 +13,7 @@ try { fs.mkdirSync(OUT, { recursive: true }); } catch (e) {}
   catch (e) { kind = 'chrome'; b = await chromium.launch({ channel: 'chrome' }); }
   const errs = [];
   const c = await b.newContext({ ...devices['iPhone 13'] }), P = await c.newPage();
-  await P.addInitScript(() => { localStorage.setItem('bo_hs_off', '1'); localStorage.setItem('bo_tut_seen', '1'); localStorage.setItem('bo_walk_blue', '1'); localStorage.setItem('bo_walk_red', '1'); localStorage.setItem('bo_tips_off', '1'); ['blue', 'red'].forEach(r => localStorage.setItem('bo_cs_' + r, '9')); });
+  await P.addInitScript(() => { localStorage.setItem('bo_card_off','1'); localStorage.setItem('bo_hs_off', '1'); localStorage.setItem('bo_tut_seen', '1'); localStorage.setItem('bo_walk_blue', '1'); localStorage.setItem('bo_walk_red', '1'); localStorage.setItem('bo_tips_off', '1'); ['blue', 'red'].forEach(r => localStorage.setItem('bo_cs_' + r, '9')); });
   P.on('pageerror', e => errs.push(e.message));
   const cell = async (x, y) => { await P.evaluate(([x, y]) => { const S = UI._S(), i = y * S.cfg.cols + x; document.querySelectorAll('#board .cell')[i].click(); }, [x, y]); };
   const said = async () => ({ banner: (await P.textContent('#banner')) || '', pop: (await P.locator('#snpop').count()) ? await P.textContent('#snpop') : '', hint: (await P.textContent('#hint')) || '', maybe: await P.locator('.cell.maybe').count() });
