@@ -115,7 +115,9 @@ function vultureFly(g, p) {
   if (e && !ostrichGuards(g, p)) { g.marks[key(p)] = 'spotted'; g.lastAction.spotted = p.slice(); }
   if (isRock(g, p)) { g.lastAction.refill = g.stones < g.cfg.stones; g.stones = g.cfg.stones; }
   g.lastAction.smell = smellsEgg(g, p);
-  g.sniff = { p: p.slice(), yes: g.lastAction.smell }; // shown until the vulture's next move
+  // Snapshot for the green "might" squares until the next vulture move. round stamps the sense
+  // so a later turn can keep the memory without announcing it again as a current fact.
+  g.sniff = { p: p.slice(), yes: g.lastAction.smell, round: g.round };
   g.turn = 'blue'; dropCarried(g); return true;
 }
 const onBoard = p => !!(p && p[0] >= 0 && p[1] >= 0);
@@ -182,6 +184,26 @@ function foodRoute(cfg, pos, marks) {
   return null;
 }
 
+// The yes/no is true only for the round it was sensed. After that the ostrich has moved and eggs
+// may have been carried off or gone cold; announcing it again would describe a previous round.
+function sniffFresh(v) {
+  const sn = v && v.sniff;
+  if (!v || v.phase !== 'play' || !sn) return false;
+  if (sn.round != null) return sn.round === v.round;
+  return v.turn === 'blue' && !!(v.lastAction && v.lastAction.type === 'fly');
+}
+// What the vulture may be told out loud. "Found egg!" tracks the visible found mark (cleared when
+// the egg leaves). Nearby / not-nearby is this sense only. Other roles get no sniff announcement.
+function sniffAnnounce(v, role) {
+  if (!v || v.phase !== 'play') return '';
+  if ((role || v.role) !== 'red') return '';
+  const sn = v.sniff;
+  if (!sn || !v.vulture) return '';
+  if (v.marks && v.marks[key(v.vulture)] === 'spotted' && key(sn.p) === key(v.vulture)) return 'Found egg!';
+  if (!sniffFresh(v)) return '';
+  return sn.yes ? 'Egg nearby!' : 'No egg nearby';
+}
+
 const API = { CONFIG, newGame, canPlaceEgg, placeEgg, placeOstrich, ostrichMoves, ostrichStep, ostrichSit, canSit, canCarry, mustLeave, onEgg, dropCarried,
-  endRound, smellsEgg, flyTargets, throwTargets, vultureFly, vultureThrow, eggAt, aliveEggs, coldIn, key, dist, visible, isFood, isRock, parkEliminated, ostrichGuards, foodRoute };
+  endRound, smellsEgg, flyTargets, throwTargets, vultureFly, vultureThrow, eggAt, aliveEggs, coldIn, sniffFresh, sniffAnnounce, key, dist, visible, isFood, isRock, parkEliminated, ostrichGuards, foodRoute };
 if (typeof module !== 'undefined') module.exports = API; else window.BO = API;

@@ -54,4 +54,43 @@ t('food path counts steps around smashed squares, and the warning is path + 1 sp
  const box={}; for(let dx=-1;dx<=1;dx++)for(let dy=-1;dy<=1;dy++) if(dx||dy) box[(4+dx)+','+(3+dy)]='hit';
  assert.equal(B.foodRoute(C,[4,3],box),null);
 });
+// Brian's pass-and-play playtest: the vulture was told "Egg nearby!" on a later turn about a square
+// that had held an egg. The landing snapshot stays (so the green "might" squares and the bot do not
+// learn whether the egg moved). The spoken announcement does not.
+t('regression (Brian playtest): removed egg does not announce Egg nearby later; a current egg still does',()=>{
+ const AI=require('./ai.js');const g=B.newGame();
+ assert(B.placeEgg(g,[6,2]));assert(B.placeEgg(g,[2,5]));assert(B.placeEgg(g,[3,5]));B.placeOstrich(g,[6,2]);
+ assert(B.vultureFly(g,[5,3]));assert.equal(g.lastAction.smell,true);assert.equal(B.smellsEgg(g,[5,3]),true);
+ assert.equal(B.sniffFresh(g),true);assert.equal(B.sniffAnnounce(g,'red'),'Egg nearby!');assert.equal(B.sniffAnnounce(g,'blue'),'');
+ assert(B.ostrichStep(g,[7,2],true)); // egg leaves the sniffed neighborhood
+ assert.equal(g.round,2);assert.equal(B.smellsEgg(g,[5,3]),false);assert.equal(g.sniff.yes,true);assert.equal(AI.redView(g).sniff.yes,true);
+ assert.equal(B.sniffFresh(g),false);assert.equal(B.sniffAnnounce(g,'red'),'');
+ assert(B.vultureFly(g,[4,1]));assert.equal(g.lastAction.smell,false);assert.equal(B.sniffAnnounce(g,'red'),'No egg nearby');
+ assert(B.ostrichStep(g,[7,1]));assert.equal(B.sniffAnnounce(g,'red'),''); // do not repeat the old "no" either
+ assert(B.vultureFly(g,[6,1]));assert.equal(B.smellsEgg(g,[6,1]),true);assert.equal(g.lastAction.smell,true);assert.equal(B.sniffAnnounce(g,'red'),'Egg nearby!');
+});
+t('regression (Brian playtest): a cold egg is not smelled and does not announce later',()=>{
+ const g=B.newGame({...C,warmth:1});assert(B.placeEgg(g,[6,2]));assert(B.placeEgg(g,[2,5]));assert(B.placeEgg(g,[3,5]));B.placeOstrich(g,[2,5]);
+ assert(B.vultureFly(g,[6,3]));assert.equal(B.sniffAnnounce(g,'red'),'Egg nearby!');
+ assert(B.ostrichSit(g));assert.equal(g.eggs[0].alive,false);assert.deepEqual(g.eggs[0].pos,[6,2]);
+ assert.equal(B.smellsEgg(g,[6,3]),false);assert.equal(g.sniff.yes,true);assert.equal(B.sniffAnnounce(g,'red'),'');
+});
+t('regression (Brian playtest): bird brings an egg in, leaves, and the old clue is not spoken live',()=>{
+ const g=B.newGame();assert(B.placeEgg(g,[7,3]));assert(B.placeEgg(g,[2,5]));assert(B.placeEgg(g,[3,5]));B.placeOstrich(g,[7,3]);
+ assert(B.vultureFly(g,[5,3]));assert.equal(g.lastAction.smell,false);assert.equal(B.sniffAnnounce(g,'red'),'No egg nearby');
+ assert(B.ostrichStep(g,[6,3],true)); // bird carries the egg into the vulture's vicinity
+ assert.equal(B.smellsEgg(g,[5,3]),true);assert.equal(g.sniff.yes,false);assert.equal(B.sniffAnnounce(g,'red'),'');
+ assert(B.vultureFly(g,[6,4]));assert.equal(g.lastAction.smell,true);assert.equal(B.sniffAnnounce(g,'red'),'Egg nearby!');
+ assert(B.ostrichStep(g,[7,2],true)); // bird leaves; the sniffed square is empty
+ assert.equal(B.smellsEgg(g,[6,4]),false);assert.equal(g.sniff.yes,true);assert.equal(B.sniffAnnounce(g,'red'),'');
+ assert(B.vultureFly(g,[5,4]));assert.equal(g.lastAction.smell,false);assert.equal(B.sniffAnnounce(g,'red'),'No egg nearby');
+});
+t('regression (Brian playtest): Found egg stays only while that egg is still found',()=>{
+ const g=B.newGame();assert(B.placeEgg(g,[6,2]));assert(B.placeEgg(g,[2,5]));assert(B.placeEgg(g,[3,5]));B.placeOstrich(g,[1,1]);
+ assert(B.vultureFly(g,[6,2]));assert.equal(g.marks['6,2'],'spotted');assert.equal(B.sniffAnnounce(g,'red'),'Found egg!');
+ assert(B.ostrichStep(g,[1,2]));assert.equal(g.marks['6,2'],'spotted');assert.equal(B.sniffAnnounce(g,'red'),'Found egg!');
+ const cold=B.newGame({...C,warmth:1});assert(B.placeEgg(cold,[6,2]));assert(B.placeEgg(cold,[2,5]));assert(B.placeEgg(cold,[3,5]));B.placeOstrich(cold,[2,5]);
+ assert(B.vultureFly(cold,[6,2]));assert.equal(B.sniffAnnounce(cold,'red'),'Found egg!');
+ assert(B.ostrichSit(cold));assert.equal(cold.marks['6,2'],undefined);assert.equal(B.sniffAnnounce(cold,'red'),'');
+});
 console.log(n+' tests passed');

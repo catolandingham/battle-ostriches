@@ -18,7 +18,7 @@ const XMARK='<svg viewBox="0 0 40 40" aria-hidden="true"><path d="M9 9L31 31M31 
 const EGG='<svg viewBox="0 0 40 40" aria-hidden="true"><ellipse cx="20" cy="22" rx="12" ry="15" fill="#ffd21f" stroke="#3a2a00" stroke-width="3"/><ellipse cx="15" cy="15" rx="3" ry="5" fill="#fff6c0"/></svg>';
 const MYEGG='<svg viewBox="0 0 40 40" aria-hidden="true"><ellipse cx="20" cy="21" rx="11" ry="14" fill="#fffaf0" stroke="#2a2418" stroke-width="2.5"/></svg>';
 const MAYBE='<svg viewBox="0 0 40 40" aria-hidden="true"><ellipse cx="20" cy="21" rx="11" ry="14" fill="none" stroke="#fff" stroke-width="3" stroke-dasharray="5 3"/><text x="20" y="28" text-anchor="middle" font-size="19" font-weight="900" fill="#fff" font-family="sans-serif">?</text></svg>';
-let sniffSeen='',sniffUntil=0,overHold=0;
+let sniffSeen={},sniffUntil=0,overHold=0;
 const VOCAB={maybe:[MAYBE,'Egg might be here: your last sniff said "Egg nearby!" and nothing rules this square out'],legal:['','Glowing square = you can move here'],target:['','Red-orange glow = you can throw a stone here'],stone:[STONE,'Stone mark: a stone landed here. The ostrich won\'t carry an egg onto it'],food:[LEAF,'Food: the ostrich must step here at least every '+window.BO.CONFIG.food+' turns or it starves'],
  rock:[ROCKS,'Rock pile: the vulture lands here to pick up a stone (holds 1)'],hit:[XMARK,'Smashed egg: this square is blocked now'],spot:[EGG,'Found egg: the vulture landed on it'],
  myegg:[MYEGG,'Your egg: the ring drains as it cools; the number is rounds left'],me:['','This is you'],vul:['','The vulture'],ost:['','The ostrich']};
@@ -47,7 +47,7 @@ function connect(){
  sock.onclose=()=>{if(sock!==ws)return;stopHB();if(pending||inRoom())retry();};
  sock.onmessage=ev=>{const m=JSON.parse(ev.data);lastPong=Date.now();
   if(m.t==='pong')return;
-  if(m.t==='joined'){pending=null;clearTimeout(pendTimer);attempts=0;status('');me={code:m.code,token:m.token,role:m.role};localStorage.setItem('bo_me',JSON.stringify(me));history.replaceState(null,'','/?room='+m.code);return;}
+  if(m.t==='joined'){pending=null;clearTimeout(pendTimer);attempts=0;status('');sniffSeen={};me={code:m.code,token:m.token,role:m.role};localStorage.setItem('bo_me',JSON.stringify(me));history.replaceState(null,'','/?room='+m.code);return;}
   if(m.t==='state'&&m.lobby){if(S&&S.phase&&S.phase!=='over')return;pending=null;clearTimeout(pendTimer);attempts=0;status('');S=null;window.LobbyUI&&LobbyUI.show(m.state);return;}
   else if(m.t==='state'&&m.pass)return passState(m);
   else if(m.t==='state'){window.LobbyUI&&LobbyUI.hide();const prev=S;S=m.state;if(!prev||prev.turn!==S.turn||prev.phase!==S.phase)mode=null;render(prev);sounds(prev);if(!prev)maybeWalk(S.role);return;}
@@ -85,7 +85,8 @@ function showCover(r,first){const h=$('handoff');h.className=r;$('hArt').innerHT
  $('hTitle').textContent=`Pass to the ${NAME[r]}${r==='red'?' 🦅':' 🐦'}`;
  $('hSub').textContent=first?`The ${NAME[r]} goes first and hides the eggs. ${NAME[r==='blue'?'red':'blue']}, look away!`:`${NAME[r==='blue'?'red':'blue']}, hand over the phone. No peeking!`;
  $('hGo').textContent=`I'm the ${NAME[r]} — tap to start`;
- $('board').innerHTML='';$('actions').innerHTML='';$('hint').textContent='';}
+ $('board').innerHTML='';$('actions').innerHTML='';$('hint').textContent='';
+ const bn=$('banner');if(bn){bn.textContent='';bn.className='hidden';}}
 function showView(r,v){holder=r;const prev=lastBy[r]||null;const pr=S;S=v;mode=null;if(!pr)$('lobby').classList.add('hidden');render(prev);sounds(prev);if(!lastBy[r])maybeWalk(r);lastBy[r]=v;}
 function passState(m){clearTimeout(hT);PV=m;const next=m.active,over=m.views.blue.phase==='over';
  if(over||holder===next||(holder&&locked)){if(over){$('handoff').className='hidden';locked=false;}if(!locked||over)return showView(over?'blue':next,m.views[over?'blue':next]);return;}
@@ -130,7 +131,7 @@ function drawWalk(){const st=WALK[wr],cur=st[wi],W=$('walk');
  W.innerHTML=`<div class="wcard"><div class="wart"><span style="width:56px;height:56px;display:inline-block">${wr==='red'?VUL:OST}</span><span style="font-size:44px">${cur[0]}</span></div><h2>${cur[1]}</h2><p id="wText">${cur[2]}</p><div class="wdots">${st.map((_,k)=>`<span class="${k===wi?'on':''}"></span>`).join('')}</div><div class="wnav"><button id="wSkip">Skip</button><button id="wNext">${wi===st.length-1?"Let's play":'Next'}</button></div></div>`;
  tapper($('wSkip'),closeWalk);tapper($('wNext'),()=>{if(wi<st.length-1){wi++;drawWalk();}else closeWalk();});}
 window.UI={walk(){walk();},rules(){$('rules').classList.remove('hidden');const b=document.getElementById('guideToggle');if(b){const on=!localStorage.getItem('bo_hs_off');b.textContent=on?'Ostrich guides: ON (tap to turn off)':'Ostrich guides: OFF (tap to turn on)';}},closeRules(){$('rules').classList.add('hidden')},
- setMode(m){if(locked||!S||!S.myTurn)return;mode=m;if(m==='throw')coachDid('throw');render();},act(a){if(locked||!S||!S.myTurn)return;if(a==='sit'&&!(S.can&&S.can.sit))return nope(S.mustLeave?`You sat ${S.cfg.maxSit} turns in a row. Step off this turn.`:'Sit only works while you stand on an egg.');coachDid(a);if(a==='sit'&&G&&G.id==='start')gSet('start','1');send({t:'act',a})},guides(on){if(on)localStorage.removeItem('bo_hs_off');else localStorage.setItem('bo_hs_off','1');const b=document.getElementById('guideToggle');if(b)b.textContent=on?'Ostrich guides: ON (tap to turn off)':'Ostrich guides: OFF (tap to turn on)';if(S)render();},replayCoach(){Object.keys(localStorage).filter(k=>k.startsWith('bo_g_')).forEach(k=>localStorage.removeItem(k));['blue','red'].forEach(r=>localStorage.removeItem('bo_cs_'+r));localStorage.removeItem('bo_tips_off');Object.keys(localStorage).filter(k=>k.startsWith('bo_tip_')).forEach(k=>localStorage.removeItem(k));if(S)render();},rematch(how){holder=null;lastBy={};send({t:'act',a:'rematch',how:how||'same'})},
+ setMode(m){if(locked||!S||!S.myTurn)return;mode=m;if(m==='throw')coachDid('throw');render();},act(a){if(locked||!S||!S.myTurn)return;if(a==='sit'&&!(S.can&&S.can.sit))return nope(S.mustLeave?`You sat ${S.cfg.maxSit} turns in a row. Step off this turn.`:'Sit only works while you stand on an egg.');coachDid(a);if(a==='sit'&&G&&G.id==='start')gSet('start','1');send({t:'act',a})},guides(on){if(on)localStorage.removeItem('bo_hs_off');else localStorage.setItem('bo_hs_off','1');const b=document.getElementById('guideToggle');if(b)b.textContent=on?'Ostrich guides: ON (tap to turn off)':'Ostrich guides: OFF (tap to turn on)';if(S)render();},replayCoach(){Object.keys(localStorage).filter(k=>k.startsWith('bo_g_')).forEach(k=>localStorage.removeItem(k));['blue','red'].forEach(r=>localStorage.removeItem('bo_cs_'+r));localStorage.removeItem('bo_tips_off');Object.keys(localStorage).filter(k=>k.startsWith('bo_tip_')).forEach(k=>localStorage.removeItem(k));if(S)render();},rematch(how){holder=null;lastBy={};sniffSeen={};send({t:'act',a:'rematch',how:how||'same'})},
  _rr(){if(S)render();},open(m){open(m);},pause(ms){sniffUntil=Math.max(sniffUntil,Date.now()+ms);},send(o){send(o);},_tip:t=>tipBar(t),_S:()=>S,_legal:()=>legalNow(),_locked:()=>locked,menu(){S=null;localStorage.removeItem('bo_me');location.href='/';}};
 // --- learn-by-playing coach marks: one hint, anchored, everything else dimmed; advances when the player does it ---
 const COACH={blue:[
@@ -251,7 +252,10 @@ function render(prev){
  const board=$('board');board.style.gridTemplateColumns=`repeat(${C.cols},minmax(0,1fr))`;board.style.alignContent='start';board.style.alignItems='start';board.innerHTML='';
  const la=S.lastAction,newTurn=!!(prev&&(prev.turn!==S.turn||prev.round!==S.round));
  const lastThrow=la&&la.type==='throw'&&la.p&&newTurn?key(la.p):null;const eggAt={};(S.eggs||[]).forEach(e=>{if(e.alive&&e.pos)eggAt[key(e.pos)]=e;});
- const sn=S.phase==='play'&&S.sniff?S.sniff:null,snK=sn?sn.p+'|'+sn.yes:'',snNew=!!sn&&snK!==sniffSeen;sniffSeen=snK; // keyed by the sniff itself, not the round: the ostrich's own move bumps the round and used to replay it lateif(snNew)sniffUntil=Date.now()+1200;
+ const sn=S.phase==='play'&&S.sniff?S.sniff:null,snK=sn?((sn.round!=null?sn.round:'x')+'|'+sn.p+'|'+sn.yes):'';
+ // This animal, this sense, once, and only while that sense is still the current round. The live round
+ // used to be part of the key, so the ostrich's move replayed "Egg nearby!" after the egg could leave.
+ const senseNow=BO.sniffFresh(S),seen=sniffSeen[S.role]||'',snNew=!!sn&&senseNow&&snK!==seen;sniffSeen[S.role]=snK;if(snNew)sniffUntil=Date.now()+1200;
  const found=!!sn&&key(sn.p)===key(S.vulture)&&S.marks[key(S.vulture)]==='spotted'; // landed ON an egg: that's a find, not a sniff
  const inSn=k=>{if(!sn)return false;const [a,b]=k.split(',').map(Number);return Math.max(Math.abs(a-sn.p[0]),Math.abs(b-sn.p[1]))<=1;};
  const birdGone=side=>{const b=S.h3&&S.h3.birds;if(!b)return false;if(S.h3.team){const me=S.h3.mySeat;return side==='o'?!!((me==='o1'||me==='o2')&&b[me]&&b[me].out):!!((me==='v1'||me==='v2')&&b[me]&&b[me].out);}return side==='o'?!!(b.blue&&b.blue.out):!!(b.red&&b.red.out);};
@@ -292,12 +296,12 @@ function render(prev){
  if(prev&&blue&&S.hungerLeft>prev.hungerLeft&&S.ostrich&&S.ostrich[0]>=0){const c=board.children[S.ostrich[1]*C.cols+S.ostrich[0]];if(c)c.classList.add('ate');}
  if(snNew){const vc=board.children[sn.p[1]*C.cols+sn.p[0]];if(vc&&!found){const w=document.createElement('div');w.className='snwave '+(sn.yes?'yes':'no');vc.appendChild(w);}
   if(!window.BORing||BORing.showSniffPop(blue,!!sn.yes,found)){const o=document.createElement('div');o.id='snpop';o.className=(found?'yes found':sn.yes?'yes':'no')+(blue?' small':'');o.textContent=found?(blue?'Vulture found your egg!':'Found egg!'):sn.yes?(blue?'Vulture smells an egg nearby':'Egg nearby!'):'No egg nearby';board.appendChild(o);setTimeout(()=>o.remove(),1400);}}
- // sniff banner: yes/no for this turn only (vulture), plus hunger warning (ostrich)
+ // sniff banner: the vulture's yes/no for this sense only (a later round must not repeat it), plus hunger
  const bn=$('banner');let bt='',bc='';
  const smashed=la&&la.type==='throw'&&la.result==='hit';
  if(smashed){bt='💥 Smash!';bc='yes';}
  else if(foodLead){bt=foodText;bc='hungry';}
- else if(S.phase==='play'&&!blue&&S.sniff){bt=S.marks[key(S.vulture)]==='spotted'&&key(S.sniff.p)===key(S.vulture)?'Found egg!':S.sniff.yes?'Egg nearby!':'No egg nearby';bc=S.sniff.yes?'yes':'no';}
+ else if(BO.sniffAnnounce(S)){bt=BO.sniffAnnounce(S);bc=bt==='No egg nearby'?'no':'yes';}
  else if(S.phase==='play'&&blue&&S.ostrich&&S.ostrich[0]>=0&&!BO.foodRoute(C,S.ostrich,S.marks)&&S.hungerLeft<=2){bt=`Hungry! ${S.hungerLeft} left, no open path to a leaf`;bc='hungry';}
  if(prev&&S.phase==='play'&&(S.lastCold|0)>(prev.lastCold|0)&&!smashed){bt='An egg went cold.';bc='no';}
  if(prev&&blue&&S.hungerLeft>prev.hungerLeft){bt='Ate the leaf. Hunger restored.';bc='yes';}
