@@ -217,9 +217,9 @@ body.three #clock3.hidden{display:block;visibility:hidden}
 body.red #banner.hidden,body.blue #banner.hidden,body.hunter #banner.hidden{display:block!important;visibility:hidden}
 body.red #banner,body.blue #banner,body.hunter #banner{min-height:44px;box-sizing:border-box}
 #board .cell.vfound .ic-myegg,#board .cell.vfound .ic-spot{position:absolute;left:38%;top:38%;width:62%;height:62%;transform:none!important;z-index:6}
-/* vulture out of stones: rock piles call out */
-#board .cell.rockcall{box-shadow:inset 0 0 0 4px #e6e9ee,0 0 14px 4px #e6e9ee!important;animation:rockc 1s ease-in-out infinite alternate}
-@keyframes rockc{to{box-shadow:inset 0 0 0 4px #fff,0 0 22px 8px #fff}}
+/* vulture with no stone, every turn: both rock piles get a white ring with a dark edge on each side. It is a ring drawn on top of the square (like the guide rings), so it shows in every theme, over the yellow legal glow and the red-orange throw glow, and is not the yellow legal glow itself. */
+html #board .cell.rockcall::after{content:'';position:absolute;inset:0;border-radius:4px;pointer-events:none;z-index:46;border:5px solid #fff;box-shadow:inset 0 0 0 2px #111,0 0 0 2px #111,0 0 14px 5px rgba(255,255,255,.95);animation:rockc 1s ease-in-out infinite alternate}
+@keyframes rockc{to{border-color:#d9f4ff;box-shadow:inset 0 0 0 2px #111,0 0 0 2px #111,0 0 22px 9px rgba(255,255,255,.95)}}
 #hint.myturn{border-color:#ffd21f!important;box-shadow:0 0 0 3px #ffd21f,0 0 16px 2px #ffd21f88!important;animation:myturn 1.2s ease-in-out 2}@keyframes myturn{50%{box-shadow:0 0 0 5px #ffd21f,0 0 26px 6px #ffd21f}}
 #hud .hh{position:relative}#hud .hh .hbar{display:block;position:absolute;left:8px;right:8px;bottom:2px;height:4px;border-radius:3px;background:#0005;overflow:hidden}#hud .hh .hbar i{display:block;height:100%;background:#38d66b;border-radius:3px;transition:width .4s}#hud .hh.low .hbar i{background:#ff3b2f}
 #banner.final,html[data-theme] #banner.final{background:#ffd21f!important;color:#111!important;font-weight:900}
