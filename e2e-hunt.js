@@ -31,7 +31,8 @@ const at = { state: 'attached' };
   assert.equal((await A.textContent('#actions')).trim(), 'Burrow'); await A.waitForTimeout(2300); await shot(A, '4-hunter-view-both-hunters');
   assert.ok(!/tough ground|one more still turn/i.test(await A.textContent('#hint') + await A.locator('#actions button').first().getAttribute('title')), 'no tough-ground wording');
   await A.locator('#actions button').first().click({ force: true }); // stay: one still turn always burrows
-  const room = [...server.rooms.values()].find(r => r.hunt); assert.equal(room.g.hunt.hs.badger.burrowed, true, 'burrowed after 1 still turn'); assert.equal(room.g.hunt.hs.badger.dig, 2);
+  const room = [...server.rooms.values()].find(r => r.hunt); for (let i = 0; i < 50 && !room.g.hunt.hs.badger.burrowed; i++) await A.waitForTimeout(40); // the click reaches the server a moment later
+  assert.equal(room.g.hunt.hs.badger.burrowed, true, 'burrowed after 1 still turn'); assert.equal(room.g.hunt.hs.badger.dig, 2);
   await A.waitForFunction(() => /burrowed/i.test(document.body.innerText), null, { timeout: 4000 }); assert.equal(await A.locator('.burtag.dig').count(), 0, 'no tough-ground tag');
   await A.waitForTimeout(1000); await shot(A, '5-badger-burrowed');
   // ambush sight: a bird placed next to the burrowed badger shows at its exact square on the badger's board, and nowhere else
