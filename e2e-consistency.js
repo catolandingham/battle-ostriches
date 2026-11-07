@@ -20,7 +20,7 @@ let seed = 7; const rnd = n => { seed = (seed * 16807) % 2147483647; return seed
       const h = st.hint;
       if (st.role === 'red') {
         if (st.spotted && st.stones > 0) return /Smash it: tap Throw stone, then your square\./.test(h) || /Tap your own square to smash the egg\./.test(h);
-        if (st.stones < 1) return /No stone: fly to a rock pile to pick one up\./.test(h);
+        if (st.stones < 1) return /No stone\. Land on a glowing rock pile to pick one up\./.test(h) || /You found an egg, but you have no stone\. Get one, then come back\./.test(h);
         if (st.btns.some(x => x.pressed && /Throw/.test(x.t))) return /Tap a red-orange square to throw your stone\./.test(h);
         return /Tap a glowing square to fly/.test(h);
       }
@@ -61,7 +61,7 @@ let seed = 7; const rnd = n => { seed = (seed * 16807) % 2147483647; return seed
           // a selected + Carry button is disabled, so it has no 'on' class; aria-pressed marks every selected mode
           const i = st.btns.indexOf(bt); await P.locator('#actions button').nth(i).click({ force: true });
           const after = await P.evaluate(() => ({ on: [...document.querySelectorAll('#actions button')].findIndex(x => x.getAttribute('aria-pressed') === 'true'), n: document.querySelectorAll('.cell.legal').length, hint: document.getElementById('hint').textContent }));
-          assert.equal(after.on, i, 'tapped mode becomes selected'); assert.ok(after.n > 0 && /glowing|red-orange|No stone: fly to a rock pile|smash the egg|Smash it: tap Throw stone/.test(after.hint), 'mode shows targets + hint: ' + after.hint); // a found egg under the vulture swaps in the smash hints; throw mode names its targets "red-orange squares", not "glowing"; this wording dates from 3eb803b
+          assert.equal(after.on, i, 'tapped mode becomes selected'); assert.ok(after.n > 0 && /glowing|red-orange|No stone\. Land on a glowing rock pile|You found an egg, but you have no stone|smash the egg|Smash it: tap Throw stone/.test(after.hint), 'mode shows targets + hint: ' + after.hint); // a found egg under the vulture swaps in the smash hints; throw mode names its targets "red-orange squares", not "glowing"; this wording dates from 3eb803b
         }
       }
       // tap a non-glowing square: explained locally, no server error. "Non-glowing" means legal in NO mode for this player,
