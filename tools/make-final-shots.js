@@ -1,7 +1,7 @@
 // Pass & play scripted game on WebKit iPhone 13 -> vulture/ostrich/states shots. Usage: node make-final-shots.js [baseURL] [outDir] [themes,comma]
 const { webkit, devices } = require('playwright-core'); const fs = require('fs');
 const BASE = process.argv[2] || null, OUT = process.argv[3] || 'shots/final/', THEMES = (process.argv[4] || 'classic').split(',');
-let server; if (!BASE) { process.env.PORT = 3995; server = require('./server.js'); }
+let server; if (!BASE) { process.env.PORT = 3995; server = require('../server.js'); }
 const URL = BASE || 'http://localhost:3995/';
 (async () => {
   fs.mkdirSync(OUT, { recursive: true }); const b = await webkit.launch(), errs = [];

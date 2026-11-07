@@ -1,7 +1,7 @@
 // Pass & play, every theme: screenshot ostrich move step and vulture fly/throw step. Usage: node make-squares-shots.js <outdir>
 const { webkit, devices } = require('playwright-core'); const fs = require('fs');
 const OUT = process.argv[2] || 'shots/squares/'; fs.mkdirSync(OUT, { recursive: true });
-process.env.PORT = 3995; const server = require('./server.js');
+process.env.PORT = 3995; const server = require('../server.js');
 const T = ['classic','nature','notes','golden','paper','arcade','toybox','tactical','storm','volcano','comic','pharaoh','neon'];
 (async () => { const b = await webkit.launch();
   for (const t of T) { const c = await b.newContext({ ...devices['iPhone 13'] }), P = await c.newPage();

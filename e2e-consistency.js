@@ -20,7 +20,7 @@ let seed = 7; const rnd = n => { seed = (seed * 16807) % 2147483647; return seed
       const st = await P.evaluate(() => { const S = UI._S(); return { phase: S.phase, role: S.role, legal: UI._legal(), hint: document.getElementById('hint').textContent,
         dom: [...document.querySelectorAll('#board .cell')].map((e, i) => e.classList.contains('legal') ? i : -1).filter(i => i >= 0),
         bad: [...document.querySelectorAll('#actions button')].filter(x => x.disabled && (x.matches('.on,.pulse,.spot') || getComputedStyle(x).animationName !== 'none')).map(x => x.textContent),
-        btns: [...document.querySelectorAll('#actions button')].map(x => ({ t: x.textContent, dis: x.disabled, on: x.classList.contains('on') })), cols: S.cfg.cols }; });
+        btns: [...document.querySelectorAll('#actions button')].map(x => ({ t: x.textContent, dis: x.disabled, on: x.classList.contains('on'), pressed: x.getAttribute('aria-pressed') === 'true' })), cols: S.cfg.cols }; });
       if (st.phase === 'over') break;
       checks++;
       const want = st.legal.map(p => p[1] * st.cols + p[0]).sort((a, b) => a - b);
@@ -30,7 +30,7 @@ let seed = 7; const rnd = n => { seed = (seed * 16807) % 2147483647; return seed
       assert.ok(/glowing square/i.test(st.hint) || /No stone: fly to a rock pile/.test(st.hint), `${theme} hint names the glowing squares: "${st.hint}"`);
       assert.deepEqual(st.bad, [], 'no highlighted/pulsing disabled control');
       if (st.phase === 'play') {
-        assert.equal(st.btns.filter(x => x.on).length, 1, 'exactly one mode is selected: ' + JSON.stringify(st.btns));
+        assert.equal(st.btns.filter(x => x.on || x.pressed).length, 1, 'exactly one mode is selected (a selected + Carry is disabled and marked only by aria-pressed): ' + JSON.stringify(st.btns));
         // every enabled mode button does something visible
         for (const bt of st.btns.filter(x => !x.dis && !/Sit/.test(x.t))) {
           // a selected + Carry button is disabled, so it has no 'on' class; aria-pressed marks every selected mode

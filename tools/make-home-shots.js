@@ -1,6 +1,6 @@
 // WebKit iPhone 13: home + role picker screenshots for every theme; asserts no scrolling.
 const { webkit, devices } = require('playwright-core'); const fs = require('fs');
-process.env.PORT = 3997; const server = require('./server.js'); const U = 'http://localhost:3997/', OUT = 'shots/home/'; fs.mkdirSync(OUT, { recursive: true });
+process.env.PORT = 3997; const server = require('../server.js'); const U = 'http://localhost:3997/', OUT = 'shots/home/'; fs.mkdirSync(OUT, { recursive: true });
 const THEMES = ['classic','nature','notes','golden','paper','arcade','toybox','tactical','storm','volcano','comic','pharaoh','neon'];
 (async () => { const b = await webkit.launch(); let bad = [];
   for (const th of THEMES) { const c = await b.newContext({ ...devices['iPhone 13'] }); const p = await c.newPage(); await p.addInitScript(() => localStorage.setItem('bo_tut_seen', '1'));

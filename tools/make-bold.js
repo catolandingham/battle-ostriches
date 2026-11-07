@@ -1,6 +1,6 @@
 // Records the bold themes in play on two WebKit iPhones -> shots/bold/<t>.jpg (ostrich|vulture side-by-side) and public/gallery/<t>.mp4
 const { webkit, devices } = require('playwright-core'); const fs = require('fs'), cp = require('child_process');
-process.env.PORT = 3994; const server = require('./server.js'); const O = 'shots/bold/', G = 'public/gallery/', TMP = '/tmp/boldvid/';
+process.env.PORT = 3994; const server = require('../server.js'); const O = 'shots/bold/', G = 'public/gallery/', TMP = '/tmp/boldvid/';
 [O, G, TMP].forEach(d => fs.mkdirSync(d, { recursive: true }));
 (async () => {
   const b = await webkit.launch(), U = 'http://localhost:3994/';

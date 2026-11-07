@@ -1,6 +1,6 @@
 // Records each reimagined theme in play (both phones) -> shots/themes/<theme>-play.webm/.gif + mid-game screenshots.
 const { webkit, devices } = require('playwright-core'); const fs = require('fs'), cp = require('child_process');
-process.env.PORT = 3995; const server = require('./server.js'); const O = 'shots/themes/'; fs.mkdirSync(O + 'vid', { recursive: true });
+process.env.PORT = 3995; const server = require('../server.js'); const O = 'shots/themes/'; fs.mkdirSync(O + 'vid', { recursive: true });
 (async () => {
   const b = await webkit.launch(), U = 'http://localhost:3995/';
   for (const theme of process.argv.slice(2).length ? process.argv.slice(2) : ['nature', 'notes', 'golden', 'paper', 'arcade', 'toybox', 'tactical', 'neon']) {

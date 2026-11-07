@@ -1,6 +1,6 @@
 // Plays a scripted local game in two iPhone-sized browsers and saves real UI screenshots for the tutorial.
 const { webkit, devices } = require('playwright-core');
-process.env.PORT = 3998; const server = require('./server.js');
+process.env.PORT = 3998; const server = require('../server.js');
 (async () => {
   const b = await webkit.launch();
   const mk = async () => { const c = await b.newContext({ ...devices['iPhone 13'] }); const p = await c.newPage();
