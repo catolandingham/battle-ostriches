@@ -6,7 +6,7 @@
   // The card's modes are the lobby's: '2' classic, '3' ostrich + vulture + hunter, '4' 2 vs 2, '4h' Hunters, '5' 2 vs 2 + hunter.
   function rulesFromModules() {
     const B = require('../game.js'), T = require('../three.js'), H = require('../hunt.js'), M = require('../team.js'), C = B.CONFIG;
-    const pick = (t) => ({ ko: { hyena: t.ko.hyena, badger: t.ko.badger }, sense: t.sense });
+    const pick = (t) => ({ ko: { hyena: t.ko.hyena, badger: t.ko.badger }, sense: t.sense, pounce: t.pounce });
     return {
       cfg: { eggs: C.eggs, rounds: C.rounds, warmth: C.warmth, food: C.food, stones: C.stones, fly: C.vultureFly, throwRange: C.throwRange, smell: C.smellRange, walk: C.ostrichWalk, carryWalk: C.carryWalk },
       modes: { '3': pick(T.T3), '4h': pick(H.TH), '4': pick(M.TM), '5': pick(M.TM) },
@@ -86,7 +86,7 @@
     if (who === 'hyena') return {
       title: 'You are the Hyena', goal,
       moves: [`Move 1 square a turn. ${sense}`,
-        'Pounce: When rose dots show a bird is near, you get one extra square after your move. Land on the bird to catch it.',
+        `Pounce: When rose dots show a bird is near, you can move up to ${m.pounce} squares that turn. Land on the bird to catch it.`,
         `A bird is out after ${catches(n)}.`],
       lose, picture: 'hyena' };
     return {

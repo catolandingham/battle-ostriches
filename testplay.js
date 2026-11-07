@@ -28,8 +28,8 @@ ok('ring: Step and Fly can be selected, and the squares still do the move', () =
   assert.deepEqual(ids(full), ['fly', 'throw']);
   const aimed = R.legalActions({ phase: 'play', myTurn: true, role: 'red', stones: 1, cfg: { vultureFly: 2, stones: 1 } }, 'throw');
   assert.deepEqual(ids(aimed), ['fly', 'throw']);
-  const pounce = R.legalActions({ phase: 'play', myTurn: true, role: 'hunter', pounce: true, h3: { kind: 'hyena' } });
-  assert.deepEqual(ids(pounce), ['hstay']); assert.match(pounce[0].detail, /catch/i);
+  const pounce = R.legalActions({ phase: 'play', myTurn: true, role: 'hunter', sense: true, h3: { kind: 'hyena' } });
+  assert.deepEqual(ids(pounce), ['hstay']); assert.equal(pounce[0].label, 'Stay'); assert.doesNotMatch(pounce[0].detail, /extra move|Stop/);
   const dig = R.legalActions({ phase: 'play', myTurn: true, role: 'hunter', h3: { kind: 'badger' }, dig: 0 });
   assert.equal(dig[0].label, 'Burrow'); assert.doesNotMatch(dig[0].detail, /tough ground|usually|one more/i);
   for (const item of back.concat(on, full, aimed, pounce, dig)) assert.equal(item.enabled, true);

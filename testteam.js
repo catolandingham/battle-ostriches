@@ -49,8 +49,14 @@ ok('ambush catch (5p): a catch on the move out of the burrow sets ambush; an ope
   assert.equal(a.lastCatch.ambush, true); assert.equal(a.b.o2.catches, 1);
   const o = ready(5, 'badger', [8, 3]); for (let i = 0; i < 4; i++) T.timeout(o); o.b.o2.pos = [7, 3]; assert.ok(T.hunterMove(o, [7, 3])); assert.ok(!o.lastCatch.ambush, 'open catch');
   const w = ready(5, 'badger'); T.timeout(w); w.h.p = [1, 2]; w.h.burrowed = true; assert.equal(w.turn, 'o1'); assert.ok(T.ostrichAct(w, 'o1', 'step', [1, 2])); assert.equal(w.lastCatch.walked, true); assert.ok(!w.lastCatch.ambush, 'walk-in'); });
-ok('5p: hyena pounce gives one extra square when the sense says yes', () => { const g = ready(5, 'hyena', [8, 3]); for (let i = 0; i < 4; i++) T.timeout(g);
-  g.h.sense = true; g.b.o2.pos = [6, 5]; T.hunterMove(g, [8, 4]); assert.equal(g.h.pounce, true); assert.equal(g.turn, 'hunter'); assert.ok(T.hunterMove(g, [7, 5])); assert.equal(g.turn, 'v1'); });
+ok('5p: hyena pounce is one move of up to 2 squares when the sense says yes; 1 square when it does not; the badger always 1', () => {
+  const dd = (a, b) => Math.max(Math.abs(a[0] - b[0]), Math.abs(a[1] - b[1]));
+  const g = ready(5, 'hyena', [8, 3]); for (let i = 0; i < 4; i++) T.timeout(g);
+  g.b.o2.pos = [6, 5]; g.h.sense = true; assert.equal(T.hunterRange(g), 2); assert.equal(T.TM.pounce, 2); assert.equal(T.hunterReach(g), 2);
+  assert.ok(T.hunterMoves(g).some(p => dd(p, [8, 3]) === 2) && T.hunterMoves(g).every(p => dd(p, [8, 3]) <= 2)); assert.equal(T.hunterMoves(g).length, 3 * 5 - 1);
+  assert.ok(T.hunterMove(g, [6, 5])); assert.equal(g.b.o2.catches, 1, 'landed 2 squares away on the ostrich'); assert.equal(g.turn, 'v1', 'one move ends the hunter turn'); assert.equal(g.h.pounce, undefined);
+  const n = ready(5, 'hyena', [8, 3]); for (let i = 0; i < 4; i++) T.timeout(n); n.h.sense = false; assert.equal(T.hunterRange(n), 1); assert.ok(T.hunterMoves(n).every(p => dd(p, [8, 3]) === 1));
+  const b = ready(5, 'badger', [8, 3]); for (let i = 0; i < 4; i++) T.timeout(b); b.h.sense = true; assert.equal(T.hunterRange(b), 1); assert.equal(T.hunterReach(b), 1); });
 ok('5p: hunter wins only with an ostrich AND a vulture knocked out; no speed boost after the first knock-out', () => { const g = ready(5, 'badger', [8, 3]);
   for (let i = 0; i < 4; i++) T.timeout(g); assert.equal(T.hunterRange(g), 1); g.b.o2.pos = [7, 3]; g.b.o2.catches = 1; g.b.v2.catches = 1; T.hunterMove(g, [7, 3]); assert.equal(g.b.o2.out, true);
   assert.equal(g.phase, 'play'); for (let i = 0; i < 3; i++) T.timeout(g); assert.equal(T.hunterRange(g), 1); assert.ok(T.hunterMoves(g).every(p => Math.max(Math.abs(p[0] - g.h.p[0]), Math.abs(p[1] - g.h.p[1])) === 1)); assert.equal(T.status(g).boost, undefined); assert.equal(T.TM.boost, undefined);

@@ -4,7 +4,7 @@ const B = require('./game.js'), T = require('./three.js'), H = require('./hunt.j
 let n = 0; const ok = (name, f) => { f(); n++; console.log('ok', name); };
 const C = B.CONFIG;
 const text = (c) => [c.title, c.goal, ...c.moves, c.lose].join('\n');
-const POUNCE = 'When rose dots show a bird is near, you get one extra square after your move. Land on the bird to catch it.';
+const POUNCE = (n) => `When rose dots show a bird is near, you can move up to ${n} squares that turn. Land on the bird to catch it.`;
 
 // every card a phone can be shown: [role, kind, mode]
 const ALL = [
@@ -18,9 +18,9 @@ const ALL = [
 ok('rules from the modules are plain numbers and nothing else (no start squares)', () => {
   const r = R.rulesFromModules();
   assert.deepEqual(r.cfg, { eggs: C.eggs, rounds: C.rounds, warmth: C.warmth, food: C.food, stones: C.stones, fly: C.vultureFly, throwRange: C.throwRange, smell: C.smellRange, walk: C.ostrichWalk, carryWalk: C.carryWalk });
-  assert.deepEqual(r.modes['3'], { ko: T.T3.ko, sense: T.T3.sense });
-  assert.deepEqual(r.modes['4h'], { ko: H.TH.ko, sense: H.TH.sense });
-  assert.deepEqual(r.modes['5'], { ko: TT.TM.ko, sense: TT.TM.sense });
+  assert.deepEqual(r.modes['3'], { ko: T.T3.ko, sense: T.T3.sense, pounce: T.T3.pounce });
+  assert.deepEqual(r.modes['4h'], { ko: H.TH.ko, sense: H.TH.sense, pounce: H.TH.pounce });
+  assert.deepEqual(r.modes['5'], { ko: TT.TM.ko, sense: TT.TM.sense, pounce: TT.TM.pounce });
   assert.ok(!/starts|clockMs/.test(JSON.stringify(r)), 'no start squares or clocks in what the server sends');
 });
 
@@ -74,7 +74,7 @@ ok('numbers on the cards equal the rules constants', () => {
 ok('change every constant: every number on every card follows, and no other number appears', () => {
   // odd values that cannot be mistaken for a typed 1, 2 or 3
   const X = { cfg: { eggs: 7, rounds: 41, warmth: 19, food: 11, stones: 5, fly: 6, throwRange: 4, smell: 8, walk: 9, carryWalk: 10 },
-    modes: { '3': { ko: { hyena: 12, badger: 13 }, sense: 14 }, '4h': { ko: { hyena: 15, badger: 16 }, sense: 17 }, '4': { ko: { hyena: 18, badger: 21 }, sense: 22 }, '5': { ko: { hyena: 23, badger: 24 }, sense: 25 } } };
+    modes: { '3': { ko: { hyena: 12, badger: 13 }, sense: 14, pounce: 26 }, '4h': { ko: { hyena: 15, badger: 16 }, sense: 17, pounce: 27 }, '4': { ko: { hyena: 18, badger: 21 }, sense: 22, pounce: 28 }, '5': { ko: { hyena: 23, badger: 24 }, sense: 25, pounce: 29 } } };
   const allowed = new Set(); (function walk(o) { for (const v of Object.values(o)) typeof v === 'object' ? walk(v) : allowed.add(String(v)); })(X);
   for (const [role, kind, mode] of ALL) {
     const c = R.roleCard(role, kind, mode, X), at = `${role}/${kind}/${mode}`;
@@ -95,7 +95,7 @@ ok('change every constant: every number on every card follows, and no other numb
 ok('the hyena card says Pounce plainly, in every mode with a hyena; the honey badger card does not', () => {
   for (const [role, kind, mode] of [['hunter', 'hyena', '3'], ['hyena', null, '4h'], ['hunter', 'hyena', '5']]) {
     const c = R.roleCard(role, kind, mode);
-    assert.ok(c.moves.some((m) => m === 'Pounce: ' + POUNCE), mode + ' hyena: ' + c.moves.join(' | '));
+    assert.ok(c.moves.some((m) => m === 'Pounce: ' + POUNCE(R.rulesFromModules().modes[mode].pounce)), mode + ' hyena: ' + c.moves.join(' | ')); assert.ok(c.moves.some((m) => m === 'Pounce: ' + POUNCE(2)), 'up to 2 squares');
   }
   for (const [role, kind, mode] of [['hunter', 'badger', '3'], ['badger', null, '4h'], ['hunter', 'badger', '5']]) {
     const c = R.roleCard(role, kind, mode);
@@ -105,7 +105,8 @@ ok('the hyena card says Pounce plainly, in every mode with a hyena; the honey ba
 
 ok('a hunter card never sounds like the other hunter: hyena has no burrow, honey badger has no pounce', () => {
   assert.ok(!/burrow/i.test(text(R.roleCard('hunter', 'hyena', '3'))));
-  assert.ok(!/pounce|extra square/i.test(text(R.roleCard('hunter', 'badger', '3'))));
+  assert.ok(!/pounce/i.test(text(R.roleCard('hunter', 'badger', '3'))));
+  assert.ok(R.roleCard('hunter', 'hyena', '3', { cfg: R.rulesFromModules().cfg, modes: { '3': { ko: { hyena: 2, badger: 2 }, sense: 2, pounce: 29 } } }).moves.some((m) => m.includes('up to 29 squares that turn')), 'the pounce distance on the card comes from the rules');
 });
 
 ok('card ids: one per animal, hunter and mode (a bird card only changes with the hunter in 3 players)', () => {

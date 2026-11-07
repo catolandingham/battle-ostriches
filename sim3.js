@@ -2,12 +2,12 @@
 // Usage: node sim3.js [games] [hyena|badger]
 const B = require('./game.js'), AI = require('./ai.js'), T = require('./three.js');
 function hview(g) { const t = g.three; return { cfg: g.cfg, round: g.round, marks: B.visible(g).marks, hunter: t.h, kind: t.kind, sense: t.sense, senseSeq: t.senseSeq,
-  senseRange: T.T3.sense, pounce: t.pounce, burrowed: t.burrowed, dig: t.dig || 0, hmoves: T.hunterMoves(g), seenBirds: T.ambushSight(g) }; }
+  senseRange: T.T3.sense, burrowed: t.burrowed, dig: t.dig || 0, hmoves: T.hunterMoves(g), seenBirds: T.ambushSight(g) }; }
 function play(kind, opt = {}) {
   const g = T.newGame3(kind), mem = { red: {}, hunter: {} }; let k = 0, seen = 0;
   while (g.phase !== 'play') { const m = AI.ostrich(g); g.phase === 'setupEggs' ? B.placeEgg(g, m.p) : (T.placeOstrich3(g, m.p) || T.placeOstrich3(g, g.eggs[1].pos)); }
   while (g.phase === 'play' && k++ < 400) {
-    const r = g.turn, hv = T.hunterSeenBy(g, r) ? g.three.h : null, reach = T.hunterRange(g) + (kind === 'hyena' ? 1 : 0);
+    const r = g.turn, hv = T.hunterSeenBy(g, r) ? g.three.h : null, reach = T.hunterReach(g);
     if (opt.timeout && Math.random() < opt.timeout) { T.timeout(g); continue; }
     let ok;
     if (r === 'hunter') { if (g.three.lastCatch && seen !== g.three.lastCatch.seq) { seen = g.three.lastCatch.seq; mem.hunter.reset = true; mem.hunter.lastCatch = g.three.h.slice(); }
