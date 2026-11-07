@@ -9,6 +9,12 @@ function humans(k, extra) {
   for (let i = 0; i < k; i++) list.push({ id: 'h' + i, name: 'Player ' + (i + 1), host: i === 0, role: null, kind: null, token: 't' + i, ws: null });
   return Object.assign({ humans: list, botsWanted: 0, solo: false, setupChoice: null, recovery: null, clock: true, level: 'normal', hunterKind: null, code: 'ABCD', note: '' }, extra || {});
 }
+t('lobby role lines say the catch counts the rules use (both hunters 2)', () => {
+  const T3 = require('./three.js').T3, TH = require('./hunt.js').TH, TM = require('./team.js').TM;
+  for (const ko of [T3.ko, TH.ko, TM.ko]) assert.equal(ko.badger, ko.hyena);
+  assert.equal(LB.META.badger.sub, 'Burrow · ' + T3.ko.badger + ' catches'); assert.equal(LB.ANIMAL.badger.sub, 'Burrow · ' + T3.ko.badger + ' catches');
+  assert.equal(LB.META.hyena.sub, 'Pounce · ' + T3.ko.hyena + ' catches'); assert.equal(LB.ANIMAL.hyena.sub, 'Pounce · ' + T3.ko.hyena + ' catches');
+});
 t('one friend previews 2p roles and cannot start', () => {
   const r = humans(1); LB.reconcile(r);
   const v = LB.view(r, 'h0');

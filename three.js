@@ -2,7 +2,7 @@
 const TOUGH3 = typeof process !== 'undefined' && process.env.BO_TOUGH ? +process.env.BO_TOUGH : 0.15; // share of badger digs that hit tough ground (2 still turns instead of 1)
 // without changing them. Turn order each round: vulture, ostrich, hunter. All tuning lives in T3.
 const B = require('./game.js'), K = B.key, D = B.dist;
-const T3 = { sense: 2, see: 2, knock: 2, clockMs: 10000, ko: { hyena: 2, badger: 1 }, boost: 2, starts: [[0, 3], [8, 3]] };
+const T3 = { sense: 2, see: 2, knock: 2, clockMs: 10000, ko: { hyena: 2, badger: 2 }, boost: 2, starts: [[0, 3], [8, 3]] };
 const OFF = [-99, -99], BIRDS = ['red', 'blue'], NAME = { red: 'vulture', blue: 'ostrich', hunter: 'hunter' };
 const sgn = Math.sign;
 function newGame3(kind, cfg = B.CONFIG, start) {

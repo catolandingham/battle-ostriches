@@ -168,7 +168,7 @@ ok('hunter near is a one-shot on entering sight, not while burrowed', () => {
   assert.deepEqual(R.seenHunterKinds(both), ['hyena']);
 });
 
-ok('burrowed or digging badger still receives its own position', () => {
+ok('burrowed badger still receives its own position', () => {
   const { room } = S.create3({ role: 'hunter', bots: ['blue', 'red'], kind: 'badger' }, null);
   room.g = T.newGame3('badger', undefined, [8, 3]);
   room.g.three.burrowed = false; room.g.three.dig = 1;
@@ -193,7 +193,7 @@ ok('an eliminated bird leaves the egg and no longer blocks a smash', () => {
   assert.ok(stuck.ostrich[0] < 0); assert.equal(stuck.eggs[0].alive, false);
   const ko = T.newGame3('badger', undefined, [6, 2]);
   for (const p of [[6, 1], [2, 1], [2, 5]]) assert(B.placeEgg(ko, p));
-  assert(T.placeOstrich3(ko, [6, 1]));
+  assert(T.placeOstrich3(ko, [6, 1])); ko.three.birds.blue.catches = 1; // hurt once, so this second catch knocks it out
   assert(T.vultureFly3(ko, [4, 1])); assert(T.ostrichAct3(ko, 'sit')); assert(T.hunterMove(ko, [6, 1]));
   assert.equal(ko.three.birds.blue.out, true); assert.ok(ko.ostrich[0] < 0); assert.equal(ko.turn, 'red');
   ko.vulture = [5, 1]; ko.stones = 1; assert.equal(T.vultureThrow3(ko, [6, 1]), 'hit');

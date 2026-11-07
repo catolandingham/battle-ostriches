@@ -5,7 +5,7 @@ const TOUGHH = typeof process !== 'undefined' && process.env.BO_TOUGH ? +process
 // Fearless rivalry: badger moves onto the hyena -> the hyena is knocked back 2; hyena moves onto the badger -> the hyena
 // bounces back 2. Nobody is hurt. Hunters win when both birds are out (more KOs wins, a tie goes to the last KO).
 const B = require('./game.js'), K = B.key, D = B.dist;
-const TH = { sense: 2, see: 2, knock: 2, rivalKnock: 2, clockMs: 10000, ko: { hyena: 2, badger: 1 }, starts: [[0, 3], [8, 3]] };
+const TH = { sense: 2, see: 2, knock: 2, rivalKnock: 2, clockMs: 10000, ko: { hyena: 2, badger: 2 }, starts: [[0, 3], [8, 3]] };
 const OFF = [-99, -99], BIRDS = ['red', 'blue'], HUNTERS = ['hyena', 'badger'], ORDER = ['red', 'blue', 'hyena', 'badger'], sgn = Math.sign;
 function newHunt(cfg = B.CONFIG, starts) {
   const g = B.newGame(cfg), st = starts || (Math.random() < .5 ? TH.starts : TH.starts.slice().reverse());

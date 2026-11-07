@@ -60,11 +60,11 @@ ok('"is out" banner names the bird; team seats say which', () => {
 
 // catchesLeft is read from the rules constants and the bird's catch count in the view, never typed into the words
 const view3 = g => T.status3(g), viewT = g => TT.status(g), viewH = g => H.statusH(g);
-ok('catchesLeft: 3-player view (hyena 2, badger 1) from T3.ko and the bird\'s catches', () => {
+ok('catchesLeft: 3-player view (hyena 2, badger 2) from T3.ko and the bird\'s catches', () => {
   const g = T.newGame3('hyena'); assert.equal(CT.catchesLeft(view3(g), lc({ bird: 'blue' })), T.T3.ko.hyena);
   g.three.birds.blue.catches = 1; assert.equal(CT.catchesLeft(view3(g), lc({ bird: 'blue' })), T.T3.ko.hyena - 1);
   assert.equal(CT.catchLine(lc(), 'blue', 'hyena', CT.catchesLeft(view3(g), lc())), "The hyena caught you! Hurt: one more catch and you're out.");
-  const b = T.newGame3('badger'); b.three.birds.red.catches = 1; assert.equal(CT.catchesLeft(view3(b), lc({ bird: 'red' })), 0); });
+  const b = T.newGame3('badger'); b.three.birds.red.catches = 1; assert.equal(CT.catchesLeft(view3(b), lc({ bird: 'red' })), T.T3.ko.badger - 1); b.three.birds.red.catches = 2; assert.equal(CT.catchesLeft(view3(b), lc({ bird: 'red' })), 0); });
 ok('catchesLeft: changing the rules constants changes the words', () => {
   const was = T.T3.ko.hyena; try { T.T3.ko.hyena = 4; const g = T.newGame3('hyena'); g.three.birds.blue.catches = 1;
     assert.equal(CT.catchLine(lc(), 'blue', 'hyena', CT.catchesLeft(view3(g), lc())), "The hyena caught you! Hurt: 3 more catches and you're out.");
@@ -76,7 +76,7 @@ ok('catchesLeft: Hunters view picks the knock-out count of the hunter that caugh
   assert.equal(CT.catchesLeft(viewH(g), lc({ by: 'hyena' })), H.TH.ko.hyena - 1); assert.equal(CT.catchesLeft(viewH(g), lc({ by: 'badger' })), H.TH.ko.badger - 1); });
 ok('catchesLeft: 2 vs 2 + hunter view (team.js)', () => {
   const g = TT.newTeam(5, 'hyena'); g.b.v2.catches = 1; assert.equal(CT.catchesLeft(viewT(g), lc({ bird: 'v2' })), TT.TM.ko.hyena - 1);
-  const k = TT.newTeam(5, 'badger'); k.b.v2.catches = 1; assert.equal(CT.catchesLeft(viewT(k), lc({ bird: 'v2' })), 0); });
+  const k = TT.newTeam(5, 'badger'); k.b.v2.catches = 1; assert.equal(CT.catchesLeft(viewT(k), lc({ bird: 'v2' })), TT.TM.ko.badger - 1); k.b.v2.catches = 2; assert.equal(CT.catchesLeft(viewT(k), lc({ bird: 'v2' })), 0); });
 
 // end to end through the rules: play a real catch, build the view the same way server.js does, read the words
 const setup3 = (kind, h) => { const g = T.newGame3(kind, undefined, h); for (const p of [[2, 1], [6, 1], [2, 5]]) assert(B.placeEgg(g, p)); assert(T.placeOstrich3(g, [6, 5])); return g; };
@@ -88,7 +88,9 @@ ok('real 3-player catches: walked in vs hunter landed; hurt vs out', () => {
   assert.equal(CT.catchLine(l, 'red', 'hyena', CT.catchesLeft(s, l)), 'The hyena caught the ostrich.');
   const h = setup3('hyena', [4, 3]); T.vultureFly3(h, [4, 2]); T.ostrichAct3(h, 'step', [5, 5]); assert(T.hunterMove(h, [4, 2]));
   l = h.three.lastCatch; s = view3(h); assert.equal(CT.catchLine(l, 'red', 'hyena', CT.catchesLeft(s, l)), "The hyena caught you! Hurt: one more catch and you're out.");
-  const k = setup3('badger', [7, 4]); T.vultureFly3(k, [4, 1]); assert(T.ostrichAct3(k, 'step', [7, 4])); l = k.three.lastCatch; s = view3(k);
+  const k0 = setup3('badger', [7, 4]); T.vultureFly3(k0, [4, 1]); assert(T.ostrichAct3(k0, 'step', [7, 4])); l = k0.three.lastCatch; s = view3(k0);
+  assert.equal(CT.catchLine(l, 'blue', 'badger', CT.catchesLeft(s, l)), "You walked into the hidden honey badger! The honey badger caught you! Hurt: one more catch and you're out.");
+  const k = setup3('badger', [7, 4]); k.three.birds.blue.catches = 1; T.vultureFly3(k, [4, 1]); assert(T.ostrichAct3(k, 'step', [7, 4])); l = k.three.lastCatch; s = view3(k);
   assert.equal(CT.catchLine(l, 'blue', 'badger', CT.catchesLeft(s, l)), 'You walked into the hidden honey badger! The honey badger knocked you out.');
   assert.equal(CT.catchLine(l, 'hunter', 'badger', CT.catchesLeft(s, l)), 'Ostrich knocked out!'); });
 ok('real Hunters catches: second hunter is a bystander; hyena second catch is a knock-out', () => {
@@ -101,7 +103,7 @@ ok('real Hunters catches: second hunter is a bystander; hyena second catch is a 
   to(g, 'hyena'); g.vulture = [2, 3]; g.hunt.birds.red.skip = 0; H.hunterMove(g, [2, 3]); l = g.hunt.lastCatch; s = viewH(g); assert.equal(l.ko, true);
   assert.equal(CT.catchLine(l, 'red', l.by, CT.catchesLeft(s, l)), 'The hyena knocked you out.');
   assert.equal(CT.catchLine(l, 'badger', l.by, CT.catchesLeft(s, l)), 'The hyena knocked out the vulture.');
-  const w = ready(); to(w, 'blue'); w.ostrich = [4, 6]; w.hunt.hs.badger.p = [5, 6]; assert.ok(H.ostrichActH(w, 'step', [5, 6])); l = w.hunt.lastCatch; s = viewH(w);
+  const w = ready(); to(w, 'blue'); w.ostrich = [4, 6]; w.hunt.hs.badger.p = [5, 6]; w.hunt.birds.blue.catches = 1; assert.ok(H.ostrichActH(w, 'step', [5, 6])); l = w.hunt.lastCatch; s = viewH(w);
   assert.equal(CT.catchLine(l, 'blue', l.by, CT.catchesLeft(s, l)), 'You walked into the hidden honey badger! The honey badger knocked you out.');
   assert.equal(CT.catchLine(l, 'hyena', l.by, CT.catchesLeft(s, l)), 'The honey badger knocked out the ostrich.'); });
 ok('real 2 vs 2 + hunter catch: teammate and hunter see their own lines', () => {

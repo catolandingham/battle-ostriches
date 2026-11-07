@@ -59,16 +59,16 @@ ok('numbers on the cards equal the rules constants', () => {
   assert.ok(v.moves[1].includes(`${C.stones} stone`) && v.moves[2].includes(`within ${C.throwRange} of you`));
   const hy = R.roleCard('hunter', 'hyena', '3'), ba = R.roleCard('hunter', 'badger', '3');
   assert.ok(hy.moves.join('\n').includes(`A bird is out after ${T.T3.ko.hyena} catches.`), hy.moves.join('|'));
-  assert.ok(ba.moves.join('\n').includes(`A bird is out after ${T.T3.ko.badger} catch.`), ba.moves.join('|'));
+  assert.ok(ba.moves.join('\n').includes(`A bird is out after ${T.T3.ko.badger} catches.`), ba.moves.join('|'));
   assert.ok(hy.moves[0].includes(`within ${T.T3.sense} squares`) && hy.goal.includes(`round ${C.rounds}`));
   // Hunters mode reads its own constants
   assert.ok(R.roleCard('hyena', null, '4h').moves.join('\n').includes(`after ${H.TH.ko.hyena} catches`));
-  assert.ok(R.roleCard('badger', null, '4h').moves.join('\n').includes(`after ${H.TH.ko.badger} catch.`));
+  assert.ok(R.roleCard('badger', null, '4h').moves.join('\n').includes(`after ${H.TH.ko.badger} catches.`));
   assert.ok(R.roleCard('o1', null, '4').goal.includes(`${C.rounds} rounds`) && R.roleCard('o1', null, '4').moves[1].includes(`within ${C.warmth} rounds`));
   // a bird is told how many catches end it
   assert.ok(R.roleCard('blue', 'hyena', '3').lose.includes(`hyena catches you ${T.T3.ko.hyena} times`));
-  assert.ok(R.roleCard('red', 'badger', '3').lose.includes('honey badger catches you once'));
-  const b4 = R.roleCard('blue', null, '4h').lose; assert.ok(b4.includes(`hyena catches you ${H.TH.ko.hyena} times`) && b4.includes('honey badger catches you once'), b4);
+  assert.ok(R.roleCard('red', 'badger', '3').lose.includes(`honey badger catches you ${T.T3.ko.badger} times`));
+  const b4 = R.roleCard('blue', null, '4h').lose; assert.ok(b4.includes(`hyena catches you ${H.TH.ko.hyena} times`) && b4.includes(`honey badger catches you ${H.TH.ko.badger} times`), b4);
 });
 
 ok('change every constant: every number on every card follows, and no other number appears', () => {

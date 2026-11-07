@@ -16,7 +16,7 @@ const META = {
   v1: { name: 'Vulture 1', sub: 'team vulture' },
   v2: { name: 'Vulture 2', sub: 'team vulture' },
   hyena: { name: 'Hyena', sub: 'Pounce · 2 catches' },
-  badger: { name: 'Honey Badger', sub: 'Burrow · 1 catch' },
+  badger: { name: 'Honey Badger', sub: 'Burrow · 2 catches' },
 };
 const PREFER = {
   blue: ['blue', 'o1', 'o2'], o1: ['o1', 'blue', 'o2'], o2: ['o2', 'blue', 'o1'],
@@ -35,7 +35,7 @@ const ANIMAL = {
   ostrich: { name: 'Ostrich', sub: 'hide eggs', seats4: ['o1', 'o2'], seats4h: ['blue'] },
   vulture: { name: 'Vulture', sub: 'hunt eggs', seats4: ['v1', 'v2'], seats4h: ['red'] },
   hyena: { name: 'Hyena', sub: 'Pounce · 2 catches', seats4: [], seats4h: ['hyena'] },
-  badger: { name: 'Honey Badger', sub: 'Burrow · 1 catch', seats4: [], seats4h: ['badger'] },
+  badger: { name: 'Honey Badger', sub: 'Burrow · 2 catches', seats4: [], seats4h: ['badger'] },
 };
 function animalOf(h) {
   if (!h) return null;

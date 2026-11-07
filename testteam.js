@@ -36,10 +36,14 @@ ok('5p: hunter moves last, senses within 2, catch knocks back 2 and costs a turn
   g.b.o2.pos = [5, 0]; T.timeout(g); T.timeout(g); T.timeout(g); T.timeout(g); assert.equal(g.turn, 'hunter'); assert.equal(g.h.sense, false);
   g.b.o2.pos = [7, 3]; g.h.sense = true; assert.ok(T.hunterMove(g, [7, 3])); assert.equal(g.b.o2.catches, 1); assert.deepEqual(g.b.o2.pos, [5, 3]); assert.equal(g.b.o2.skip, 1);
   assert.equal(g.turn, 'v1'); T.timeout(g); T.timeout(g); T.timeout(g); assert.equal(g.turn, 'hunter', 'Ostrich 2 lost its turn'); });
+ok('5p: badger: first catch hurts the bird (not out), the second knocks it out', () => { const g = ready(5, 'badger', [8, 3]); for (let i = 0; i < 4; i++) T.timeout(g);
+  g.b.o2.pos = [7, 3]; g.h.sense = true; assert.ok(T.hunterMove(g, [7, 3])); assert.equal(T.TM.ko.badger, 2); assert.equal(g.b.o2.catches, 1); assert.equal(g.lastCatch.ko, false); assert.equal(g.b.o2.out, false); assert.equal(g.b.o2.skip, 1);
+  for (let i = 0; i < 8 && g.turn !== 'hunter'; i++) T.timeout(g); assert.equal(g.turn, 'hunter'); g.b.o2.pos = [6, 3]; assert.ok(T.hunterMove(g, [6, 3]));
+  assert.equal(g.b.o2.catches, 2); assert.equal(g.lastCatch.ko, true); assert.equal(g.b.o2.out, true); });
 ok('5p: hyena pounce gives one extra square when the sense says yes', () => { const g = ready(5, 'hyena', [8, 3]); for (let i = 0; i < 4; i++) T.timeout(g);
   g.h.sense = true; g.b.o2.pos = [6, 5]; T.hunterMove(g, [8, 4]); assert.equal(g.h.pounce, true); assert.equal(g.turn, 'hunter'); assert.ok(T.hunterMove(g, [7, 5])); assert.equal(g.turn, 'v1'); });
 ok('5p: hunter wins only with an ostrich AND a vulture knocked out; boost 2 after the first knock-out', () => { const g = ready(5, 'badger', [8, 3]);
-  for (let i = 0; i < 4; i++) T.timeout(g); assert.equal(T.hunterRange(g), 1); g.b.o2.pos = [7, 3]; T.hunterMove(g, [7, 3]); assert.equal(g.b.o2.out, true);
+  for (let i = 0; i < 4; i++) T.timeout(g); assert.equal(T.hunterRange(g), 1); g.b.o2.pos = [7, 3]; g.b.o2.catches = 1; g.b.v2.catches = 1; T.hunterMove(g, [7, 3]); assert.equal(g.b.o2.out, true);
   assert.equal(g.phase, 'play'); for (let i = 0; i < 3; i++) T.timeout(g); assert.equal(T.hunterRange(g), 2);
   g.b.v2.pos = [5, 3]; T.hunterMove(g, [5, 3]); assert.equal(g.winner, 'hunter'); });
 ok('5p: two ostriches knocked out but no vulture -> vultures win, not the hunter', () => { const g = ready(5, 'badger'); T.knockout(g, 'o1', 'caught'); T.knockout(g, 'o2', 'caught'); assert.equal(g.winner, 'red'); });
@@ -58,7 +62,7 @@ ok('server views: vultures see no eggs; ostriches see all eggs; hunter sees no b
   assert.equal(vv.h3.pieces.filter(p => p.type === 'o').length, 2); assert.equal(ov.h3.pieces.find(p => p.seat === 'o2').mate, true); S.close(); });
 ok('lastCatch.walked: true when a bird stepped onto the hunter, absent when the hunter landed on the bird', () => {
   const o = ready(5, 'hyena'); T.timeout(o); o.h.p = [1, 2]; assert.equal(o.turn, 'o1'); assert.ok(T.ostrichAct(o, 'o1', 'step', [1, 2])); assert.equal(o.lastCatch.bird, 'o1'); assert.strictEqual(o.lastCatch.walked, true);
-  const v = ready(5, 'badger'); v.b.v1.pos = [4, 3]; v.h.p = [3, 3]; assert.equal(v.turn, 'v1'); assert.ok(T.vultureFly(v, 'v1', [3, 3])); assert.equal(v.lastCatch.bird, 'v1'); assert.strictEqual(v.lastCatch.ko, true); assert.strictEqual(v.lastCatch.walked, true);
+  const v = ready(5, 'badger'); v.b.v1.catches = 1; v.b.v1.pos = [4, 3]; v.h.p = [3, 3]; assert.equal(v.turn, 'v1'); assert.ok(T.vultureFly(v, 'v1', [3, 3])); assert.equal(v.lastCatch.bird, 'v1'); assert.strictEqual(v.lastCatch.ko, true); assert.strictEqual(v.lastCatch.walked, true);
   const h = ready(5, 'hyena', [8, 3]); h.b.o1.pos = [7, 3]; for (let i = 0; i < 4 && h.turn !== 'hunter'; i++) T.timeout(h); assert.equal(h.turn, 'hunter'); h.b.o1.pos = [7, 3]; assert.ok(T.hunterMove(h, [7, 3])); assert.equal(h.lastCatch.bird, 'o1'); assert(!h.lastCatch.walked, 'hunter landed on the ostrich'); });
 ok('bot games finish with only legal moves (4p, 5p hyena, 5p badger)', () => { for (const [np, k] of [[4], [5, 'hyena'], [5, 'badger']]) for (let i = 0; i < 40; i++) { const r = SIM.play(np, k); assert.equal(r.bad, 0); } });
 console.log(n + ' team tests passed'); process.exit(0);
