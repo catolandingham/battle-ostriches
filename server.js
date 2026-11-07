@@ -564,8 +564,9 @@ wss.on('connection', ws => {
       room.players[to] = room.players[role]; room.players[role] = null; ws._bo.seat = to;
       send({ t: 'joined', code: room.code, role: clientRole(room, to), token: room.players[to].token, seat: true }); room.touched = Date.now(); return broadcast(room);
     }
+    if (b && b.arrival && (m.t === 'act' || m.t === 'seat')) return; // a friend waiting for the next game cannot act in this one
     if (m.t === 'act' && room && !room.lobby) {
-      if (m.a === 'rematch' && room.flow) return handleRematch(room, m.how === 'change' ? 'change' : 'same');
+      if (m.a === 'rematch' && room.flow) { if (!room.g || room.g.phase !== 'over') return send({ t: 'error', msg: 'Not a legal move right now.', soft: true }); return handleRematch(room, m.how === 'change' ? 'change' : 'same'); }
       const who = room.pass ? (m.a === 'rematch' ? 'blue' : active(room.g)) : role;
       if (act(room, who, m)) { room.touched = Date.now(); broadcast(room); }
       else send({ t: 'error', msg: 'Not a legal move right now.', soft: true });

@@ -355,6 +355,7 @@ const roomOf = code => server.rooms.get(code);
   assert.equal(stillBlue.state.role, 'blue');
   console.log('ok late joiner expands 2p into hunter and keeps roles');
 
+  roomOf(code).g.phase = 'over'; // Change roles is on the end screen
   from(A);
   A.send({ t: 'act', a: 'rematch', how: 'change' });
   const back = await wait(A, m => m.t === 'state' && m.lobby && m.state.humanCount === 3 && !m.state.roles.some(r => r.mine));
@@ -485,6 +486,15 @@ const roomOf = code => server.rooms.get(code);
   const g1 = await twoPlayers();
   const late1 = await lateJoin(g1);
   await keepPlaying(g1);
+  // nobody can reset a running game: a waiting friend's game actions are ignored, and a player's rematch waits for the end
+  const phaseBefore = g1.live.g.phase;
+  late1.c.send({ t: 'act', a: 'rematch', how: 'change' }); late1.c.send({ t: 'act', a: 'rematch', how: 'same' });
+  from(g1.a); g1.a.send({ t: 'act', a: 'rematch', how: 'change' });
+  const early = await wait(g1.a, m => m.t === 'error');
+  assert.match(early.msg, /Not a legal move/);
+  assert.equal(g1.live.g.phase, phaseBefore, 'the running game was not reset'); assert.ok(!g1.live.lobby, 'still in the game, not the lobby');
+  console.log('ok T5 a waiting friend or an early rematch cannot reset a running game');
+
   // a waiting friend who reloads the page is still recognised, with the same note
   late1.c.w.close();
   const c1b = await conn(); c1b.send({ t: 'join', code: g1.code, token: late1.token });
