@@ -186,6 +186,10 @@ function after(S,prev,board){chips(S);clock(S);kindPick(S);if(S.h3.team)tPieces(
   hc.dataset.tip=(hc.dataset.tip?hc.dataset.tip+' · ':'')+(me==='hunter'?(bur?'You, burrowed: the birds can\'t see you':'You ('+KIND[k].n+')'):`${KIND[k].n}! It catches a bird by landing on it (or if you step onto it)`);
   if(bur){const l=document.createElement('span');l.className='burtag';l.textContent='BURROWED';hc.appendChild(l);}
 }
+ // ambush sight: a burrowed badger sees the exact square of any bird next to it (S.seenBirds comes from the rules only while burrowed)
+ if(me==='hunter'&&S.phase==='play'&&S.burrowed&&S.seenBirds)for(const q of S.seenBirds){const c=cellAt(board,S,q.p);if(!c||c.querySelector('.pc.po,.pc.pv'))continue;
+  const d=document.createElement('div');d.className='pc '+(q.type==='o'?'po':'pv')+' ambushsee';d.innerHTML=q.type==='o'?OSTI:VULI;c.appendChild(d);
+  c.dataset.tip=(c.dataset.tip?c.dataset.tip+' · ':'')+'A bird is next to you. You can see it from your burrow.';c.setAttribute('aria-label',(c.getAttribute('aria-label')?c.getAttribute('aria-label')+'. ':'')+'Bird next to you');}
  // sense: hunter only. The shaded box is yes or no. It does not name a direction or draw a compass.
  if(me==='hunter'&&S.phase==='play'&&S.sense!=null&&S.myTurn){
   const hx=S.hunter[0],hy=S.hunter[1],range=h.senseRange;

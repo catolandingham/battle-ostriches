@@ -114,6 +114,8 @@ function vultureThrow(g, s, p) { clearOut(g);
 const koAt = g => TM.ko[(g.h && g.h.kind) || 'hyena'];
 const kos = g => g.h ? g.h.kos.o + g.h.kos.v : 0;
 const senses = g => birdsIn(g).some(s => D(g.b[s].pos, g.h.p) <= TM.sense);
+// ambush sight: a burrowed badger sees the exact square of any living bird next to it (1 square). Nobody else learns anything.
+const ambushSight = g => !g.h || g.h.kind !== 'badger' || !g.h.burrowed ? [] : birdsIn(g).filter(s => D(g.b[s].pos, g.h.p) === 1).map(s => ({ seat: s, type: isO(s) ? 'o' : 'v', p: g.b[s].pos.slice() }));
 const hunterSeenBy = (g, s) => !!(g.h && (isO(s) || isV(s)) && live(g, s) && !g.h.burrowed && D(g.b[s].pos, g.h.p) <= TM.see);
 const hunterRange = g => !g.h ? 0 : g.h.pounce ? 1 : kos(g) ? TM.boost : 1;
 function hunterMoves(g) {
@@ -125,8 +127,9 @@ function hunterMoves(g) {
 function startHunter(g) { const h = g.h; h.pounce = false; h.sense = senses(g); h.senseSeq++; }
 function hunterMove(g, p) {
   if (!hunterMoves(g).some(q => K(q) === K(p))) return false;
-  const h = g.h, from = h.p.slice(), wasP = h.pounce; h.p = p.slice(); h.burrowed = false; h.dig = 0; let caught = false;
+  const h = g.h, from = h.p.slice(), wasP = h.pounce, wasBur = h.burrowed; h.p = p.slice(); h.burrowed = false; h.dig = 0; let caught = false;
   for (const s of birdsIn(g)) if (g.phase === 'play' && K(g.b[s].pos) === K(p)) { catchBird(g, s, [sgn(p[0] - from[0]), sgn(p[1] - from[1])]); caught = true; }
+  if (caught && wasBur && g.lastCatch) g.lastCatch.ambush = true; // the badger jumped out of its burrow onto the bird
   h.last = { type: 'move', from, to: p.slice(), caught, pounce: wasP };
   if (g.phase === 'over') return true;
   if (!caught && !wasP && h.kind === 'hyena' && h.sense) { h.pounce = true; h.sense = senses(g); h.senseSeq++; return true; } // Pounce
@@ -202,5 +205,5 @@ function status(g) {
     birds: Object.fromEntries(OS.concat(VS).map(s => [s, { out: g.b[s].out, why: g.b[s].why, catches: g.b[s].catches, skip: g.b[s].skip }])) };
 }
 module.exports = { TM, OFF, OS, VS, isO, isV, mate, newTeam, place, canPlaceEgg, setupStep, nestOf, ostrichMoves, ostrichAct, canSit, canCarry, mustLeave, onEgg,
-  flyTargets, throwTargets, vultureFly, vultureThrow, hunterMoves, hunterMove, hunterStay, hunterRange, hunterSeenBy, senses, timeout, status, alive, eggAt,
+  flyTargets, throwTargets, vultureFly, vultureThrow, hunterMoves, hunterMove, hunterStay, hunterRange, hunterSeenBy, ambushSight, senses, timeout, status, alive, eggAt,
   eggPos, live, catchBird, knockout, next, checkEnd, endRound };

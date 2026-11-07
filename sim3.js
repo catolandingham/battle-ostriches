@@ -2,7 +2,7 @@
 // Usage: node sim3.js [games] [hyena|badger]
 const B = require('./game.js'), AI = require('./ai.js'), T = require('./three.js');
 function hview(g) { const t = g.three; return { cfg: g.cfg, round: g.round, marks: B.visible(g).marks, hunter: t.h, kind: t.kind, sense: t.sense, senseSeq: t.senseSeq,
-  senseRange: T.T3.sense, pounce: t.pounce, burrowed: t.burrowed, dig: t.dig || 0, hmoves: T.hunterMoves(g) }; }
+  senseRange: T.T3.sense, pounce: t.pounce, burrowed: t.burrowed, dig: t.dig || 0, hmoves: T.hunterMoves(g), seenBirds: T.ambushSight(g) }; }
 function play(kind, opt = {}) {
   const g = T.newGame3(kind), mem = { red: {}, hunter: {} }; let k = 0, seen = 0;
   while (g.phase !== 'play') { const m = AI.ostrich(g); g.phase === 'setupEggs' ? B.placeEgg(g, m.p) : (T.placeOstrich3(g, m.p) || T.placeOstrich3(g, g.eggs[1].pos)); }

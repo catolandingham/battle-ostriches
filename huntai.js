@@ -2,7 +2,7 @@
 const B = require('./game.js'), AI = require('./ai.js'), H = require('./hunt.js');
 function hunterView(g, h) { const x = g.hunt.hs[h];
   return { cfg: g.cfg, round: g.round, hunter: x.p, kind: h, sense: g.turn === h ? x.sense : null, senseSeq: x.senseSeq, senseRange: H.TH.sense, pounce: x.pounce,
-    burrowed: x.burrowed, dig: x.dig, hmoves: H.hunterMoves(g, h), marks: Object.fromEntries(Object.entries(g.marks).filter(([, m]) => m !== 'spotted')) }; }
+    burrowed: x.burrowed, dig: x.dig, hmoves: H.hunterMoves(g, h), seenBirds: h === 'badger' ? H.ambushSight(g) : [], marks: Object.fromEntries(Object.entries(g.marks).filter(([, m]) => m !== 'spotted')) }; }
 // nearest hunter this bird can see, and how far it could reach next turn (hyena: 1 + pounce)
 function threat(g, b) { const at = H.pos(g, b);
   const vis = H.HUNTERS.filter(h => H.seen(g, b, h)).sort((x, y) => B.dist(g.hunt.hs[x].p, at) - B.dist(g.hunt.hs[y].p, at))[0];

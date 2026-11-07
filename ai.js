@@ -104,8 +104,10 @@ function hunter(v, mem = {}) {
     sq.forEach(p => { const inR = D(p, h) <= v.senseRange; mem.bel[K(p)] *= v.sense ? (inR ? 4 : .3) : (inR ? 0 : 1); });
     mem.bel[K(h)] = v.sense ? mem.bel[K(h)] : 0; }
   if (v.kind === 'badger' && !v.pounce) { // burrow when something is near and we're not already hidden; ambush, then pop up
+    // burrowed with a bird next to us (ambush sight shows its exact square): jump out onto it
+    if (v.burrowed && v.seenBirds && v.seenBirds.length) { const t = v.seenBirds[0].p, m = v.hmoves.find(q => K(q) === K(t)); if (m) return { a: 'hmove', p: m }; }
     if (v.sense && !v.burrowed && Math.random() < .6) return { a: 'hstay' };
-    if (v.burrowed && v.sense && Math.random() < .35) return { a: 'hstay' }; }
+    if (v.burrowed && v.sense && Math.random() < .75) return { a: 'hstay' }; } // a bird may be near: stay hidden and wait for it to step next to us
   if (!v.hmoves.length) return { a: 'hstay' };
   const val = p => { let s = 0; sq.forEach(q => { if (D(p, q) <= 1) s += mem.bel[K(q)] * (K(p) === K(q) ? 3 : 1); }); return s + Math.random() * .3; };
   const p = sortBy(v.hmoves, q => -val(q))[0]; mem.bel[K(p)] = 0;

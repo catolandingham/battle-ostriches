@@ -49,6 +49,7 @@
 @keyframes h3pop{0%{transform:translate(-50%,-50%) scale(.4)}15%{transform:translate(-50%,-50%) scale(1.1)}25%{transform:translate(-50%,-50%) scale(1)}80%{opacity:1}100%{opacity:0}}
 .h3claw{position:absolute;inset:0;z-index:7;pointer-events:none;animation:h3claw 1.6s ease-out forwards}.h3claw svg{width:100%;height:100%}
 .pc.foundnow{z-index:5;animation:moundin .4s ease}
+.pc.ambushsee{z-index:5;animation:moundin .4s ease}
 @keyframes h3claw{0%{transform:scale(1.6);opacity:0}20%{transform:scale(1);opacity:1}85%{opacity:1}100%{opacity:0}}
 .cell.h3kb{animation:h3kb .7s ease-out 2}@keyframes h3kb{30%{box-shadow:inset 0 0 0 6px #ff2a6d;transform:scale(1.08)}}
 body.hunter #turnTag{background:#c46a12}body.hunter .cell{background:#6b4a1f}body.hunter .cell.legal{outline-color:#ffd21f}

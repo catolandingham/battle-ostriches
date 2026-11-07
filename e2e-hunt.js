@@ -34,6 +34,13 @@ const at = { state: 'attached' };
   const room = [...server.rooms.values()].find(r => r.hunt); assert.equal(room.g.hunt.hs.badger.burrowed, true, 'burrowed after 1 still turn'); assert.equal(room.g.hunt.hs.badger.dig, 2);
   await A.waitForFunction(() => /burrowed/i.test(document.body.innerText), null, { timeout: 4000 }); assert.equal(await A.locator('.burtag.dig').count(), 0, 'no tough-ground tag');
   await A.waitForTimeout(1000); await shot(A, '5-badger-burrowed');
+  // ambush sight: a bird placed next to the burrowed badger shows at its exact square on the badger's board, and nowhere else
+  { const bd0 = room.g.hunt.hs.badger.p, saved = room.g.ostrich.slice(); const nb = [[bd0[0] - 1, bd0[1]], [bd0[0], bd0[1] - 1], [bd0[0], bd0[1] + 1]].find(q => q[0] >= 0 && q[1] >= 0 && q[1] < 7 && !H.HUNTERS.some(h => room.g.hunt.hs[h].p + '' === q + '') && room.g.vulture + '' !== q + '');
+    room.g.ostrich = nb.slice(); server.broadcast(room); await A.waitForSelector('.pc.ambushsee', { state: 'attached', timeout: 5000 });
+    assert.equal(await A.locator('.pc.ambushsee').count(), H.ambushSight(room.g).length, 'one drawn for each bird next to the badger'); assert.equal(await A.locator('.cell').nth(nb[1] * 9 + nb[0]).locator('.pc.ambushsee').count(), 1, 'the bird is drawn on its exact square');
+    await A.waitForTimeout(600); await shot(A, '5b-badger-sees-adjacent-bird');
+    assert.equal(await Y.locator('.pc.ambushsee').count(), 0, 'the hyena sees nothing new');
+    room.g.ostrich = saved; server.broadcast(room); await A.waitForFunction(n => !document.querySelectorAll('.cell')[n].querySelector('.pc.ambushsee'), nb[1] * 9 + nb[0], { timeout: 5000 }); }
   // rivalry: hyena moves onto the badger and bounces back 2
   await Y.waitForSelector('#actions.mine', { state: 'attached',  ...at, timeout: 20000 }); const hy = room.g.hunt.hs.hyena.p, bd = room.g.hunt.hs.badger.p;
   if (Math.max(Math.abs(hy[0] - bd[0]), Math.abs(hy[1] - bd[1])) === 1) { await Y.locator('.cell').nth(bd[1] * 9 + bd[0]).click(); await Y.waitForTimeout(500);

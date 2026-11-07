@@ -99,7 +99,7 @@ ok('the hyena card says Pounce plainly, in every mode with a hyena; the honey ba
   }
   for (const [role, kind, mode] of [['hunter', 'badger', '3'], ['badger', null, '4h'], ['hunter', 'badger', '5']]) {
     const c = R.roleCard(role, kind, mode);
-    assert.ok(!text(c).includes('Pounce') && /Burrow/.test(text(c)) && /Land on a bird to catch it/.test(text(c)), mode + ' badger');
+    assert.ok(!text(c).includes('Pounce') && /Burrow/.test(text(c)) && /Land on a bird to catch it/.test(text(c)), mode + ' badger'); assert.ok(text(c).includes('you see any bird next to you'), mode + ' badger card says what a burrowed badger sees'); assert.ok(!R.roleCard('hyena', null, '4h').moves.join(' ').includes('next to you'), 'the hyena card is unchanged');
   }
 });
 

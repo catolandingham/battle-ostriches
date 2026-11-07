@@ -39,6 +39,16 @@ ok('5p: badger: first catch hurts the bird (not out), the second knocks it out',
   g.b.o2.pos = [7, 3]; g.h.sense = true; assert.ok(T.hunterMove(g, [7, 3])); assert.equal(T.TM.ko.badger, 2); assert.equal(g.b.o2.catches, 1); assert.equal(g.lastCatch.ko, false); assert.equal(g.b.o2.out, false); assert.equal(g.b.o2.skip, 1);
   for (let i = 0; i < 8 && g.turn !== 'hunter'; i++) T.timeout(g); assert.equal(g.turn, 'hunter'); g.b.o2.pos = [6, 3]; assert.ok(T.hunterMove(g, [6, 3]));
   assert.equal(g.b.o2.catches, 2); assert.equal(g.lastCatch.ko, true); assert.equal(g.b.o2.out, true); });
+ok('ambush sight (5p): a burrowed badger sees the exact square of a bird next to it, not one 2 away', () => { const g = ready(5, 'badger', [8, 3]); for (let i = 0; i < 4; i++) T.timeout(g);
+  g.b.o2.pos = [7, 3]; g.b.v2.pos = [6, 2]; g.b.o1.pos = [1, 1]; g.b.v1.pos = [4, 2]; assert.deepEqual(T.ambushSight(g), [], 'not burrowed: nothing'); T.hunterStay(g); assert.equal(g.h.burrowed, true);
+  const s = T.ambushSight(g); assert.equal(s.length, 1); assert.deepEqual(s[0].p, [7, 3]); assert.equal(s[0].seat, 'o2'); assert.equal(s[0].type, 'o');
+  g.b.v2.pos = [7, 2]; assert.deepEqual(T.ambushSight(g).map(q => q.seat).sort(), ['o2', 'v2']); g.b.o2.out = true; assert.deepEqual(T.ambushSight(g).map(q => q.seat), ['v2'], 'a bird that is out is not shown');
+  g.b.v2.pos = [6, 2]; assert.deepEqual(T.ambushSight(g), [], 'two away: nothing'); assert.equal(T.hunterSeenBy(g, 'v2'), false, 'birds still cannot see it'); g.h.kind = 'hyena'; g.b.v2.pos = [7, 2]; assert.deepEqual(T.ambushSight(g), []); });
+ok('ambush catch (5p): a catch on the move out of the burrow sets ambush; an open catch or a walk-in does not', () => {
+  const a = ready(5, 'badger', [8, 3]); for (let i = 0; i < 4; i++) T.timeout(a); T.hunterStay(a); for (let i = 0; i < 4; i++) T.timeout(a); assert.equal(a.turn, 'hunter'); a.b.o2.pos = [7, 3]; assert.ok(T.hunterMove(a, [7, 3]));
+  assert.equal(a.lastCatch.ambush, true); assert.equal(a.b.o2.catches, 1);
+  const o = ready(5, 'badger', [8, 3]); for (let i = 0; i < 4; i++) T.timeout(o); o.b.o2.pos = [7, 3]; assert.ok(T.hunterMove(o, [7, 3])); assert.ok(!o.lastCatch.ambush, 'open catch');
+  const w = ready(5, 'badger'); T.timeout(w); w.h.p = [1, 2]; w.h.burrowed = true; assert.equal(w.turn, 'o1'); assert.ok(T.ostrichAct(w, 'o1', 'step', [1, 2])); assert.equal(w.lastCatch.walked, true); assert.ok(!w.lastCatch.ambush, 'walk-in'); });
 ok('5p: hyena pounce gives one extra square when the sense says yes', () => { const g = ready(5, 'hyena', [8, 3]); for (let i = 0; i < 4; i++) T.timeout(g);
   g.h.sense = true; g.b.o2.pos = [6, 5]; T.hunterMove(g, [8, 4]); assert.equal(g.h.pounce, true); assert.equal(g.turn, 'hunter'); assert.ok(T.hunterMove(g, [7, 5])); assert.equal(g.turn, 'v1'); });
 ok('5p: hunter wins only with an ostrich AND a vulture knocked out; boost 2 after the first knock-out', () => { const g = ready(5, 'badger', [8, 3]);

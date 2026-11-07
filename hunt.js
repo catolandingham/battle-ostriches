@@ -20,6 +20,9 @@ const inB = (g, p) => p[0] >= 0 && p[1] >= 0 && p[0] < g.cfg.cols && p[1] < g.cf
 const hunterAt = (g, p) => HUNTERS.find(h => K(g.hunt.hs[h].p) === K(p));
 const birdAt = (g, p) => BIRDS.find(b => !isOut(g, b) && pos(g, b) && K(pos(g, b)) === K(p));
 const senses = (g, h) => BIRDS.some(b => !isOut(g, b) && pos(g, b) && D(pos(g, b), g.hunt.hs[h].p) <= TH.sense);
+// ambush sight: a burrowed badger sees the exact square of any living bird next to it (1 square). Nobody else learns anything.
+const ambushSight = g => { const x = g.hunt.hs.badger; if (!x.burrowed) return [];
+  return BIRDS.filter(b => !isOut(g, b) && pos(g, b) && pos(g, b)[0] >= 0 && D(pos(g, b), x.p) === 1).map(b => ({ seat: b, type: b === 'blue' ? 'o' : 'v', p: pos(g, b).slice() })); };
 // who sees a hunter: birds and the other hunter within 2 squares, never a burrowed badger; a hunter always sees itself
 function seen(g, who, h) {
   const x = g.hunt.hs[h]; if (who === h) return true; if (x.burrowed) return false;
@@ -111,7 +114,7 @@ function hunterMoves(g, h = g.turn) {
 }
 function hunterMove(g, p) {
   const h = g.turn; if (!hunterMoves(g, h).some(q => K(q) === K(p))) return false;
-  const t = g.hunt, x = t.hs[h], o = h === 'hyena' ? 'badger' : 'hyena', y = t.hs[o], from = x.p.slice(), dir = [sgn(p[0] - from[0]), sgn(p[1] - from[1])], wasP = x.pounce;
+  const t = g.hunt, x = t.hs[h], o = h === 'hyena' ? 'badger' : 'hyena', y = t.hs[o], from = x.p.slice(), dir = [sgn(p[0] - from[0]), sgn(p[1] - from[1])], wasP = x.pounce, wasBur = x.burrowed;
   x.burrowed = false; x.dig = 0;
   if (K(y.p) === K(p)) { // fearless rivalry: the hyena always ends up 2 squares away; nobody is hurt
     if (h === 'badger') { y.burrowed = false; y.dig = 0; x.p = p.slice(); y.p = push(g, p, dir, TH.rivalKnock, 'hyena'); t.rival = { by: 'badger', at: p.slice(), to: y.p.slice(), seq: ++t.seq, round: g.round }; }
@@ -120,6 +123,7 @@ function hunterMove(g, p) {
   }
   x.p = p.slice(); let caught = false;
   const b = birdAt(g, p); if (b && g.phase === 'play') { catchBird(g, b, h, dir); caught = true; }
+  if (caught && wasBur && t.lastCatch) t.lastCatch.ambush = true; // the badger jumped out of its burrow onto the bird
   x.last = { type: 'move', from, to: p.slice(), caught, pounce: wasP };
   if (g.phase === 'over') return true;
   if (!caught && !wasP && h === 'hyena' && x.sense) { x.pounce = true; x.sense = senses(g, h); x.senseSeq++; return true; } // Pounce
@@ -138,5 +142,5 @@ function timeout(g) {
 }
 function statusH(g) { const t = g.hunt;
   return { hunt: true, ko: TH.ko, boost: false, birds: JSON.parse(JSON.stringify(t.birds)), order: ORDER, hkos: { hyena: t.hs.hyena.kos, badger: t.hs.badger.kos } }; }
-module.exports = { TH, OFF, BIRDS, HUNTERS, ORDER, isH, newHunt, senses, seen, hunterMoves, hunterMove, hunterStay, hunterRange, placeOstrichH, vultureFlyH,
+module.exports = { TH, OFF, BIRDS, HUNTERS, ORDER, isH, newHunt, senses, seen, ambushSight, hunterMoves, hunterMove, hunterStay, hunterRange, placeOstrichH, vultureFlyH,
   vultureThrowH, ostrichActH, timeout, statusH, isOut, pos, advance, catchBird, knockout, hunterAt };

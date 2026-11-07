@@ -15,7 +15,13 @@
   }
   // viewer: your seat ('blue', 'red', 'o1'..'v2', 'hunter', 'hyena', 'badger'). kind: 'hyena' or 'badger', the animal that made the catch.
   // catchesLeft: catches the caught bird can still take after this one (ignored when lastCatch.ko).
+  // A badger that jumps out of its burrow onto a bird (lc.ambush, set by the rules only for that) gets a tag line, said to every player.
+  const AMBUSH_TAG = " Honey badger don't care.";
   function catchLine(lc, viewer, kind, left) {
+    const line = baseLine(lc, viewer, kind, left);
+    return lc.ambush && !lc.walked ? line + AMBUSH_TAG : line;
+  }
+  function baseLine(lc, viewer, kind, left) {
     const hunter = hunterWord(kind || lc.by), bird = birdWord(lc.bird);
     if (viewer === lc.bird) {
       const line = lc.ko ? `The ${hunter} knocked you out.` : `The ${hunter} caught you! Hurt: ${more(left)} and you're out.`;

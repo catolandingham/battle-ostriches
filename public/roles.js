@@ -91,7 +91,7 @@
     return {
       title: 'You are the Honey Badger', goal,
       moves: [`Move 1 square a turn. ${sense} Land on a bird to catch it.`,
-        'Burrow: Stay still and you dig in. Birds cannot see you while you are burrowed. Moving pops you up.',
+        'Burrow: Stay still to dig in. Birds cannot see you, and you see any bird next to you. Moving pops you up.',
         `A bird is out after ${catches(n)}.`],
       lose, picture: 'badger' };
   }

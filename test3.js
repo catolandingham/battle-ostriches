@@ -87,6 +87,22 @@ t('badger: first catch hurts the bird (not out), the second knocks it out', () =
   assert(T.isOut(g, 'blue'));
   assert.deepEqual(g.ostrich, T.OFF);
 });
+t('ambush sight (3p): a burrowed badger sees the exact square of a bird next to it, not one 2 away; birds learn nothing', () => {
+  const g = setup('badger', [6, 4]); g.vulture = [4, 3]; // the ostrich at (6,5) is 1 away, the vulture 2 away
+  assert.deepEqual(T.ambushSight(g), [], 'not burrowed: nothing');
+  g.three.burrowed = true;
+  const s = T.ambushSight(g); assert.equal(s.length, 1); assert.deepEqual(s[0].p, [6, 5]); assert.equal(s[0].seat, 'blue'); assert.equal(s[0].type, 'o');
+  g.vulture = [5, 3]; assert.deepEqual(T.ambushSight(g).map(q => q.seat).sort(), ['blue', 'red'], 'both next to it');
+  g.three.birds.blue.out = true; g.ostrich = T.OFF.slice(); assert.deepEqual(T.ambushSight(g).map(q => q.seat), ['red'], 'a bird that is out is not shown');
+  g.vulture = [4, 3]; assert.deepEqual(T.ambushSight(g), [], 'only 2 away: nothing');
+  g.vulture = [5, 3]; g.three.kind = 'hyena'; assert.deepEqual(T.ambushSight(g), [], 'a hyena never gets it');
+  g.three.kind = 'badger'; g.three.burrowed = false; assert.deepEqual(T.ambushSight(g), [], 'out of the burrow: as today');
+  g.three.burrowed = true; assert.ok(!T.hunterSeenBy(g, 'red'), 'birds still cannot see a burrowed badger'); });
+t('ambush catch (3p): a catch on the move out of the burrow sets ambush; an open catch or a walk-in does not', () => {
+  const a = setup('badger', [8, 3]); T.vultureFly3(a, [4, 1]); T.ostrichAct3(a, 'step', [7, 5]); assert(T.hunterStay(a)); assert(a.three.burrowed); T.vultureFly3(a, [4, 2]); T.ostrichAct3(a, 'step', [7, 4]);
+  assert.deepEqual(T.ambushSight(a).map(q => q.p), [[7, 4]]); assert(T.hunterMove(a, [7, 4])); assert.equal(a.three.lastCatch.ambush, true); assert.equal(a.three.birds.blue.catches, 1);
+  const o = setup('badger', [8, 3]); T.vultureFly3(o, [4, 1]); T.ostrichAct3(o, 'step', [7, 4]); assert(T.hunterMove(o, [7, 4])); assert.ok(!o.three.lastCatch.ambush, 'open catch');
+  const w = setup('badger', [7, 4]); w.three.burrowed = true; T.vultureFly3(w, [4, 1]); assert(T.ostrichAct3(w, 'step', [7, 4])); assert.equal(w.three.lastCatch.walked, true); assert.ok(!w.three.lastCatch.ambush, 'walk-in'); });
 t('a bird sees the hunter enter 2 squares and not after the hunter leaves', () => {
   const g = setup('hyena', [8, 3]);
   assert(!T.hunterSeenBy(g, 'red'));

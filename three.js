@@ -17,6 +17,9 @@ const anyOut = g => BIRDS.some(b => isOut(g, b));
 const koAt = g => T3.ko[g.three.kind || 'hyena'];
 // yes/no: is any bird (still in the game) within 2 squares of the hunter? No direction.
 const senses = g => BIRDS.some(b => !isOut(g, b) && pos(g, b) && D(pos(g, b), g.three.h) <= T3.sense);
+// ambush sight: a burrowed badger sees the exact square of any living bird next to it (1 square). Nobody else learns anything.
+const ambushSight = g => { const t = g.three; if (t.kind !== 'badger' || !t.burrowed) return [];
+  return BIRDS.filter(b => !isOut(g, b) && pos(g, b) && pos(g, b)[0] >= 0 && D(pos(g, b), t.h) === 1).map(b => ({ seat: b, type: b === 'blue' ? 'o' : 'v', p: pos(g, b).slice() })); };
 // a bird sees the hunter only within 2 squares of itself, and never a burrowed badger
 const hunterSeenBy = (g, b) => !!(BIRDS.includes(b) && !isOut(g, b) && pos(g, b) && !g.three.burrowed && D(pos(g, b), g.three.h) <= T3.see);
 function finish(g) { // map a 2-player game end into 3-player outcomes (a bird left alone still has to meet its own goal)
@@ -95,9 +98,10 @@ function hunterMoves(g) {
 }
 function hunterMove(g, p) {
   if (!hunterMoves(g).some(q => K(q) === K(p))) return false;
-  const t = g.three, from = t.h.slice(), wasP = t.pounce; t.h = p.slice(); t.burrowed = false; t.dig = 0;
+  const t = g.three, from = t.h.slice(), wasP = t.pounce, wasBur = t.burrowed; t.h = p.slice(); t.burrowed = false; t.dig = 0;
   let caught = false;
   for (const b of BIRDS) if (g.phase === 'play' && !isOut(g, b) && K(pos(g, b)) === K(p)) { catchBird(g, b, [sgn(p[0] - from[0]), sgn(p[1] - from[1])]); caught = true; }
+  if (caught && wasBur && t.lastCatch) t.lastCatch.ambush = true; // the badger jumped out of its burrow onto the bird
   t.lastHunter = { type: 'move', from, to: p.slice(), caught, pounce: wasP };
   if (g.phase === 'over') return true;
   // Hyena Pounce: its sense said a bird is within 2 -> one extra 1-square move this same turn
@@ -119,5 +123,5 @@ function timeout(g) {
 // Public 3-player status every seat may see (no positions).
 function status3(g) { const t = g.three;
   return { kind: t.kind, ko: koAt(g), boost: anyOut(g), birds: JSON.parse(JSON.stringify(t.birds)), order: ['red', 'blue', 'hunter'] }; }
-module.exports = { T3, OFF, NAME, newGame3, senses, hunterSeenBy, hunterMoves, hunterMove, hunterStay, hunterRange, placeOstrich3, vultureFly3, vultureThrow3,
+module.exports = { T3, OFF, NAME, newGame3, senses, hunterSeenBy, ambushSight, hunterMoves, hunterMove, hunterStay, hunterRange, placeOstrich3, vultureFly3, vultureThrow3,
   ostrichAct3, timeout, status3, anyOut, isOut, pos, advance, catchBird, knockout };

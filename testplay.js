@@ -217,6 +217,25 @@ ok('an eliminated bird leaves the egg and no longer blocks a smash', () => {
   assert.equal(TT.vultureThrow(team, 'v1', [6, 1]), 'hit'); assert.ok(team.b.o1.pos[0] < 0);
 });
 
+ok('ambush sight in the views: only the burrowed badger player gets seenBirds; birds and the other hunter see no change', () => {
+  const near = v => (v.seenBirds || []).map(q => q.p.join(','));
+  const { room } = S.create3({ role: 'hunter', bots: ['blue', 'red'], kind: 'badger' }, null);
+  const g3 = room.g = T.newGame3('badger', undefined, [6, 4]); g3.phase = 'play'; g3.ostrich = [6, 5]; g3.vulture = [4, 3]; g3.turn = 'hunter';
+  assert.deepEqual(near(S.view3(room, 'hunter')), [], 'out of the burrow: nothing');
+  g3.three.burrowed = true; g3.three.dig = 2;
+  assert.deepEqual(near(S.view3(room, 'hunter')), ['6,5'], 'adjacent bird shown at its exact square; the bird 2 away is not');
+  for (const r of ['blue', 'red']) { const v = S.view3(room, r); assert.equal(v.seenBirds, undefined, r + ' gets no seenBirds'); assert.equal(v.h3.hunter, null, r + ' still cannot see a burrowed badger'); assert.equal(v.h3.burrowed, false); }
+  g3.three.kind = 'hyena'; assert.deepEqual(near(S.view3(room, 'hunter')), [], 'a hyena gets nothing');
+  const { room: h } = S.createH({ role: 'badger', bots: ['blue', 'red', 'hyena'] }, null);
+  const gh = h.g; gh.phase = 'play'; gh.hunt.hs.badger.p = [6, 4]; gh.hunt.hs.badger.burrowed = true; gh.hunt.hs.hyena.p = [0, 0]; gh.ostrich = [7, 4]; gh.vulture = [4, 4]; gh.turn = 'badger';
+  assert.deepEqual(near(S.viewH(h, 'badger')), ['7,4']);
+  for (const r of ['blue', 'red', 'hyena']) { const v = S.viewH(h, r); assert.deepEqual(near(v), [], r + ' gets no seenBirds'); assert.ok(!(v.h3.hunters || []).some(x => x.kind === 'badger'), r + ' cannot see the burrowed badger'); }
+  const { room: t5 } = S.createT({ team: 5, role: 'hunter', bots: ['v1', 'v2', 'o1', 'o2'], kind: 'badger' }, null);
+  const gt = t5.g; gt.phase = 'play'; gt.turn = 'hunter'; gt.h.kind = 'badger'; gt.h.p = [6, 4]; gt.h.burrowed = true; gt.b.o1.pos = [0, 0]; gt.b.o2.pos = [5, 3]; gt.b.v1.pos = [4, 2]; gt.b.v2.pos = [8, 6];
+  assert.deepEqual(near(S.viewT(t5, 'hunter')), ['5,3']);
+  for (const r of ['o1', 'o2', 'v1', 'v2']) { const v = S.viewT(t5, r); assert.equal(v.seenBirds, undefined, r + ' gets no seenBirds'); assert.equal(v.h3.hunter, null, r + ' cannot see the burrowed badger'); }
+});
+
 ok('lobby clock off hides the timer and is not turned back on here', () => {
   assert.equal(R.timersShown({ showTimers: true, clockStopped: true }, '1'), false);
   const room = { code: 'ZZZZ', g: B.newGame(), players: { blue: {}, red: null }, clock: false };
