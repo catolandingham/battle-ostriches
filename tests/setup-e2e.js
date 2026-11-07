@@ -11,16 +11,18 @@ const target = path.join(BROWSERS, 'webkit-' + rev), done = path.join(target, 'I
 if (fs.existsSync(done)) { console.log('WebKit ' + rev + ' is already installed in node_modules/.pw-browsers.'); process.exit(0); }
 
 const started = Date.now();
+// A private temp folder for the download, so the fallback below only ever unzips a file this run downloaded.
+const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'bo-webkit-'));
 const cli = path.join(PWC, 'cli.js');
-const p = spawn(process.execPath, [cli, 'install', 'webkit'], { cwd: ROOT, stdio: 'inherit', env: { ...process.env, PLAYWRIGHT_BROWSERS_PATH: BROWSERS } });
+const p = spawn(process.execPath, [cli, 'install', 'webkit'], { cwd: ROOT, stdio: 'inherit', env: { ...process.env, PLAYWRIGHT_BROWSERS_PATH: BROWSERS, TMPDIR: TMP } });
 let finished = false;
 p.on('close', code => { finished = true; clearInterval(watch); if (fs.existsSync(done)) ok(); else fail('The installer exited (code ' + code + ') without finishing.'); });
 
-// The installer downloads to <tmp>/playwright-download-XXXX/<name>.zip, then unpacks into target.
+// The installer downloads to TMP/playwright-download-XXXX/<name>.zip, then unpacks into target.
 function newestZip() {
   let best = null;
-  for (const d of fs.readdirSync(os.tmpdir()).filter(n => n.startsWith('playwright-download-'))) {
-    const dir = path.join(os.tmpdir(), d);
+  for (const d of fs.readdirSync(TMP).filter(n => n.startsWith('playwright-download-'))) {
+    const dir = path.join(TMP, d);
     let names = []; try { names = fs.readdirSync(dir); } catch (e) { continue; }
     for (const n of names.filter(n => /webkit.*\.zip$/.test(n) && n.includes(rev))) {
       const f = path.join(dir, n), st = fs.statSync(f);
