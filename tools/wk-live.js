@@ -1,6 +1,6 @@
 // WebKit iPhone test against a URL: create a game in one context, join from another.
 const { webkit, devices } = require('playwright-core');
-const U = process.argv[2] || 'https://battle-ostriches.onrender.com/';
+const U = process.argv[2] || 'https://ostriches.onrender.com/';
 (async () => {
   const b = await webkit.launch(); const logs = [];
   const mk = async (n) => { const c = await b.newContext({ ...devices['iPhone 13'] }); const p = await c.newPage(); if (n !== 'T') await p.addInitScript(() => ['seen','blue','red'].forEach(k => localStorage.setItem('bo_tut_' + k, '1')));

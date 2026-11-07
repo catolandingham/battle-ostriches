@@ -1,6 +1,6 @@
 // Mid-game WebKit iPhone screenshots of every theme, both roles -> shots/themes/
 const { webkit, devices } = require('playwright-core'); const fs = require('fs');
-process.env.PORT = 3997; require('./server.js'); fs.mkdirSync('shots/themes', { recursive: true });
+process.env.PORT = 3997; require('../server.js'); fs.mkdirSync('shots/themes', { recursive: true });
 (async () => {
   const b = await webkit.launch();
   const mk = async () => { const c = await b.newContext({ ...devices['iPhone 13'] }); const p = await c.newPage();

@@ -1,6 +1,6 @@
 // Captures the onboarding: 3 intro cards + live coach marks for both roles + a just-in-time tip. -> shots/onboarding/
 const { webkit, devices } = require('playwright-core');
-process.env.PORT = 3996; const server = require('./server.js');
+process.env.PORT = 3996; const server = require('../server.js');
 (async () => {
   const b = await webkit.launch(); const U = 'http://localhost:3996/', O = 'shots/onboarding/';
   const mk = async (seed) => { const c = await b.newContext({ ...devices['iPhone 13'] }); const p = await c.newPage();

@@ -13,43 +13,80 @@ let seed = 7; const rnd = n => { seed = (seed * 16807) % 2147483647; return seed
     await P.goto('http://localhost:3992/?theme=' + theme);
     if (kind === 'pass') { await P.click('#playPass'); await P.click('#passGo'); await P.click('#hGo'); }
     else { await P.click('#playSolo'); await P.click('[data-bots="1"]'); await P.click('#soloGo'); if (kind === 'ai-red') await P.click('[data-role="red"]'); await P.click('#startGame'); }
-    const cells = P.locator('#board .cell');
+    const cells = P.locator('#board .cell'); let lastTurn = null;
+    const progress = () => P.evaluate(() => { const S = UI._S(); return JSON.stringify([S.turn, S.round, S.phase, S.ostrich, S.vulture, S.stones, S.sitRun, S.carried, S.lastAction, S.eggs, S.marks]); });
+    // The hints a player can legitimately see at the start of a turn (wording from public/ui.js render()), by what the turn is.
+    const hintOk = st => {
+      const h = st.hint;
+      if (st.role === 'red') {
+        if (st.spotted && st.stones > 0) return /Smash it: tap Throw stone, then your square\./.test(h) || /Tap your own square to smash the egg\./.test(h);
+        if (st.stones < 1) return /No stone: fly to a rock pile to pick one up\./.test(h);
+        if (st.btns.some(x => x.pressed && /Throw/.test(x.t))) return /Tap a red-orange square to throw your stone\./.test(h);
+        return /Tap a glowing square to fly/.test(h);
+      }
+      if (st.mustLeave) return /You sat \d+ turns: step off \(or \+ Carry\)\./.test(h);
+      return /glowing square/i.test(h);
+    };
     for (let turn = 0; turn < 400; turn++) {
       await P.waitForFunction(() => { const S = UI._S(); return S && (S.phase === 'over' || ((S.myTurn || S.phase.startsWith('setup') && S.role === 'blue') && !UI._locked() && document.getElementById('handoff').classList.contains('hidden'))) || !document.getElementById('handoff').classList.contains('hidden'); }, null, { timeout: 15000 });
       if (!(await P.locator('#handoff.hidden').count())) { await P.click('#hGo'); continue; }
       const st = await P.evaluate(() => { const S = UI._S(); return { phase: S.phase, role: S.role, legal: UI._legal(), hint: document.getElementById('hint').textContent,
+        turn: S.turn, round: S.round, myTurn: S.myTurn, stones: S.stones, mustLeave: !!S.mustLeave, onEgg: !!S.onEgg,
+        spotted: !!(S.role === 'red' && S.vulture && S.marks && S.marks[S.vulture[0] + ',' + S.vulture[1]] === 'spotted'),
+        n: { fly: (S.fly || []).length, throw: (S.throw || []).length, moves: (S.moves || []).length, carry: (S.carryMoves || []).length, hmoves: (S.hmoves || []).length },
         dom: [...document.querySelectorAll('#board .cell')].map((e, i) => e.classList.contains('legal') ? i : -1).filter(i => i >= 0),
         bad: [...document.querySelectorAll('#actions button')].filter(x => x.disabled && (x.matches('.on,.pulse,.spot') || getComputedStyle(x).animationName !== 'none')).map(x => x.textContent),
-        btns: [...document.querySelectorAll('#actions button')].map(x => ({ t: x.textContent, dis: x.disabled, on: x.classList.contains('on') })), cols: S.cfg.cols }; });
+        btns: [...document.querySelectorAll('#actions button')].map(x => ({ t: x.textContent, dis: x.disabled, on: x.classList.contains('on'), pressed: x.getAttribute('aria-pressed') === 'true' })), cols: S.cfg.cols }; });
       if (st.phase === 'over') break;
       checks++;
+      // everything a future failure needs to explain itself
+      const dump = `${kind} ${theme} turn#${turn}: ` + JSON.stringify({ phase: st.phase, role: st.role, turn: st.turn, myTurn: st.myTurn, round: st.round, stones: st.stones, mustLeave: st.mustLeave, targets: st.legal.length, lens: st.n, buttons: st.btns.map(x => x.t + (x.pressed ? ' [pressed]' : '') + (x.dis ? ' [disabled]' : '')), hint: st.hint });
+      // A turn starts in the default mode (Fly for the vulture, Step for the ostrich): the mode a player picked last turn must not carry over.
+      // Only checked when the previous loop pass really ended the turn.
+      if (st.phase === 'play' && lastTurn && lastTurn !== st.turn + '|' + st.round) {
+        const pressed = st.btns.filter(x => x.pressed).map(x => x.t);
+        assert.ok(pressed.length === 1 && /^(✓ )?(Fly|Step)$/.test(pressed[0]), 'a new turn starts in the default mode, got ' + JSON.stringify(pressed) + ' | ' + dump);
+      }
+      lastTurn = st.turn + '|' + st.round;
       const want = st.legal.map(p => p[1] * st.cols + p[0]).sort((a, b) => a - b);
       assert.deepEqual(st.dom.sort((a, b) => a - b), want, `${theme} glowing squares == legal (${st.role} ${st.phase})`);
-      assert.ok(st.legal.length > 0, 'a turn always has targets');
-      // A vulture with no stone is told to fly to a rock pile (open-skies hint, 4355d99); every other turn names the glowing squares.
-      assert.ok(/glowing square/i.test(st.hint) || /No stone: fly to a rock pile/.test(st.hint), `${theme} hint names the glowing squares: "${st.hint}"`);
+      assert.ok(st.legal.length > 0, 'a turn always has targets | ' + dump);
+      // The hint tells the player what to do this turn: glowing squares, a stone-less vulture's rock pile, a found egg to smash, or an ostrich that must step off.
+      assert.ok(hintOk(st), `${theme} hint says what to do this turn: "${st.hint}" | ` + dump);
       assert.deepEqual(st.bad, [], 'no highlighted/pulsing disabled control');
       if (st.phase === 'play') {
-        assert.equal(st.btns.filter(x => x.on).length, 1, 'exactly one mode is selected: ' + JSON.stringify(st.btns));
+        assert.equal(st.btns.filter(x => x.on || x.pressed).length, 1, 'exactly one mode is selected (a selected + Carry is disabled and marked only by aria-pressed): ' + JSON.stringify(st.btns));
         // every enabled mode button does something visible
         for (const bt of st.btns.filter(x => !x.dis && !/Sit/.test(x.t))) {
           // a selected + Carry button is disabled, so it has no 'on' class; aria-pressed marks every selected mode
           const i = st.btns.indexOf(bt); await P.locator('#actions button').nth(i).click({ force: true });
           const after = await P.evaluate(() => ({ on: [...document.querySelectorAll('#actions button')].findIndex(x => x.getAttribute('aria-pressed') === 'true'), n: document.querySelectorAll('.cell.legal').length, hint: document.getElementById('hint').textContent }));
-          assert.equal(after.on, i, 'tapped mode becomes selected'); assert.ok(after.n > 0 && /glowing|red-orange|No stone: fly to a rock pile/.test(after.hint), 'mode shows targets + hint: ' + after.hint); // throw mode names its targets "red-orange squares", not "glowing"; this wording dates from 3eb803b
+          assert.equal(after.on, i, 'tapped mode becomes selected'); assert.ok(after.n > 0 && /glowing|red-orange|No stone: fly to a rock pile|smash the egg|Smash it: tap Throw stone/.test(after.hint), 'mode shows targets + hint: ' + after.hint); // a found egg under the vulture swaps in the smash hints; throw mode names its targets "red-orange squares", not "glowing"; this wording dates from 3eb803b
         }
       }
-      // tap a non-glowing square: explained locally, no server error
-      const cur = await P.evaluate(() => { const S = UI._S(); return UI._legal().map(p => p[1] * S.cfg.cols + p[0]); });
+      // tap a non-glowing square: explained locally, no server error. "Non-glowing" means legal in NO mode for this player,
+      // so the tap can never perform a move (a fly square tapped in Throw mode is still a move once the mode changes).
+      const cur = await P.evaluate(() => { const S = UI._S(), at = a => (a || []).map(p => p[1] * S.cfg.cols + p[0]);
+        return [...new Set([...UI._legal().map(p => p[1] * S.cfg.cols + p[0]), ...at(S.fly), ...at(S.throw), ...at(S.moves), ...at(S.carryMoves), ...at(S.hmoves)])]; });
       const off = [...Array(63).keys()].filter(i => !cur.includes(i));
       if (off.length) { await cells.nth(off[rnd(off.length)]).click({ force: true }); await P.waitForTimeout(30);
         assert.ok(!/Not a legal/.test(await P.textContent('#log')), 'non-glowing tap never hits server');
-        assert.ok((await P.textContent('#hint')).length > 5, 'explained'); }
+        assert.ok((await P.textContent('#hint')).length > 5, 'explained');
+        const still = await P.evaluate(() => { const S = UI._S(); return { turn: S.turn, round: S.round, myTurn: S.myTurn, last: JSON.stringify(S.lastAction) }; });
+        assert.ok(still.myTurn === st.myTurn && still.turn === st.turn && still.round === st.round, 'a tap on a non-glowing square never plays a move or ends the turn: ' + JSON.stringify(still) + ' | ' + dump); }
       // act: sometimes Sit, else random glowing square in current mode
+      const before = await progress();
       const sit = await P.locator('#actions button:has-text("Sit"):not([disabled])');
       if (await sit.count() && rnd(3) === 0) await sit.click({ force: true });
-      else { const L = await P.evaluate(() => { const S = UI._S(); return UI._legal().map(p => p[1] * S.cfg.cols + p[0]); }); await cells.nth(L[rnd(L.length)]).click({ force: true }); }
-      await P.waitForTimeout(150);
+      else {
+        const L = await P.evaluate(() => { const S = UI._S(); return (S.myTurn || S.phase.startsWith('setup') && S.role === 'blue') ? UI._legal().map(p => p[1] * S.cfg.cols + p[0]) : []; });
+        if (!L.length) continue; // no longer this player's turn: loop again, the wait at the top handles it
+        await cells.nth(L[rnd(L.length)]).click({ force: true });
+      }
+      // Wait for the server's answer, so the next pass never reads the old turn (the stale state still said myTurn, with Throw left selected).
+      // The pass-and-play cover also counts: the handoff screen shows once the move was played.
+      await P.waitForFunction(b => { const S = UI._S(); return !document.getElementById('handoff').classList.contains('hidden') || JSON.stringify([S.turn, S.round, S.phase, S.ostrich, S.vulture, S.stones, S.sitRun, S.carried, S.lastAction, S.eggs, S.marks]) !== b; }, before, { timeout: 10000 })
+        .catch(() => { throw new Error('the move was never answered | ' + dump); });
       assert.ok(!/Not a legal/.test(await P.textContent('#log')), 'legal tap accepted');
     }
     await P.waitForSelector('#over:not(.hidden)', { timeout: 20000 }); await c.close();
