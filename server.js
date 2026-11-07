@@ -48,7 +48,7 @@ function view(room, role) {
       can: { sit: B.canSit(g), carry: B.canCarry(g) } });
   }
   if (role === 'red') Object.assign(v, { fly: pub.fly, throw: pub.throw });
-  return stamp(room, v);
+  return stamp(room, v, role);
 }
 const active = g => g.phase === 'play' ? g.turn : 'blue'; // pass & play: whose hands the phone is in
 function persist(room) { if (room.saveT) return; room.saveT = setTimeout(() => { room.saveT = null; if (rooms.get(room.code) === room) ST.save(room); }, 150); }
@@ -125,7 +125,7 @@ function view3(room, role) {
       h3.hunter = t.h.slice(); h3.burrowed = !!t.burrowed;
     }
   }
-  v.h3 = h3; v.three = true; v.showTimers = timersOn(room); return stamp(room, v);
+  v.h3 = h3; v.three = true; v.showTimers = timersOn(room); return stamp(room, v, role);
 }
 function broadcast3(room) {
   sched3(room); clock3(room);
@@ -215,7 +215,7 @@ function viewT(room, seat) {
     lastCold: (g.lastCold || []).length, myTurn: mine, opponent: true, joined: tseats(g).every(s => room.players[s]), ai: null, pass: false, three: true, h3, showTimers: timersOn(room) };
   if (seat === 'hunter') return stamp(room, Object.assign(base, { role: 'hunter', phase: setup ? 'setupEggs' : g.phase, cfg: g.cfg, vulture: TT.OFF, ostrich: TT.OFF, stones: Math.max(0, ...TT.VS.filter(x => !g.b[x].out).map(x => g.b[x].stones)), hungerLeft: Math.min(g.cfg.food, ...TT.OS.filter(x => !g.b[x].out).map(x => g.b[x].hunger)), sniff: null,
     sitRun: 0, carried: false, lastAction: null, hunter: g.h.p, kind: g.h.kind, sense: g.turn === 'hunter' || g.h.pounce ? g.h.sense : null, senseSeq: g.h.senseSeq,
-    senseRange: TT.TM.sense, pounce: g.h.pounce, burrowed: g.h.burrowed, dig: g.h.dig || 0, hmoves: mine ? TT.hunterMoves(g) : [], lastHunter: g.h.last, eggs: over ? eggs() : undefined }));
+    senseRange: TT.TM.sense, pounce: g.h.pounce, burrowed: g.h.burrowed, dig: g.h.dig || 0, hmoves: mine ? TT.hunterMoves(g) : [], lastHunter: g.h.last, eggs: over ? eggs() : undefined }), seat);
   const la = g.lastAction && (isO || over || g.lastAction.type !== 'throw' ? g.lastAction : { type: 'throw', from: g.lastAction.from, p: g.lastAction.p, result: g.lastAction.result, egg: !!g.lastAction.egg });
   const v = Object.assign(base, { role: isO ? 'blue' : 'red', phase: setup ? (isO ? (step === 'eggs' ? 'setupEggs' : step === 'ostrich' ? 'setupOstrich' : 'play') : 'setupEggs') : g.phase,
     cfg: { ...g.cfg, eggs: isO && setup ? g.eggs.length + (TT.TM.eggs - TT.nestOf(g, seat).length) : g.cfg.eggs * 2 },
@@ -232,7 +232,7 @@ function viewT(room, seat) {
       .map(s => ({ seat: s, type: TT.isO(s) ? 'o' : 'v', p: g.b[s].pos, mate: (TT.isO(s) && isO) || (TT.isV(s) && isV), carrying: isO && TT.isO(s) && g.b[s].carrying != null }));
     if (g.h) { v.h3.hunter = g.h.p.slice(); v.h3.burrowed = !!g.h.burrowed; }
   } else if (myB.out) { v.myTurn = false; v.moves = []; v.carryMoves = []; v.fly = []; v.throw = []; }
-  return stamp(room, v);
+  return stamp(room, v, seat);
 }
 function broadcastT(room) {
   schedT(room); clockT(room);
@@ -318,7 +318,7 @@ function viewH(room, seat) {
       h3.hunters = HU.HUNTERS.map(h => ({ kind: h, p: t.hs[h].p.slice(), burrowed: !!t.hs[h].burrowed, me: false }));
     }
   }
-  v.h3 = h3; v.three = true; v.showTimers = timersOn(room); return stamp(room, v);
+  v.h3 = h3; v.three = true; v.showTimers = timersOn(room); return stamp(room, v, seat);
 }
 function broadcastH(room) {
   schedH(room); clockH(room);
@@ -356,7 +356,9 @@ function viewerIsHost(room, v) {
   if (!v || !roster.length) return !roster.length;
   return roster.some(r => r.host && (r.role === v.role || (v.role === 'hunter' && (r.role === v.kind || r.role === 'hunter'))));
 }
-function stamp(room, v) {
+// picked: true means Start gave this seat to the player; they did not choose it (lobby.js plan). Roster seat = view seat.
+function stamp(room, v, seat) {
+  if (v) v.picked = !!((room && room.roster || []).find(r => !r.bot && r.role === seat) || {}).picked;
   if (v) { v.showTimers = timersOn(room); v.clockStopped = !!(room && room.clock === false); v.host = viewerIsHost(room, v); }
   if (room && room.flow) {
     v.flow = 1;
@@ -405,7 +407,7 @@ function applyPlan(room, plan) {
     else {
       const h = a.human;
       room.players[a.seat] = { ws: h.ws, token: h.token };
-      room.roster.push({ id: h.id, token: h.token, name: h.name, role: a.seat, kind: h.kind || null, host: !!h.host, bot: false });
+      room.roster.push({ id: h.id, token: h.token, name: h.name, role: a.seat, kind: h.kind || null, host: !!h.host, picked: !!h.picked, bot: false });
       if (h.ws) { h.ws._bo = { room, seat: a.seat, hid: h.id }; tell(h.ws, room, a.seat, h.token); }
     }
   }
@@ -425,7 +427,7 @@ function toLobby(room, humans, opt) {
   room.touched = Date.now(); lobbyBroadcast(room);
 }
 function playingHumans(room) {
-  return (room.roster || []).filter(r => !r.bot).map(r => ({ id: r.id, token: r.token, name: r.name, host: !!r.host, role: r.role, kind: r.kind, ws: wsFor(room, r.token) }));
+  return (room.roster || []).filter(r => !r.bot).map(r => ({ id: r.id, token: r.token, name: r.name, host: !!r.host, role: r.role, kind: r.kind, picked: !!r.picked, ws: wsFor(room, r.token) }));
 }
 function handleRematch(room, how) {
   const humans = playingHumans(room);

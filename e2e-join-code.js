@@ -119,9 +119,10 @@ fs.mkdirSync(OUT, { recursive: true });
     setup: LobbyUI.get().setup,
     label: LobbyUI.get().startLabel
   }));
-  assert.equal(started.text, 'Start with computers');
+  // The host has not picked an animal, so Start says which one Start will give them.
+  assert.equal(started.text, "Start · you'll be the Ostrich");
   assert.equal(started.setup, '2');
-  assert.equal(started.label, 'Start with computers');
+  assert.equal(started.label, "Start · you'll be the Ostrich");
   const join = await (await browser.newContext(devices['iPhone 13'])).newPage();
   join.on('pageerror', e => errs.push(e.message));
   await join.addInitScript(() => localStorage.setItem('bo_tut_seen', '1'));
@@ -138,7 +139,7 @@ fs.mkdirSync(OUT, { recursive: true });
     setup: LobbyUI.get().setup,
     roles: LobbyUI.get().roles.map(r => r.id)
   }));
-  assert.equal(both.text, 'Start · 2 people');
+  assert.equal(both.text, "Start · you'll be the Ostrich");
   assert.equal(both.setup, '2');
   // Two people can also pick a hunter, so the Hyena and Honey Badger cards sit after the two ostrich seats.
   assert.deepEqual(both.roles, ['blue', 'red', 'hyena', 'badger']);

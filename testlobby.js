@@ -42,11 +42,11 @@ t('two computers replace the nested hunter card with Hyena and Honey Badger', ()
   assert.equal(now.canStart, true);
 });
 t('one friend starts with computers once a computer is added', () => {
-  const r = humans(1); LB.setBots(r, 1, 'h0');
+  const r = humans(1); LB.setBots(r, 1, 'h0'); LB.claim(r, 'h0', 'blue');
   const v = LB.view(r, 'h0');
   assert.equal(v.canStart, true); assert.equal(v.setup, '2');
   assert.equal(v.startLabel, 'Start with computers');
-  const two = humans(2);
+  const two = humans(2); LB.claim(two, 'h0', 'blue');
   const w = LB.view(two, 'h0');
   assert.equal(w.canStart, true); assert.equal(w.setup, '2'); assert.equal(w.startLabel, 'Start · 2 people');
 });
@@ -81,7 +81,7 @@ t('bots fill only the roles left at start', () => {
   assert.equal(p.setup, '3'); assert.deepEqual(p.botSeats, ['hunter']); assert.equal(p.kind, 'hyena');
 });
 t('solo bot count selects the setup', () => {
-  const r = humans(1, { solo: true, botsWanted: 1 }); LB.clampBots(r);
+  const r = humans(1, { solo: true, botsWanted: 1 }); LB.clampBots(r); LB.claim(r, 'h0', 'blue');
   assert.equal(LB.plan(r).setup, '2');
   r.botsWanted = 2; LB.clampBots(r); LB.reconcile(r);
   LB.claim(r, 'h0', 'hunter', 'badger');
@@ -209,6 +209,96 @@ t('adding computers to two birds becomes 2 vs 2 without a setup button', () => {
   assert.deepEqual(p.botSeats, ['o2', 'v2']);
 });
 
+// ---- T7: the game never picks your animal without saying so ----
+const PICK = 'Pick your animal first.';
+t('solo with two computers and no pick: Start is off, the reason is shown, and plan refuses', () => {
+  const r = humans(1, { solo: true, botsWanted: 2 }); LB.clampBots(r); LB.reconcile(r);
+  const v = LB.view(r, 'h0');
+  assert.equal(v.canStart, false);
+  assert.equal(v.hint, PICK); assert.equal(v.setupLabel, PICK);
+  assert.equal(v.youAre, 'Choose an animal');
+  assert.deepEqual(LB.plan(r), { error: PICK });
+  assert.equal(r.humans[0].role, null, 'a refused start seats nobody');
+  assert.ok(!('picked' in r.humans[0]), 'a refused start marks nobody');
+  for (const n of [1, 3, 4]) { r.botsWanted = n; LB.clampBots(r); LB.reconcile(r); assert.equal(LB.view(r, 'h0').canStart, false, n + ' computers'); assert.equal(LB.plan(r).error, PICK); }
+});
+t('solo with one computer and no pick is also held until a pick', () => {
+  const r = humans(1, { solo: true, botsWanted: 1 }); LB.clampBots(r);
+  assert.equal(LB.view(r, 'h0').canStart, false);
+  assert.equal(LB.view(r, 'h0').hint, PICK);
+  LB.claim(r, 'h0', 'red');
+  const v = LB.view(r, 'h0');
+  assert.equal(v.canStart, true); assert.notEqual(v.hint, PICK); assert.notEqual(v.setupLabel, PICK);
+});
+t('solo, Honey Badger and two computers: the host plays the badger and picked is false', () => {
+  const r = humans(1, { solo: true, botsWanted: 2 }); LB.clampBots(r); LB.reconcile(r);
+  assert.equal(LB.claim(r, 'h0', 'badger').ok, true);
+  const v = LB.view(r, 'h0');
+  assert.equal(v.canStart, true); assert.equal(v.youAre, 'YOU ARE Honey Badger');
+  assert.notEqual(v.hint, PICK);
+  const p = LB.plan(r);
+  assert.equal(p.ok, true); assert.equal(p.setup, '3'); assert.equal(p.kind, 'badger');
+  const mine = p.assignments.find(a => a.human === r.humans[0]);
+  assert.equal(mine.seat, 'hunter'); assert.equal(r.humans[0].kind, 'badger');
+  assert.equal(LB.animalOf(r.humans[0]), 'badger');
+  assert.equal(r.humans[0].picked, false);
+  assert.deepEqual(p.botSeats.sort(), ['blue', 'red']);
+});
+t('friends room, host has not picked: Start says which animal they will be, and plan marks picked', () => {
+  const r = humans(2);
+  const v = LB.view(r, 'h0');
+  assert.equal(v.canStart, true);
+  assert.equal(v.startLabel, "Start · you'll be the Ostrich");
+  assert.notEqual(v.hint, PICK);
+  assert.equal(LB.view(r, 'h1').startLabel, 'Start · 2 people', 'a guest has no Start button, so the label is the old one');
+  assert.ok(r.humans.every(h => !('picked' in h) && h.role === null && h.animal == null), 'viewing seats nobody');
+  const p = LB.plan(r);
+  assert.equal(p.ok, true);
+  assert.equal(r.humans[0].role, 'blue'); assert.equal(r.humans[0].picked, true);
+  assert.equal(r.humans[1].role, 'red'); assert.equal(r.humans[1].picked, true);
+});
+t('friends room: the label follows what plan would give, and a pick removes it', () => {
+  const r = humans(2);
+  LB.claim(r, 'h1', 'blue');
+  assert.equal(LB.view(r, 'h0').startLabel, "Start · you'll be the Vulture");
+  LB.claim(r, 'h0', 'red');
+  assert.equal(LB.view(r, 'h0').startLabel, 'Start · 2 people');
+  const one = humans(1, { botsWanted: 1 }); LB.clampBots(one);
+  assert.equal(LB.view(one, 'h0').startLabel, "Start · you'll be the Ostrich");
+  LB.claim(one, 'h0', 'red');
+  assert.equal(LB.view(one, 'h0').startLabel, 'Start with computers');
+  const hunt = humans(1, { botsWanted: 2 }); LB.clampBots(hunt);
+  assert.equal(LB.view(hunt, 'h0').startLabel, "Start · you'll be the Ostrich");
+  const four = humans(4);
+  LB.claim(four, 'h1', 'blue'); LB.claim(four, 'h2', 'hyena'); LB.claim(four, 'h3', 'badger');
+  assert.equal(LB.view(four, 'h0').startLabel, "Start · you'll be the Vulture");
+});
+t('plan marks picked true only for humans seated without their own pick', () => {
+  const r = humans(3);
+  LB.claim(r, 'h1', 'blue');
+  const p = LB.plan(r);
+  assert.equal(p.ok, true);
+  assert.equal(r.humans[1].picked, false);
+  assert.equal(r.humans[0].picked, true); assert.equal(r.humans[2].picked, true);
+  const roles = r.humans.map(h => h.role).sort();
+  assert.deepEqual(roles, ['blue', 'hunter', 'red']);
+});
+t('viewing the lobby never marks or seats anyone', () => {
+  const rooms = [humans(2), humans(3, { botsWanted: 1 }), humans(1, { solo: true, botsWanted: 2 }), humans(4)];
+  for (const r of rooms) {
+    LB.clampBots(r); LB.reconcile(r);
+    const before = JSON.stringify(r.humans);
+    for (const h of r.humans) LB.view(r, h.id);
+    assert.equal(JSON.stringify(r.humans), before);
+    assert.ok(r.humans.every(h => !('picked' in h)), 'no picked key after viewing');
+  }
+  const r = humans(2); LB.plan(r); r.humans[0].picked = true;
+  LB.view(r, 'h0'); assert.equal(r.humans[0].picked, true, 'a real mark survives a view');
+  assert.equal(r.humans[1].picked, true);
+  const q = humans(2); q.humans[0].picked = false; q.humans[0].role = 'blue';
+  LB.view(q, 'h0'); assert.equal(q.humans[0].picked, false);
+});
+
 process.env.PORT = 3977; process.env.BO_NOSTORE = '1'; process.env.BO_CLOCKMS = '60000';
 const server = require('./server.js');
 const WS = require('ws');
@@ -330,6 +420,40 @@ const roomOf = code => server.rooms.get(code);
   assert.equal(huntRoom.hunt, true);
   assert.equal(huntRoom.players.hyena.token, hj.token);
   console.log('ok 4p roles choose Hunters without a setup step');
+
+  const P = await conn();
+  P.send({ t: 'create', friends: 1 });
+  const pj = await wait(P, m => m.t === 'joined' && m.lobby);
+  P.send({ t: 'lobby', a: 'bots', n: 1 });
+  await wait(P, m => m.t === 'state' && m.lobby && m.state.botsWanted === 1);
+  from(P); P.send({ t: 'lobby', a: 'start' });
+  const pst = await wait(P, m => m.t === 'state' && !m.lobby && m.state.role);
+  assert.equal(pst.state.picked, true, 'Start seated the host without a pick, and the game view says so');
+  assert.equal(roomOf(pj.code).roster.find(x => !x.bot).picked, true);
+  const Q = await conn();
+  Q.send({ t: 'create', friends: 1 });
+  const qj = await wait(Q, m => m.t === 'joined' && m.lobby);
+  Q.send({ t: 'lobby', a: 'bots', n: 1 });
+  Q.send({ t: 'lobby', a: 'role', role: 'red' });
+  await wait(Q, m => m.t === 'state' && m.lobby && m.state.botsWanted === 1 && m.state.roles.some(r => r.id === 'red' && r.mine));
+  Q.send({ t: 'lobby', a: 'start' });
+  const qst = await wait(Q, m => m.t === 'state' && !m.lobby && m.state.role);
+  assert.equal(qst.state.role, 'red'); assert.equal(qst.state.picked, false, 'a chosen animal is not marked');
+  const SO = await conn();
+  SO.send({ t: 'create', solo: 1, bots: 2 });
+  const sj = await wait(SO, m => m.t === 'joined' && m.lobby);
+  const sl = await wait(SO, m => m.t === 'state' && m.lobby);
+  assert.equal(sl.state.canStart, false); assert.equal(sl.state.hint, PICK);
+  from(SO); SO.send({ t: 'lobby', a: 'start' });
+  const refused = await wait(SO, m => m.t === 'error');
+  assert.equal(refused.msg, PICK);
+  assert.equal(roomOf(sj.code).lobby, true, 'a stale client cannot start a solo room without a pick');
+  SO.send({ t: 'lobby', a: 'role', role: 'badger' });
+  await wait(SO, m => m.t === 'state' && m.lobby && m.state.canStart === true);
+  SO.send({ t: 'lobby', a: 'start' });
+  const sg = await wait(SO, m => m.t === 'state' && !m.lobby && m.state.role === 'hunter');
+  assert.equal(sg.state.kind, 'badger'); assert.equal(sg.state.picked, false);
+  console.log('ok T7 picked reaches the game view, and solo refuses a start with no pick');
 
   console.log(n + ' lobby rule checks passed');
   server.close();
