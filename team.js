@@ -2,13 +2,13 @@
 // vultures (v1, v2); in 5 players a hunter (hyena / honey badger) moves last. Turn order: V1, O1, V2, O2 (, hunter).
 // Reuses the 2-player CONFIG and the 3-player hunter rules (sense, pounce, burrow, catches, knock-back).
 const B = require('./game.js'), K = B.key, D = B.dist;
-const TM = { eggs: 2, vStarts: [[4, 2], [4, 4]], sense: 2, see: 2, knock: 2, clockMs: 10000, ko: { hyena: 2, badger: 2 }, hStarts: [[0, 3], [8, 3]] };
+const TM = { eggs: 2, vStarts: [[4, 2], [4, 4]], sense: 2, see: 2, walk: 2, pounce: 1, knock: 2, clockMs: 10000, ko: { hyena: 2, badger: 2 }, hStarts: [[0, 3], [8, 3]] };
 const OFF = [-99, -99], OS = ['o1', 'o2'], VS = ['v1', 'v2'], sgn = Math.sign;
 const isO = s => s === 'o1' || s === 'o2', isV = s => s === 'v1' || s === 'v2';
 const mate = s => ({ o1: 'o2', o2: 'o1', v1: 'v2', v2: 'v1' })[s];
 function newTeam(n, kind, cfg = B.CONFIG, hstart) {
   const g = { team: true, n: n === 5 ? 5 : 4, cfg: { ...cfg, eggs: TM.eggs }, phase: 'setup', round: 1, turn: null, eggs: [], marks: {}, winner: null, winBy: null,
-    order: n === 5 ? ['v1', 'o1', 'v2', 'o2', 'hunter'] : ['v1', 'o1', 'v2', 'o2'], b: {}, sniffs: {}, lastAction: null, lastCold: [], seq: 0, kickSeq: 0, lastKick: null, lastCatch: null, lost: null,
+    order: n === 5 ? ['v1', 'o1', 'v2', 'o2', 'hunter'] : ['v1', 'o1', 'v2', 'o2'], b: {}, sniffs: {}, lastAction: null, lastCold: [], seq: 0, kickSeq: 0, lastKick: null, stoneSeq: 0, lastStone: null, lastCatch: null, lost: null,
     h: n === 5 ? { kind: kind === 'badger' || kind === 'hyena' ? kind : null, p: (hstart || TM.hStarts[Math.random() * 2 | 0]).slice(), burrowed: false, dig: 0,
       sense: null, senseSeq: 0, kos: { o: 0, v: 0 }, last: null } : null };
   VS.forEach((s, i) => g.b[s] = { pos: TM.vStarts[i].slice(), stones: cfg.stones, out: false, why: null, catches: 0, skip: 0 });
@@ -18,6 +18,7 @@ function newTeam(n, kind, cfg = B.CONFIG, hstart) {
 const inB = (g, p) => p && p[0] >= 0 && p[1] >= 0 && p[0] < g.cfg.cols && p[1] < g.cfg.rows;
 const alive = g => g.eggs.filter(e => e.alive);
 const eggAt = (g, p) => g.eggs.find(e => e.alive && e.pos && K(e.pos) === K(p));
+const hunterUp = (g, p) => !!(g.h && K(g.h.p) === K(p) && !g.h.burrowed);
 const live = (g, s) => g.b[s] && !g.b[s].out && g.b[s].pos && g.b[s].pos[0] >= 0;
 const birdsIn = g => OS.concat(VS).filter(s => live(g, s));
 const myTurn = (g, s) => g.phase === 'play' && g.turn === s;
@@ -40,13 +41,14 @@ function place(g, s, p) {
 const setupStep = (g, s) => g.phase !== 'setup' || !isO(s) ? null : nestOf(g, s).length < TM.eggs ? 'eggs' : !g.b[s].pos ? 'ostrich' : 'done';
 // --- ostriches ---
 const onEgg = (g, s) => live(g, s) && g.b[s].carrying === null && !!eggAt(g, g.b[s].pos);
-const canSit = (g, s) => myTurn(g, s) && onEgg(g, s) && g.b[s].sitRun < g.cfg.maxSit;
+const canSit = (g, s) => myTurn(g, s) && onEgg(g, s); // no limit on sitting
 const canCarry = (g, s) => myTurn(g, s) && onEgg(g, s);
-const mustLeave = (g, s) => myTurn(g, s) && onEgg(g, s) && g.b[s].sitRun >= g.cfg.maxSit;
+const mustLeave = () => false;
 function ostrichMoves(g, s, carry = false) {
   if (!myTurn(g, s) || !isO(s) || (carry && !canCarry(g, s))) return [];
-  const m = g.b[mate(s)], res = B.walkSquares(g.cfg, g.marks, g.b[s].pos, carry ? g.cfg.carryWalk : g.cfg.ostrichWalk).filter(p => m.out || !m.pos || K(m.pos) !== K(p));
-  return carry ? res.filter(p => !(eggAt(g, p) || B.isFood(g, p) || B.isRock(g, p) || g.marks[K(p)] === 'stone')) : res;
+  // wrecked squares and any animal the ostrich can see are not landing squares (it may pass over them); a buried badger is hidden, so it can be walked onto
+  const res = B.walkSquares(g.cfg, g.marks, g.b[s].pos, carry ? g.cfg.carryWalk : g.cfg.ostrichWalk).filter(p => !birdsIn(g).some(o => o !== s && K(g.b[o].pos) === K(p)) && !hunterUp(g, p));
+  return carry ? res.filter(p => !(eggAt(g, p) || B.isRock(g, p) || B.nearLeaf(g, p))) : res; // an egg is never put on or next to a leaf
 }
 function feed(g, s) { // after an ostrich's move or stay: food resets hunger, else it gets hungrier and may starve (out; its partner plays on)
   const b = g.b[s];
@@ -62,13 +64,13 @@ function ostrichAct(g, s, a, p) {
     if (carry) { const e = eggAt(g, b.pos); e.pos = null; b.carrying = e.id; if (g.marks[K(b.pos)] === 'spotted') delete g.marks[K(b.pos)]; }
     b.pos = p.slice(); b.sitRun = 0; }
   g.lastAction = { seat: s, type: a === 'sit' ? 'sit' : a === 'carry' ? 'carry' : 'step' };
-  const e = b.carrying !== null ? g.eggs[b.carrying] : eggAt(g, b.pos); if (e) e.lastWarm = g.round; // either ostrich may warm any egg
+  const e = b.carrying !== null ? null : eggAt(g, b.pos); if (e) e.lastWarm = g.round; // either ostrich may warm any egg; a carried egg is not warmed
   feed(g, s);
-  if (!b.out && a !== 'sit' && g.h && K(b.pos) === K(g.h.p)) { catchBird(g, s, [sgn(from[0] - p[0]), sgn(from[1] - p[1])]); g.lastCatch.walked = true; } // the ostrich stepped onto the hunter
+  if (!b.out && a !== 'sit' && g.h && K(b.pos) === K(g.h.p)) { catchBird(g, s, () => { b.pos = from.slice(); }); g.lastCatch.walked = true; } // the ostrich stepped onto the buried badger
   next(g); return true;
 }
 // --- Kick (rules in game.js): an ostrich may kick a vulture or the hunter next to it, never its teammate and never a burrowed badger.
-function canKick(g, s) { return myTurn(g, s) && isO(s) && g.b[s].carrying === null && !mustLeave(g, s) && live(g, s); }
+function canKick(g, s) { return myTurn(g, s) && isO(s) && g.b[s].carrying === null && live(g, s); }
 function kickable(g, s) {
   const r = [];
   if (!isO(s) || !live(g, s)) return r;
@@ -81,11 +83,12 @@ const kickTargets = (g, s) => canKick(g, s) ? kickable(g, s) : [];
 function ostrichKick(g, s, p) {
   if (!kickTargets(g, s).some(q => K(q) === K(p))) return false;
   const b = g.b[s], from = p.slice(), hunter = !!(g.h && K(g.h.p) === K(from)), v = VS.find(x => live(g, x) && K(g.b[x].pos) === K(from));
-  // a pushed animal stops before the board edge, the hunter, or any bird
-  const to = B.slide(g.cfg, from, B.awayFrom(b.pos, from), g.cfg.kickPush, m => (g.h && K(g.h.p) === K(m) && !hunter) || birdsIn(g).some(o => o !== v && K(g.b[o].pos) === K(m)));
+  // a pushed animal wraps around the edge and stops before a wrecked square or any animal that is up
+  const n = hunter && g.h.kind === 'badger' ? g.cfg.kickPushBadger : g.cfg.kickPush;
+  const to = B.slide(g.cfg, from, B.awayFrom(b.pos, from), n, m => (g.h && K(g.h.p) === K(m) && !g.h.burrowed && !hunter) || birdsIn(g).some(o => o !== v && K(g.b[o].pos) === K(m)), g.marks, true);
   if (hunter) g.h.p = to; else g.b[v].pos = to;
   const who = hunter ? (g.h.kind || 'hyena') : 'vulture';
-  g.lastKick = { seq: ++g.kickSeq, who, seat: hunter ? 'hunter' : v, from, to: to.slice(), round: g.round };
+  g.lastKick = { seq: ++g.kickSeq, who, seat: hunter ? 'hunter' : v, from, to: to.slice(), round: g.round, tried: n };
   g.lastAction = { seat: s, type: 'kick', who };
   const e = eggAt(g, b.pos); if (e) e.lastWarm = g.round; // an egg under the ostrich is warmed, as when it sits
   feed(g, s); next(g); return true;
@@ -97,14 +100,14 @@ function flyTargets(g, s) {
   if (!myTurn(g, s) || !isV(s)) return [];
   const v = g.b[s].pos, m = g.b[mate(s)], r = [];
   for (let x = 0; x < g.cfg.cols; x++) for (let y = 0; y < g.cfg.rows; y++) { const d = D([x, y], v);
-    if (d >= 1 && d <= g.cfg.vultureFly && !(!m.out && K(m.pos) === K([x, y]))) r.push([x, y]); }
+    if (d >= 1 && d <= g.cfg.vultureFly && !B.wrecked(g, [x, y]) && !hunterUp(g, [x, y]) && !birdsIn(g).some(o => K(g.b[o].pos) === K([x, y]))) r.push([x, y]); }
   return r;
 }
 function throwTargets(g, s) {
   if (!myTurn(g, s) || !isV(s) || g.b[s].stones < 1) return [];
-  const v = g.b[s].pos, r = [];
+  const v = g.b[s].pos, m = g.b[mate(s)], r = [];
   for (let x = 0; x < g.cfg.cols; x++) for (let y = 0; y < g.cfg.rows; y++) { const k = x + ',' + y;
-    if (D([x, y], v) <= g.cfg.throwRange && g.marks[k] !== 'hit' && g.marks[k] !== 'stone') r.push([x, y]); }
+    if (D([x, y], v) <= g.cfg.throwRange && g.marks[k] !== 'hit' && g.marks[k] !== 'stone' && !(!m.out && K(m.pos) === K([x, y]))) r.push([x, y]); }
   return r;
 }
 const smells = (g, p) => alive(g).some(e => { const q = eggPos(g, e); return q && D(q, p) <= g.cfg.smellRange; });
@@ -119,17 +122,23 @@ function vultureFly(g, s, p) { clearOut(g);
   if (B.isRock(g, p)) { g.lastAction.refill = b.stones < g.cfg.stones; b.stones = g.cfg.stones; }
   g.lastAction.smell = smells(g, p); g.sniffs[s] = { p: p.slice(), yes: g.lastAction.smell, round: g.round };
   dropAll(g);
-  if (g.h && K(p) === K(g.h.p)) { catchBird(g, s, [sgn(from[0] - p[0]), sgn(from[1] - p[1])]); g.lastCatch.walked = true; } // the vulture flew onto the hunter
+  if (g.h && K(p) === K(g.h.p)) { catchBird(g, s, () => { b.pos = from.slice(); }); g.lastCatch.walked = true; } // the vulture flew onto the buried badger
   next(g); return true;
 }
+// The stone resolver's view of this mode: either ostrich kicks it back, the hunter is pushed 2 away from the vulture and a buried badger comes up.
+const stoneW = (g, s) => { const b = g.b[s]; return { thrower: () => b.pos.slice(), setThrower: q => { b.pos = q.slice(); },
+  ostrichAt: p => OS.some(o => live(g, o) && K(g.b[o].pos) === K(p)), eggAt: p => eggAt(g, p),
+  pushAt: (p, dir, n) => { if (!g.h || K(g.h.p) !== K(p)) return []; const from = g.h.p.slice(), wasBur = g.h.burrowed; g.h.burrowed = false; g.h.dig = 0; if (wasBur) g.popout = { seq: g.popSeq = (g.popSeq || 0) + 1, round: g.round };
+    g.h.p = B.slide(g.cfg, from, dir, n, m => birdsIn(g).some(o => K(g.b[o].pos) === K(m)), g.marks); return [{ kind: g.h.kind, from, to: g.h.p.slice() }]; },
+  open: q => !B.wrecked(g, q) && !birdsIn(g).some(o => K(g.b[o].pos) === K(q)) && !hunterUp(g, q), ostrichPos: () => { const o = OS.find(x => live(g, x)); return o ? g.b[o].pos : null; } }; };
 function vultureThrow(g, s, p) { clearOut(g);
   if (!throwTargets(g, s).some(q => K(q) === K(p))) return false;
   const b = g.b[s]; b.stones--; g.sniffs[s] = null;
-  const e = eggAt(g, p), guard = OS.find(o => live(g, o) && K(g.b[o].pos) === K(p)); let result;
-  if (guard) result = 'bounce'; else if (e) { e.alive = false; result = 'hit'; g.marks[K(p)] = 'hit'; } else { result = 'miss'; g.marks[K(p)] = 'stone'; }
-  g.lastAction = { seat: s, type: 'throw', from: b.pos.slice(), p: p.slice(), result };
-  if (guard) g.lastAction.egg = !!(e || g.b[guard].carrying !== null);
-  dropAll(g); next(g); return result;
+  const from = b.pos.slice(), r = B.resolveThrow(g, stoneW(g, s), p);
+  g.lastAction = { seat: s, type: 'throw', from, p: p.slice(), result: r.result, line: r.line, kickedBack: r.kickedBack, hop: r.hop, used: r.used };
+  if (r.result === 'bounce') g.lastAction.egg = !!(eggAt(g, p) || OS.some(o => live(g, o) && K(g.b[o].pos) === K(p) && g.b[o].carrying !== null));
+  if (r.line) g.lastStone = { seq: ++g.stoneSeq, text: r.line, round: g.round };
+  dropAll(g); next(g); return r.result;
 }
 // --- hunter (5 players) ---
 const koAt = g => TM.ko[(g.h && g.h.kind) || 'hyena'];
@@ -138,18 +147,19 @@ const senses = g => birdsIn(g).some(s => D(g.b[s].pos, g.h.p) <= TM.sense);
 // ambush sight: a burrowed badger sees the exact square of any living bird next to it (1 square). Nobody else learns anything.
 const ambushSight = g => !g.h || g.h.kind !== 'badger' || !g.h.burrowed ? [] : birdsIn(g).filter(s => D(g.b[s].pos, g.h.p) === 1).map(s => ({ seat: s, type: isO(s) ? 'o' : 'v', p: g.b[s].pos.slice() }));
 const hunterSeenBy = (g, s) => !!(g.h && (isO(s) || isV(s)) && live(g, s) && !g.h.burrowed && D(g.b[s].pos, g.h.p) <= TM.see);
-const hunterRange = g => !g.h ? 0 : 1; // the hunter always moves 1 square (no speed-up after a knock-out)
+const hunterRange = g => !g.h ? 0 : g.h.pounce ? TM.pounce : TM.walk;
+const hunterReach = g => !g.h ? 0 : TM.walk + (g.h.kind === 'hyena' ? TM.pounce : 0); // the farthest it can reach on any turn
 function hunterMoves(g) {
   if (!myTurn(g, 'hunter')) return [];
   const h = g.h.p, n = hunterRange(g), r = [];
-  for (let x = 0; x < g.cfg.cols; x++) for (let y = 0; y < g.cfg.rows; y++) { const d = D([x, y], h); if (d >= 1 && d <= n) r.push([x, y]); }
+  for (let x = 0; x < g.cfg.cols; x++) for (let y = 0; y < g.cfg.rows; y++) { const d = D([x, y], h); if (d >= 1 && d <= n && !B.wrecked(g, [x, y])) r.push([x, y]); }
   return r;
 }
 function startHunter(g) { const h = g.h; h.pounce = false; h.sense = senses(g); h.senseSeq++; }
 function hunterMove(g, p) {
   if (!hunterMoves(g).some(q => K(q) === K(p))) return false;
   const h = g.h, from = h.p.slice(), wasP = h.pounce, wasBur = h.burrowed; h.p = p.slice(); h.burrowed = false; h.dig = 0; let caught = false;
-  for (const s of birdsIn(g)) if (g.phase === 'play' && K(g.b[s].pos) === K(p)) { catchBird(g, s, [sgn(p[0] - from[0]), sgn(p[1] - from[1])]); caught = true; }
+  for (const s of birdsIn(g)) if (g.phase === 'play' && K(g.b[s].pos) === K(p)) { catchBird(g, s, () => { h.p = from.slice(); }); caught = true; }
   if (caught && wasBur && g.lastCatch) g.lastCatch.ambush = true; // the badger jumped out of its burrow onto the bird
   g.popout = !caught && wasBur ? { seq: g.popSeq = (g.popSeq || 0) + 1, round: g.round } : null; // popped out of the burrow without a catch (shown only to who can see the badger)
   h.last = { type: 'move', from, to: p.slice(), caught, pounce: wasP };
@@ -170,24 +180,29 @@ function knockout(g, s, why) {
   if (why === 'caught' && g.h) g.h.kos[isO(s) ? 'o' : 'v']++;
   checkEnd(g);
 }
-function catchBird(g, s, dir) {
+// A caught bird scrambles 2 squares in a random open direction chosen by the game (rule 4.2). No missed turn. If it cannot move at all, whoever moved goes back (back()).
+function catchBird(g, s, back) {
   const b = g.b[s], at = b.pos.slice(); b.catches++;
   if (b.carrying != null) { const e = g.eggs[b.carrying]; b.carrying = null; if (e.alive) e.pos = at.slice(); } // a carried egg drops where it was caught
   if (b.catches >= koAt(g)) { g.lastCatch = { bird: s, at, to: null, ko: true, seq: ++g.seq, round: g.round }; knockout(g, s, 'caught'); return; }
-  b.skip = 1; let [dx, dy] = dir; if (!dx && !dy) { dx = at[0] < g.cfg.cols / 2 ? -1 : 1; dy = at[1] < g.cfg.rows / 2 ? -1 : 1; }
-  let q = at.slice();
-  for (let i = 0; i < TM.knock; i++) { const n = [q[0] + dx, q[1] + dy];
-    if (!inB(g, n) || K(n) === K(g.h.p) || (isO(s) && g.marks[K(n)] === 'hit') || birdsIn(g).some(o => o !== s && K(g.b[o].pos) === K(n))) break; q = n; }
-  b.pos = q; if (isO(s)) b.sitRun = 0;
-  g.lastCatch = { bird: s, at, to: q.slice(), ko: false, seq: ++g.seq, round: g.round };
+  const q = B.scrambleTo(g.cfg, at, m => !B.wrecked(g, m) && !birdsIn(g).some(o => o !== s && K(g.b[o].pos) === K(m)) && !hunterUp(g, m) && !(g.h && K(g.h.p) === K(m)), TM.knock);
+  if (q) b.pos = q; else if (back) back();
+  if (g.h && g.h.burrowed && K(g.h.p) === K(at)) { g.h.burrowed = false; g.h.dig = 0; }
+  g.lastCatch = { bird: s, at, to: b.pos.slice(), ko: false, seq: ++g.seq, round: g.round };
 }
-function end(g, w, by) { if (g.phase === 'over') return; g.phase = 'over'; g.winner = w; g.winBy = by; }
-function checkEnd(g) {
+// Endings (rules 9): a side is out when all its birds are knocked out or it can no longer meet its goal; a side that meets its goal wins; the last side in wins; time with no goal met is a draw.
+// HUNTER_GOAL ('all' | 'first', game.js): the hunter needs every bird, or (first) one ostrich and one vulture.
+function end(g, w, by, why) { if (g.phase === 'over') return; g.phase = 'over'; g.winner = w; g.winBy = by; g.endWhy = why; }
+function checkEnd(g, timeUp) {
   if (g.phase === 'over') return true;
-  const vIn = VS.some(s => !g.b[s].out), oIn = OS.some(s => !g.b[s].out), hWin = g.h && g.h.kos.o >= 1 && g.h.kos.v >= 1;
-  if (hWin) end(g, 'hunter', 'ko');
-  else if (!alive(g).length) vIn ? end(g, 'red', g.lastAction && g.lastAction.type === 'throw' ? 'smashed' : 'cold') : end(g, 'none', 'eggs-lost');
-  else if (!oIn) vIn ? end(g, 'red', 'ostriches-out') : end(g, 'none', 'all-out');
+  const vIn = VS.some(s => !g.b[s].out), eggs = alive(g).length, oIn = OS.some(s => !g.b[s].out) && eggs > 0, nm = g.h && g.h.kind === 'badger' ? 'honey badger' : 'hyena';
+  const allOut = OS.concat(VS).every(s => g.b[s].out), firstGoal = g.h && g.h.kos.o >= 1 && g.h.kos.v >= 1;
+  if (g.h && (allOut || (B.HUNTER_GOAL() === 'first' && firstGoal))) end(g, 'hunter', 'ko', allOut ? `The ${nm} knocked out every bird.` : `The ${nm} knocked out an ostrich and a vulture, and that was its goal.`);
+  else if (eggs === 0 && vIn) end(g, 'red', g.lastAction && g.lastAction.type === 'throw' ? 'smashed' : 'cold', g.lastAction && g.lastAction.type === 'throw' ? 'The vultures smashed every egg.' : 'The last egg went cold, so the vultures win.');
+  else if (timeUp && oIn) end(g, 'blue', 'survived', `An egg was still alive after round ${g.cfg.rounds}, so the ostriches win.`);
+  else if (!vIn && !oIn) g.h ? end(g, 'hunter', 'last', `Both teams are out of the game, so the ${nm} wins.`) : end(g, 'none', 'all-out', 'Both teams are out of the game.');
+  else if (!oIn && !g.h) end(g, 'red', 'ostriches-out', 'Both ostriches are out, so the vultures win.');
+  else if (timeUp) end(g, 'none', 'time', 'Time ran out and nobody met their goal.');
   return g.phase === 'over';
 }
 function endRound(g) {
@@ -195,8 +210,7 @@ function endRound(g) {
   for (const e of alive(g)) if (g.round - e.lastWarm >= g.cfg.warmth) {
     e.alive = false; g.lastCold.push(e.id); const c = OS.find(s => g.b[s].carrying === e.id); if (c) g.b[c].carrying = null;
     if (e.pos && g.marks[K(e.pos)] === 'spotted') delete g.marks[K(e.pos)]; }
-  if (checkEnd(g)) return;
-  if (g.round >= g.cfg.rounds) return end(g, 'blue', 'survived');
+  if (checkEnd(g, g.round >= g.cfg.rounds)) return;
   g.round++;
 }
 // whose turn: skip seats that are out; a caught bird loses its next turn (an ostrich still gets hungry)
