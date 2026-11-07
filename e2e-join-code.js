@@ -4,7 +4,7 @@ const assert = require('assert'), fs = require('fs');
 process.env.PORT = '3994';
 process.env.BO_NOSTORE = '1';
 const server = require('./server.js');
-const OUT = '/opt/cursor/artifacts';
+const OUT = require('path').join(__dirname, 'shots', 'e2e');
 fs.mkdirSync(OUT, { recursive: true });
 (async () => {
   const browser = await webkit.launch(), errs = [];
@@ -140,7 +140,8 @@ fs.mkdirSync(OUT, { recursive: true });
   }));
   assert.equal(both.text, 'Start · 2 people');
   assert.equal(both.setup, '2');
-  assert.deepEqual(both.roles, ['blue', 'red']);
+  // Two people can also pick a hunter, so the Hyena and Honey Badger cards sit after the two ostrich seats.
+  assert.deepEqual(both.roles, ['blue', 'red', 'hyena', 'badger']);
   assert.equal(errs.length, 0, errs.join('\n'));
   await browser.close();
   server.close();

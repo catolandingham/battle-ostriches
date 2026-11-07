@@ -1,15 +1,15 @@
 // Two humans, zero computers: real sockets from the lobby through the first game screen.
-const { chromium } = require('playwright-core');
+const { webkit } = require('playwright-core');
 const assert = require('assert'), fs = require('fs');
 process.env.PORT = '3985';
 process.env.BO_NOSTORE = '1';
 process.env.BO_BOTMS = '200';
 const server = require('./server.js');
-const OUT = '/opt/cursor/artifacts';
+const OUT = require('path').join(__dirname, 'shots', 'e2e');
 fs.mkdirSync(OUT, { recursive: true });
 const desk = { viewport: { width: 1280, height: 800 } };
 (async () => {
-  const browser = await chromium.launch({ executablePath: '/usr/local/bin/google-chrome', args: ['--no-sandbox', '--disable-dev-shm-usage'] }), errs = [];
+  const browser = await webkit.launch(), errs = [];
   const open = async () => {
     const page = await (await browser.newContext(desk)).newPage();
     page.on('pageerror', e => errs.push(e.message));

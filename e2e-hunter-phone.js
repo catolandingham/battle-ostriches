@@ -1,5 +1,5 @@
 // Phone 390x844 and a short keyboard viewport: hunter can see why no bird is drawn, and can tap a real step.
-const { chromium } = require('playwright-core');
+const { webkit } = require('playwright-core');
 const assert = require('assert'), fs = require('fs');
 process.env.PORT = '3983';
 process.env.BO_NOSTORE = '1';
@@ -7,11 +7,11 @@ process.env.BO_BOTMS = '40';
 process.env.BO_CLOCKMS = '60000';
 const T = require('./three.js');
 const server = require('./server.js');
-const OUT = '/opt/cursor/artifacts';
+const OUT = require('path').join(__dirname, 'shots', 'e2e');
 fs.mkdirSync(OUT, { recursive: true });
 const phone = { viewport: { width: 390, height: 844 } };
 (async () => {
-  const browser = await chromium.launch({ executablePath: '/usr/local/bin/google-chrome', args: ['--no-sandbox', '--disable-dev-shm-usage'] }), errs = [];
+  const browser = await webkit.launch(), errs = [];
   const open = async () => {
     const page = await (await browser.newContext(phone)).newPage();
     page.on('pageerror', e => errs.push(e.message));
@@ -24,8 +24,9 @@ const phone = { viewport: { width: 390, height: 844 } };
     const hud = r(document.getElementById('hud')), board = r(document.getElementById('board')), hint = r(document.getElementById('hint'));
     const legal = [...document.querySelectorAll('.cell.legal')].map(c => { const b = c.getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top + b.height / 2, top: b.top, bot: b.bottom }; });
     const shown = legal.filter(p => p.top >= board.top && p.bot <= Math.min(board.bottom, innerHeight));
+    const key = document.getElementById('markkey'), keyH = key && !key.hidden ? r(key).height : 0;
     return {
-      gap: Math.round(board.top - hint.bottom),
+      gap: Math.round(board.top - hint.bottom), keyH: Math.round(keyH), gapNoKey: Math.round(board.top - hint.bottom - keyH),
       overlap: hud.bottom > board.top + 1,
       legal: legal.length, shown: shown.length, sample: shown[0] || legal[0] || null,
       hint: document.getElementById('hint').textContent,
@@ -77,7 +78,8 @@ const phone = { viewport: { width: 390, height: 844 } };
   assert.ok(desk.legal >= 3, 'hunter has steps ' + desk.legal);
   assert.match(desk.hint, /no bird is drawn|not pointed at/);
   assert.ok(desk.tipH < 2, 'hidden tip does not reserve a band');
-  assert.ok(desk.gap < 90, 'gap under the hint is ' + desk.gap);
+  // The "Legal step / Bird may be here" key now sits between the hint and the board, so it is not counted as empty space.
+  assert.ok(desk.gapNoKey < 90, 'gap under the hint, not counting the key, is ' + desk.gapNoKey + ' (key ' + desk.keyH + ')');
   assert.equal(desk.overlap, false);
   const tall = await fit(H);
   assertFit('844', tall);
