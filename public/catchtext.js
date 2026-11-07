@@ -47,6 +47,19 @@
     return rv.by === 'badger' ? `The honey badger ran into the hyena. Nobody is hurt. The hyena slid back ${n} squares.`
       : `The hyena ran into the honey badger. Nobody is hurt. The hyena slid back ${n} squares.`;
   }
-  const API = { catchLine, catchesLeft, outLine, kickLine, popOutLine, rivalLine };
+  // The big-event lines this phone has not announced yet. seen remembers the last seq of each event ({ pop: 0, rival: 0 }, one per page).
+  // A page opened mid-game (prev is null) learns where the counters are and says nothing; a new game (setup phase) starts the counters over.
+  // Each item: { kind, text, square } where square is a place on the board and is null unless the view carried one (the server sends it only to a player who can see it).
+  function newEvents(seen, S, prev) {
+    const out = [], h = (S && S.h3) || {};
+    if (!S) return out;
+    if (S.phase && S.phase.startsWith('setup')) { seen.pop = seen.rival = seen.kick = 0; return out; }
+    const po = h.popout, rv = h.rival, k = S.kick;
+    if (k && k.seq !== seen.kick) { seen.kick = k.seq; if (prev) out.push({ kind: 'kick', text: kickLine(k.who, k.moved, S.cfg && S.cfg.kickPush), square: k.to || null }); }
+    if (po && po.seq !== seen.pop) { seen.pop = po.seq; if (prev) out.push({ kind: 'popout', text: popOutLine(), seen: !!po.seen }); }
+    if (rv && rv.seq !== seen.rival) { seen.rival = rv.seq; if (prev) out.push({ kind: 'rival', text: rivalLine(rv), square: rv.to || null }); }
+    return out;
+  }
+  const API = { catchLine, catchesLeft, outLine, kickLine, popOutLine, rivalLine, newEvents };
   if (typeof module !== 'undefined') module.exports = API; else window.CatchText = API;
 })();

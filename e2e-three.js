@@ -27,8 +27,10 @@ const shot = (p, n) => p.screenshot({ path: OUT + n + '.jpg', type: 'jpeg', qual
   await H.waitForSelector('#actions.mine', { state: 'attached' }); await H.waitForSelector('.cell.maybird', { state: 'attached' }); await H.waitForSelector('.h3pop.yes', { state: 'attached' }); await H.waitForTimeout(400); await shot(H, '3-sense');
   console.log('maybird', await H.locator('.cell.maybird').count()); assert.ok(await H.locator('.cell.maybird').count() >= 9, 'sense zone: rose "Bird may be here" dots'); assert.ok(/A bird is near: you can move up to 2 squares\. The rose dots show where it may be\./.test(await H.textContent('#hint')));
   await H.waitForTimeout(800); await shot(H, '4-hunter-view');
-  await H.waitForTimeout(1200); await cell(H, 7, 5).click(); // hyena pounce: one move of 2 squares lands on the ostrich
-  await A.waitForSelector('.h3pop.catch'); await H.waitForSelector('.h3pop.catch'); await A.waitForTimeout(250); await shot(A, '5-catch-ostrich'); await shot(H, '5-catch-hunter');
+  await cell(H, 8, 4).click(); await H.waitForFunction(() => /POUNCE/.test(document.getElementById('hint').textContent)); // hyena pounce: extra square
+  await H.waitForTimeout(1200); await cell(H, 7, 5).click();
+  const said = () => /caught|knocked/i.test((document.getElementById('announce') || {}).textContent || ''); // the catch line (the start-of-game line may be up first)
+  await A.waitForFunction(said, null, { timeout: 15000 }); await H.waitForFunction(said, null, { timeout: 15000 }); await A.waitForTimeout(250); await shot(A, '5-catch-ostrich'); await shot(H, '5-catch-hunter');
   assert.equal(await A.locator('#h3bar .bchip.blue .pip.on').count(), 1, 'header shows catch');
   assert.equal(await A.locator('.cell').nth(6 * 9 + 6).locator('.pc.po').count(), 1, 'ostrich knocked back to (6,6)');
   // round 2: vulture lets the clock run out -> pass; ostrich lost its turn -> hunter

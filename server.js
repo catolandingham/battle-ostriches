@@ -109,7 +109,7 @@ function view3(room, role) {
   const g = room.g, t = g.three, over = g.phase === 'over', pub = AI.redView(g), mine = g.phase === 'play' && g.turn === role && ready3(room);
   const seats = Object.fromEntries(SEATS3.map(s => [s, room.bots.includes(s) ? 'bot' : room.players[s] ? (room.players[s].ws ? 'on' : 'off') : 'open']));
   const lc = t.lastCatch && { bird: t.lastCatch.bird, ko: t.lastCatch.ko, walked: !!t.lastCatch.walked, ambush: !!t.lastCatch.ambush, seq: t.lastCatch.seq, round: t.lastCatch.round,
-    at: t.lastCatch.at, to: role !== 'hunter' || over ? t.lastCatch.to : null }; // every seat sees where it happened: birds see birds, the hunter made the catch
+    at: role === t.lastCatch.bird || role === 'hunter' || over || T.hunterSeenBy(g, role) ? t.lastCatch.at : null, to: role !== 'hunter' || over ? t.lastCatch.to : null }; // a bird sees where the catch was only if it can see the hunter now (birds see birds, so `to` is public to them)
   const h3 = Object.assign(T.status3(g), { seats, ready: ready3(room), needKind: role === 'hunter' && !t.kind, lastCatch: lc, lost: t.lost || null,
     clockLeft: room.deadline && g.phase === 'play' ? Math.max(0, room.deadline - Date.now()) : null, clockMs: T.T3.clockMs, senseRange: T.T3.sense,
     hunter: over || role === 'hunter' || T.hunterSeenBy(g, role) ? t.h : null, burrowed: role === 'hunter' || over ? t.burrowed : false, range: role === 'hunter' ? T.hunterRange(g) : 1,
@@ -131,7 +131,7 @@ function view3(room, role) {
     if (g.phase === 'play' && T.isOut(g, role)) {
       v.god = true; v.myTurn = false; v.moves = []; v.carryMoves = []; v.fly = []; v.throw = []; v.hmoves = [];
       v.can = { sit: false, carry: false }; v.ostrich = g.ostrich; v.vulture = g.vulture; v.eggs = eggView(g);
-      h3.hunter = t.h.slice(); h3.burrowed = !!t.burrowed; if (h3.popout) h3.popout.seen = true;
+      h3.hunter = t.h.slice(); h3.burrowed = !!t.burrowed; if (h3.popout) h3.popout.seen = true; if (lc) lc.at = t.lastCatch.at;
     }
   }
   // Kick: the ostrich's options; the kick itself is announced to every seat, the square it ended on only to a seat that can see that square
@@ -211,7 +211,7 @@ function viewT(room, seat) {
   const isO = TT.isO(seat), isV = TT.isV(seat), myB = g.b[seat], step = TT.setupStep(g, seat);
   const seats = Object.fromEntries(tseats(g).map(s => [s, room.bots.includes(s) ? 'bot' : room.players[s] ? (room.players[s].ws ? 'on' : 'off') : 'open']));
   const lc = g.lastCatch && { bird: g.lastCatch.bird, ko: g.lastCatch.ko, walked: !!g.lastCatch.walked, ambush: !!g.lastCatch.ambush, seq: g.lastCatch.seq, round: g.lastCatch.round,
-    at: g.lastCatch.at, to: seat !== 'hunter' || over ? g.lastCatch.to : null }; // every seat sees where it happened: birds see birds, the hunter made the catch
+    at: seat === g.lastCatch.bird || seat === 'hunter' || over || TT.hunterSeenBy(g, seat) ? g.lastCatch.at : null, to: seat !== 'hunter' || over ? g.lastCatch.to : null }; // a bird sees where the catch was only if it can see the hunter now
   const pub = Object.fromEntries(Object.entries(g.marks).filter(([, m]) => m === 'spotted' || m === 'hit' || m === 'stone'));
   // other birds on the board: birds always see each other (vultures don't see where the ostriches start until play begins); the hunter sees none
   const pieces = seat === 'hunter' && !over ? [] : TT.OS.concat(TT.VS).filter(s => s !== seat && TT.live(g, s) && !(setup && isV && TT.isO(s)))
@@ -221,7 +221,7 @@ function viewT(room, seat) {
     clockLeft: room.deadline && g.phase === 'play' ? Math.max(0, room.deadline - Date.now()) : null, clockMs: TT.TM.clockMs, senseRange: TT.TM.sense,
     hunter: g.h && (over || seat === 'hunter' || TT.hunterSeenBy(g, seat)) ? g.h.p : null, burrowed: g.h && (seat === 'hunter' || over) ? g.h.burrowed : false, range: seat === 'hunter' ? TT.hunterRange(g) : 1,
     popout: g.h ? popView(g.popout, seat === 'hunter' || over || TT.hunterSeenBy(g, seat)) : null,
-    block: TT.TM.vStarts.concat(g.h ? [g.h.p] : []), mateSniff: isV && g.phase === 'play' ? g.sniffs[TT.mate(seat)] || null : null, eggsTotal: g.eggs.length });
+    block: setup ? TT.TM.vStarts.concat(g.h ? [g.h.p] : []) : [], mateSniff: isV && g.phase === 'play' ? g.sniffs[TT.mate(seat)] || null : null, eggsTotal: g.eggs.length });
   const eggs = () => g.eggs.map(e => { const c = TT.OS.find(o => g.b[o].carrying === e.id);
     return { pos: e.pos || (c && c !== seat ? g.b[c].pos : null), alive: e.alive, coldIn: B.coldIn(g, e), carried: c === seat, nest: e.nest, mine: isO && e.nest === myB.nest }; });
   // Kick: announced to every seat; the square it ended on only to a seat that can see it (birds see every bird, a bird sees the hunter within 2, the hunter sees no bird)
@@ -247,7 +247,7 @@ function viewT(room, seat) {
     v.can = { sit: false, carry: false, kick: false }; v.kickTargets = []; v.kickNear = false; v.kick = kickOf(true); v.eggs = eggs();
     v.h3.pieces = TT.OS.concat(TT.VS).filter(s => s !== seat && TT.live(g, s))
       .map(s => ({ seat: s, type: TT.isO(s) ? 'o' : 'v', p: g.b[s].pos, mate: (TT.isO(s) && isO) || (TT.isV(s) && isV), carrying: isO && TT.isO(s) && g.b[s].carrying != null }));
-    if (g.h) { v.h3.hunter = g.h.p.slice(); v.h3.burrowed = !!g.h.burrowed; if (v.h3.popout) v.h3.popout.seen = true; }
+    if (g.h) { v.h3.hunter = g.h.p.slice(); v.h3.burrowed = !!g.h.burrowed; if (v.h3.popout) v.h3.popout.seen = true; if (lc) lc.at = g.lastCatch.at; }
   } else if (myB.out) { v.myTurn = false; v.moves = []; v.carryMoves = []; v.fly = []; v.throw = []; }
   return stamp(room, v, seat);
 }
@@ -310,7 +310,7 @@ function viewH(room, seat) {
   const g = room.g, t = g.hunt, over = g.phase === 'over', pub = AI.redView(g), mine = g.phase === 'play' && g.turn === seat && readyH(room), isH = HU.isH(seat);
   const seats = Object.fromEntries(SEATSH.map(s => [s, room.bots.includes(s) ? 'bot' : room.players[s] ? (room.players[s].ws ? 'on' : 'off') : 'open']));
   const lc = t.lastCatch && { bird: t.lastCatch.bird, by: t.lastCatch.by, ko: t.lastCatch.ko, walked: !!t.lastCatch.walked, ambush: !!t.lastCatch.ambush, seq: t.lastCatch.seq, round: t.lastCatch.round,
-    at: !isH || seat === t.lastCatch.by || over ? t.lastCatch.at : null, to: !isH || over ? t.lastCatch.to : null }; // birds see birds; the hunter that made the catch knows where it landed; the other hunter sees no bird
+    at: seat === t.lastCatch.bird || seat === t.lastCatch.by || over || (!isH && HU.seen(g, seat, t.lastCatch.by)) ? t.lastCatch.at : null, to: !isH || over ? t.lastCatch.to : null }; // birds see birds; a bird sees where the catch was only if it can see that hunter now; the hunter that made it knows the square, the other hunter sees no bird
   const hunters = HU.HUNTERS.filter(h => over || HU.seen(g, seat, h)).map(h => ({ kind: h, p: t.hs[h].p, burrowed: (h === seat || over) && t.hs[h].burrowed, me: h === seat }));
   const rv = t.rival && { by: t.rival.by, seq: t.rival.seq, round: t.rival.round, n: HU.TH.rivalKnock, to: isH || over || HU.seen(g, seat, 'hyena') ? t.rival.to : null }; // the meeting is announced to every seat; the square only to a seat that can see the hyena
   const h3 = Object.assign(HU.statusH(g), { seats, ready: readyH(room), needKind: false, kind: isH ? seat : null, mySeat: seat, hunters, hunter: null, burrowed: false,
@@ -332,8 +332,8 @@ function viewH(room, seat) {
     if (g.phase === 'play' && HU.isOut(g, seat)) {
       v.god = true; v.myTurn = false; v.moves = []; v.carryMoves = []; v.fly = []; v.throw = []; v.hmoves = [];
       v.can = { sit: false, carry: false }; v.ostrich = g.ostrich; v.vulture = g.vulture; v.eggs = eggView(g);
-      if (h3.rival) h3.rival.to = t.rival.to; if (h3.popout) h3.popout.seen = true;
       h3.hunters = HU.HUNTERS.map(h => ({ kind: h, p: t.hs[h].p.slice(), burrowed: !!t.hs[h].burrowed, me: false }));
+      if (h3.rival) h3.rival.to = t.rival.to; if (h3.popout) h3.popout.seen = true; if (lc) lc.at = t.lastCatch.at;
     }
   }
   if (seat === 'blue') { v.kickTargets = mine && !v.god ? HU.kickTargetsH(g) : []; v.kickNear = !!mine && !v.god && HU.kickableH(g).length > 0; v.can = Object.assign(v.can || {}, { kick: v.kickTargets.length > 0 }); }

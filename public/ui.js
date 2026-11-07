@@ -133,6 +133,8 @@ function drawWalk(){const st=WALK[wr],cur=st[wi],W=$('walk');
 // --- role card: one card per animal per phone, shown at the first play state for that seat (words in roles.js) ---
 let cardOpen=null;
 const cardSeen=id=>{try{return localStorage.getItem('bo_card_'+id)||localStorage.getItem('bo_card_off')}catch(e){return 1}};
+// How to play: the first line of each mode's rules says who hunts what (roles.js huntLine), naming the hunter once the game knows it
+function fillHuntLines(){const k=S&&(S.role==='hunter'?(S.kind||(S.h3&&S.h3.kind)):(S.h3&&S.h3.kind));document.querySelectorAll('.mrules').forEach(e=>{const l=e.querySelector('.huntline');if(l&&window.Roles)l.textContent=Roles.huntLine(e.dataset.m,k);});}
 function cardMode(s){return !s.three?'2':s.h3&&s.h3.team?String(s.h3.n):s.h3&&s.h3.hunt?'4h':'3';}
 function cardFor(s){if(!s||!window.Roles||!s.rules)return null;const h=s.h3||{};
  return Roles.roleCard(h.mySeat||s.role,s.role==='hunter'?(s.kind||h.kind):h.kind,cardMode(s),s.rules);}
@@ -149,7 +151,7 @@ function maybeCard(){if(cardOpen||!S||S.phase!=='play'||S.god)return;const h=S.h
  const walk=$('walk'),tut=document.getElementById('tut');if(!walk.classList.contains('hidden')||(tut&&!tut.classList.contains('hidden')))return;
  const c=cardFor(S);if(!c||cardSeen(c.id))return;showCard(c,S.picked,false);}
 tapper($('rolecard'),closeCard);
-window.UI={card(){showCard(cardFor(S),S&&S.picked,true);},walk(){walk();},rules(){$('rules').classList.remove('hidden');const rb=$('roleCardBtn');if(rb)rb.classList.toggle('hidden',!cardFor(S));const b=document.getElementById('guideToggle');if(b){const on=!localStorage.getItem('bo_hs_off');b.textContent=on?'Ostrich guides: ON (tap to turn off)':'Ostrich guides: OFF (tap to turn on)';}},closeRules(){$('rules').classList.add('hidden')},
+window.UI={card(){showCard(cardFor(S),S&&S.picked,true);},walk(){walk();},rules(){fillHuntLines();$('rules').classList.remove('hidden');const rb=$('roleCardBtn');if(rb)rb.classList.toggle('hidden',!cardFor(S));const b=document.getElementById('guideToggle');if(b){const on=!localStorage.getItem('bo_hs_off');b.textContent=on?'Ostrich guides: ON (tap to turn off)':'Ostrich guides: OFF (tap to turn on)';}},closeRules(){$('rules').classList.add('hidden')},
  setMode(m){if(locked||!S||!S.myTurn)return;mode=m;if(m==='throw')coachDid('throw');render();},
  kick(){if(locked||!S||!S.myTurn||S.role!=='blue')return;if(curMode()==='carry')return nope("You can't kick while carrying an egg.");
   if(!(S.can&&S.can.kick))return nope(S.mustLeave?`You sat ${S.cfg.maxSit} turns in a row. Step off this turn.`:'Nothing to kick next to you.');
@@ -236,6 +238,21 @@ function coolNow(){W=null;if(!S||S.role!=='blue'||S.phase!=='play')return;const 
 function guideApply(){if(S&&!S._o)S._o={m:S.moves,c:S.carryMoves,cc:S.can&&S.can.carry};else if(S){S.moves=S._o.m;S.carryMoves=S._o.c;if(S.can)S.can.carry=S._o.cc;}if(!G)return;const o=S.ostrich;if(!G.t)return;if(G.free){G.path=[];let p=o.slice();for(let k=0;k<20&&gd(p,G.t)>0;k++){p=[p[0]+Math.sign(G.t[0]-p[0]),p[1]+Math.sign(G.t[1]-p[1])];G.path.push(key(p));}return;}const tg=G.any||[G.t],f=ms=>{const r=(ms||[]).filter(p=>tg.some(t=>gd(p,t)<gd(o,t)));return r.length||!(ms||[]).length?r:ms;};
  if(G.sit&&S.can&&S.can.sit){S.moves=[];S.carryMoves=[];S.can.carry=false;}else{S.moves=f(S.moves);S.carryMoves=f(S.carryMoves);}
  G.path=[];let p=o.slice();for(let k=0;k<20&&gd(p,G.t)>0;k++){p=[p[0]+Math.sign(G.t[0]-p[0]),p[1]+Math.sign(G.t[1]-p[1])];G.path.push(key(p));}}
+// "YOU" tag on this phone's own piece, plus a 0.6 s pulse when this player's turn starts (Nov 4 playtest: "I don't see where I am").
+// It only marks a piece this player already sees: nothing for an eliminated (off-board) bird, the watcher view or the end screen.
+// The pulse plays once per turn (youKey); a re-render inside those 0.6 s picks the animation up where it was.
+let youKey='',youAt=0;
+function youTag(board){
+ if(!S||S.god||S.phase==='over'){youKey='';return;}
+ const bs=S.h3&&S.h3.birds,mb=bs&&bs[S.h3.mySeat||S.role];if(mb&&mb.out)return;
+ const mine=board.querySelector('.pc.ph.mine'),cell=mine?mine.closest('.cell'):board.querySelector('.cell[data-tags~="me"]');
+ if(!cell)return;
+ const t=document.createElement('span');t.className='youtag'+(cell.querySelector('.pouncetag')?' low':'');t.textContent='YOU';cell.appendChild(t);
+ if(S.phase!=='play'||!S.myTurn)return;
+ const k=S.role+':'+S.round+':'+S.turn;if(k!==youKey){youKey=k;youAt=Date.now();}
+ const el=Date.now()-youAt;if(el>=600)return;
+ const p=document.createElement('span');p.className='youpulse';p.style.animationDelay=(-el)+'ms';cell.appendChild(p);
+ setTimeout(()=>document.querySelectorAll('.youpulse').forEach(e=>e.remove()),650-el);}
 function render(prev){
  maybeCard();$('lobby').classList.add('hidden');const C=S.cfg,blue=S.role==='blue',body=document.body;body.className=(S.role==='hunter'?'hunter':blue?'blue':'red')+(S.three?' three':'')+(S.god?' godview':'');
  $('turnTag').innerHTML=S.role==='hunter'||(S.h3&&S.h3.team)?window.T3UI.tag(S):`<span style="display:inline-block;width:26px;height:26px;vertical-align:middle">${blue?OST:VUL}</span> ${blue?'OSTRICH':'VULTURE'}`;
@@ -376,7 +393,8 @@ function render(prev){
  if(CM){let an=CM.at==='board'?null:[...a.querySelectorAll('button')].find(b=>(CM.at==='sit'?/Sit/:/Throw/).test(b.textContent));
   if(an&&!an.disabled){an.classList.add('spot','pulse');}if(CM.at==='board'||(an&&!an.disabled))h=CM.txt+(h&&CM.at!=='board'?' — or '+h.charAt(0).toLowerCase()+h.slice(1):'');}
  if(S.three)window.T3UI.after(S,prev,board);
- window.T3UI.events(S,prev,board);window.T3UI.startLine(S,prev,board,cardMode(S));
+ window.T3UI.events(S,prev,board);window.T3UI.startLine(S,prev,cardMode(S));
+ youTag(board);
  if(window.BORing)BORing.sync(S);
  if(S.role!=='hunter'){requestAnimationFrame(()=>window.FX&&FX.update(S,prev));window.SMASH&&SMASH.update(S,prev);}
  // make 'your turn' + what to do impossible to miss (Brian playtest: a player missed the instructions)
@@ -384,6 +402,8 @@ function render(prev){
  if(window.BORing&&S.phase==='play'&&S.myTurn){for(const note of BORing.omittedNotes(S)){const sit=/^sit/i.test(note),stone=/stone/i.test(note);if(sit&&!/step off|sit is used/i.test(h))h=(h?h+' ':'')+note;if(stone&&!/stone/i.test(h))h=(h?h+' ':'')+note;}}
  if(mt&&!/your turn/i.test(h)){const what=S.role==='red'?'Tap a glowing square to fly'+(S.stones>0?'. Tap yourself to Throw':''):S.role==='hunter'?'Tap a glowing square to move. Tap yourself to stay':'Tap a glowing square to walk'+(S.onEgg&&S.can&&(S.can.sit||S.can.carry)?'. Tap your ostrich for Sit or Carry':'');h='YOUR TURN · '+(h&&!/turn…$/.test(h)?h:what);}
  $('hint').textContent=h;if(h&&(G||(W&&W.txt))){const sb=document.createElement('button');sb.className='skipguide';sb.id='skipGuide';sb.textContent='Skip guide';$('hint').appendChild(sb);tapper(sb,()=>{UI.guides(false)});}$('hint').classList.toggle('empty',!h);$('hint').classList.toggle('guide',!!G||!!(W&&W.txt));$('hint').classList.toggle('cold',!G&&!!(W&&W.txt));$('hint').classList.toggle('urgent',!G&&!!(W&&W.urgent));$('log').textContent=S.joined&&!S.opponent&&S.phase!=='over'?'Opponent offline… they can rejoin with the same link.':'';
+ // cause before result (D36): stone into the count, carried egg slide, cold egg dims, badger sinks; each only on a screen that already held the facts (fx.js)
+ if(window.CAUSE)CAUSE.run(S,prev,board,{stone:STONE,egg:MYEGG,ring:n=>warmRing(n,C.warmth)});
  const o=$('over');if(S.phase==='over'){hideTip();tipBar(null);$('rules').classList.add('hidden');$('walk').classList.add('hidden');const tut=document.getElementById('tut');if(tut)tut.classList.add('hidden');
   if(!overHold){overHold=Date.now()+1000;setTimeout(()=>{if(S&&S.phase==='over')render();},1000);}}
  else overHold=0;

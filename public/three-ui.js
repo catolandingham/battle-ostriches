@@ -109,7 +109,7 @@ function hChips(S){let bar=$('h3bar');if(!bar){bar=document.createElement('div')
  bar.innerHTML=bird('red')+bird('blue')+hun('hyena')+hun('badger');}
 function hPieces(S,board,prev){const h=S.h3,me=h.mySeat;
  for(const x of h.hunters||[]){const c=cellAt(board,S,x.p);if(!c)continue;const bur=x.burrowed;const pc=document.createElement('div');
-  pc.className='pc ph h'+x.kind+(bur?' bur':'')+(x.me?' mine':' rival')+(bur&&x.me&&prev&&!prev.burrowed?' justbur':'');pc.innerHTML=bur?MOUND:KIND[x.kind].art;c.appendChild(pc);c.classList.add('hcell');
+  pc.className='pc ph h'+x.kind+(bur?' bur':'')+(x.me?' mine':' rival');pc.innerHTML=bur?MOUND:KIND[x.kind].art;c.appendChild(pc);c.classList.add('hcell');
   if(x.me){const old=document.getElementById('current');if(old&&old!==c)old.removeAttribute('id');c.id='current';}
   c.dataset.tip=(c.dataset.tip?c.dataset.tip+' · ':'')+(x.me?(bur?'You, burrowed: nobody can see you':'You ('+KIND[x.kind].n+')'):me==='hyena'||me==='badger'?`Your rival, the ${KIND[x.kind].n}. ${x.kind==='badger'?'If it moves onto you, you are knocked back 2. If you move onto it, you bounce back 2.':'If you move onto it, it is knocked back 2.'}`:`${KIND[x.kind].n}! It catches a bird by landing on it (or if you step onto it)`);
   if(bur){const l=document.createElement('span');l.className='burtag';l.textContent='BURROWED';c.appendChild(l);}
@@ -180,7 +180,7 @@ const BL=window.BadgerLines;let bPicker=BL.createPicker(),bLastS=null,bBusy=fals
 const winNote=S=>{const t=BL.winLine(S);return t?`<p class="badgerwin">${t}</p>`:'';};
 function badgerSay(text){if(bQ.length<4)bQ.push(text);setTimeout(()=>bPump(0),60);} // after this state's board is drawn, so the badger's square is there to point at
 function bPump(tries){if(bBusy||!bQ.length)return;
- if(document.querySelector('#board .h3pop')&&tries<10){setTimeout(()=>bPump(tries+1),400);return;}
+ if((document.querySelector('#board .h3pop')||document.getElementById('announce')&&document.getElementById('announce').classList.contains('show'))&&tries<10){setTimeout(()=>bPump(tries+1),400);return;}
  bBusy=true;const o=document.createElement('div');o.id='badgerline';o.className='h3pop badger';o.textContent=bQ.shift();document.body.appendChild(o);
  const cell=document.querySelector('#board .pc.ph.hbadger'),bd=document.getElementById('board'),r=(cell||bd).getBoundingClientRect(),w=o.offsetWidth,h=o.offsetHeight,vw=window.innerWidth;
  let x=r.left+r.width/2,y=cell?r.top-8-h/2:r.top+r.height/2;x=Math.max(w/2+8,Math.min(vw-w/2-8,x));if(y<h/2+8)y=r.bottom+8+h/2;
@@ -188,32 +188,36 @@ function bPump(tries){if(bBusy||!bQ.length)return;
  setTimeout(()=>{o.remove();bBusy=false;bPump(0);},3000);}
 function badgerLines(S,prev){if(S===bLastS)return;bLastS=S;if(!prev||(prev.round!=null&&S.round<prev.round))bPicker=BL.createPicker();
  for(const e of BL.detect(prev,S,bPicker))badgerSay(e.text);}
-function pop(board,txt,cls){const o=document.createElement('div');o.className='h3pop '+cls;o.textContent=txt;board.appendChild(o);setTimeout(()=>o.remove(),cls==='catch'||cls==='event'?3400:1800);}
-// Big events are announced to every phone in one line (catchtext.js). Where they happened (the square highlight) shows only when the view carries that square,
-// and the server sends it only to a player who can see it. seen[] remembers which one-time events this phone already announced; a page opened mid-game never replays them.
+function pop(board,txt,cls){const o=document.createElement('div');o.className='h3pop '+cls;o.textContent=txt;board.appendChild(o);setTimeout(()=>o.remove(),cls==='catch'?3400:1800);}
+// --- Announcements: one plain line for a big event (catch, knock-out, the hunters meeting, the badger coming out, the start-of-game line) on every phone.
+// The line lives in #announce, outside #board, so a board redraw never erases it. Each line stays up about 3 seconds, one at a time, in order.
+// Where the event happened (a square highlight) is drawn on the board only when the view carries that square, and the server sends it only to a player who can see it. ---
+const ANN_MS=3000,annQ=[];let annBusy=false;
+function announce(txt){if(!txt)return;annQ.push(txt);if(annQ.length>4)annQ.shift();annPump();}
+function annPump(){if(annBusy||!annQ.length)return;annBusy=true;
+ let o=$('announce');if(!o){o=document.createElement('div');o.id='announce';o.setAttribute('role','status');o.setAttribute('aria-live','polite');document.body.appendChild(o);}
+ o.textContent=annQ.shift();o.className='show';
+ setTimeout(()=>{o.className='';o.textContent='';setTimeout(()=>{annBusy=false;annPump();},120);},ANN_MS);}
 const evSeen={kick:0,pop:0,rival:0};
 function events(S,prev,board){
- if(S&&!S.three)rulesMode('2');
- if(!S||S.phase!=='play'){evSeen.kick=evSeen.pop=evSeen.rival=0;return;}
- const CT=window.CatchText,h=S.h3||{},k=S.kick,po=h.popout,rv=h.rival;
- if(k&&k.seq!==evSeen.kick){evSeen.kick=k.seq;
-  if(prev){pop(board,CT.kickLine(k.who,k.moved,S.cfg.kickPush),'event');const c=cellAt(board,S,k.to);c&&c.classList.add('h3kb');}}
- if(po&&po.seq!==evSeen.pop){evSeen.pop=po.seq;if(prev)pop(board,CT.popOutLine(),'event');}
- if(rv&&rv.seq!==evSeen.rival){evSeen.rival=rv.seq;
-  if(prev){pop(board,CT.rivalLine(rv),'event');const c=cellAt(board,S,rv.to);c&&c.classList.add('h3kb');}}}
+ if(!S)return;if(!S.three)rulesMode('2');
+ const h=S.h3||{};
+ for(const e of window.CatchText.newEvents(evSeen,S,prev)){announce(e.text);
+  // the square highlight: the hyena's landing square for the meeting; the badger's own square for a pop-out, only if this phone can see the badger
+  const sq=e.kind==='rival'||e.kind==='kick'?e.square:e.seen?(h.hunters?(h.hunters.find(x=>x.kind==='badger')||{}).p:h.hunter):null,c=cellAt(board,S,sq);c&&c.classList.add('h3kb');}}
 // One plain line at the start of every game: who hunts what, naming only the animals in the game (roles.js).
 let startDone=false;
-function startLine(S,prev,board,mode){
+function startLine(S,prev,mode){
  if(!S||S.phase!=='play'){startDone=false;return;}
  const h=S.h3;if(startDone||(h&&(h.ready===false||h.needKind||(h.team&&h.teamSetup&&h.teamSetup!=='done'))))return;
  startDone=true;if(!prev&&S.round>1)return;
- pop(board,window.Roles.huntLine(mode,S.role==='hunter'?(S.kind||(h&&h.kind)):(h&&h.kind)),'event');}
+ announce(window.Roles.huntLine(mode,S.role==='hunter'?(S.kind||(h&&h.kind)):(h&&h.kind)));}
 function after(S,prev,board){badgerLines(S,prev);chips(S);clock(S);kindPick(S);if(S.h3.team)tPieces(S,board);if(S.h3.hunt)hPieces(S,board,prev);
  rulesMode(S.h3.hunt?'4h':S.h3.team?String(S.h3.n):'3');
  const h=S.h3,k=h.kind||'hyena',me=S.role;
  // hunter piece: the hunter always sees itself; a bird only sees it within 2 squares (never a burrowed badger)
  const hp=h.hunter,hc=cellAt(board,S,hp);
- if(hc){const bur=me==='hunter'&&S.burrowed;const pc=document.createElement('div');pc.className='pc ph h'+k+(bur?' bur':'')+(me==='hunter'?' mine':'')+(bur&&prev&&!prev.burrowed?' justbur':'');pc.innerHTML=bur?MOUND:KIND[k].art;hc.appendChild(pc);hc.classList.add('hcell');if(me==='hunter'){const old=document.getElementById('current');if(old&&old!==hc)old.removeAttribute('id');hc.id='current';}
+ if(hc){const bur=me==='hunter'&&S.burrowed;const pc=document.createElement('div');pc.className='pc ph h'+k+(bur?' bur':'')+(me==='hunter'?' mine':'');pc.innerHTML=bur?MOUND:KIND[k].art;hc.appendChild(pc);hc.classList.add('hcell');if(me==='hunter'){const old=document.getElementById('current');if(old&&old!==hc)old.removeAttribute('id');hc.id='current';}
   hc.dataset.tip=(hc.dataset.tip?hc.dataset.tip+' · ':'')+(me==='hunter'?(bur?'You, burrowed: the birds can\'t see you':'You ('+KIND[k].n+')'):`${KIND[k].n}! It catches a bird by landing on it (or if you step onto it)`);
   if(bur){const l=document.createElement('span');l.className='burtag';l.textContent='BURROWED';hc.appendChild(l);}
 }
@@ -231,6 +235,7 @@ function after(S,prev,board){badgerLines(S,prev);chips(S);clock(S);kindPick(S);i
    pop(board,S.sense?'Bird may be here.':'Nothing near',S.sense?'yes':'no');
    window.SFX&&SFX.play(S.sense?'sniffYes':'sniffNo');}}
  // catch + knockback feedback
+ if(S.phase&&S.phase.startsWith('setup'))lastCatch=0;
  const lc=h.lastCatch;if(lc&&lc.seq!==lastCatch){const fresh=lastCatch!==0||(prev&&prev.h3);lastCatch=lc.seq;
   if(fresh){const ac=cellAt(board,S,lc.at),tc=cellAt(board,S,lc.to);
    const word=lc.bird==='red'||lc.bird==='v1'||lc.bird==='v2'?'vulture':'ostrich';
@@ -239,7 +244,7 @@ function after(S,prev,board){badgerLines(S,prev);chips(S);clock(S);kindPick(S);i
    if(tc)tc.classList.add('h3kb');
    // what the catch means, in words: hurt or out, and who did it (catchtext.js)
    const CT=window.CatchText,seat=h.mySeat||me,by=lc.by||k;
-   pop(board,CT.catchLine(lc,seat,by,CT.catchesLeft(h,lc)),'catch');
+   announce(CT.catchLine(lc,seat,by,CT.catchesLeft(h,lc)));
    const ch=document.querySelector('#h3bar .bchip.'+lc.bird);ch&&ch.classList.add('hitnow');window.SFX&&SFX.play(me==='hunter'?'win':'warn');}}
  outBanner(S,prev);
  markHurt(S,board); warnNear(S,board);
@@ -255,6 +260,6 @@ function over(S){if(S.h3.hunt)return hOver(S);if(S.h3.team)return tOver(S);const
   :w==='red'?(S.winBy==='cold'?`The last egg went cold in round ${S.round}.`:S.winBy==='starved'?'The ostrich was out and no eggs were left.':`The vulture smashed every egg by round ${S.round}.`)
   :S.winBy==='time'?'Time ran out: the ostrich was out and the vulture never got every egg.':'The eggs were lost, but the vulture was already out.';
  return `<div class="lobbybox"><div class="bigost">${art}</div><h1>${title}</h1><p>${why}</p>${winNote(S)}${endBits(S)}</div>`;}
-window.T3UI={after,events,startLine,pop,hint,tag,waitMsg,nopeMsg,over,endBits,KIND};
+window.T3UI={after,events,startLine,announce,hint,tag,waitMsg,nopeMsg,over,endBits,KIND};
 document.readyState==='loading'?document.addEventListener('DOMContentLoaded',lobby):lobby();
 })();

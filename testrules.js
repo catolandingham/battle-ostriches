@@ -168,7 +168,7 @@ ok('a catch: every seat is told; where it happened goes to the birds and to the 
   const g = room.g = hunters(); g.turn = 'hyena'; g.hunt.hs.hyena.p = [3, 3]; g.hunt.hs.badger.p = [8, 6]; g.ostrich = [4, 4]; g.vulture = [8, 0]; g.hunt.hs.hyena.sense = true; assert.ok(H.hunterMove(g, [4, 4]));
   const v = seatsOf(s => S.viewH(room, s), ['blue', 'red', 'hyena', 'badger']);
   for (const s of Object.keys(v)) { assert.equal(v[s].h3.lastCatch.bird, 'blue', s); assert.equal(v[s].h3.lastCatch.by, 'hyena'); }
-  assert.ok(v.blue.h3.lastCatch.at && v.red.h3.lastCatch.at && v.blue.h3.lastCatch.to && v.red.h3.lastCatch.to, 'both birds see the square');
+  assert.ok(v.blue.h3.lastCatch.at && v.blue.h3.lastCatch.to && v.red.h3.lastCatch.to, 'the caught bird knows the square; birds see birds'); assert.equal(v.red.h3.lastCatch.at, null, 'a vulture too far to see the hyena is not told where it landed');
   assert.ok(v.hyena.h3.lastCatch.at && !v.hyena.h3.lastCatch.to); assert.equal(v.badger.h3.lastCatch.at, null); assert.equal(v.badger.h3.lastCatch.to, null); });
 
 ok('the words: one line every phone gets, the Brian wording, and the honey badger quote', () => {

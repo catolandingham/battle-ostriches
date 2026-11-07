@@ -84,3 +84,68 @@ window.FX={update(S,prev){const t=theme();ensure();layer.className=t||'';
  relayout(){for(const k in spr)spr[k].dataset.pos='';}};
 addEventListener('resize',()=>FX.relayout());
 })();
+// Cause before result (Brian's D36: never show a result without its cause). Four short marks, each at most 0.7 s, each drawn only
+// on a screen that already holds the facts: the stone flight (vulture, own landing), the carried egg (ostrich, own move), the badger
+// sinking into its mound (badger, own burrow) and the cold egg dimming (any screen whose last state listed that egg with a square).
+// Marks are classes on the board squares (fxpick, fxcarry, fxcold, fxburrow) and the stone chip (fxfill). The board is rebuilt on every
+// state, so run() re-applies a live mark with a negative delay and it carries on from where it was. Nothing here changes turn timing.
+(function(){
+const MS={pick:700,carry:560,cold:700,burrow:700},RMS=200,HOLD=.85;
+let layer=null,act=[],last={},cur=null;
+const rm=()=>{try{return matchMedia('(prefers-reduced-motion: reduce)').matches}catch(e){return false}};
+const ensure=()=>{if(!layer||!layer.isConnected){layer=document.createElement('div');layer.id='causefx';document.body.appendChild(layer);}};
+const cellAt=(board,S,p)=>p&&p[0]>=0&&p[1]>=0?board.children[p[1]*S.cfg.cols+p[0]]:null;
+const mid=r=>({x:r.left+r.width/2,y:r.top+r.height/2});
+// a fixed box that travels from a to b (each {x,y,s}: centre and size)
+function box(html,a,b,d,arc,cls){ensure();const e=document.createElement('div');e.className='fxc-box '+(cls||'');e.innerHTML=html;e.style.width=e.style.height=b.s+'px';layer.appendChild(e);
+ const tf=(c,sc,up)=>`translate(${c.x-b.s/2}px,${c.y-b.s/2-(up||0)}px) scale(${sc})`;
+ e.animate([{transform:tf(a,a.s/b.s)},{transform:tf({x:(a.x+b.x)/2,y:(a.y+b.y)/2},(a.s+b.s)/2/b.s,arc||0),offset:.5},{transform:tf(b,1)}],{duration:d,easing:'ease-in-out',fill:'forwards'});
+ setTimeout(()=>e.remove(),d+40);return e;}
+const mark=(el,a)=>{el.style.setProperty('--fxd',a.d+'ms');el.style.setProperty('--fxdel',-(Date.now()-a.t0)+'ms');};
+// the count keeps showing its old number (a pseudo-element) while the real text already holds the new one
+function hold(el,old){if(!el)return;if(!el.classList.contains('fxheld')){const cs=getComputedStyle(el);el.style.setProperty('--held',cs.color);el.style.setProperty('--heldsh',cs.textShadow);}el.dataset.old=old;el.classList.add('fxheld');}
+function release(el){if(!el)return;el.classList.remove('fxheld');el.removeAttribute('data-old');el.style.removeProperty('--held');el.style.removeProperty('--heldsh');}
+function strip(){document.querySelectorAll('.fxpick,.fxcarry,.fxcold,.fxburrow,.fxfill').forEach(e=>{e.classList.remove('fxpick','fxcarry','fxslide','fxslideo','fxcold','fxburrow','fxfill');e.style.removeProperty('--fxd');e.style.removeProperty('--fxdel');});
+ document.querySelectorAll('.fxghost,.fxsink').forEach(e=>e.remove());document.querySelectorAll('.fxheld').forEach(release);}
+function apply(S,board){const t=Date.now();act=act.filter(a=>t<a.t0+a.d);
+ for(const a of act){
+  if(a.kind==='pick'){const c=cellAt(board,S,a.at);if(c){c.classList.add('fxpick');mark(c,a);}
+   const chip=document.querySelector('#stats .hs');if(chip){chip.classList.add('fxfill');mark(chip,a);}
+   if(t<a.t0+a.d*HOLD)hold(document.getElementById('stonesLeft'),a.old);}
+  else if(a.kind==='carry'){const c=cellAt(board,S,a.at);if(c){c.classList.add('fxcarry');if(a.egg)c.classList.add('fxslide');if(a.ost)c.classList.add('fxslideo');mark(c,a);}}
+  else if(a.kind==='cold'){const c=cellAt(board,S,a.at);if(c){c.classList.add('fxcold');mark(c,a);
+    if(!c.querySelector('.fxghost')){const g=document.createElement('span');g.className='fxghost';g.innerHTML=a.html;c.appendChild(g);mark(g,a);}}
+   hold(document.getElementById('eggsLeft'),a.old);}
+  else if(a.kind==='burrow'){const c=cellAt(board,S,a.at),pc=c&&c.querySelector('.pc.ph.bur');if(c&&pc){c.classList.add('fxburrow');mark(c,a);
+    if(!pc.querySelector('.fxsink')&&a.art){const s=document.createElement('span');s.className='fxsink';s.innerHTML='<span>'+a.art+'</span>';pc.appendChild(s);mark(s,a);}}}}}
+function add(kind,o){const a=Object.assign({kind,t0:Date.now(),d:rm()?RMS:MS[kind]},o);act.push(a);
+ setTimeout(()=>{act=act.filter(x=>Date.now()<x.t0+x.d);strip();if(cur)apply(cur.S,cur.board);},a.d+30);
+ if(kind==='pick')setTimeout(()=>{if(!act.some(x=>x.kind==='pick'&&Date.now()<x.t0+x.d*HOLD))release(document.getElementById('stonesLeft'));},a.d*HOLD+10);return a;}
+const once=(kind,S,la)=>{const sig=JSON.stringify([S.code,S.round,S.turn,kind,la||null]);if(last[kind]===sig)return false;last[kind]=sig;return true;};
+function detect(S,prev,board,ic){if(!prev||S.god||!S.cfg)return;
+ const la=S.lastAction,own=!!prev.myTurn&&!S.myTurn,fast=rm();
+ // 1. the vulture's own landing on a rock pile: a stone leaves the pile and drops into the stone count
+ if(S.role==='red'&&own&&prev.phase==='play'&&la&&la.type==='fly'&&la.refill&&S.vulture&&S.vulture[0]>=0&&once('pick',S,la)){
+  const c=cellAt(board,S,S.vulture),chip=document.querySelector('#stats .hs svg');
+  const a=add('pick',{at:S.vulture.slice(),old:prev.stones+'/'+S.cfg.stones});
+  if(c&&chip&&!fast){const r=c.getBoundingClientRect(),q=chip.getBoundingClientRect(),w=Math.max(18,q.width);box(ic.stone,{...mid(r),s:r.width*.55},{...mid(q),s:w},a.d*HOLD,r.width*.9,'fxc-stone');}}
+ // 2. the ostrich's own carry: the egg (and, with no sprite layer, the ostrich) slides from the old square to the new one
+ if(S.role==='blue'&&own&&prev.phase==='play'&&la&&la.type==='carry'&&prev.ostrich&&S.ostrich&&prev.ostrich[0]>=0&&S.ostrich[0]>=0&&(prev.ostrich[0]!==S.ostrich[0]||prev.ostrich[1]!==S.ostrich[1])&&once('carry',S,la)){
+  const f=cellAt(board,S,prev.ostrich),c=cellAt(board,S,S.ostrich);
+  const a=add('carry',{at:S.ostrich.slice(),egg:!!(f&&c&&!fast)});
+  if(f&&c&&!fast){const fr=f.getBoundingClientRect(),tr=c.getBoundingClientRect();
+   box(ic.egg,{...mid(fr),s:fr.width*.5},{x:tr.left+tr.width*.80,y:tr.top+tr.height*.80,s:tr.width*.36},a.d,tr.width*.5,'fxc-egg');
+   if(!document.querySelector('#fx .spr-o')){const po=c.querySelector('.pc.po');if(po){a.ost=true;const pr=po.getBoundingClientRect();
+    box(po.innerHTML,{x:fr.left+(pr.left-tr.left)+pr.width/2,y:fr.top+(pr.top-tr.top)+pr.height/2,s:pr.width},{...mid(pr),s:pr.width},a.d,tr.width*.15,'fxc-ost');}}}}
+ // 3. an egg that was on the list with a square last state and is gone now, without a smash on it, went cold
+ if(prev.eggs&&S.eggs&&once('cold',S,S.eggsLeft)){
+  S.eggs.forEach((e,i)=>{const pe=prev.eggs[i];if(!pe||!pe.alive||e.alive||!pe.pos||pe.pos[0]<0)return;
+   if(S.marks&&S.marks[pe.pos[0]+','+pe.pos[1]]==='hit')return;
+   if(la&&la.type==='throw'&&la.result==='hit'&&la.p&&la.p[0]===pe.pos[0]&&la.p[1]===pe.pos[1])return;
+   add('cold',{at:pe.pos.slice(),old:String(prev.eggsLeft),html:ic.egg+ic.ring(0)});});}
+ // 4. the badger's own burrow: the badger sinks into the mound
+ if(S.role==='hunter'&&S.burrowed&&!prev.burrowed&&prev.phase==='play'&&S.hunter&&S.hunter[0]>=0&&once('burrow',S,null)){
+  const k=window.T3UI&&T3UI.KIND&&T3UI.KIND.badger;add('burrow',{at:S.hunter.slice(),art:k?k.art:''});}}
+window.CAUSE={run(S,prev,board,ic){if(!S||!board)return;cur={S,board};detect(S,prev,board,ic);apply(S,board);},
+ _active:()=>act.map(a=>a.kind)};
+})();

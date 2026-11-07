@@ -50,7 +50,7 @@
     if (m === '2') return 'The vulture hunts eggs.';
     if (m === '4') return 'The vultures hunt eggs.';
     if (m === '4h') return 'The vulture hunts eggs. The hyena and honey badger hunt birds.';
-    return `The ${m === '5' ? 'vultures hunt' : 'vulture hunts'} eggs. The ${HUNTERS[kind] || 'hunter'} hunts birds.`;
+    return `The ${m === '5' ? 'vultures hunt' : 'vulture hunts'} eggs. The ${HUNTERS[kind] || 'hyena or honey badger'} hunts birds.`;
   }
   function ostrich(mode, kind, R) {
     const c = R.cfg, team = mode === '4' || mode === '5', hunt = mode === '3' || mode === '4h' || mode === '5';
