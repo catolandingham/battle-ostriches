@@ -8,7 +8,7 @@ const isO = s => s === 'o1' || s === 'o2', isV = s => s === 'v1' || s === 'v2';
 const mate = s => ({ o1: 'o2', o2: 'o1', v1: 'v2', v2: 'v1' })[s];
 function newTeam(n, kind, cfg = B.CONFIG, hstart) {
   const g = { team: true, n: n === 5 ? 5 : 4, cfg: { ...cfg, eggs: TM.eggs }, phase: 'setup', round: 1, turn: null, eggs: [], marks: {}, winner: null, winBy: null,
-    order: n === 5 ? ['v1', 'o1', 'v2', 'o2', 'hunter'] : ['v1', 'o1', 'v2', 'o2'], b: {}, sniffs: {}, lastAction: null, lastCold: [], seq: 0, lastCatch: null, lost: null,
+    order: n === 5 ? ['v1', 'o1', 'v2', 'o2', 'hunter'] : ['v1', 'o1', 'v2', 'o2'], b: {}, sniffs: {}, lastAction: null, lastCold: [], seq: 0, kickSeq: 0, lastKick: null, lastCatch: null, lost: null,
     h: n === 5 ? { kind: kind === 'badger' || kind === 'hyena' ? kind : null, p: (hstart || TM.hStarts[Math.random() * 2 | 0]).slice(), burrowed: false, dig: 0,
       sense: null, senseSeq: 0, kos: { o: 0, v: 0 }, last: null } : null };
   VS.forEach((s, i) => g.b[s] = { pos: TM.vStarts[i].slice(), stones: cfg.stones, out: false, why: null, catches: 0, skip: 0 });
@@ -55,6 +55,7 @@ function feed(g, s) { // after an ostrich's move or stay: food resets hunger, el
 }
 function ostrichAct(g, s, a, p) {
   const b = g.b[s]; if (!myTurn(g, s) || !isO(s)) return false;
+  if (a === 'kick') return ostrichKick(g, s, p);
   const from = b.pos.slice();
   if (a === 'sit') { if (!canSit(g, s)) return false; b.sitRun++; }
   else { const carry = a === 'carry'; if (!ostrichMoves(g, s, carry).some(q => K(q) === K(p))) return false;
@@ -65,6 +66,29 @@ function ostrichAct(g, s, a, p) {
   feed(g, s);
   if (!b.out && a !== 'sit' && g.h && K(b.pos) === K(g.h.p)) { catchBird(g, s, [sgn(from[0] - p[0]), sgn(from[1] - p[1])]); g.lastCatch.walked = true; } // the ostrich stepped onto the hunter
   next(g); return true;
+}
+// --- Kick (rules in game.js): an ostrich may kick a vulture or the hunter next to it, never its teammate and never a burrowed badger.
+function canKick(g, s) { return myTurn(g, s) && isO(s) && g.b[s].carrying === null && !mustLeave(g, s) && live(g, s); }
+function kickable(g, s) {
+  const r = [];
+  if (!isO(s) || !live(g, s)) return r;
+  const at = g.b[s].pos;
+  for (const v of VS) if (live(g, v) && D(g.b[v].pos, at) === 1) r.push(g.b[v].pos.slice());
+  if (g.h && !g.h.burrowed && D(g.h.p, at) === 1) r.push(g.h.p.slice());
+  return r;
+}
+const kickTargets = (g, s) => canKick(g, s) ? kickable(g, s) : [];
+function ostrichKick(g, s, p) {
+  if (!kickTargets(g, s).some(q => K(q) === K(p))) return false;
+  const b = g.b[s], from = p.slice(), hunter = !!(g.h && K(g.h.p) === K(from)), v = VS.find(x => live(g, x) && K(g.b[x].pos) === K(from));
+  // a pushed animal stops before the board edge, the hunter, or any bird
+  const to = B.slide(g.cfg, from, B.awayFrom(b.pos, from), g.cfg.kickPush, m => (g.h && K(g.h.p) === K(m) && !hunter) || birdsIn(g).some(o => o !== v && K(g.b[o].pos) === K(m)));
+  if (hunter) g.h.p = to; else g.b[v].pos = to;
+  const who = hunter ? (g.h.kind || 'hyena') : 'vulture';
+  g.lastKick = { seq: ++g.kickSeq, who, seat: hunter ? 'hunter' : v, from, to: to.slice(), round: g.round };
+  g.lastAction = { seat: s, type: 'kick', who };
+  const e = eggAt(g, b.pos); if (e) e.lastWarm = g.round; // an egg under the ostrich is warmed, as when it sits
+  feed(g, s); next(g); return true;
 }
 function ostrichStay(g, s, why) { const b = g.b[s]; b.sitRun = 0; g.lastAction = { seat: s, type: 'stay', [why]: true }; feed(g, s); }
 // --- vultures (they share what they sniff) ---
@@ -203,6 +227,6 @@ function status(g) {
   return { n: g.n, order: g.order, kind: g.h ? g.h.kind : null, ko: koAt(g), hkos: g.h ? { ...g.h.kos } : null,
     birds: Object.fromEntries(OS.concat(VS).map(s => [s, { out: g.b[s].out, why: g.b[s].why, catches: g.b[s].catches, skip: g.b[s].skip }])) };
 }
-module.exports = { TM, OFF, OS, VS, isO, isV, mate, newTeam, place, canPlaceEgg, setupStep, nestOf, ostrichMoves, ostrichAct, canSit, canCarry, mustLeave, onEgg,
+module.exports = { TM, OFF, OS, VS, isO, isV, mate, newTeam, place, canPlaceEgg, setupStep, nestOf, ostrichMoves, ostrichAct, canKick, kickable, kickTargets, ostrichKick, canSit, canCarry, mustLeave, onEgg,
   flyTargets, throwTargets, vultureFly, vultureThrow, hunterMoves, hunterMove, hunterStay, hunterRange, hunterReach, hunterSeenBy, ambushSight, senses, timeout, status, alive, eggAt,
   eggPos, live, catchBird, knockout, next, checkEnd, endRound };

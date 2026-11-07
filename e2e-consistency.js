@@ -41,11 +41,11 @@ let seed = 7; const rnd = n => { seed = (seed * 16807) % 2147483647; return seed
       checks++;
       // everything a future failure needs to explain itself
       const dump = `${kind} ${theme} turn#${turn}: ` + JSON.stringify({ phase: st.phase, role: st.role, turn: st.turn, myTurn: st.myTurn, round: st.round, stones: st.stones, mustLeave: st.mustLeave, targets: st.legal.length, lens: st.n, buttons: st.btns.map(x => x.t + (x.pressed ? ' [pressed]' : '') + (x.dis ? ' [disabled]' : '')), hint: st.hint });
-      // A turn starts in the default mode (Fly for the vulture, Step for the ostrich): the mode a player picked last turn must not carry over.
+      // A turn starts in the default mode (Fly for the vulture, Walk for the ostrich): the mode a player picked last turn must not carry over.
       // Only checked when the previous loop pass really ended the turn.
       if (st.phase === 'play' && lastTurn && lastTurn !== st.turn + '|' + st.round) {
         const pressed = st.btns.filter(x => x.pressed).map(x => x.t);
-        assert.ok(pressed.length === 1 && /^(✓ )?(Fly|Step)$/.test(pressed[0]), 'a new turn starts in the default mode, got ' + JSON.stringify(pressed) + ' | ' + dump);
+        assert.ok(pressed.length === 1 && /^(✓ )?(Fly|Walk)$/.test(pressed[0]), 'a new turn starts in the default mode, got ' + JSON.stringify(pressed) + ' | ' + dump);
       }
       lastTurn = st.turn + '|' + st.round;
       const want = st.legal.map(p => p[1] * st.cols + p[0]).sort((a, b) => a - b);

@@ -82,7 +82,27 @@ function vultureFly3(g, p) {
   if (!finish(g)) advance(g); return true;
 }
 function vultureThrow3(g, p) { const r = B.vultureThrow(g, p); if (!r) return false; if (!finish(g)) advance(g); return r; }
+// --- Kick (rules in game.js): the ostrich may kick the vulture or the hunter next to it. A burrowed badger can't be seen, so it can't be kicked.
+const liveAt = (g, b) => !isOut(g, b) && pos(g, b) && pos(g, b)[0] >= 0;
+function kickable3(g) {
+  const t = g.three, r = [];
+  if (!liveAt(g, 'blue')) return r;
+  if (liveAt(g, 'red') && D(g.vulture, g.ostrich) === 1) r.push(g.vulture.slice());
+  if (!(t.kind === 'badger' && t.burrowed) && D(t.h, g.ostrich) === 1) r.push(t.h.slice());
+  return r;
+}
+const kickTargets3 = g => B.canKick(g) ? kickable3(g) : [];
+function ostrichKick3(g, p) {
+  if (!kickTargets3(g).some(q => K(q) === K(p))) return false;
+  const t = g.three, hunter = K(p) === K(t.h), from = p.slice();
+  // a pushed animal stops before the board edge or another piece: a kicked hunter is stopped by the vulture, a kicked vulture by the hunter
+  const to = B.slide(g.cfg, from, B.awayFrom(g.ostrich, p), g.cfg.kickPush, m => hunter ? liveAt(g, 'red') && K(m) === K(g.vulture) : K(m) === K(t.h));
+  if (hunter) t.h = to; else g.vulture = to;
+  B.kickDone(g, hunter ? (t.kind || 'hyena') : 'vulture', from, to);
+  afterOstrich(g); return true;
+}
 function ostrichAct3(g, a, p) {
+  if (a === 'kick') return g.phase === 'play' && g.turn === 'blue' && ostrichKick3(g, p);
   const from = g.ostrich.slice(); let ok;
   if (a === 'sit') ok = B.ostrichSit(g); else ok = B.ostrichStep(g, p, a === 'carry');
   if (!ok) return false;
@@ -125,5 +145,5 @@ function timeout(g) {
 // Public 3-player status every seat may see (no positions).
 function status3(g) { const t = g.three;
   return { kind: t.kind, ko: koAt(g), birds: JSON.parse(JSON.stringify(t.birds)), order: ['red', 'blue', 'hunter'] }; }
-module.exports = { T3, OFF, NAME, newGame3, senses, hunterSeenBy, ambushSight, hunterMoves, hunterMove, hunterStay, hunterRange, hunterReach, placeOstrich3, vultureFly3, vultureThrow3,
+module.exports = { T3, OFF, NAME, newGame3, senses, hunterSeenBy, ambushSight, hunterMoves, hunterMove, hunterStay, hunterRange, hunterReach, kickable3, kickTargets3, ostrichKick3, placeOstrich3, vultureFly3, vultureThrow3,
   ostrichAct3, timeout, status3, isOut, pos, advance, catchBird, knockout };

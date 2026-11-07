@@ -52,7 +52,7 @@ const OUT = 'shots/pass/'; fs.mkdirSync(OUT, { recursive: true });
   let rounds = 0;
   while (!(await P.locator('#over:not(.hidden)').count()) && rounds < 60) {
     rounds++;
-    await P.click('#actions button:has-text("Step")', { force: true }).catch(() => {}); await P.locator('.cell.legal').first().click();
+    await P.click('#actions button:has-text("Walk")', { force: true }).catch(() => {}); await P.locator('.cell.legal').first().click();
     await P.waitForFunction(() => !document.getElementById('handoff').classList.contains('hidden') || !document.getElementById('over').classList.contains('hidden'));
     if (await P.locator('#over:not(.hidden)').count()) break;
     await vultureTurn(false);

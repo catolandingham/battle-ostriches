@@ -31,12 +31,11 @@ const OUT = 'shots/hardstop/'; fs.mkdirSync(OUT, { recursive: true });
   assert.ok(!(await A.locator('#hint.guide').count()) || !/sit on eggs/i.test(await A.textContent('#hint')), 'tip shows once'); assert.ok((await legal()).length >= 3, 'free play');
   await cell(A, 6, 3).click(); await vfly(4, 0);
   // 2) first low food: only moves toward the nearest leaf
-  await A.evaluate(() => { UI._S().hungerLeft = 4; UI._rr(); }); 
-  // The food warning is timed to the real walk: it shows once hunger left is within one turn of the shortest path to a leaf, in the banner.
+  // The food warning is timed to the real walk (in moves of up to 2 squares): it shows once hunger left is within one turn of the shortest path to a leaf, in the banner.
   const o = await A.evaluate(() => UI._S().ostrich), food = [[0, 0], [8, 6]].sort((a, b) => gd(a, o) - gd(b, o))[0];
   const walk = await A.evaluate(() => { const S = UI._S(); return BO.foodRoute(S.cfg, S.ostrich, S.marks).len; });
-  assert.ok(4 <= walk + 1, 'test sets hunger within one turn of the walk to a leaf: walk ' + walk);
-  assert.equal((await A.textContent('#banner')).trim(), `Leaf in ${walk} step${walk === 1 ? '' : 's'} · 4 left`);
+  const left = walk + 1; await A.evaluate(h => { UI._S().hungerLeft = h; UI._rr(); }, left);
+  assert.equal((await A.textContent('#banner')).trim(), `Leaf in ${walk} move${walk === 1 ? '' : 's'} · ${left} left`);
   assert.ok(await A.locator('#banner.hungry').count() === 1, 'food warning uses the hungry banner');
   L = await legal(); assert.ok(L.length && L.every(p => gd(p, food) < gd(o, food)), 'hungry: only closer moves'); await shot('3-hungry-go-eat.jpg');
   await A.evaluate(w => { UI._S().hungerLeft = w + 2; UI._rr(); }, walk); assert.ok(!/Leaf in/.test(await A.textContent('#banner')), 'no food warning while there is time to spare');

@@ -8,6 +8,7 @@ const CONFIG = {
   maxSit: 3,           // max consecutive Sit turns; then the ostrich must step off for at least one turn
   ostrichWalk: 2,      // the ostrich walks up to N squares (king-move distance; a 2-square walk needs a middle square that is not smashed)...
   carryWalk: 1,        // ...but only 1 square while it carries an egg
+  kickPush: 2,         // Kick: the ostrich pushes an animal on a square next to it this many squares straight away (stops at the edge or a piece)
   vultureFly: 2,       // vulture flies up to N squares (king-move distance)
   throwRange: 1,       // vulture throws at its own square or one next to it...
   vultureStart: [4, 3],
@@ -27,7 +28,7 @@ const smashed = (g, p) => g.marks[key(p)] === 'hit';
 function newGame(cfg = CONFIG) {
   return { cfg, phase: 'setupEggs', round: 1, turn: 'blue', eggs: [], ostrich: null,
     carrying: null, sitRun: 0, vulture: cfg.vultureStart.slice(), hungerLeft: cfg.food, stones: cfg.stones,
-    marks: {}, sniff: null, winner: null, winBy: null, lastAction: null, lastCold: [] };
+    marks: {}, sniff: null, winner: null, winBy: null, lastAction: null, lastCold: [], kickSeq: 0, lastKick: null };
 }
 function eggAt(g, p) { return g.eggs.find(e => e.alive && e.pos && key(e.pos) === key(p)); }
 function aliveEggs(g) { return g.eggs.filter(e => e.alive); }
@@ -80,6 +81,32 @@ function ostrichMoves(g, carry = false) {
   const res = walkSquares(g.cfg, g.marks, g.ostrich, carry ? g.cfg.carryWalk : g.cfg.ostrichWalk); // smashed squares are blocked
   // the ostrich won't carry an egg onto a stone-marked square (afraid), onto another egg, food or rocks
   return carry ? res.filter(p => !(eggAt(g, p) || isFood(g, p) || isRock(g, p) || g.marks[key(p)] === 'stone')) : res;
+}
+// --- Kick --- on its own turn, instead of moving, the ostrich may kick an animal it can see on a square next to it: the animal is pushed
+// cfg.kickPush squares straight away from the ostrich. The ostrich stays on its square (on an egg, it still warms it), it never kicks while
+// it carries an egg, and it cannot kick when it must step off its egg. A kick is not a Sit: it neither adds to nor clears the sit count.
+const sgn = Math.sign;
+// Slide up to n squares from `from` in direction dir; stops before the board edge or before a square where blocked(square) is true.
+function slide(cfg, from, dir, n, blocked) {
+  let q = from.slice();
+  for (let i = 0; i < n; i++) { const m = [q[0] + dir[0], q[1] + dir[1]]; if (!inB(m, cfg) || (blocked && blocked(m))) break; q = m; }
+  return q;
+}
+const awayFrom = (from, p) => [sgn(p[0] - from[0]), sgn(p[1] - from[1])];
+function canKick(g) { return myTurn(g, 'blue') && g.carrying === null && !mustLeave(g); }
+// Animals next to the ostrich that it can see (classic: the vulture, always in sight), and the squares it may kick now.
+function kickable(g) { return g.ostrich && g.ostrich[0] >= 0 && g.vulture && g.vulture[0] >= 0 && dist(g.vulture, g.ostrich) === 1 ? [g.vulture.slice()] : []; }
+function kickTargets(g) { return canKick(g) ? kickable(g) : []; }
+// Records the kick, then the ostrich's turn ends like a stay that still warms an egg under it and still counts for hunger.
+function kickDone(g, who, from, to) {
+  g.lastKick = { seq: ++g.kickSeq, who, from: from.slice(), to: to.slice(), round: g.round };
+  g.lastAction = { type: 'kick', who, from: from.slice(), to: to.slice() };
+  endOstrich(g);
+}
+function ostrichKick(g, p) {
+  if (!kickTargets(g).some(q => key(q) === key(p))) return false;
+  const from = g.vulture.slice(), to = slide(g.cfg, from, awayFrom(g.ostrich, from), g.cfg.kickPush);
+  g.vulture = to; kickDone(g, 'vulture', from, to); return true;
 }
 function canSit(g) { return myTurn(g, 'blue') && onEgg(g) && g.sitRun < g.cfg.maxSit; }
 function canCarry(g) { return myTurn(g, 'blue') && onEgg(g); }
@@ -211,6 +238,6 @@ function sniffAnnounce(v, role) {
   return sn.yes ? 'Egg nearby!' : 'No egg nearby';
 }
 
-const API = { CONFIG, newGame, canPlaceEgg, placeEgg, placeOstrich, ostrichMoves, ostrichStep, ostrichSit, canSit, canCarry, mustLeave, onEgg, dropCarried,
+const API = { CONFIG, myTurn, slide, awayFrom, canKick, kickable, kickTargets, kickDone, ostrichKick, newGame, canPlaceEgg, placeEgg, placeOstrich, ostrichMoves, ostrichStep, ostrichSit, canSit, canCarry, mustLeave, onEgg, dropCarried,
   endRound, walkSquares, smellsEgg, flyTargets, throwTargets, vultureFly, vultureThrow, eggAt, aliveEggs, coldIn, sniffFresh, sniffAnnounce, key, dist, visible, isFood, isRock, parkEliminated, ostrichGuards, foodRoute };
 if (typeof module !== 'undefined') module.exports = API; else window.BO = API;

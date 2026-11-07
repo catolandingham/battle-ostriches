@@ -71,11 +71,11 @@ ok('3 players: burrowing, staying burrowed and sight reach only the badger playe
   prev = snap(); T.hunterStay(g); now = snap(); assert.deepEqual(lines(prev.hunter, now.hunter), ['stay']); for (const r of ['blue', 'red']) assert.deepEqual(lines(prev[r], now[r]), []);
   // pops out with no bird in sight (birds far away): the badger's phone only
   g.ostrich = [1, 0]; g.vulture = [0, 6]; g.turn = 'hunter'; prev = snap(); assert.ok(g.three.burrowed); assert.ok(T.hunterMove(g, [7, 3])); now = snap();
-  assert.deepEqual(lines(prev.hunter, now.hunter), ['popOut']); for (const r of ['blue', 'red']) { assert.equal(now[r].h3.popout, null); assert.deepEqual(lines(prev[r], now[r]), [], r + ' does not see an unseen pop-out'); }
+  assert.deepEqual(lines(prev.hunter, now.hunter), ['popOut']); for (const r of ['blue', 'red']) { assert.ok(now[r].h3.popout && now[r].h3.popout.seq, r + ' is told the badger came out'); assert.equal(now[r].h3.popout.seen, false, r + ' is not told where'); assert.equal(JSON.stringify(now[r].h3.popout).includes('['), false, 'no square in what a blind seat gets'); assert.deepEqual(lines(prev[r], now[r]), [], r + ' gets no quote for an unseen pop-out'); }
   // pops out in sight of a bird (within 2): that bird's phone shows it too, the other bird's does not
   g.turn = 'hunter'; T.hunterStay(g); g.ostrich = [6, 3]; g.vulture = [0, 6]; g.turn = 'hunter';
   prev = snap(); assert.ok(g.three.burrowed); assert.ok(T.hunterMove(g, [8, 3])); now = snap(); const seenBy = r => T.hunterSeenBy(g, r);
-  assert.ok(seenBy('blue') && !seenBy('red')); assert.deepEqual(lines(prev.blue, now.blue), ['popOut']); assert.deepEqual(lines(prev.red, now.red), []); assert.deepEqual(lines(prev.hunter, now.hunter), ['popOut']); });
+  assert.ok(seenBy('blue') && !seenBy('red')); assert.equal(now.blue.h3.popout.seen, true); assert.equal(now.red.h3.popout.seen, false); assert.ok(now.red.h3.popout.seq === now.blue.h3.popout.seq); assert.deepEqual(lines(prev.blue, now.blue), ['popOut']); assert.deepEqual(lines(prev.red, now.red), []); assert.deepEqual(lines(prev.hunter, now.hunter), ['popOut']); });
 
 ok('3 players: a hyena never produces badger lines for anyone', () => {
   const { room } = S.create3({ role: 'hunter', bots: ['blue', 'red'], kind: 'hyena' }, null);

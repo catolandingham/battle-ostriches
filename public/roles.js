@@ -8,7 +8,7 @@
     const B = require('../game.js'), T = require('../three.js'), H = require('../hunt.js'), M = require('../team.js'), C = B.CONFIG;
     const pick = (t) => ({ ko: { hyena: t.ko.hyena, badger: t.ko.badger }, sense: t.sense, pounce: t.pounce });
     return {
-      cfg: { eggs: C.eggs, rounds: C.rounds, warmth: C.warmth, food: C.food, stones: C.stones, fly: C.vultureFly, throwRange: C.throwRange, smell: C.smellRange, walk: C.ostrichWalk, carryWalk: C.carryWalk },
+      cfg: { eggs: C.eggs, rounds: C.rounds, warmth: C.warmth, food: C.food, stones: C.stones, fly: C.vultureFly, throwRange: C.throwRange, smell: C.smellRange, walk: C.ostrichWalk, carryWalk: C.carryWalk, kick: C.kickPush },
       modes: { '3': pick(T.T3), '4h': pick(H.TH), '4': pick(M.TM), '5': pick(M.TM) },
     };
   }
@@ -37,13 +37,29 @@
   // "You lose if A, B, or C."
   const loseList = (lead, items) => `${lead} if ${items.length < 2 ? items[0] : items.length === 2 && !/ or /.test(items.join('|')) ? items.join(' or ') : items.slice(0, -1).join(', ') + ', or ' + items[items.length - 1]}.`;
 
+  // The animals an ostrich can kick in this mode, named only if they are in the game: "a vulture", "a vulture or hyena", "a vulture, hyena or honey badger"
+  function kickList(mode, kind) {
+    const m = String(mode || '2'), names = ['vulture'];
+    if (m === '4h') names.push('hyena', 'honey badger'); else if ((m === '3' || m === '5')) names.push(HUNTERS[kind] || 'hunter');
+    return 'a ' + (names.length < 2 ? names[0] : names.slice(0, -1).join(', ') + ' or ' + names[names.length - 1]);
+  }
+  const kickLine = (mode, kind, c) => `Kick: push ${kickList(mode, kind)} next to you back ${c.kick} squares. Not while carrying an egg.`;
+  // One line for the start of a game and for How to play: who hunts what, naming only the animals in the game.
+  function huntLine(mode, kind) {
+    const m = String(mode || '2');
+    if (m === '2') return 'The vulture hunts eggs.';
+    if (m === '4') return 'The vultures hunt eggs.';
+    if (m === '4h') return 'The vulture hunts eggs. The hyena and honey badger hunt birds.';
+    return `The ${m === '5' ? 'vultures hunt' : 'vulture hunts'} eggs. The ${HUNTERS[kind] || 'hunter'} hunts birds.`;
+  }
   function ostrich(mode, kind, R) {
     const c = R.cfg, team = mode === '4' || mode === '5', hunt = mode === '3' || mode === '4h' || mode === '5';
     const hl = hunt ? birdHunterLose(mode, kind, R) : [];
     if (team) return {
       title: 'You are an Ostrich',
       goal: `Goal: Keep at least one of your team's eggs alive for ${c.rounds} rounds.`,
-      moves: [`Walk up to ${squares(c.walk)} (${squares(c.carryWalk)} if you carry an egg), or sit on an egg to keep it warm. Either ostrich can warm any egg.`,
+      moves: [`Walk up to ${squares(c.walk)} (${c.carryWalk} if you carry an egg), or sit on an egg to keep it warm. Either ostrich can warm any egg.`,
+        kickLine(mode, kind, c),
         `An egg goes cold if no ostrich visits it within ${c.warmth} rounds.`,
         `Eat at a green leaf at least every ${c.food} turns.`],
       lose: 'Your team loses if every egg is smashed or cold.',
@@ -52,7 +68,8 @@
     return {
       title: 'You are the Ostrich',
       goal: `Goal: Keep one of your ${c.eggs} eggs alive for ${c.rounds} rounds.`,
-      moves: [`Walk up to ${squares(c.walk)} (${squares(c.carryWalk)} if you carry an egg), or sit on an egg to keep it warm.`,
+      moves: [`Walk up to ${squares(c.walk)} (${c.carryWalk} if you carry an egg), or sit on an egg to keep it warm.`,
+        kickLine(mode, kind, c),
         `Visit each egg within ${c.warmth} rounds or it goes cold.`,
         `Eat at a green leaf at least every ${c.food} turns.`],
       lose: loseList('You lose', ['every egg is smashed or cold', 'you starve'].concat(hl)),
@@ -112,6 +129,6 @@
     return [a, bird && m === '3' && HUNTERS[kind] ? kind : '', m].join('_'); // only the 3-player bird cards change with the hunter
   }
 
-  const API = { roleCard, cardId, animal, rulesFromModules, PICKED };
+  const API = { roleCard, cardId, huntLine, kickList, animal, rulesFromModules, PICKED };
   if (typeof module !== 'undefined') module.exports = API; else window.Roles = API;
 })();

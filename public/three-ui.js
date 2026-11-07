@@ -114,8 +114,7 @@ function hPieces(S,board,prev){const h=S.h3,me=h.mySeat;
   c.dataset.tip=(c.dataset.tip?c.dataset.tip+' · ':'')+(x.me?(bur?'You, burrowed: nobody can see you':'You ('+KIND[x.kind].n+')'):me==='hyena'||me==='badger'?`Your rival, the ${KIND[x.kind].n}. ${x.kind==='badger'?'If it moves onto you, you are knocked back 2. If you move onto it, you bounce back 2.':'If you move onto it, it is knocked back 2.'}`:`${KIND[x.kind].n}! It catches a bird by landing on it (or if you step onto it)`);
   if(bur){const l=document.createElement('span');l.className='burtag';l.textContent='BURROWED';c.appendChild(l);}
 }
- const rv=h.rival;if(rv&&rv.seq!==hPieces.rv){const fresh=hPieces.rv!==undefined;hPieces.rv=rv.seq;
-  if(fresh){const t=cellAt(board,S,rv.to);t&&t.classList.add('h3kb');pop(board,rv.by==='badger'?'Badger shoved the hyena back 2!':'Hyena bounced off the badger!','catch');}}}
+}
 function hOver(S){const h=S.h3,w=S.winner,me=h.mySeat,C=S.cfg;
  const art=w==='hyena'||w==='badger'?KIND[w].art:w==='blue'?OSTI:w==='red'?VULI:'🤝';
  const title=w==='none'?'No winner':w===me?'You win!':`${tname(S,w)} wins!`;
@@ -189,7 +188,26 @@ function bPump(tries){if(bBusy||!bQ.length)return;
  setTimeout(()=>{o.remove();bBusy=false;bPump(0);},3000);}
 function badgerLines(S,prev){if(S===bLastS)return;bLastS=S;if(!prev||(prev.round!=null&&S.round<prev.round))bPicker=BL.createPicker();
  for(const e of BL.detect(prev,S,bPicker))badgerSay(e.text);}
-function pop(board,txt,cls){const o=document.createElement('div');o.className='h3pop '+cls;o.textContent=txt;board.appendChild(o);setTimeout(()=>o.remove(),cls==='catch'?3400:1800);}
+function pop(board,txt,cls){const o=document.createElement('div');o.className='h3pop '+cls;o.textContent=txt;board.appendChild(o);setTimeout(()=>o.remove(),cls==='catch'||cls==='event'?3400:1800);}
+// Big events are announced to every phone in one line (catchtext.js). Where they happened (the square highlight) shows only when the view carries that square,
+// and the server sends it only to a player who can see it. seen[] remembers which one-time events this phone already announced; a page opened mid-game never replays them.
+const evSeen={kick:0,pop:0,rival:0};
+function events(S,prev,board){
+ if(S&&!S.three)rulesMode('2');
+ if(!S||S.phase!=='play'){evSeen.kick=evSeen.pop=evSeen.rival=0;return;}
+ const CT=window.CatchText,h=S.h3||{},k=S.kick,po=h.popout,rv=h.rival;
+ if(k&&k.seq!==evSeen.kick){evSeen.kick=k.seq;
+  if(prev){pop(board,CT.kickLine(k.who,k.moved,S.cfg.kickPush),'event');const c=cellAt(board,S,k.to);c&&c.classList.add('h3kb');}}
+ if(po&&po.seq!==evSeen.pop){evSeen.pop=po.seq;if(prev)pop(board,CT.popOutLine(),'event');}
+ if(rv&&rv.seq!==evSeen.rival){evSeen.rival=rv.seq;
+  if(prev){pop(board,CT.rivalLine(rv),'event');const c=cellAt(board,S,rv.to);c&&c.classList.add('h3kb');}}}
+// One plain line at the start of every game: who hunts what, naming only the animals in the game (roles.js).
+let startDone=false;
+function startLine(S,prev,board,mode){
+ if(!S||S.phase!=='play'){startDone=false;return;}
+ const h=S.h3;if(startDone||(h&&(h.ready===false||h.needKind||(h.team&&h.teamSetup&&h.teamSetup!=='done'))))return;
+ startDone=true;if(!prev&&S.round>1)return;
+ pop(board,window.Roles.huntLine(mode,S.role==='hunter'?(S.kind||(h&&h.kind)):(h&&h.kind)),'event');}
 function after(S,prev,board){badgerLines(S,prev);chips(S);clock(S);kindPick(S);if(S.h3.team)tPieces(S,board);if(S.h3.hunt)hPieces(S,board,prev);
  rulesMode(S.h3.hunt?'4h':S.h3.team?String(S.h3.n):'3');
  const h=S.h3,k=h.kind||'hyena',me=S.role;
@@ -237,6 +255,6 @@ function over(S){if(S.h3.hunt)return hOver(S);if(S.h3.team)return tOver(S);const
   :w==='red'?(S.winBy==='cold'?`The last egg went cold in round ${S.round}.`:S.winBy==='starved'?'The ostrich was out and no eggs were left.':`The vulture smashed every egg by round ${S.round}.`)
   :S.winBy==='time'?'Time ran out: the ostrich was out and the vulture never got every egg.':'The eggs were lost, but the vulture was already out.';
  return `<div class="lobbybox"><div class="bigost">${art}</div><h1>${title}</h1><p>${why}</p>${winNote(S)}${endBits(S)}</div>`;}
-window.T3UI={after,hint,tag,waitMsg,nopeMsg,over,endBits,KIND};
+window.T3UI={after,events,startLine,pop,hint,tag,waitMsg,nopeMsg,over,endBits,KIND};
 document.readyState==='loading'?document.addEventListener('DOMContentLoaded',lobby):lobby();
 })();

@@ -99,7 +99,24 @@ function vultureFlyH(g, p) {
   if (!finish(g)) advance(g); return true;
 }
 function vultureThrowH(g, p) { const r = B.vultureThrow(g, p); if (!r) return false; if (!finish(g)) advance(g); return r; }
+// --- Kick (rules in game.js): the ostrich may kick the vulture, the hyena or the honey badger next to it (never a burrowed badger).
+function kickableH(g) {
+  const r = [];
+  if (isOut(g, 'blue')) return r;
+  if (!isOut(g, 'red') && g.vulture[0] >= 0 && D(g.vulture, g.ostrich) === 1) r.push(g.vulture.slice());
+  for (const h of HUNTERS) { const x = g.hunt.hs[h]; if (!x.burrowed && D(x.p, g.ostrich) === 1) r.push(x.p.slice()); }
+  return r;
+}
+const kickTargetsH = g => B.canKick(g) ? kickableH(g) : [];
+function ostrichKickH(g, p) {
+  if (!kickTargetsH(g).some(q => K(q) === K(p))) return false;
+  const h = hunterAt(g, p), from = p.slice(), to = push(g, from, B.awayFrom(g.ostrich, p), g.cfg.kickPush, h || 'red'); // push() stops at the edge and at any hunter or bird
+  if (h) g.hunt.hs[h].p = to; else g.vulture = to;
+  B.kickDone(g, h || 'vulture', from, to);
+  afterOstrich(g); return true;
+}
 function ostrichActH(g, a, p) {
+  if (a === 'kick') return g.phase === 'play' && g.turn === 'blue' && ostrichKickH(g, p);
   const from = g.ostrich.slice(); const ok = a === 'sit' ? B.ostrichSit(g) : B.ostrichStep(g, p, a === 'carry'); if (!ok) return false;
   const h = a !== 'sit' && !(g.phase === 'over' && g.winBy === 'starved') && hunterAt(g, g.ostrich);
   if (h) { catchBird(g, 'blue', h, [sgn(from[0] - p[0]), sgn(from[1] - p[1])]); g.hunt.lastCatch.walked = true; } // the ostrich stepped onto a hunter
@@ -146,4 +163,4 @@ function timeout(g) {
 function statusH(g) { const t = g.hunt;
   return { hunt: true, ko: TH.ko, birds: JSON.parse(JSON.stringify(t.birds)), order: ORDER, hkos: { hyena: t.hs.hyena.kos, badger: t.hs.badger.kos } }; }
 module.exports = { TH, OFF, BIRDS, HUNTERS, ORDER, isH, newHunt, senses, seen, ambushSight, hunterMoves, hunterMove, hunterStay, hunterRange, hunterReach, placeOstrichH, vultureFlyH,
-  vultureThrowH, ostrichActH, timeout, statusH, isOut, pos, advance, catchBird, knockout, hunterAt };
+  vultureThrowH, ostrichActH, kickableH, kickTargetsH, ostrichKickH, timeout, statusH, isOut, pos, advance, catchBird, knockout, hunterAt };

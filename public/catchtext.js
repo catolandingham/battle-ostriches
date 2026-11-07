@@ -34,6 +34,19 @@
   }
   // banner for a bird that is out ("The ostrich is out."; in 2 vs 2 the seat name: "Ostrich 1 is out.")
   const outLine = b => SEAT[b] ? `${SEAT[b]} is out.` : `The ${birdWord(b)} is out.`;
-  const API = { catchLine, catchesLeft, outLine };
+  // Big events other than catches, said to every player (where they happened is shown only to a player who can see that square).
+  const kickWho = w => w === 'vulture' ? 'vulture' : hunterWord(w);
+  function kickLine(who, moved, push) {
+    const n = moved == null ? push : moved;
+    if (n === 0) return `The ostrich kicked the ${kickWho(who)}, but it had nowhere to go.`;
+    return `The ostrich kicked the ${kickWho(who)} back ${n} square${n === 1 ? '' : 's'}.`;
+  }
+  const popOutLine = () => 'The honey badger came out of its burrow!';
+  function rivalLine(rv) {
+    const n = rv.n || 2;
+    return rv.by === 'badger' ? `The honey badger ran into the hyena. Nobody is hurt. The hyena slid back ${n} squares.`
+      : `The hyena ran into the honey badger. Nobody is hurt. The hyena slid back ${n} squares.`;
+  }
+  const API = { catchLine, catchesLeft, outLine, kickLine, popOutLine, rivalLine };
   if (typeof module !== 'undefined') module.exports = API; else window.CatchText = API;
 })();

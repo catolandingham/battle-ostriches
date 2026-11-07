@@ -87,7 +87,7 @@ ok('3p: eliminated bird gets a read-only god view; living seats do not', () => {
   const dead = S.view3(room, 'blue');
   assert.equal(dead.god, true); assert.equal(dead.myTurn, false);
   assert.deepEqual(dead.moves, []); assert.deepEqual(dead.carryMoves, []);
-  assert.deepEqual(dead.can, { sit: false, carry: false });
+  assert.deepEqual(dead.can, { sit: false, carry: false, kick: false });
   assert.deepEqual(dead.h3.hunter, [0, 3]); assert.equal(dead.h3.burrowed, true);
   assert.ok(dead.eggs.some(e => e.pos[0] === 2 && e.pos[1] === 1));
   assert.equal(S.act3(room, 'blue', { a: 'step', p: [5, 4] }), false);
