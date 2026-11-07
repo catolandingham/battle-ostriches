@@ -21,7 +21,7 @@ const at = { state: 'attached' };
   for (const [x, y] of [[2, 1], [6, 1], [2, 5], [1, 4]]) { await cell(A, x, y).click(); await A.waitForTimeout(150); }
   // the start-of-game line reaches every phone, naming only the animals in this game
   const hunts = 'The vulture hunts eggs. The hyena and honey badger hunt birds.';
-  for (const [P, name] of [[A, 'ostrich'], [Y, 'badger']]) await P.waitForFunction(t => [...document.querySelectorAll('.h3pop.event')].some(e => e.textContent === t), hunts, { timeout: 15000 }).catch(e => { throw new Error(name + ' phone never showed the start line: ' + e.message); });
+  for (const [P, name] of [[A, 'ostrich'], [Y, 'badger']]) await P.waitForFunction(t => (document.getElementById('announce') || {}).textContent === t, hunts, { timeout: 15000 }).catch(e => { throw new Error(name + ' phone never showed the start line: ' + e.message); });
   await A.waitForSelector('#actions.mine', { ...at, timeout: 25000 });
   const room = [...server.rooms.values()].find(r => r.hunt), g = room.g;
   g.vulture = [8, 6]; g.hunt.hs.hyena.p = [0, 0]; g.hunt.hs.badger.p = [8, 0]; server.broadcast(room); await A.waitForTimeout(400);
@@ -46,10 +46,10 @@ const at = { state: 'attached' };
   await A.locator('#actions button:has-text("Kick")').click({ force: true });
   await A.waitForFunction(() => /Tap the glowing animal to kick it\./.test(document.getElementById('hint').textContent));
   assert.equal(await A.locator('.cell.legal').count(), 1, 'only the badger glows'); await cell(A, 3, 5).click();
-  await A.waitForFunction(() => document.querySelector('.h3pop.event'), null, { timeout: 5000 });
-  assert.deepEqual(g.hunt.hs.badger.p, [5, 5], 'pushed 2 squares straight away'); assert.deepEqual(g.ostrich, [2, 5], 'the ostrich stays'); assert.equal(g.lastKick.who, 'badger');
+  for (let i = 0; i < 100 && !g.lastKick; i++) await A.waitForTimeout(50);
+  assert.deepEqual(g.hunt.hs.badger.p, [5, 5], 'pushed 2 squares straight away: ' + JSON.stringify([g.hunt.hs.badger.p, g.hunt.hs.hyena.p, g.vulture, g.ostrich])); assert.deepEqual(g.ostrich, [2, 5], 'the ostrich stays'); assert.equal(g.lastKick.who, 'badger');
   const line = 'The ostrich kicked the honey badger back 2 squares.';
-  for (const [P, name] of [[A, 'ostrich'], [Y, 'badger']]) await P.waitForFunction(t => [...document.querySelectorAll('.h3pop.event')].some(e => e.textContent === t), line, { timeout: 6000 }).catch(e => { throw new Error(name + ' phone never showed the kick line: ' + e.message); });
+  for (const [P, name] of [[A, 'ostrich'], [Y, 'badger']]) await P.waitForFunction(t => (document.getElementById('announce') || {}).textContent === t, line, { timeout: 6000 }).catch(e => { throw new Error(name + ' phone never showed the kick line: ' + e.message); });
   for (const P of [A, Y]) await P.waitForFunction(t => (document.getElementById('badgerline') || {}).textContent === t, BL.LINES.kicked, { timeout: 8000 });
   assert.equal(BL.LINES.kicked, "Ouch. I mean... honey badger don't care.");
   await shot(A, '3-kick-ostrich'); await shot(Y, '4-kick-badger');
