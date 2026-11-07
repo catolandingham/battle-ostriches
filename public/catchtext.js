@@ -53,9 +53,10 @@
   function newEvents(seen, S, prev) {
     const out = [], h = (S && S.h3) || {};
     if (!S) return out;
-    if (S.phase && S.phase.startsWith('setup')) { seen.pop = seen.rival = seen.kick = 0; return out; }
+    if (S.phase && S.phase.startsWith('setup')) { seen.pop = seen.rival = seen.kick = seen.stone = 0; return out; }
     const po = h.popout, rv = h.rival, k = S.kick;
     if (k && k.seq !== seen.kick) { seen.kick = k.seq; if (prev) out.push({ kind: 'kick', text: kickLine(k.who, k.moved, S.cfg && S.cfg.kickPush), square: k.to || null }); }
+    if (S.stoneNote && S.stoneNote.seq !== seen.stone) { seen.stone = S.stoneNote.seq; if (prev) out.push({ kind: 'stone', text: S.stoneNote.text }); }
     if (po && po.seq !== seen.pop) { seen.pop = po.seq; if (prev) out.push({ kind: 'popout', text: popOutLine(), seen: !!po.seen }); }
     if (rv && rv.seq !== seen.rival) { seen.rival = rv.seq; if (prev) out.push({ kind: 'rival', text: rivalLine(rv), square: rv.to || null }); }
     return out;

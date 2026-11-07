@@ -30,7 +30,7 @@ function warmRing(n,W){const f=Math.max(0,n)/W,C=2*Math.PI*17,col=warmCol(f);
  return `<svg class="wring" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="17" fill="none" stroke="rgba(0,0,0,.45)" stroke-width="5"/><circle cx="20" cy="20" r="17" fill="none" stroke="${col}" stroke-width="4.5" stroke-linecap="round" stroke-dasharray="${(C*f).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 20 20)"/></svg><span class="wnum${n<=2?' low':''}" style="--wc:${col}">${n}</span>`;}
 const icon=(t,cls)=>`<span class="ic ic-${t}${cls?' '+cls:''}" data-t="${t}">${VOCAB[t][0]}</span>`;
 const C0=window.BO.CONFIG;
-['eggs','warm','sit','fly','rounds','smell','food','stones','walk','carry','kick'].forEach(k=>document.querySelectorAll('.c-'+k).forEach(e=>e.textContent={eggs:C0.eggs,warm:C0.warmth,sit:C0.maxSit,fly:C0.vultureFly,rounds:C0.rounds,smell:C0.smellRange,food:C0.food,stones:C0.stones,walk:C0.ostrichWalk,carry:C0.carryWalk,kick:C0.kickPush}[k]));
+['eggs','warm','sit','fly','rounds','smell','food','stones','walk','carry','kick'].forEach(k=>document.querySelectorAll('.c-'+k).forEach(e=>e.textContent={eggs:C0.eggs,warm:C0.warmth,fly:C0.vultureFly,rounds:C0.rounds,smell:C0.smellRange,food:C0.food,stones:C0.stones,walk:C0.ostrichWalk,carry:C0.carryWalk,kick:C0.kickPush}[k]));
 // --- robust connection layer ---
 let pending=null,pendTimer=null,connTimer=null,attempts=0,hb=null,lastPong=0;
 function status(msg,err){const e=$('lobbyErr');if(e){e.textContent=msg||'';e.style.color=err?'#ffb3a8':'#fff';}
@@ -118,7 +118,7 @@ if(roomQ){$('codeIn').value=roomQ;open({t:'join',code:roomQ,token:me.code===room
 $('shareBtn').onclick=()=>{const u=$('shareLink').value;if(navigator.share)navigator.share({title:'Battle Ostriches',text:'Play Battle Ostriches with me! Code '+S.code,url:u}).catch(()=>{});else{navigator.clipboard&&navigator.clipboard.writeText(u);$('shareBtn').textContent='Copied!';}};
 // --- walkthrough (same chips as the board) ---
 const WALK={blue:[['🥚','Your goal','Hide '+C0.eggs+' eggs. Keep at least one alive for '+C0.rounds+' rounds. The vulture sees you, but not your eggs.'],
-  ['👆','Your turn','Walk up to '+C0.ostrichWalk+' squares. On an egg: Sit (max '+C0.maxSit+' in a row) or Carry it '+C0.carryWalk+' square. Kick pushes an animal next to you back '+C0.kickPush+' squares. The ring on each egg drains as it cools: visit it before the number hits 0.'],
+  ['👆','Your turn','Walk up to '+C0.ostrichWalk+' squares. On an egg: Sit (others can see you sitting) or Carry it '+C0.carryWalk+' square. Kick pushes an animal next to you back '+C0.kickPush+' squares. The ring on each egg drains as it cools: visit it before the number hits 0.'],
   ['🍃','Stay fed','Step on a leaf at least every '+C0.food+' turns or you starve. A stone thrown at you just bounces off, so your square (and an egg in your beak) is always safe. Squares next to you are not!']],
  red:[['💥','Your goal','Smash all '+C0.eggs+' hidden eggs. You can see the ostrich; its eggs are hidden.'],
   ['👆','Your turn','Fly up to '+C0.vultureFly+' squares. Each landing tells you "Egg nearby!" or "No egg nearby" (within 1 square). Land on an egg to find it.'],
@@ -154,9 +154,9 @@ tapper($('rolecard'),closeCard);
 window.UI={card(){showCard(cardFor(S),S&&S.picked,true);},walk(){walk();},rules(){fillHuntLines();$('rules').classList.remove('hidden');const rb=$('roleCardBtn');if(rb)rb.classList.toggle('hidden',!cardFor(S));const b=document.getElementById('guideToggle');if(b){const on=!localStorage.getItem('bo_hs_off');b.textContent=on?'Ostrich guides: ON (tap to turn off)':'Ostrich guides: OFF (tap to turn on)';}},closeRules(){$('rules').classList.add('hidden')},
  setMode(m){if(locked||!S||!S.myTurn)return;mode=m;if(m==='throw')coachDid('throw');render();},
  kick(){if(locked||!S||!S.myTurn||S.role!=='blue')return;if(curMode()==='carry')return nope("You can't kick while carrying an egg.");
-  if(!(S.can&&S.can.kick))return nope(S.mustLeave?`You sat ${S.cfg.maxSit} turns in a row. Step off this turn.`:'Nothing to kick next to you.');
+  if(!(S.can&&S.can.kick))return nope('Nothing to kick next to you.');
   mode='kick';render();}, // like Throw: Kick selects the mode, then a tap on the glowing animal kicks it
- act(a){if(a==='kick')return UI.kick();if(locked||!S||!S.myTurn)return;if(a==='sit'&&!(S.can&&S.can.sit))return nope(S.mustLeave?`You sat ${S.cfg.maxSit} turns in a row. Step off this turn.`:'Sit only works while you stand on an egg.');coachDid(a);if(a==='sit'&&G&&G.id==='start')gSet('start','1');send({t:'act',a})},guides(on){if(on)localStorage.removeItem('bo_hs_off');else localStorage.setItem('bo_hs_off','1');const b=document.getElementById('guideToggle');if(b)b.textContent=on?'Ostrich guides: ON (tap to turn off)':'Ostrich guides: OFF (tap to turn on)';if(S)render();},replayCoach(){Object.keys(localStorage).filter(k=>k.startsWith('bo_g_')).forEach(k=>localStorage.removeItem(k));['blue','red'].forEach(r=>localStorage.removeItem('bo_cs_'+r));localStorage.removeItem('bo_tips_off');Object.keys(localStorage).filter(k=>k.startsWith('bo_tip_')).forEach(k=>localStorage.removeItem(k));if(S)render();},rematch(how){holder=null;lastBy={};sniffSeen={};send({t:'act',a:'rematch',how:how||'same'})},
+ act(a){if(a==='kick')return UI.kick();if(locked||!S||!S.myTurn)return;if(a==='sit'&&!(S.can&&S.can.sit))return nope('Sit only works while you stand on an egg.');coachDid(a);if(a==='sit'&&G&&G.id==='start')gSet('start','1');send({t:'act',a})},guides(on){if(on)localStorage.removeItem('bo_hs_off');else localStorage.setItem('bo_hs_off','1');const b=document.getElementById('guideToggle');if(b)b.textContent=on?'Ostrich guides: ON (tap to turn off)':'Ostrich guides: OFF (tap to turn on)';if(S)render();},replayCoach(){Object.keys(localStorage).filter(k=>k.startsWith('bo_g_')).forEach(k=>localStorage.removeItem(k));['blue','red'].forEach(r=>localStorage.removeItem('bo_cs_'+r));localStorage.removeItem('bo_tips_off');Object.keys(localStorage).filter(k=>k.startsWith('bo_tip_')).forEach(k=>localStorage.removeItem(k));if(S)render();},rematch(how){holder=null;lastBy={};sniffSeen={};send({t:'act',a:'rematch',how:how||'same'})},
  _rr(){if(S)render();},open(m){open(m);},pause(ms){sniffUntil=Math.max(sniffUntil,Date.now()+ms);},send(o){send(o);},_tip:t=>tipBar(t),_S:()=>S,_legal:()=>legalNow(),_locked:()=>locked,menu(){S=null;localStorage.removeItem('bo_me');location.href='/';}};
 // --- learn-by-playing coach marks: one hint, anchored, everything else dimmed; advances when the player does it ---
 const COACH={blue:[
@@ -350,8 +350,8 @@ function render(prev){
  else if(S.phase==='play'&&S.three&&(!S.myTurn||S.role==='hunter'))h=window.T3UI.hint(S,a);
  else if(S.phase==='play'&&!S.myTurn)h=blue?'Vulture\'s turn…':'Ostrich\'s turn…';
  else if(S.phase==='play'&&blue){
-  a.innerHTML=btn('s','Walk',M==='step',"UI.setMode('step')")+(S.onEgg?btn('c',M==='carry'?'Carry selected · tap a square':'+ Carry',M==='carry',"UI.setMode('carry')",M==='carry'||!S.can.carry)+btn('t',S.mustLeave?'Sit · step off first':`Sit · ${C.maxSit-S.sitRun} left`,false,"UI.act('sit')",!S.can.sit):'')+(S.kickNear?btn('k','Kick',M==='kick',"UI.kick()",M==='carry'||!(S.can&&S.can.kick)):'');
-  h=M==='kick'?'Tap the glowing animal to kick it.':S.mustLeave?`You sat ${C.maxSit} turns: step off (or + Carry).`:M==='carry'?'Carry selected. Tap a glowing square. This does not end your turn.'+(S.kickNear?" You can't kick while carrying an egg.":''):S.moves.length?(S.onEgg&&S.can&&(S.can.sit||S.can.carry)?'Tap a glowing square to move. + Carry selects a move and does not end the turn.':'Tap a glowing square to move.'):'';
+  a.innerHTML=btn('s','Walk',M==='step',"UI.setMode('step')")+(S.onEgg?btn('c',M==='carry'?'Carry selected · tap a square':'+ Carry',M==='carry',"UI.setMode('carry')",M==='carry'||!S.can.carry)+btn('t','Sit',false,"UI.act('sit')",!S.can.sit):'')+(S.kickNear?btn('k','Kick',M==='kick',"UI.kick()",M==='carry'||!(S.can&&S.can.kick)):'');
+  h=M==='kick'?'Tap the glowing animal to kick it.':M==='carry'?'Carry selected. Tap a glowing square. This does not end your turn.'+(S.kickNear?" You can't kick while carrying an egg.":''):S.moves.length?(S.onEgg&&S.can&&(S.can.sit||S.can.carry)?'Tap a glowing square to move. + Carry selects a move and does not end the turn.':'Tap a glowing square to move.'):'';
  } else if(S.phase==='play'){
   a.innerHTML=btn('fl','Fly',M==='fly',"UI.setMode('fly')")+btn('th',S.stones<1?'Throw stone (none)':`Throw stone · ${S.stones}/${C.stones}`,M==='throw',"UI.setMode('throw')",S.stones<1);
   h=S.stones<1?'No stone. Land on a glowing rock pile to pick one up.':M==='throw'?'Tap a red-orange square to throw your stone.':S.stones>0?'Tap a glowing square to fly. Tap yourself to Throw.':'Tap a glowing square to fly there.';}
@@ -385,13 +385,14 @@ function render(prev){
   if(S.hungerLeft<=C.food/2&&!foodLead)T('food',`Step on a green leaf within ${S.hungerLeft} turns or you starve.`);
   if(S.onEgg&&S.can.carry&&S.round>3)T('carry','Carry egg: move it 1 square to hide it again.');
   if(S.kickNear&&S.can&&S.can.kick)T('kick','Kick: push the animal next to you back '+C.kickPush+' squares instead of walking.');
-  if(S.mustLeave)T('sitcap',`Max ${C.maxSit} sits in a row, then step off for a turn.`);}
+}
  if(window.TUT&&S.phase==='play'&&S.round>2)TUT.tip('marks','Hover or tap a square to see what it is.');
  // render the coach mark
  document.querySelectorAll('.spot').forEach(e=>e.classList.remove('spot'));let ce=$('coach');if(!ce){ce=document.createElement('div');ce.id='coach';document.body.appendChild(ce);}
  document.body.classList.remove('coaching');ce.className='hidden';
  if(CM){let an=CM.at==='board'?null:[...a.querySelectorAll('button')].find(b=>(CM.at==='sit'?/Sit/:/Throw/).test(b.textContent));
   if(an&&!an.disabled){an.classList.add('spot','pulse');}if(CM.at==='board'||(an&&!an.disabled))h=CM.txt+(h&&CM.at!=='board'?' — or '+h.charAt(0).toLowerCase()+h.slice(1):'');}
+ (S.sittingAt||[]).forEach(q=>{const c=board.children[q[1]*C.cols+q[0]];if(c&&c.classList&&!c.querySelector('.sittag')){const t=document.createElement('span');t.className='sittag';t.textContent='sitting';c.appendChild(t);}});
  if(S.three)window.T3UI.after(S,prev,board);
  window.T3UI.events(S,prev,board);window.T3UI.startLine(S,prev,cardMode(S));
  youTag(board);
@@ -411,7 +412,7 @@ function render(prev){
  if(S.phase==='over'&&overHold&&Date.now()<overHold)o.classList.add('hidden');
  else if(S.phase==='over'&&S.three){const pop=document.getElementById('snpop');if(pop)pop.remove();o.classList.remove('hidden');o.innerHTML=window.T3UI.over(S);}
  else if(S.phase==='over'){const pop=document.getElementById('snpop');if(pop)pop.remove();const won=S.winner===S.role;o.classList.remove('hidden');
-  o.innerHTML=`<div class="lobbybox"><div class="bigost">${S.winner==='blue'?OST:VUL}</div><h1>${S.pass?(S.winner==='blue'?'Ostrich wins!':'Vulture wins!'):won?'You win!':'You lose'}</h1>${S.ai?`<p>vs computer (${S.ai})</p>`:''}<p>${S.winner==='blue'?`The ostrich kept ${S.eggsLeft} egg(s) alive for ${C.rounds} rounds.`:S.winBy==='starved'?`The ostrich starved in round ${S.round}.`:S.winBy==='cold'?`The last egg went cold in round ${S.round}.`:`The vulture smashed every egg by round ${S.round}.`}</p>${window.T3UI.endBits(S)}</div>`;}
+  o.innerHTML=`<div class="lobbybox"><div class="bigost">${S.winner==='blue'?OST:VUL}</div><h1>${S.pass?(S.winner==='blue'?'Ostrich wins!':'Vulture wins!'):won?'You win!':'You lose'}</h1>${S.ai?`<p>vs computer (${S.ai})</p>`:''}<p>${S.endWhy||(S.winner==='blue'?`The ostrich kept ${S.eggsLeft} egg(s) alive for ${C.rounds} rounds.`:S.winBy==='starved'?`The ostrich starved in round ${S.round}.`:S.winBy==='cold'?`The last egg went cold in round ${S.round}.`:`The vulture smashed every egg by round ${S.round}.`)}</p>${window.T3UI.endBits(S)}</div>`;}
  else o.classList.add('hidden');
 }
 })();

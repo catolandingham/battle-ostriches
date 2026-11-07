@@ -143,7 +143,7 @@ function hunterMove(g, p) {
   t.lastHunter = { type: 'move', from, to: p.slice(), caught, pounce: wasP };
   if (g.phase === 'over') return true;
   // Pounce (rule 7.3): a hyena that sensed a bird at the start of its turn and did not catch senses again and may take one more step
-  if (!caught && !wasP && t.kind === 'hyena' && t.sense) { t.pounce = true; t.first = t.sense; t.sense = senses(g); t.senseSeq++; t.senseAt = t.h.slice(); return true; }
+  if (!caught && !wasP && t.kind === 'hyena' && t.sense) { t.pounce = true; t.first = t.sense; t.firstAt = from.slice(); t.sense = senses(g); t.senseSeq++; t.senseAt = t.h.slice(); return true; }
   endHunter(g); return true;
 }
 function hunterStay(g) { // badger: staying still burrows it (invisible to birds). During a pounce: skip the extra move.

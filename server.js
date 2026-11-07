@@ -119,7 +119,7 @@ function view3(room, role) {
     v = { role, code: room.code, phase: g.phase, turn: g.turn, round: g.round, cfg: g.cfg, winner: g.winner, winBy: g.winBy, eggsLeft: B.aliveEggs(g).length,
       marks: pub.marks, vulture: over ? g.vulture : T.OFF, ostrich: over ? g.ostrich : T.OFF, stones: g.stones, hungerLeft: g.hungerLeft, sniff: null, sitRun: 0, carried: false,
       lastAction: null, lastCold: 0, myTurn: mine, opponent: true, joined: SEATS3.every(s => room.players[s]), ai: null, pass: false,
-      hunter: t.h, kind: t.kind, sense: g.turn === 'hunter' || t.pounce ? t.sense : null, senseSeq: t.senseSeq, senseRange: T.T3.sense, pounce: t.pounce, burrowed: t.burrowed, dig: t.dig || 0,
+      hunter: t.h, kind: t.kind, sense: g.turn === 'hunter' || t.pounce ? t.sense : null, senseSeq: t.senseSeq, senseRange: T.T3.sense, pounce: t.pounce, firstAt: t.pounce ? t.firstAt : null, burrowed: t.burrowed, dig: t.dig || 0,
       hmoves: mine ? T.hunterMoves(g) : [], lastHunter: t.lastHunter, seenBirds: g.phase === 'play' ? T.ambushSight(g) : [] };
     if (over) v.eggs = g.eggs.map(e => ({ pos: e.pos, alive: e.alive, coldIn: B.coldIn(g, e), carried: false }));
   } else {
@@ -231,7 +231,7 @@ function viewT(room, seat) {
     lastCold: (g.lastCold || []).length, myTurn: mine, opponent: true, joined: tseats(g).every(s => room.players[s]), ai: null, pass: false, three: true, h3, showTimers: timersOn(room) };
   if (seat === 'hunter') return stamp(room, Object.assign(base, { role: 'hunter', phase: setup ? 'setupEggs' : g.phase, cfg: g.cfg, vulture: TT.OFF, ostrich: TT.OFF, stones: Math.max(0, ...TT.VS.filter(x => !g.b[x].out).map(x => g.b[x].stones)), hungerLeft: Math.min(g.cfg.food, ...TT.OS.filter(x => !g.b[x].out).map(x => g.b[x].hunger)), sniff: null,
     sitRun: 0, carried: false, lastAction: null, hunter: g.h.p, kind: g.h.kind, sense: g.turn === 'hunter' || g.h.pounce ? g.h.sense : null, senseSeq: g.h.senseSeq,
-    senseRange: TT.TM.sense, pounce: g.h.pounce, burrowed: g.h.burrowed, dig: g.h.dig || 0, hmoves: mine ? TT.hunterMoves(g) : [], lastHunter: g.h.last, seenBirds: g.phase === 'play' ? TT.ambushSight(g) : [], eggs: over ? eggs() : undefined }), seat);
+    senseRange: TT.TM.sense, pounce: g.h.pounce, firstAt: g.h.pounce ? g.h.firstAt : null, burrowed: g.h.burrowed, dig: g.h.dig || 0, hmoves: mine ? TT.hunterMoves(g) : [], lastHunter: g.h.last, seenBirds: g.phase === 'play' ? TT.ambushSight(g) : [], eggs: over ? eggs() : undefined }), seat);
   const la = g.lastAction && (isO || over || g.lastAction.type !== 'throw' ? g.lastAction : { type: 'throw', from: g.lastAction.from, p: g.lastAction.p, result: g.lastAction.result, egg: !!g.lastAction.egg });
   const v = Object.assign(base, { role: isO ? 'blue' : 'red', phase: setup ? (isO ? (step === 'eggs' ? 'setupEggs' : step === 'ostrich' ? 'setupOstrich' : 'play') : 'setupEggs') : g.phase,
     cfg: { ...g.cfg, eggs: isO && setup ? g.eggs.length + (TT.TM.eggs - TT.nestOf(g, seat).length) : g.cfg.eggs * 2 },
@@ -321,7 +321,7 @@ function viewH(room, seat) {
     v = { role: 'hunter', code: room.code, phase: g.phase, turn: HU.isH(g.turn) ? (g.turn === seat ? 'hunter' : g.turn) : g.turn, round: g.round, cfg: g.cfg, winner: g.winner, winBy: g.winBy,
       eggsLeft: B.aliveEggs(g).length, marks: pub.marks, vulture: over ? g.vulture : HU.OFF, ostrich: over ? g.ostrich : HU.OFF, stones: g.stones, hungerLeft: g.hungerLeft,
       sniff: null, sitRun: 0, carried: false, lastAction: null, lastCold: 0, myTurn: mine, opponent: true, joined: readyH(room), ai: null, pass: false,
-      hunter: x.p, kind: seat, sense: g.turn === seat ? x.sense : null, senseSeq: x.senseSeq, senseRange: HU.TH.sense, pounce: x.pounce, burrowed: x.burrowed, dig: x.dig,
+      hunter: x.p, kind: seat, sense: g.turn === seat ? x.sense : null, senseSeq: x.senseSeq, senseRange: HU.TH.sense, pounce: x.pounce, firstAt: x.pounce ? x.firstAt : null, burrowed: x.burrowed, dig: x.dig,
       hmoves: mine ? HU.hunterMoves(g, seat) : [], lastHunter: x.last, seenBirds: seat === 'badger' && g.phase === 'play' ? HU.ambushSight(g) : [] };
     if (over) v.eggs = g.eggs.map(e => ({ pos: e.pos, alive: e.alive, coldIn: B.coldIn(g, e), carried: false }));
   } else {

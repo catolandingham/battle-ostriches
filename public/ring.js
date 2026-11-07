@@ -43,7 +43,7 @@
       if (mode === 'carry') items.push({ id: 'step', label: 'Move', detail: 'Tap a glowing square to walk.', enabled: true, mode: 'step' });
       else if ((S.moves || []).length) items.push({ id: 'step', label: 'Walk', detail: 'Walk is selected. Tap a glowing square.', enabled: true, mode: 'step' });
       if (S.onEgg && S.can && S.can.carry) items.push({ id: 'carry', label: 'Carry', detail: 'Carry the egg 1 square.', enabled: true, mode: 'carry' });
-      if (S.onEgg && S.can && S.can.sit) items.push({ id: 'sit', label: 'Sit', detail: `Warm the egg. ${Math.max(0, (C.maxSit || 0) - (S.sitRun || 0))} sits left.`, enabled: true, act: 'sit' });
+      if (S.onEgg && S.can && S.can.sit) items.push({ id: 'sit', label: 'Sit', detail: 'Warm the egg. Others can see you sitting.', enabled: true, act: 'sit' });
       if (S.kickNear) items.push({ id: 'kick', label: 'Kick', detail: mode === 'carry' ? "You can't kick while carrying an egg." : `Push the animal next to you back ${C.kickPush || 2} squares.`, enabled: mode !== 'carry' && !!(S.can && S.can.kick), act: 'kick' });
       return items;
     }
@@ -56,7 +56,6 @@
   function omittedNotes(S) {
     if (!S || S.god || S.phase !== 'play' || !S.myTurn) return [];
     const notes = [];
-    if (S.role === 'blue' && S.mustLeave) notes.push('Sit is used up. Step off this turn.');
     if (S.role === 'red' && (S.stones | 0) < 1) notes.push('No stone. Land on a rock pile to pick one up.');
     return notes;
   }

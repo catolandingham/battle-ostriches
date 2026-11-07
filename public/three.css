@@ -87,3 +87,7 @@ b.snum.o{background:#38d6f0}b.snum.v{background:#ffb000}b.snum.me{background:#ff
 .pcount{flex-wrap:wrap;gap:5px;margin:2px 0 8px}
 .pcount button{width:auto;min-width:56px;height:auto;padding:4px 6px;display:flex;flex-direction:column;align-items:center;line-height:1.1;font-size:16px;border-width:3px}
 .pcount button small{font-size:10px;font-weight:800;opacity:.8}
+/* the second Pounce reading: dots inside both readings are the brightest */
+#board .cell.maybird.bright::after{width:14px;height:14px;margin:-7px 0 0 -7px;background:#ffd21f;box-shadow:0 0 0 3px #5a1033,0 0 12px 4px #ffd21f}
+/* a sitting ostrich is shown to anyone who can see it */
+.sittag{position:absolute;left:50%;bottom:1px;transform:translateX(-50%);font-size:9px;font-weight:900;letter-spacing:.03em;background:#fff8c9;color:#5a4300;border:1px solid #5a4300;border-radius:6px;padding:0 3px;z-index:6;pointer-events:none}

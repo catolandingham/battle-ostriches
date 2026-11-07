@@ -96,7 +96,7 @@ function tOver(S){const h=S.h3,w=S.winner,me=h.mySeat,C=S.cfg,mySide=me==='hunte
  const why=w==='hunter'?`The ${hName(S)} knocked out an ostrich and a vulture by round ${S.round}.`:w==='blue'?`The ostriches kept ${S.eggsLeft} egg(s) alive for ${C.rounds} rounds.`
   :w==='red'?(S.winBy==='cold'?`The last egg went cold in round ${S.round}.`:S.winBy==='ostriches-out'?'Both ostriches were out.':`The vultures smashed every egg by round ${S.round}.`)
   :'Every bird that could win was out.';
- return `<div class="lobbybox"><div class="bigost">${art}</div><h1>${title}</h1><p>${why}</p>${winNote(S)}${endBits(S)}</div>`;}
+ return `<div class="lobbybox"><div class="bigost">${art}</div><h1>${title}</h1><p>${S.endWhy||why}</p>${winNote(S)}${endBits(S)}</div>`;}
 // --- 4 players "Hunters": ostrich + vulture + hyena + honey badger (rival hunters) ---
 function hChips(S){let bar=$('h3bar');if(!bar){bar=document.createElement('div');bar.id='h3bar';$('hud').after(bar);
   bar.addEventListener('click',e=>{const c=e.target.closest('[data-tip]');if(c&&UI._tip)UI._tip(c.dataset.tip);});}
@@ -121,7 +121,7 @@ function hOver(S){const h=S.h3,w=S.winner,me=h.mySeat,C=S.cfg;
  const ko=`Knock-outs: hyena ${h.hkos.hyena}, honey badger ${h.hkos.badger}.`;
  const why=w==='hyena'||w==='badger'?`Both birds were out. ${ko}${h.hkos.hyena===h.hkos.badger?' Tie: the last knock-out wins.':''}`:w==='blue'?`The ostrich kept ${S.eggsLeft} egg(s) alive for ${C.rounds} rounds.`
   :w==='red'?(S.winBy==='cold'?`The last egg went cold in round ${S.round}.`:S.winBy==='starved'?'The ostrich was out and no eggs were left.':`The vulture smashed every egg by round ${S.round}.`):`No hunter got a knock-out. ${ko}`;
- return `<div class="lobbybox"><div class="bigost">${art}</div><h1>${title}</h1><p>${why}</p>${winNote(S)}${endBits(S)}</div>`;}
+ return `<div class="lobbybox"><div class="bigost">${art}</div><h1>${title}</h1><p>${S.endWhy||why}</p>${winNote(S)}${endBits(S)}</div>`;}
 // --- in game ---
 let lastSense='',lastCatch=0,deadline=0,clockMs=10000,raf=0,lastTurnKey='',nearSeen=null;
 function warnNear(S,board){if(!window.BORing)return;if(!S||S.phase!=='play'){nearSeen=null;return;}
@@ -134,7 +134,7 @@ function nopeMsg(S){return `Move ${S.h3.range} square${S.h3.range>1?'s':''}: tap
 function hint(S,a){if(S.h3.team&&!hint.in){hint.in=1;try{return tHint(S,a);}finally{hint.in=0;}}const r=S.role,t=S.turn;
  if(r==='hunter'&&S.myTurn){const k=S.h3.kind;
   a.innerHTML=S.pounce?'<button class="on" title="Skip this extra move. You will not catch the bird." onclick="UI.send({t:\'act\',a:\'hstay\'})">Stop</button>':`<button title="${k==='badger'?(S.burrowed?'Stay burrowed. Birds still cannot see you.':'Stay still to burrow.'):'Stay put and end your turn.'}" onclick="UI.send({t:'act',a:'hstay'})">${k==='badger'?(S.burrowed?'Stay':'Burrow'):'Stay'}</button>`;
-  if(S.pounce)return 'POUNCE: a bird is within 2. Land on it to catch it — this extra move is still your turn.';
+  if(S.pounce)return 'One more square. Bright dots: the bird is most likely here.';
   const burrowNote=k!=='badger'||S.burrowed?'':'Stay still to burrow. ';
   return burrowNote+`Tap a glowing square to move ${S.h3.range}. ${S.sense?'A bird is within 2. It is not pointed at.':'No bird within 2, so no bird is drawn.'}`;}
  if(!S.h3.ready)return S.h3.needKind?'Pick your hunter.':`Waiting for all ${S.h3.hunt?4:3} players…`;
@@ -199,7 +199,7 @@ function annPump(){if(annBusy||!annQ.length)return;annBusy=true;
  let o=$('announce');if(!o){o=document.createElement('div');o.id='announce';o.setAttribute('role','status');o.setAttribute('aria-live','polite');document.body.appendChild(o);}
  o.textContent=annQ.shift();o.className='show';
  setTimeout(()=>{o.className='';o.textContent='';setTimeout(()=>{annBusy=false;annPump();},120);},ANN_MS);}
-const evSeen={kick:0,pop:0,rival:0};
+const evSeen={kick:0,pop:0,rival:0,stone:0};
 function events(S,prev,board){
  if(!S)return;if(!S.three)rulesMode('2');
  const h=S.h3||{};
@@ -231,11 +231,11 @@ function after(S,prev,board){badgerLines(S,prev);chips(S);clock(S);kindPick(S);i
   const hx=S.hunter[0],hy=S.hunter[1],range=h.senseRange;
   if(S.sense){for(let y=0;y<S.cfg.rows;y++)for(let x=0;x<S.cfg.cols;x++){const dx=x-hx,dy=y-hy;if(!dx&&!dy)continue;if(Math.max(Math.abs(dx),Math.abs(dy))>range)continue;
    const c=board.children[y*S.cfg.cols+x];if(!c||!c.classList||!c.classList.contains('cell'))continue;if(c.querySelector('.pc.po,.pc.pv'))continue;
-   c.classList.add('maybird');const had=c.getAttribute('aria-label')||'';if(!/Bird may be here/.test(had))c.setAttribute('aria-label',had?had+'. Bird may be here':'Bird may be here');}}
+   c.classList.add('maybird');if(S.pounce&&S.firstAt&&Math.max(Math.abs(x-S.firstAt[0]),Math.abs(y-S.firstAt[1]))<=range)c.classList.add('bright');const had=c.getAttribute('aria-label')||'';if(!/Bird may be here/.test(had))c.setAttribute('aria-label',had?had+'. Bird may be here':'Bird may be here');}}
   const sk=S.round+':'+S.senseSeq;if(sk!==lastSense){lastSense=sk;UI.pause(1100);
    pop(board,S.sense?(S.pounce?'Still close.':'Bird may be here.'):'Nothing near',S.sense?'yes':'no');
    window.SFX&&SFX.play(S.sense?'sniffYes':'sniffNo');}
-  if(S.pounce)noteBanner('pounce','POUNCE: land on the bird to catch it.',true);}
+  if(S.pounce)noteBanner('pounce','Pounce!',true);}
  if(S.pounce&&S.myTurn&&me==='hunter'){const mine=board.querySelector('.pc.ph.mine');const cell=hc||(mine&&mine.closest('.cell'));
   if(cell&&!cell.querySelector('.pouncetag')){const t=document.createElement('span');t.className='pouncetag';t.textContent='CAN CATCH';cell.appendChild(t);}}
  // catch + knockback feedback
@@ -263,7 +263,7 @@ function over(S){if(S.h3.hunt)return hOver(S);if(S.h3.team)return tOver(S);const
  const why=w==='hunter'?`The ${hName(S)} knocked out both birds in round ${S.round}.`:w==='blue'?`The ostrich kept ${S.eggsLeft} egg(s) alive for ${C.rounds} rounds.`
   :w==='red'?(S.winBy==='cold'?`The last egg went cold in round ${S.round}.`:S.winBy==='starved'?'The ostrich was out and no eggs were left.':`The vulture smashed every egg by round ${S.round}.`)
   :S.winBy==='time'?'Time ran out: the ostrich was out and the vulture never got every egg.':'The eggs were lost, but the vulture was already out.';
- return `<div class="lobbybox"><div class="bigost">${art}</div><h1>${title}</h1><p>${why}</p>${winNote(S)}${endBits(S)}</div>`;}
+ return `<div class="lobbybox"><div class="bigost">${art}</div><h1>${title}</h1><p>${S.endWhy||why}</p>${winNote(S)}${endBits(S)}</div>`;}
 window.T3UI={after,events,startLine,announce,hint,tag,waitMsg,nopeMsg,over,endBits,KIND};
 document.readyState==='loading'?document.addEventListener('DOMContentLoaded',lobby):lobby();
 })();
