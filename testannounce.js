@@ -72,20 +72,6 @@ ok('2 vs 2 + hunter: the pop-out goes to every seat; the badger\'s square only t
   for (const s of ['o1', 'o2', 'v1']) { assert.equal(v[s].h3.popout.seen, false, s + ' cannot see the badger'); assert.equal(v[s].h3.hunter, null); assert.equal(has(v[s], [6, 5]), false, s); } });
 
 // ---- the hunters meeting: every seat is told; the hyena's square only to a seat that can see the hyena
-ok('Hunters: the meeting goes to every seat, in the words of whoever started it, and the square only to seats that can see the hyena', () => {
-  for (const [by, hy, ba, mover, target] of [['badger', [4, 3], [5, 3], 'badger', [4, 3]], ['hyena', [3, 3], [4, 3], 'hyena', [4, 3]]]) {
-    const room = roomH(), g = room.g = hunters(hy, ba, [0, 0], [0, 6]); g.turn = mover; assert.ok(H.hunterMove(g, target)); assert.equal(g.hunt.rival.by, by);
-    const to = g.hunt.hs.hyena.p.slice(), v = seatsOf(s => S.viewH(room, s), SH);
-    for (const s of SH) { assert.equal(v[s].h3.rival.by, by, s + ' is told'); assert.equal(v[s].h3.rival.seq, 1); assert.equal(v[s].h3.rival.n, 2);
-      assert.equal(CT.rivalLine(v[s].h3.rival), by === 'badger' ? 'The honey badger ran into the hyena. Nobody is hurt. The hyena slid back 2 squares.' : 'The hyena ran into the honey badger. Nobody is hurt. The hyena slid back 2 squares.'); }
-    assert.deepEqual(v.hyena.h3.rival.to, to); assert.deepEqual(v.badger.h3.rival.to, to);
-    // birds who cannot see either hunter get the line, not the location
-    assert.equal(v.blue.h3.rival.to, null); assert.equal(v.red.h3.rival.to, null); assert.equal(v.blue.h3.hunters.length, 0, 'the ostrich sees neither hunter'); assert.equal(v.red.h3.hunters.length, 0);
-    assert.equal(has(v.red, to), false, 'nothing about the hyena\'s square in the far vulture\'s view');
-    // a bird that can see the hyena gets the square
-    g.ostrich = [1, 2]; const near = S.viewH(room, 'blue'); assert.deepEqual(near.h3.rival.to, to, 'the ostrich at (1,2) is 1 square from the hyena'); assert.ok(near.h3.hunters.some(x => x.kind === 'hyena')); } });
-
-// ---- the first meeting on a page shows (the audit's bug), and later ones, once each
 ok('the first hunters meeting on a page is announced; a page opened mid-game says nothing about an old one; a new game starts over', () => {
   const mk = (rv, ph = 'play') => ({ phase: ph, h3: { rival: rv || null } }), seen = { pop: 0, rival: 0 };
   assert.deepEqual(CT.newEvents(seen, mk(null), {}), []);

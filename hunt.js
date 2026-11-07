@@ -64,13 +64,14 @@ function catchBird(g, b, h, back) {
   if (b === 'blue' && g.carrying !== null) { const e = g.eggs[g.carrying]; g.carrying = null; if (e.alive) e.pos = at.slice(); }
   if (st.catches >= TH.ko[h]) { t.lastCatch = { bird: b, by: h, at, to: null, ko: true, seq: ++t.seq, round: g.round }; knockout(g, b, 'caught', h); return; }
   const q = B.scrambleTo(g.cfg, at, m => !B.wrecked(g, m) && !upAt(g, m, b) && !(K(t.hs[h].p) === K(m)), TH.knock);
+  if (b === 'blue') g.sitting = false;
   if (q) { if (b === 'blue') g.ostrich = q; else g.vulture = q; } else if (back) back();
   for (const o of HUNTERS) if (t.hs[o].burrowed && K(t.hs[o].p) === K(at) && o !== h) { t.hs[o].burrowed = false; t.hs[o].dig = 0; } // a bird landed on the buried badger
   t.lastCatch = { bird: b, by: h, at, to: (q || pos(g, b)).slice(), ko: false, seq: ++t.seq, round: g.round };
 }
 // --- turns ---
 function ostrichStay(g) {
-  g.sitRun = 0; g.lastAction = { type: 'stay' };
+  g.sitRun = 0; g.sitting = false; g.lastAction = { type: 'stay' };
   if (B.isFood(g, g.ostrich)) { g.hungerLeft = g.cfg.food; g.lastAction.ate = true; }
   else if (--g.hungerLeft <= 0) { g.phase = 'over'; g.winner = 'red'; g.winBy = 'starved'; return; }
   B.endRound(g);

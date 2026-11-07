@@ -59,10 +59,10 @@ function ostrichAct(g, s, a, p) {
   const b = g.b[s]; if (!myTurn(g, s) || !isO(s)) return false;
   if (a === 'kick') return ostrichKick(g, s, p);
   const from = b.pos.slice();
-  if (a === 'sit') { if (!canSit(g, s)) return false; b.sitRun++; }
+  if (a === 'sit') { if (!canSit(g, s)) return false; b.sitRun++; b.sitting = true; }
   else { const carry = a === 'carry'; if (!ostrichMoves(g, s, carry).some(q => K(q) === K(p))) return false;
     if (carry) { const e = eggAt(g, b.pos); e.pos = null; b.carrying = e.id; if (g.marks[K(b.pos)] === 'spotted') delete g.marks[K(b.pos)]; }
-    b.pos = p.slice(); b.sitRun = 0; }
+    b.pos = p.slice(); b.sitRun = 0; b.sitting = false; }
   g.lastAction = { seat: s, type: a === 'sit' ? 'sit' : a === 'carry' ? 'carry' : 'step' };
   const e = b.carrying !== null ? null : eggAt(g, b.pos); if (e) e.lastWarm = g.round; // either ostrich may warm any egg; a carried egg is not warmed
   feed(g, s);
@@ -82,7 +82,7 @@ function kickable(g, s) {
 const kickTargets = (g, s) => canKick(g, s) ? kickable(g, s) : [];
 function ostrichKick(g, s, p) {
   if (!kickTargets(g, s).some(q => K(q) === K(p))) return false;
-  const b = g.b[s], from = p.slice(), hunter = !!(g.h && K(g.h.p) === K(from)), v = VS.find(x => live(g, x) && K(g.b[x].pos) === K(from));
+  const b = g.b[s]; b.sitting = false; const from = p.slice(), hunter = !!(g.h && K(g.h.p) === K(from)), v = VS.find(x => live(g, x) && K(g.b[x].pos) === K(from));
   // a pushed animal wraps around the edge and stops before a wrecked square or any animal that is up
   const n = hunter && g.h.kind === 'badger' ? g.cfg.kickPushBadger : g.cfg.kickPush;
   const kr = B.slideN(g.cfg, from, B.awayFrom(b.pos, from), n, m => (g.h && K(g.h.p) === K(m) && !g.h.burrowed && !hunter) || birdsIn(g).some(o => o !== v && K(g.b[o].pos) === K(m)), g.marks, true), to = kr.to;
@@ -93,7 +93,7 @@ function ostrichKick(g, s, p) {
   const e = eggAt(g, b.pos); if (e) e.lastWarm = g.round; // an egg under the ostrich is warmed, as when it sits
   feed(g, s); next(g); return true;
 }
-function ostrichStay(g, s, why) { const b = g.b[s]; b.sitRun = 0; g.lastAction = { seat: s, type: 'stay', [why]: true }; feed(g, s); }
+function ostrichStay(g, s, why) { const b = g.b[s]; b.sitRun = 0; b.sitting = false; g.lastAction = { seat: s, type: 'stay', [why]: true }; feed(g, s); }
 // --- vultures (they share what they sniff) ---
 function dropAll(g) { for (const s of OS) { const b = g.b[s]; if (b.carrying === null) continue; const e = g.eggs[b.carrying]; b.carrying = null; if (e.alive) e.pos = b.pos.slice(); } }
 function flyTargets(g, s) {
@@ -186,7 +186,7 @@ function catchBird(g, s, back) {
   if (b.carrying != null) { const e = g.eggs[b.carrying]; b.carrying = null; if (e.alive) e.pos = at.slice(); } // a carried egg drops where it was caught
   if (b.catches >= koAt(g)) { g.lastCatch = { bird: s, at, to: null, ko: true, seq: ++g.seq, round: g.round }; knockout(g, s, 'caught'); return; }
   const q = B.scrambleTo(g.cfg, at, m => !B.wrecked(g, m) && !birdsIn(g).some(o => o !== s && K(g.b[o].pos) === K(m)) && !hunterUp(g, m) && !(g.h && K(g.h.p) === K(m)), TM.knock);
-  if (q) b.pos = q; else if (back) back();
+  b.sitting = false; if (q) b.pos = q; else if (back) back();
   if (g.h && g.h.burrowed && K(g.h.p) === K(at)) { g.h.burrowed = false; g.h.dig = 0; }
   g.lastCatch = { bird: s, at, to: b.pos.slice(), ko: false, seq: ++g.seq, round: g.round };
 }

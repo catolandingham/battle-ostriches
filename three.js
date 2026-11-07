@@ -53,13 +53,14 @@ function catchBird(g, b, back) {
   if (st.catches >= koAt(g)) { t.lastCatch = { bird: b, at, to: null, ko: true, seq: ++t.seq, round: g.round }; knockout(g, b, 'caught'); return; }
   const other = BIRDS.find(x => x !== b);
   const q = B.scrambleTo(g.cfg, at, m => !B.wrecked(g, m) && !(liveAt(g, other) && K(pos(g, other)) === K(m)) && !(K(t.h) === K(m) && !(t.kind === 'badger' && t.burrowed)), T3.knock);
+  if (b === 'blue') g.sitting = false;
   if (q) { if (b === 'blue') { g.ostrich = q; } else g.vulture = q; } else if (back) back();
   if (t.burrowed && K(t.h) === K(at)) { t.burrowed = false; t.dig = 0; }
   t.lastCatch = { bird: b, at, to: (q || pos(g, b)).slice(), ko: false, seq: ++t.seq, round: g.round };
 }
 // --- whose turn: skip birds that are out or knocked back (they lose their next turn) ---
 function ostrichStay(g) { // shot clock ran out or turn lost: the ostrich stays put (no sit, no warmth), still gets hungry
-  g.sitRun = 0; g.lastAction = { type: 'stay' };
+  g.sitRun = 0; g.sitting = false; g.lastAction = { type: 'stay' };
   if (B.isFood(g, g.ostrich)) { g.hungerLeft = g.cfg.food; g.lastAction.ate = true; }
   else if (--g.hungerLeft <= 0) { g.phase = 'over'; g.winner = 'red'; g.winBy = 'starved'; return; }
   B.endRound(g);

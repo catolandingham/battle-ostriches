@@ -137,4 +137,27 @@ ok('2 vs 2 + hunter: HUNTER_GOAL "first" (default): one ostrich and one vulture 
 ok('2 vs 2: a team stays in while one of its birds is; teammates win or lose together', () => {
   const g = team('hyena', { h: [5, 5], o1: [5, 5], o2: [0, 0], v1: [8, 0], v2: [8, 6] }); g.turn = 'hunter'; g.h.p = [4, 4]; g.b.o1.catches = 1; assert.ok(TT.hunterMove(g, [5, 5])); assert.equal(g.b.o1.out, true); assert.equal(g.phase, 'play'); assert.equal(g.b.o2.out, false); });
 
+// ---- what each seat is told (views)
+process.env.PORT = 0; const S = require('./server.js'); const SEATS3 = ['blue', 'red', 'hunter'];
+const room3 = kind => S.create3({ role: 'blue', bots: ['red', 'hunter'], kind }, null).room;
+const hasSq = (v, p) => JSON.stringify(v).includes('[' + p[0] + ',' + p[1] + ']');
+ok('views: a hunter is never told where a caught bird scrambled to; the bird is; no seat learns a square it cannot see', () => {
+  const room = room3('hyena'), g = room.g = three('hyena', [5, 2], [6, 2], [0, 6]); assert.ok(T.hunterMove(g, [6, 2]));
+  const v = Object.fromEntries(SEATS3.map(s => [s, S.view3(room, s)])); const to = g.ostrich.slice();
+  assert.equal(v.hunter.h3.lastCatch.to, null); assert.ok(!hasSq(v.hunter, to) || K(to) === K(g.three.h)); assert.deepEqual(v.blue.h3.lastCatch.to, to); assert.deepEqual(v.red.h3.lastCatch.to, to, 'birds see birds');
+  assert.equal(v.red.h3.lastCatch.at, null, 'the vulture at (0,6) cannot see the hyena'); });
+ok('views: a stone line goes to every seat with no square; kick lines say how far it really went (wrapped kicks included)', () => {
+  const room = room3('hyena'), g = room.g = three('hyena', [5, 2], [4, 3], [5, 3]); g.turn = 'red'; g.stones = 1; assert.ok(T.vultureThrow3(g, [4, 3]));
+  for (const s of SEATS3) { const v = S.view3(room, s); assert.equal(v.stoneNote.text, 'The ostrich kicked the stone right back!'); assert.deepEqual(Object.keys(v.stoneNote).sort(), ['seq', 'text']); }
+  const r2 = room3('hyena'), k = r2.g = three('hyena', [1, 6], [6, 3], [7, 3]); k.turn = 'blue'; assert.ok(T.ostrichKick3(k, [7, 3])); assert.equal(S.view3(r2, 'blue').kick.moved, 3); assert.deepEqual(k.vulture, [1, 3]); });
+ok('views: birds (not hunters) see an ostrich that is sitting; the end screen carries one plain reason', () => {
+  const room = room3('hyena'), g = room.g = three('hyena', [0, 6], [2, 1], [5, 5]); g.turn = 'blue'; assert.ok(T.ostrichAct3(g, 'sit'));
+  assert.deepEqual(S.view3(room, 'red').sittingAt, [[2, 1]]); assert.deepEqual(S.view3(room, 'hunter').sittingAt, []); assert.deepEqual(S.view3(room, 'blue').sittingAt, [[2, 1]]);
+  g.phase = 'over'; g.endWhy = 'The hyena made 3 catches.'; assert.equal(S.view3(room, 'blue').endWhy, 'The hyena made 3 catches.'); });
+ok('views: Hunters and 2 vs 2 carry the same notes', () => {
+  const rh = S.createH({ role: 'badger', bots: ['blue', 'red', 'hyena'] }, null).room, g = rh.g = hunters([5, 3], [8, 6], [0, 6], [4, 3]); g.turn = 'red'; g.stones = 1; assert.ok(H.vultureThrowH(g, [5, 3]));
+  assert.deepEqual(g.hunt.hs.hyena.p, [7, 3]); assert.deepEqual(S.viewH(rh, 'hyena').sittingAt, []);
+  const rt = S.createT({ team: 5, role: 'hunter', bots: ['v1', 'v2', 'o1', 'o2'], kind: 'hyena' }, null).room, t = rt.g = team('hyena', { h: [8, 3], o1: [2, 1], o2: [7, 1], v1: [3, 3], v2: [3, 4] }); t.turn = 'o1'; assert.ok(TT.ostrichAct(t, 'o1', 'sit'));
+  assert.deepEqual(S.viewT(rt, 'v1').sittingAt, [[2, 1]]); assert.deepEqual(S.viewT(rt, 'hunter').sittingAt, []); });
+
 console.log(`PASS testv2 (${n} groups)`); process.exit(0);

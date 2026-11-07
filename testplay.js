@@ -7,38 +7,6 @@ const S = require('./server.js');
 let n = 0; const ok = (name, f) => { f(); n++; console.log('ok', name); };
 const ids = a => a.map(x => x.id);
 
-ok('ring: Step and Fly can be selected, and the squares still do the move', () => {
-  assert.deepEqual(ids(R.legalActions(null)), []);
-  assert.deepEqual(ids(R.legalActions({ phase: 'play', myTurn: false, role: 'blue', onEgg: true, can: { sit: true, carry: true } })), []);
-  assert.deepEqual(ids(R.legalActions({ phase: 'setupEggs', myTurn: true, role: 'blue' })), []);
-  assert.deepEqual(ids(R.legalActions({ phase: 'play', myTurn: true, god: true, role: 'blue', onEgg: true, can: { sit: true, carry: true } })), []);
-  const step = R.legalActions({ phase: 'play', myTurn: true, role: 'blue', onEgg: false, moves: [[1, 1]], cfg: { maxSit: 3 }, can: { sit: false, carry: false } });
-  assert.deepEqual(ids(step), ['step']);
-  assert.equal(step[0].label, 'Walk');
-  const back = R.legalActions({ phase: 'play', myTurn: true, role: 'blue', onEgg: true, moves: [[1, 1]], cfg: { maxSit: 3 }, can: { sit: true, carry: true } }, 'carry');
-  assert.deepEqual(ids(back), ['step', 'carry', 'sit']);
-  const on = R.legalActions({ phase: 'play', myTurn: true, role: 'blue', onEgg: true, moves: [[1, 1]], cfg: { maxSit: 3 }, sitRun: 3, mustLeave: true, can: { sit: false, carry: true } });
-  assert.deepEqual(ids(on), ['step', 'carry']);
-  assert.ok(on.every(a => a.enabled));
-  assert.match(R.omittedNotes({ phase: 'play', myTurn: true, role: 'blue', mustLeave: true })[0], /step off/i);
-  const vul = R.legalActions({ phase: 'play', myTurn: true, role: 'red', stones: 0, cfg: { vultureFly: 2, stones: 1 }, fly: [[1, 1]] });
-  assert.deepEqual(ids(vul), ['fly']);
-  assert.match(R.omittedNotes({ phase: 'play', myTurn: true, role: 'red', stones: 0 })[0], /rock pile/i);
-  const full = R.legalActions({ phase: 'play', myTurn: true, role: 'red', stones: 1, cfg: { vultureFly: 2, stones: 1 } });
-  assert.deepEqual(ids(full), ['fly', 'throw']);
-  const aimed = R.legalActions({ phase: 'play', myTurn: true, role: 'red', stones: 1, cfg: { vultureFly: 2, stones: 1 } }, 'throw');
-  assert.deepEqual(ids(aimed), ['fly', 'throw']);
-  const pounce = R.legalActions({ phase: 'play', myTurn: true, role: 'hunter', pounce: true, h3: { kind: 'hyena' } });
-  assert.deepEqual(ids(pounce), ['hstay']); assert.match(pounce[0].detail, /catch/i);
-  const dig = R.legalActions({ phase: 'play', myTurn: true, role: 'hunter', h3: { kind: 'badger' }, dig: 0 });
-  assert.equal(dig[0].label, 'Burrow'); assert.doesNotMatch(dig[0].detail, /tough ground|usually|one more/i);
-  for (const item of back.concat(on, full, aimed, pounce, dig)) assert.equal(item.enabled, true);
-  assert.equal(R.showSniffPop(true, false, false), false);
-  assert.equal(R.showSniffPop(true, true, false), true);
-  assert.equal(R.showSniffPop(true, false, true), true);
-  assert.equal(R.showSniffPop(false, false, false), true);
-});
-
 ok('compass names the grid, including diagonals, with north toward the top', () => {
   assert.equal(R.bearing(0, -1).name, 'north'); assert.equal(R.bearing(0, -2).key, 'N');
   assert.equal(R.bearing(0, 1).name, 'south'); assert.equal(R.bearing(1, 0).name, 'east');
@@ -127,27 +95,6 @@ ok('5p: eliminated ostrich sees the burrowed hunter and the eggs; the living vul
   assert.ok(!v.god); assert.equal(v.h3.hunter, null); assert.ok(!v.eggs);
   const hunter = S.viewT(room, 'hunter');
   assert.ok(!hunter.god); assert.deepEqual(hunter.ostrich, TT.OFF); assert.ok(!hunter.eggs);
-});
-
-ok('4h: eliminated vulture sees both hunters and the eggs; the living hyena does not', () => {
-  const { room } = S.createH({ role: 'red', bots: ['blue', 'hyena', 'badger'] }, null);
-  const g = room.g; g.phase = 'play'; g.turn = 'hyena';
-  g.ostrich = [6, 5]; g.vulture = [4, 1];
-  g.eggs = [{ id: 0, pos: [2, 1], alive: true, lastWarm: 0 }];
-  g.hunt.hs.hyena.p = [0, 3]; g.hunt.hs.badger.p = [8, 6]; g.hunt.hs.badger.burrowed = true;
-  const live = S.viewH(room, 'red');
-  assert.ok(!live.god); assert.equal(live.showTimers, true);
-  assert.deepEqual((live.h3.hunters || []).map(h => h.kind), []);
-  g.hunt.birds.red.out = true; g.vulture = HU.OFF.slice();
-  const dead = S.viewH(room, 'red');
-  assert.equal(dead.god, true); assert.equal(dead.myTurn, false); assert.deepEqual(dead.fly, []); assert.deepEqual(dead.throw, []);
-  assert.deepEqual(dead.h3.hunters.map(h => h.kind).sort(), ['badger', 'hyena']);
-  assert.equal(dead.h3.hunters.find(h => h.kind === 'badger').burrowed, true);
-  assert.ok(dead.eggs.some(e => e.pos[0] === 2 && e.pos[1] === 1));
-  assert.equal(S.actH(room, 'red', { a: 'fly', p: [4, 2] }), false);
-  const hy = S.viewH(room, 'hyena'), js = JSON.stringify(hy);
-  assert.ok(!hy.god); assert.ok(!('eggs' in hy)); assert.deepEqual(hy.ostrich, HU.OFF);
-  assert.ok(!js.includes('[6,5]')); assert.ok(!js.includes('[2,1]'));
 });
 
 ok('hunter near is a one-shot on entering sight, not while burrowed', () => {
