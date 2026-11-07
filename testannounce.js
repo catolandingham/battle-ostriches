@@ -1,8 +1,8 @@
 // Unit tests: big events are announced to every seat, and where they happened goes only to a seat that can see that square.
-// Catch, knock-out, the hunters meeting, the honey badger coming out of its burrow, the first meeting on a page. node testannounce.js
+// Catch, knock-out, the hunters meeting, the honey badger coming out of its burrow, the first meeting on a page, and the start-of-game line. node testannounce.js
 process.env.PORT = 0;
 const assert = require('assert'), B = require('./game.js'), T = require('./three.js'), H = require('./hunt.js'), HA = require('./huntai.js'), TT = require('./team.js'),
-  CT = require('./public/catchtext.js'), S = require('./server.js');
+  CT = require('./public/catchtext.js'), R = require('./public/roles.js'), S = require('./server.js');
 let n = 0; const ok = (name, f) => { f(); n++; console.log('ok', name); };
 const seatsOf = (v, list) => Object.fromEntries(list.map(s => [s, v(s)]));
 const has = (v, p) => JSON.stringify(v).includes('[' + p[0] + ',' + p[1] + ']'); // does this view carry that square anywhere
@@ -26,6 +26,18 @@ ok('the lines: hunters meeting (both ways) and the badger coming out of its burr
   assert.equal(CT.rivalLine({ by: 'badger', n: 2 }), 'The honey badger ran into the hyena. Nobody is hurt. The hyena slid back 2 squares.');
   assert.equal(CT.rivalLine({ by: 'hyena', n: 2 }), 'The hyena ran into the honey badger. Nobody is hurt. The hyena slid back 2 squares.');
   assert.equal(CT.popOutLine(), 'The honey badger came out of its burrow!'); });
+ok('the start-of-game line names only the animals in that game, in every mode', () => {
+  assert.equal(R.huntLine('2'), 'The vulture hunts eggs.');
+  assert.equal(R.huntLine('4'), 'The vultures hunt eggs.');
+  assert.equal(R.huntLine('3', 'hyena'), 'The vulture hunts eggs. The hyena hunts birds.');
+  assert.equal(R.huntLine('3', 'badger'), 'The vulture hunts eggs. The honey badger hunts birds.');
+  assert.equal(R.huntLine('4h'), 'The vulture hunts eggs. The hyena and honey badger hunt birds.');
+  assert.equal(R.huntLine('4h', 'hyena'), 'The vulture hunts eggs. The hyena and honey badger hunt birds.');
+  assert.equal(R.huntLine('5', 'hyena'), 'The vultures hunt eggs. The hyena hunts birds.');
+  assert.equal(R.huntLine('5', 'badger'), 'The vultures hunt eggs. The honey badger hunts birds.');
+  assert.equal(R.huntLine('3'), 'The vulture hunts eggs. The hyena or honey badger hunts birds.', 'How to play, before the hunter is picked');
+  for (const m of ['2', '4']) assert.ok(!/hyena|badger/.test(R.huntLine(m, 'hyena')), m + ' players have no hunter'); });
+
 // ---- the rules record a pop-out only for a move out of a burrow with no catch and no meeting
 ok('engine: a pop-out is recorded when a burrowed badger moves without a catch, in 3 players, Hunters and 2 vs 2 + hunter', () => {
   const g = three('badger', [5, 2], [0, 0], [0, 6]); g.three.burrowed = true; g.three.dig = 2; assert.ok(T.hunterMove(g, [6, 2]));

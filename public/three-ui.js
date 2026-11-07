@@ -176,7 +176,7 @@ function outBanner(S,prev){const birds=S.h3.birds;if(!birds)return;
   if(!first&&!mine&&S.phase==='play'){const txt=window.CatchText.outLine(r);outNote={txt,until:Date.now()+4000};noteBanner('no',txt,true);setTimeout(()=>{const bn=$('banner');if(bn&&bn.textContent===txt){bn.textContent='';bn.className='hidden';}},4000);}}
  if(outNote&&Date.now()<outNote.until)noteBanner('no',outNote.txt);}
 function pop(board,txt,cls){const o=document.createElement('div');o.className='h3pop '+cls;o.textContent=txt;board.appendChild(o);setTimeout(()=>o.remove(),cls==='catch'?3400:1800);}
-// --- Announcements: one plain line for a big event (catch, knock-out, the hunters meeting, the badger coming out) on every phone.
+// --- Announcements: one plain line for a big event (catch, knock-out, the hunters meeting, the badger coming out, the start-of-game line) on every phone.
 // The line lives in #announce, outside #board, so a board redraw never erases it. Each line stays up about 3 seconds, one at a time, in order.
 // Where the event happened (a square highlight) is drawn on the board only when the view carries that square, and the server sends it only to a player who can see it. ---
 const ANN_MS=3000,annQ=[];let annBusy=false;
@@ -192,6 +192,13 @@ function events(S,prev,board){
  for(const e of window.CatchText.newEvents(evSeen,S,prev)){announce(e.text);
   // the square highlight: the hyena's landing square for the meeting; the badger's own square for a pop-out, only if this phone can see the badger
   const sq=e.kind==='rival'?e.square:e.seen?(h.hunters?(h.hunters.find(x=>x.kind==='badger')||{}).p:h.hunter):null,c=cellAt(board,S,sq);c&&c.classList.add('h3kb');}}
+// One plain line at the start of every game: who hunts what, naming only the animals in the game (roles.js).
+let startDone=false;
+function startLine(S,prev,mode){
+ if(!S||S.phase!=='play'){startDone=false;return;}
+ const h=S.h3;if(startDone||(h&&(h.ready===false||h.needKind||(h.team&&h.teamSetup&&h.teamSetup!=='done'))))return;
+ startDone=true;if(!prev&&S.round>1)return;
+ announce(window.Roles.huntLine(mode,S.role==='hunter'?(S.kind||(h&&h.kind)):(h&&h.kind)));}
 function after(S,prev,board){chips(S);clock(S);kindPick(S);if(S.h3.team)tPieces(S,board);if(S.h3.hunt)hPieces(S,board,prev);
  rulesMode(S.h3.hunt?'4h':S.h3.team?String(S.h3.n):'3');
  const h=S.h3,k=h.kind||'hyena',me=S.role;
@@ -239,6 +246,6 @@ function over(S){if(S.h3.hunt)return hOver(S);if(S.h3.team)return tOver(S);const
   :w==='red'?(S.winBy==='cold'?`The last egg went cold in round ${S.round}.`:S.winBy==='starved'?'The ostrich was out and no eggs were left.':`The vulture smashed every egg by round ${S.round}.`)
   :S.winBy==='time'?'Time ran out: the ostrich was out and the vulture never got every egg.':'The eggs were lost, but the vulture was already out.';
  return `<div class="lobbybox"><div class="bigost">${art}</div><h1>${title}</h1><p>${why}</p>${endBits(S)}</div>`;}
-window.T3UI={after,events,announce,hint,tag,waitMsg,nopeMsg,over,endBits,KIND};
+window.T3UI={after,events,startLine,announce,hint,tag,waitMsg,nopeMsg,over,endBits,KIND};
 document.readyState==='loading'?document.addEventListener('DOMContentLoaded',lobby):lobby();
 })();
