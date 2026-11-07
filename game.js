@@ -17,11 +17,12 @@ const CONFIG = {
   stones: 1,           // stones the vulture can hold; refill by landing on a rock pile
   foods: [[0, 0], [8, 6]],   // fixed food spots (never run out)
   rocks: [[4, 0], [4, 6]],   // fixed rock piles (never run out)
-  hunterGoal: 'all',   // HUNTER_GOAL for the one-hunter modes (3 players, 2 vs 2 + hunter): 'all' = the hunter must knock out every bird; 'first' = the first side to meet its goal wins (3 players: the hunter needs one bird; 2 vs 2 + hunter: one ostrich and one vulture)
+  hunterGoal: { '3': 'catches:3', '5': 'first' }, // HUNTER_GOAL per one-hunter mode (3 players, 5 = 2 vs 2 + hunter). 'all': knock out every bird. 'first': the first side to meet its goal wins (3 players: the hunter needs one bird; 2 vs 2 + hunter: one ostrich and one vulture). 'catches:N' (3 players): the hunter wins at N catches in total. The words on the hunter cards and the end screen follow this setting.
   scramble: 2,         // a caught bird is pushed this many squares in a random direction
   pushHunters: 2,      // hunters meeting / a stone: the pushed animal goes this far
 };
-const HUNTER_GOAL = () => CONFIG.hunterGoal;
+// HUNTER_GOAL(mode) -> { kind: 'all' | 'first' | 'catches', n }
+const HUNTER_GOAL = (mode, cfg = CONFIG) => { const v = String((cfg.hunterGoal || {})[mode] || 'all'), m = /^catches:(\d+)$/.exec(v); return m ? { kind: 'catches', n: +m[1] } : { kind: v === 'first' ? 'first' : 'all', n: 0 }; };
 const dist = (a, b) => Math.max(Math.abs(a[0] - b[0]), Math.abs(a[1] - b[1]));
 const key = (p) => p[0] + ',' + p[1];
 const inB = (p, c = CONFIG) => p[0] >= 0 && p[1] >= 0 && p[0] < c.cols && p[1] < c.rows;
@@ -108,15 +109,16 @@ const sgn = Math.sign;
 // Slide up to n squares from `from` in direction dir (a push, rules 5). It stops before a wrecked square (when marks is given), before the board edge,
 // and before any square where blocked(square) is true (an animal that is up). With wrap, a push that reaches the edge continues from the opposite edge
 // (each axis on its own for a diagonal) and always travels its full distance unless a wrecked square or an animal stops it.
-function slide(cfg, from, dir, n, blocked, marks, wrap) {
-  let q = from.slice();
+function slide(cfg, from, dir, n, blocked, marks, wrap) { return slideN(cfg, from, dir, n, blocked, marks, wrap).to; }
+function slideN(cfg, from, dir, n, blocked, marks, wrap) {
+  let q = from.slice(), moved = 0;
   for (let i = 0; i < n; i++) {
     let m = [q[0] + dir[0], q[1] + dir[1]];
     if (wrap) m = [(m[0] + cfg.cols) % cfg.cols, (m[1] + cfg.rows) % cfg.rows]; else if (!inB(m, cfg)) break;
     if (key(m) === key(from) || (blocked && blocked(m)) || (marks && (marks[key(m)] === 'hit' || marks[key(m)] === 'stone'))) break;
-    q = m;
+    q = m; moved++;
   }
-  return q;
+  return { to: q, moved };
 }
 const awayFrom = (from, p) => [sgn(p[0] - from[0]), sgn(p[1] - from[1])];
 function canKick(g) { return myTurn(g, 'blue') && g.carrying === null; }
@@ -125,14 +127,15 @@ function kickable(g) { return g.ostrich && g.ostrich[0] >= 0 && g.vulture && g.v
 function kickTargets(g) { return canKick(g) ? kickable(g) : []; }
 // Records the kick, then the ostrich's turn ends like a stay that still warms an egg under it and still counts for hunger.
 function kickDone(g, who, from, to, n) {
-  g.lastKick = { seq: ++g.kickSeq, who, from: from.slice(), to: to.slice(), round: g.round, tried: n };
+  g.sitting = false;
+  g.lastKick = { seq: ++g.kickSeq, who, from: from.slice(), to: to.slice(), round: g.round, moved: n };
   g.lastAction = { type: 'kick', who, from: from.slice(), to: to.slice() };
   endOstrich(g);
 }
 function ostrichKick(g, p) {
   if (!kickTargets(g).some(q => key(q) === key(p))) return false;
-  const from = g.vulture.slice(), to = slide(g.cfg, from, awayFrom(g.ostrich, from), g.cfg.kickPush, null, g.marks, true);
-  g.vulture = to; kickDone(g, 'vulture', from, to); return true;
+  const from = g.vulture.slice(), r = slideN(g.cfg, from, awayFrom(g.ostrich, from), g.cfg.kickPush, null, g.marks, true), to = r.to;
+  g.vulture = to; kickDone(g, 'vulture', from, to, r.moved); return true;
 }
 function canSit(g) { return myTurn(g, 'blue') && onEgg(g); } // no limit on sitting
 function canCarry(g) { return myTurn(g, 'blue') && onEgg(g); }
@@ -141,13 +144,13 @@ function ostrichStep(g, p, carry = false) {
   if (!ostrichMoves(g, carry).some(q => key(q) === key(p))) return false;
   if (carry) { const e = eggAt(g, g.ostrich); e.pos = null; g.carrying = e.id;
     if (g.marks[key(g.ostrich)] === 'spotted') delete g.marks[key(g.ostrich)]; } // the egg moved: found mark clears
-  g.ostrich = p.slice(); g.sitRun = 0;
+  g.ostrich = p.slice(); g.sitRun = 0; g.sitting = false;
   g.lastAction = { type: carry ? 'carry' : 'step' };
   endOstrich(g); return true;
 }
 function ostrichSit(g) {
   if (!canSit(g)) return false;
-  g.sitRun++; g.lastAction = { type: 'sit' }; endOstrich(g); return true;
+  g.sitRun++; g.sitting = true; g.lastAction = { type: 'sit' }; endOstrich(g); return true;
 }
 function smellsEgg(g, p) { return aliveEggs(g).some(e => { const q = e.pos || (g.carrying === e.id ? g.ostrich : null); return q && dist(q, p) <= g.cfg.smellRange; }); }
 function endOstrich(g) {
@@ -306,6 +309,6 @@ function sniffAnnounce(v, role) {
   return sn.yes ? 'Egg nearby!' : 'No egg nearby';
 }
 
-const API = { CONFIG, HUNTER_GOAL, hunterUpAt, scrambleTo, DIRS8, resolveThrow, wrecked, nearLeaf, myTurn, slide, awayFrom, canKick, kickable, kickTargets, kickDone, ostrichKick, newGame, canPlaceEgg, placeEgg, placeOstrich, ostrichMoves, ostrichStep, ostrichSit, canSit, canCarry, mustLeave, onEgg, dropCarried,
+const API = { slideN, CONFIG, HUNTER_GOAL, hunterUpAt, scrambleTo, DIRS8, resolveThrow, wrecked, nearLeaf, myTurn, slide, awayFrom, canKick, kickable, kickTargets, kickDone, ostrichKick, newGame, canPlaceEgg, placeEgg, placeOstrich, ostrichMoves, ostrichStep, ostrichSit, canSit, canCarry, mustLeave, onEgg, dropCarried,
   endRound, walkSquares, smellsEgg, flyTargets, throwTargets, vultureFly, vultureThrow, eggAt, aliveEggs, coldIn, sniffFresh, sniffAnnounce, key, dist, visible, isFood, isRock, parkEliminated, ostrichGuards, foodRoute };
 if (typeof module !== 'undefined') module.exports = API; else window.BO = API;

@@ -32,7 +32,7 @@ function timersOn(room) { if (room && room.clock === false) return false; return
 // A big event is announced to every seat; where it happened goes only to a seat that can see that square.
 // popout: the badger came out of its burrow without a catch. Every seat gets the event (seq, round); `seen` says whether this seat can see the badger.
 // how many squares a kick actually moved the animal (0 to 2); the words say "back 2 squares" only when it went that far
-const kickMoved = k => Math.max(Math.abs(k.to[0] - k.from[0]), Math.abs(k.to[1] - k.from[1]));
+const kickMoved = k => k.moved != null ? k.moved : Math.max(Math.abs(k.to[0] - k.from[0]), Math.abs(k.to[1] - k.from[1]));
 const popView = (po, seen) => po ? { seq: po.seq, round: po.round, seen: !!seen } : null;
 function eggView(g) { return g.eggs.map(e => ({ pos: e.pos, alive: e.alive, coldIn: B.coldIn(g, e), carried: g.carrying === e.id })); }
 function view(room, role) {
@@ -160,7 +160,7 @@ function act3(room, role, m) {
 function botMove3(room, r) {
   const g = room.g, mem = room.mem[r] || (room.mem[r] = {});
   if (r === 'hunter') { const v = view3(room, 'hunter'); if (g.three.lastCatch && mem.seenCatch !== g.three.lastCatch.seq) { mem.seenCatch = g.three.lastCatch.seq; mem.reset = true; mem.lastCatch = g.three.h.slice(); } return AI.hunter(v, mem); }
-  const hv = T.hunterSeenBy(g, r) ? g.three.h : null, reach = T.hunterRange(g) + (g.three.kind === 'hyena' ? 1 : 0);
+  const hv = T.hunterSeenBy(g, r) ? g.three.h : null, reach = T.hunterReach(g);
   if (r === 'blue') { if (g.phase !== 'play') { let m = AI.ostrich(g, room.level); if (g.phase === 'setupOstrich' && B.key(m.p) === B.key(g.three.h)) m = { a: 'place', p: g.eggs[1].pos.slice() }; return m; }
     const m = AI.ostrich(g, room.level);
     const alts = (B.canCarry(g) ? B.ostrichMoves(g, true).map(p => ({ a: 'carry', p })) : []).concat(B.ostrichMoves(g).map(p => ({ a: 'step', p })));
@@ -271,7 +271,7 @@ function botMoveT(room, s) {
   const g = room.g, mem = room.mem[s] || (room.mem[s] = {});
   if (g.phase === 'setup') return TA.setup(g, s);
   if (s === 'hunter') { const v = viewT(room, 'hunter'); if (g.lastCatch && mem.seenCatch !== g.lastCatch.seq) { mem.seenCatch = g.lastCatch.seq; mem.reset = true; mem.lastCatch = g.h.p.slice(); } return AI.hunter(v, mem); }
-  const hv = g.h && TT.hunterSeenBy(g, s) ? g.h.p : null, reach = TT.hunterRange(g) + (g.h && g.h.kind === 'hyena' ? 1 : 0);
+  const hv = g.h && TT.hunterSeenBy(g, s) ? g.h.p : null, reach = TT.hunterReach(g);
   return TT.isO(s) ? TA.ostrich(g, s, room.level, hv, reach) : TA.vulture(g, s, room.level, mem, hv, reach);
 }
 function schedT(room) {
@@ -379,6 +379,9 @@ function viewerIsHost(room, v) {
 }
 // picked: true means Start gave this seat to the player; they did not choose it (lobby.js plan). Roster seat = view seat.
 function stamp(room, v, seat) {
+  if (v && room && room.g) { const g = room.g; v.endWhy = g.phase === 'over' ? g.endWhy || null : null; v.stoneNote = g.lastStone ? { seq: g.lastStone.seq, text: g.lastStone.text } : null;
+    const hid = ['hunter', 'hyena', 'badger'].includes(seat) && g.phase !== 'over'; // hunters see no bird; a bird (or anyone watching) sees an ostrich that is sitting on an egg
+    v.sittingAt = hid ? [] : g.team ? ['o1', 'o2'].filter(o => g.b[o].sitting && g.b[o].pos && g.b[o].pos[0] >= 0).map(o => g.b[o].pos.slice()) : g.sitting && g.ostrich && g.ostrich[0] >= 0 ? [g.ostrich.slice()] : []; }
   if (v) v.picked = !!((room && room.roster || []).find(r => !r.bot && r.role === seat) || {}).picked;
   if (v) v.rules = RULES;
   if (v) { v.showTimers = timersOn(room); v.clockStopped = !!(room && room.clock === false); v.host = viewerIsHost(room, v); }

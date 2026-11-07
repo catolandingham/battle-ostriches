@@ -120,9 +120,9 @@ const kickTargetsH = g => B.canKick(g) ? kickableH(g) : [];
 function ostrichKickH(g, p) {
   if (!kickTargetsH(g).some(q => K(q) === K(p))) return false;
   const h = hunterAt(g, p), from = p.slice(), n = h === 'badger' ? g.cfg.kickPushBadger : g.cfg.kickPush;
-  const to = B.slide(g.cfg, from, B.awayFrom(g.ostrich, from), n, m => upAt(g, m, h || 'red'), g.marks, true); // wraps at the edge; stops before a wrecked square or an animal that is up
+  const kr = B.slideN(g.cfg, from, B.awayFrom(g.ostrich, from), n, m => upAt(g, m, h || 'red'), g.marks, true), to = kr.to; // wraps at the edge; stops before a wrecked square or an animal that is up
   if (h) g.hunt.hs[h].p = to; else g.vulture = to;
-  B.kickDone(g, h || 'vulture', from, to, n);
+  B.kickDone(g, h || 'vulture', from, to, kr.moved);
   afterOstrich(g); return true;
 }
 function ostrichActH(g, a, p) {
@@ -176,4 +176,4 @@ function timeout(g) {
 function statusH(g) { const t = g.hunt;
   return { hunt: true, ko: TH.ko, birds: JSON.parse(JSON.stringify(t.birds)), order: ORDER, hkos: { hyena: t.hs.hyena.kos, badger: t.hs.badger.kos } }; }
 module.exports = { TH, OFF, BIRDS, HUNTERS, ORDER, isH, newHunt, senses, seen, ambushSight, hunterMoves, hunterMove, hunterStay, hunterRange, moveDir, upAt, placeOstrichH, vultureFlyH,
-  vultureThrowH, ostrichActH, kickableH, kickTargetsH, ostrichKickH, timeout, statusH, isOut, pos, advance, catchBird, knockout, hunterAt };
+  vultureThrowH, ostrichActH, finish, kickableH, kickTargetsH, ostrichKickH, timeout, statusH, isOut, pos, advance, catchBird, knockout, hunterAt };

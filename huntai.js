@@ -6,7 +6,7 @@ function hunterView(g, h) { const x = g.hunt.hs[h];
 // nearest hunter this bird can see, and how far it could reach next turn (hyena: 1 + pounce)
 function threat(g, b) { const at = H.pos(g, b);
   const vis = H.HUNTERS.filter(h => H.seen(g, b, h)).sort((x, y) => B.dist(g.hunt.hs[x].p, at) - B.dist(g.hunt.hs[y].p, at))[0];
-  return vis ? { hv: g.hunt.hs[vis].p, reach: vis === 'hyena' ? 2 : 1 } : { hv: null, reach: 1 }; }
+  return vis ? { hv: g.hunt.hs[vis].p, reach: H.TH.walk + (vis === 'hyena' ? H.TH.pounce : 0) } : { hv: null, reach: H.TH.walk }; }
 function move(g, r, mem, level = 'normal') {
   if (H.isH(r)) { const t = g.hunt; if (t.lastCatch && t.lastCatch.by === r && mem.seenCatch !== t.lastCatch.seq) { mem.seenCatch = t.lastCatch.seq; mem.reset = true; mem.lastCatch = t.hs[r].p.slice(); }
     return AI.hunter(hunterView(g, r), mem); }

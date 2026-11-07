@@ -85,10 +85,10 @@ function ostrichKick(g, s, p) {
   const b = g.b[s], from = p.slice(), hunter = !!(g.h && K(g.h.p) === K(from)), v = VS.find(x => live(g, x) && K(g.b[x].pos) === K(from));
   // a pushed animal wraps around the edge and stops before a wrecked square or any animal that is up
   const n = hunter && g.h.kind === 'badger' ? g.cfg.kickPushBadger : g.cfg.kickPush;
-  const to = B.slide(g.cfg, from, B.awayFrom(b.pos, from), n, m => (g.h && K(g.h.p) === K(m) && !g.h.burrowed && !hunter) || birdsIn(g).some(o => o !== v && K(g.b[o].pos) === K(m)), g.marks, true);
+  const kr = B.slideN(g.cfg, from, B.awayFrom(b.pos, from), n, m => (g.h && K(g.h.p) === K(m) && !g.h.burrowed && !hunter) || birdsIn(g).some(o => o !== v && K(g.b[o].pos) === K(m)), g.marks, true), to = kr.to;
   if (hunter) g.h.p = to; else g.b[v].pos = to;
   const who = hunter ? (g.h.kind || 'hyena') : 'vulture';
-  g.lastKick = { seq: ++g.kickSeq, who, seat: hunter ? 'hunter' : v, from, to: to.slice(), round: g.round, tried: n };
+  g.lastKick = { seq: ++g.kickSeq, who, seat: hunter ? 'hunter' : v, from, to: to.slice(), round: g.round, moved: kr.moved };
   g.lastAction = { seat: s, type: 'kick', who };
   const e = eggAt(g, b.pos); if (e) e.lastWarm = g.round; // an egg under the ostrich is warmed, as when it sits
   feed(g, s); next(g); return true;
@@ -197,7 +197,7 @@ function checkEnd(g, timeUp) {
   if (g.phase === 'over') return true;
   const vIn = VS.some(s => !g.b[s].out), eggs = alive(g).length, oIn = OS.some(s => !g.b[s].out) && eggs > 0, nm = g.h && g.h.kind === 'badger' ? 'honey badger' : 'hyena';
   const allOut = OS.concat(VS).every(s => g.b[s].out), firstGoal = g.h && g.h.kos.o >= 1 && g.h.kos.v >= 1;
-  if (g.h && (allOut || (B.HUNTER_GOAL() === 'first' && firstGoal))) end(g, 'hunter', 'ko', allOut ? `The ${nm} knocked out every bird.` : `The ${nm} knocked out an ostrich and a vulture, and that was its goal.`);
+  if (g.h && (allOut || (B.HUNTER_GOAL('5', g.cfg).kind === 'first' && firstGoal))) end(g, 'hunter', 'ko', allOut ? `The ${nm} knocked out every bird.` : `The ${nm} knocked out an ostrich and a vulture.`);
   else if (eggs === 0 && vIn) end(g, 'red', g.lastAction && g.lastAction.type === 'throw' ? 'smashed' : 'cold', g.lastAction && g.lastAction.type === 'throw' ? 'The vultures smashed every egg.' : 'The last egg went cold, so the vultures win.');
   else if (timeUp && oIn) end(g, 'blue', 'survived', `An egg was still alive after round ${g.cfg.rounds}, so the ostriches win.`);
   else if (!vIn && !oIn) g.h ? end(g, 'hunter', 'last', `Both teams are out of the game, so the ${nm} wins.`) : end(g, 'none', 'all-out', 'Both teams are out of the game.');

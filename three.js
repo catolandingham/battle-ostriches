@@ -27,9 +27,10 @@ const hunterName = g => (g.three.kind === 'badger' ? 'honey badger' : 'hyena');
 function settle(g) {
   const t = g.three; if (t.final && g.phase === 'over') return true;
   const timeUp = g.phase === 'over' && g.winBy === 'survived', eggs = B.aliveEggs(g).length, vIn = !isOut(g, 'red'), oIn = !isOut(g, 'blue') && eggs > 0;
-  const all = BIRDS.every(b => isOut(g, b)), first = B.HUNTER_GOAL() === 'first' && BIRDS.some(b => t.birds[b].why === 'caught'), nm = hunterName(g);
+  const HG = B.HUNTER_GOAL('3', g.cfg), nm = hunterName(g), total = BIRDS.reduce((n, b) => n + t.birds[b].catches, 0);
+  const all = BIRDS.every(b => isOut(g, b)), first = HG.kind === 'first' && BIRDS.some(b => t.birds[b].why === 'caught'), many = HG.kind === 'catches' && total >= HG.n;
   let w = null, by = null, why = null;
-  if (all || first) { w = 'hunter'; by = 'ko'; why = all ? `The ${nm} knocked out both birds.` : `The ${nm} knocked out a bird, and that was its goal.`; }
+  if (all || first || many) { w = 'hunter'; by = 'ko'; why = all ? `The ${nm} knocked out both birds.` : first ? `The ${nm} knocked out a bird.` : `The ${nm} made ${HG.n} catches.`; }
   else if (eggs === 0 && vIn) { w = 'red'; by = g.winBy === 'cold' ? 'cold' : 'smashed'; why = g.winBy === 'cold' ? 'The last egg went cold, so the vulture wins.' : 'The vulture smashed every egg.'; }
   else if (timeUp && oIn) { w = 'blue'; by = 'survived'; why = `An egg was still alive after round ${g.cfg.rounds}, so the ostrich wins.`; }
   else if (!vIn && !oIn) { w = 'hunter'; by = 'last'; why = `Both birds are out of the game, so the ${nm} wins.`; }
@@ -109,9 +110,9 @@ function ostrichKick3(g, p) {
   if (!kickTargets3(g).some(q => K(q) === K(p))) return false;
   const t = g.three, hunter = K(p) === K(t.h), from = p.slice(), n = hunter && t.kind === 'badger' ? g.cfg.kickPushBadger : g.cfg.kickPush;
   // a pushed animal stops before a wrecked square or an animal that is up; at the board edge it wraps around
-  const to = B.slide(g.cfg, from, B.awayFrom(g.ostrich, p), n, m => hunter ? liveAt(g, 'red') && K(m) === K(g.vulture) : (K(m) === K(t.h) && !(t.kind === 'badger' && t.burrowed)), g.marks, true);
+  const kr = B.slideN(g.cfg, from, B.awayFrom(g.ostrich, p), n, m => hunter ? liveAt(g, 'red') && K(m) === K(g.vulture) : (K(m) === K(t.h) && !(t.kind === 'badger' && t.burrowed)), g.marks, true), to = kr.to;
   if (hunter) t.h = to; else g.vulture = to;
-  B.kickDone(g, hunter ? (t.kind || 'hyena') : 'vulture', from, to, n);
+  B.kickDone(g, hunter ? (t.kind || 'hyena') : 'vulture', from, to, kr.moved);
   afterOstrich(g); return true;
 }
 function ostrichAct3(g, a, p) {
@@ -161,4 +162,4 @@ function timeout(g) {
 function status3(g) { const t = g.three;
   return { kind: t.kind, ko: koAt(g), birds: JSON.parse(JSON.stringify(t.birds)), order: ['red', 'blue', 'hunter'] }; }
 module.exports = { T3, OFF, NAME, newGame3, senses, hunterSeenBy, ambushSight, hunterMoves, hunterMove, hunterStay, hunterRange, hunterReach, kickable3, kickTargets3, ostrichKick3, placeOstrich3, vultureFly3, vultureThrow3,
-  ostrichAct3, timeout, status3, isOut, pos, advance, catchBird, knockout };
+  ostrichAct3, finish, timeout, status3, isOut, pos, advance, catchBird, knockout };
