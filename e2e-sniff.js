@@ -5,7 +5,7 @@ const assert = require('assert'), fs = require('fs');
 process.env.PORT = process.env.PORT || 3994;
 process.env.BO_NOSTORE = '1';
 const server = require('./server.js');
-const OUT = '/opt/cursor/artifacts';
+const OUT = require('path').join(__dirname, 'shots', 'e2e');
 try { fs.mkdirSync(OUT, { recursive: true }); } catch (e) {}
 (async () => {
   let b, kind = 'webkit';
