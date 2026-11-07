@@ -67,7 +67,7 @@ function ostrichAct(g, s, a, p) {
   g.lastAction = { seat: s, type: a === 'sit' ? 'sit' : a === 'carry' ? 'carry' : 'step' };
   const e = b.carrying !== null ? g.eggs[b.carrying] : eggAt(g, b.pos); if (e) e.lastWarm = g.round; // either ostrich may warm any egg
   feed(g, s);
-  if (!b.out && a !== 'sit' && g.h && K(b.pos) === K(g.h.p)) catchBird(g, s, [sgn(from[0] - p[0]), sgn(from[1] - p[1])]);
+  if (!b.out && a !== 'sit' && g.h && K(b.pos) === K(g.h.p)) { catchBird(g, s, [sgn(from[0] - p[0]), sgn(from[1] - p[1])]); g.lastCatch.walked = true; } // the ostrich stepped onto the hunter
   next(g); return true;
 }
 function ostrichStay(g, s, why) { const b = g.b[s]; b.sitRun = 0; g.lastAction = { seat: s, type: 'stay', [why]: true }; feed(g, s); }
@@ -99,7 +99,7 @@ function vultureFly(g, s, p) { clearOut(g);
   if (B.isRock(g, p)) { g.lastAction.refill = b.stones < g.cfg.stones; b.stones = g.cfg.stones; }
   g.lastAction.smell = smells(g, p); g.sniffs[s] = { p: p.slice(), yes: g.lastAction.smell, round: g.round };
   dropAll(g);
-  if (g.h && K(p) === K(g.h.p)) catchBird(g, s, [sgn(from[0] - p[0]), sgn(from[1] - p[1])]);
+  if (g.h && K(p) === K(g.h.p)) { catchBird(g, s, [sgn(from[0] - p[0]), sgn(from[1] - p[1])]); g.lastCatch.walked = true; } // the vulture flew onto the hunter
   next(g); return true;
 }
 function vultureThrow(g, s, p) { clearOut(g);

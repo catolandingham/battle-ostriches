@@ -100,7 +100,7 @@ const ready3 = room => SEATS3.every(s => room.players[s]) && !!room.g.three.kind
 function view3(room, role) {
   const g = room.g, t = g.three, over = g.phase === 'over', pub = AI.redView(g), mine = g.phase === 'play' && g.turn === role && ready3(room);
   const seats = Object.fromEntries(SEATS3.map(s => [s, room.bots.includes(s) ? 'bot' : room.players[s] ? (room.players[s].ws ? 'on' : 'off') : 'open']));
-  const lc = t.lastCatch && { bird: t.lastCatch.bird, ko: t.lastCatch.ko, seq: t.lastCatch.seq, round: t.lastCatch.round,
+  const lc = t.lastCatch && { bird: t.lastCatch.bird, ko: t.lastCatch.ko, walked: !!t.lastCatch.walked, seq: t.lastCatch.seq, round: t.lastCatch.round,
     at: role === t.lastCatch.bird || role === 'hunter' || over ? t.lastCatch.at : null, to: role !== 'hunter' || over ? t.lastCatch.to : null };
   const h3 = Object.assign(T.status3(g), { seats, ready: ready3(room), needKind: role === 'hunter' && !t.kind, lastCatch: lc, lost: t.lost || null,
     clockLeft: room.deadline && g.phase === 'play' ? Math.max(0, room.deadline - Date.now()) : null, clockMs: T.T3.clockMs, senseRange: T.T3.sense,
@@ -198,7 +198,7 @@ function viewT(room, seat) {
   const g = room.g, over = g.phase === 'over', setup = g.phase === 'setup', ready = readyT(room), mine = g.phase === 'play' && g.turn === seat && ready;
   const isO = TT.isO(seat), isV = TT.isV(seat), myB = g.b[seat], step = TT.setupStep(g, seat);
   const seats = Object.fromEntries(tseats(g).map(s => [s, room.bots.includes(s) ? 'bot' : room.players[s] ? (room.players[s].ws ? 'on' : 'off') : 'open']));
-  const lc = g.lastCatch && { bird: g.lastCatch.bird, ko: g.lastCatch.ko, seq: g.lastCatch.seq, round: g.lastCatch.round,
+  const lc = g.lastCatch && { bird: g.lastCatch.bird, ko: g.lastCatch.ko, walked: !!g.lastCatch.walked, seq: g.lastCatch.seq, round: g.lastCatch.round,
     at: seat === g.lastCatch.bird || seat === 'hunter' || over ? g.lastCatch.at : null, to: seat !== 'hunter' || over ? g.lastCatch.to : null };
   const pub = Object.fromEntries(Object.entries(g.marks).filter(([, m]) => m === 'spotted' || m === 'hit' || m === 'stone'));
   // other birds on the board: birds always see each other (vultures don't see where the ostriches start until play begins); the hunter sees none
@@ -292,7 +292,7 @@ const readyH = room => SEATSH.every(s => room.players[s]);
 function viewH(room, seat) {
   const g = room.g, t = g.hunt, over = g.phase === 'over', pub = AI.redView(g), mine = g.phase === 'play' && g.turn === seat && readyH(room), isH = HU.isH(seat);
   const seats = Object.fromEntries(SEATSH.map(s => [s, room.bots.includes(s) ? 'bot' : room.players[s] ? (room.players[s].ws ? 'on' : 'off') : 'open']));
-  const lc = t.lastCatch && { bird: t.lastCatch.bird, by: t.lastCatch.by, ko: t.lastCatch.ko, seq: t.lastCatch.seq, round: t.lastCatch.round,
+  const lc = t.lastCatch && { bird: t.lastCatch.bird, by: t.lastCatch.by, ko: t.lastCatch.ko, walked: !!t.lastCatch.walked, seq: t.lastCatch.seq, round: t.lastCatch.round,
     at: seat === t.lastCatch.bird || seat === t.lastCatch.by || over ? t.lastCatch.at : null, to: seat === t.lastCatch.bird || over ? t.lastCatch.to : null };
   const hunters = HU.HUNTERS.filter(h => over || HU.seen(g, seat, h)).map(h => ({ kind: h, p: t.hs[h].p, burrowed: (h === seat || over) && t.hs[h].burrowed, me: h === seat }));
   const rv = t.rival && { by: t.rival.by, seq: t.rival.seq, round: t.rival.round, to: isH || over ? t.rival.to : null };

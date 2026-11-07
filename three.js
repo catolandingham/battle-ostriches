@@ -76,7 +76,7 @@ function endHunter(g) { const t = g.three; t.pounce = false; g.turn = 'red'; adv
 function placeOstrich3(g, p) { if (p && K(p) === K(g.three.h)) return false; return B.placeOstrich(g, p); }
 function vultureFly3(g, p) {
   const from = g.vulture.slice(); if (!B.vultureFly(g, p)) return false;
-  if (K(p) === K(g.three.h)) catchBird(g, 'red', [sgn(from[0] - p[0]), sgn(from[1] - p[1])]);
+  if (K(p) === K(g.three.h)) { catchBird(g, 'red', [sgn(from[0] - p[0]), sgn(from[1] - p[1])]); g.three.lastCatch.walked = true; } // the vulture flew onto the hunter
   if (!finish(g)) advance(g); return true;
 }
 function vultureThrow3(g, p) { const r = B.vultureThrow(g, p); if (!r) return false; if (!finish(g)) advance(g); return r; }
@@ -84,7 +84,7 @@ function ostrichAct3(g, a, p) {
   const from = g.ostrich.slice(); let ok;
   if (a === 'sit') ok = B.ostrichSit(g); else ok = B.ostrichStep(g, p, a === 'carry');
   if (!ok) return false;
-  if (!(g.phase === 'over' && g.winBy === 'starved') && a !== 'sit' && K(g.ostrich) === K(g.three.h)) catchBird(g, 'blue', [sgn(from[0] - p[0]), sgn(from[1] - p[1])]);
+  if (!(g.phase === 'over' && g.winBy === 'starved') && a !== 'sit' && K(g.ostrich) === K(g.three.h)) { catchBird(g, 'blue', [sgn(from[0] - p[0]), sgn(from[1] - p[1])]); g.three.lastCatch.walked = true; } // the ostrich stepped onto the hunter
   afterOstrich(g); return true;
 }
 function hunterRange(g) { return g.three.pounce ? 1 : anyOut(g) ? T3.boost : 1; }

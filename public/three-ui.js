@@ -165,7 +165,18 @@ function markHurt(S,board){const birds=S.h3&&S.h3.birds;if(!birds)return;
   cell.dataset.tip=(cell.dataset.tip?cell.dataset.tip+' · ':'')+(b.skip?'Hurt: caught, and loses its next turn.':'Hurt: caught '+b.catches+' time'+(b.catches===1?'':'s')+'. Still in the game.');};
  if(S.h3.team){for(const [r,b] of Object.entries(birds)){let cell=board.querySelector('.cell[data-seat="'+r+'"]');if(!cell&&r===S.h3.mySeat)cell=board.querySelector('.cell[data-tags~="me"]');tag(cell,b);}}
  else{const po=board.querySelector('.pc.po'),pv=board.querySelector('.pc.pv');tag(po&&po.closest('.cell'),birds.blue);tag(pv&&pv.closest('.cell'),birds.red);}}
-function pop(board,txt,cls){const o=document.createElement('div');o.className='h3pop '+cls;o.textContent=txt;board.appendChild(o);setTimeout(()=>o.remove(),1800);}
+// "The ostrich is out." once per elimination, for everyone still playing. outSeen remembers which birds were already out (a re-render, or opening
+// the page mid-game, never repeats it; a new game clears it). The line stays up a few seconds and is re-applied if the next state redraws the banner.
+const outSeen={};let outNote=null;
+function outBanner(S,prev){const birds=S.h3.birds;if(!birds)return;
+ const first=!(prev&&prev.h3);
+ for(const [r,b] of Object.entries(birds)){
+  if(!b.out){delete outSeen[r];continue;}
+  if(outSeen[r])continue;outSeen[r]=1;
+  const mine=r===(S.h3.mySeat||S.role);
+  if(!first&&!mine&&S.phase==='play'){const txt=window.CatchText.outLine(r);outNote={txt,until:Date.now()+4000};noteBanner('no',txt,true);setTimeout(()=>{const bn=$('banner');if(bn&&bn.textContent===txt){bn.textContent='';bn.className='hidden';}},4000);}}
+ if(outNote&&Date.now()<outNote.until)noteBanner('no',outNote.txt);}
+function pop(board,txt,cls){const o=document.createElement('div');o.className='h3pop '+cls;o.textContent=txt;board.appendChild(o);setTimeout(()=>o.remove(),cls==='catch'?3400:1800);}
 function after(S,prev,board){chips(S);clock(S);kindPick(S);if(S.h3.team)tPieces(S,board);if(S.h3.hunt)hPieces(S,board,prev);
  rulesMode(S.h3.hunt?'4h':S.h3.team?String(S.h3.n):'3');
  const h=S.h3,k=h.kind||'hyena',me=S.role;
@@ -191,14 +202,14 @@ function after(S,prev,board){chips(S);clock(S);kindPick(S);if(S.h3.team)tPieces(
  const lc=h.lastCatch;if(lc&&lc.seq!==lastCatch){const fresh=lastCatch!==0||(prev&&prev.h3);lastCatch=lc.seq;
   if(fresh){const ac=cellAt(board,S,lc.at),tc=cellAt(board,S,lc.to);
    const word=lc.bird==='red'||lc.bird==='v1'||lc.bird==='v2'?'vulture':'ostrich';
-   const striker=h.hunt&&lc.by?KIND[lc.by].n:KIND[k].n;
    if(ac&&me==='hunter'&&!ac.querySelector('.pc.po,.pc.pv')){const disc=document.createElement('div');disc.className='pc '+(word==='ostrich'?'po':'pv')+' foundnow';disc.innerHTML=word==='ostrich'?OSTI:VULI;ac.appendChild(disc);}
    if(ac){const m=document.createElement('div');m.className='h3claw';m.innerHTML=CLAW;ac.appendChild(m);}
    if(tc)tc.classList.add('h3kb');
-   const byOther=h.hunt&&me==='hunter'&&lc.by!==h.mySeat;
-   const mineBird=me===lc.bird||(S.h3.team&&S.h3.mySeat===lc.bird);
-   pop(board,byOther?`${striker} ${lc.ko?'knocked out':'caught'} the ${word}!`:me==='hunter'?(lc.ko?`Found ${word}! Knocked out!`:`Found ${word}! Caught, not out yet.`):mineBird?(lc.ko?`${striker} knocked you out!`:`${striker} caught you! Knocked back 2.`):`${striker} ${lc.ko?'knocked out':'caught'} the ${word}!`,'catch');
+   // what the catch means, in words: hurt or out, and who did it (catchtext.js)
+   const CT=window.CatchText,seat=h.mySeat||me,by=lc.by||k;
+   pop(board,CT.catchLine(lc,seat,by,CT.catchesLeft(h,lc)),'catch');
    const ch=document.querySelector('#h3bar .bchip.'+lc.bird);ch&&ch.classList.add('hitnow');window.SFX&&SFX.play(me==='hunter'?'win':'warn');}}
+ outBanner(S,prev);
  markHurt(S,board); warnNear(S,board);
  // waiting panel text: which seats are still open
  if(!S.joined){const w=$('wait');const open=Object.entries(h.seats).filter(([,v])=>v==='open').map(([r])=>SN[r]);if(w)w.firstElementChild.nextElementSibling.textContent=`Waiting for: ${open.join(', ')}. Send them this link:`;}}

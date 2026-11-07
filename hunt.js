@@ -93,14 +93,14 @@ function endHunter(g, h) { g.hunt.hs[h].pounce = false; if (h === 'hyena') retur
 function placeOstrichH(g, p) { if (p && hunterAt(g, p)) return false; return B.placeOstrich(g, p); }
 function vultureFlyH(g, p) {
   const from = g.vulture.slice(); if (!B.vultureFly(g, p)) return false;
-  const h = hunterAt(g, p); if (h) catchBird(g, 'red', h, [sgn(from[0] - p[0]), sgn(from[1] - p[1])]);
+  const h = hunterAt(g, p); if (h) { catchBird(g, 'red', h, [sgn(from[0] - p[0]), sgn(from[1] - p[1])]); g.hunt.lastCatch.walked = true; } // the vulture flew onto a hunter
   if (!finish(g)) advance(g); return true;
 }
 function vultureThrowH(g, p) { const r = B.vultureThrow(g, p); if (!r) return false; if (!finish(g)) advance(g); return r; }
 function ostrichActH(g, a, p) {
   const from = g.ostrich.slice(); const ok = a === 'sit' ? B.ostrichSit(g) : B.ostrichStep(g, p, a === 'carry'); if (!ok) return false;
   const h = a !== 'sit' && !(g.phase === 'over' && g.winBy === 'starved') && hunterAt(g, g.ostrich);
-  if (h) catchBird(g, 'blue', h, [sgn(from[0] - p[0]), sgn(from[1] - p[1])]);
+  if (h) { catchBird(g, 'blue', h, [sgn(from[0] - p[0]), sgn(from[1] - p[1])]); g.hunt.lastCatch.walked = true; } // the ostrich stepped onto a hunter
   afterOstrich(g); return true;
 }
 const hunterRange = () => 1; // no speed boost in this mode

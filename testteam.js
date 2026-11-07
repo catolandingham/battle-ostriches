@@ -56,5 +56,9 @@ ok('server views: vultures see no eggs; ostriches see all eggs; hunter sees no b
   assert.equal(vv.eggs, undefined); assert.equal(ov.eggs.length, 4); assert.equal(ov.eggs.filter(e => e.mine).length, 2);
   assert.deepEqual(vv.h3.mateSniff.p, [3, 2]); assert.equal(hv.h3.pieces.length, 0); assert.deepEqual(hv.ostrich, T.OFF);
   assert.equal(vv.h3.pieces.filter(p => p.type === 'o').length, 2); assert.equal(ov.h3.pieces.find(p => p.seat === 'o2').mate, true); S.close(); });
+ok('lastCatch.walked: true when a bird stepped onto the hunter, absent when the hunter landed on the bird', () => {
+  const o = ready(5, 'hyena'); T.timeout(o); o.h.p = [1, 2]; assert.equal(o.turn, 'o1'); assert.ok(T.ostrichAct(o, 'o1', 'step', [1, 2])); assert.equal(o.lastCatch.bird, 'o1'); assert.strictEqual(o.lastCatch.walked, true);
+  const v = ready(5, 'badger'); v.b.v1.pos = [4, 3]; v.h.p = [3, 3]; assert.equal(v.turn, 'v1'); assert.ok(T.vultureFly(v, 'v1', [3, 3])); assert.equal(v.lastCatch.bird, 'v1'); assert.strictEqual(v.lastCatch.ko, true); assert.strictEqual(v.lastCatch.walked, true);
+  const h = ready(5, 'hyena', [8, 3]); h.b.o1.pos = [7, 3]; for (let i = 0; i < 4 && h.turn !== 'hunter'; i++) T.timeout(h); assert.equal(h.turn, 'hunter'); h.b.o1.pos = [7, 3]; assert.ok(T.hunterMove(h, [7, 3])); assert.equal(h.lastCatch.bird, 'o1'); assert(!h.lastCatch.walked, 'hunter landed on the ostrich'); });
 ok('bot games finish with only legal moves (4p, 5p hyena, 5p badger)', () => { for (const [np, k] of [[4], [5, 'hyena'], [5, 'badger']]) for (let i = 0; i < 40; i++) { const r = SIM.play(np, k); assert.equal(r.bad, 0); } });
 console.log(n + ' team tests passed'); process.exit(0);
