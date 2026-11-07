@@ -19,6 +19,9 @@ const at = { state: 'attached' };
   await Y.waitForFunction(() => { const s = LobbyUI.get(); return s && s.roles.some(r => r.id === 'badger' && r.mine); });
   await A.click('#startGame'); await A.waitForSelector('#board .cell'); await Y.waitForSelector('#board .cell');
   for (const [x, y] of [[2, 1], [6, 1], [2, 5], [1, 4]]) { await cell(A, x, y).click(); await A.waitForTimeout(150); }
+  // the start-of-game line reaches every phone, naming only the animals in this game
+  const hunts = 'The vulture hunts eggs. The hyena and honey badger hunt birds.';
+  for (const [P, name] of [[A, 'ostrich'], [Y, 'badger']]) await P.waitForFunction(t => [...document.querySelectorAll('.h3pop.event')].some(e => e.textContent === t), hunts, { timeout: 15000 }).catch(e => { throw new Error(name + ' phone never showed the start line: ' + e.message); });
   await A.waitForSelector('#actions.mine', { ...at, timeout: 25000 });
   const room = [...server.rooms.values()].find(r => r.hunt), g = room.g;
   g.vulture = [8, 6]; g.hunt.hs.hyena.p = [0, 0]; g.hunt.hs.badger.p = [8, 0]; server.broadcast(room); await A.waitForTimeout(400);
@@ -41,6 +44,8 @@ const at = { state: 'attached' };
   g.hunt.hs.badger.burrowed = false; server.broadcast(room); await A.waitForSelector('#actions button:has-text("Kick")');
   // kick: the badger flies 2 squares east
   await A.locator('#actions button:has-text("Kick")').click({ force: true });
+  await A.waitForFunction(() => /Tap the glowing animal to kick it\./.test(document.getElementById('hint').textContent));
+  assert.equal(await A.locator('.cell.legal').count(), 1, 'only the badger glows'); await cell(A, 3, 5).click();
   await A.waitForFunction(() => document.querySelector('.h3pop.event'), null, { timeout: 5000 });
   assert.deepEqual(g.hunt.hs.badger.p, [5, 5], 'pushed 2 squares straight away'); assert.deepEqual(g.ostrich, [2, 5], 'the ostrich stays'); assert.equal(g.lastKick.who, 'badger');
   const line = 'The ostrich kicked the honey badger back 2 squares.';
