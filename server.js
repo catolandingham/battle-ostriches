@@ -3,6 +3,7 @@ const http = require('http'), fs = require('fs'), path = require('path');
 const { WebSocketServer } = require('ws');
 const B = require('./game.js'), AI = require('./ai.js'), T = require('./three.js'), HU = require('./hunt.js'), HA = require('./huntai.js');
 const LB = require('./lobby.js');
+const RULES = require('./public/roles.js').rulesFromModules(); // the numbers on the role card, from the rules (plain numbers only, nothing hidden)
 const PORT = process.env.PORT || 3000, PUB = path.join(__dirname, 'public');
 const TYPES = { '.html': 'text/html', '.css': 'text/css', '.js': 'application/javascript', '.svg': 'image/svg+xml', '.mp4': 'video/mp4', '.jpg': 'image/jpeg', '.png': 'image/png' };
 const server = http.createServer((req, res) => {
@@ -359,6 +360,7 @@ function viewerIsHost(room, v) {
 // picked: true means Start gave this seat to the player; they did not choose it (lobby.js plan). Roster seat = view seat.
 function stamp(room, v, seat) {
   if (v) v.picked = !!((room && room.roster || []).find(r => !r.bot && r.role === seat) || {}).picked;
+  if (v) v.rules = RULES;
   if (v) { v.showTimers = timersOn(room); v.clockStopped = !!(room && room.clock === false); v.host = viewerIsHost(room, v); }
   if (room && room.flow) {
     v.flow = 1;

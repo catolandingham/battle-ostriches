@@ -3,7 +3,7 @@ const { webkit, devices } = require('playwright-core');
 const assert = require('assert'), fs = require('fs');
 process.env.PORT = 3996; const server = require('./server.js');
 fs.mkdirSync('shots/tooltip/', { recursive: true });
-const init = () => { localStorage.setItem('bo_tut_seen','1'); localStorage.setItem('bo_walk_blue','1'); localStorage.setItem('bo_walk_red','1'); localStorage.setItem('bo_tips_off','1'); };
+const init = () => { localStorage.setItem('bo_tut_seen','1'); localStorage.setItem('bo_walk_blue','1'); localStorage.setItem('bo_walk_red','1'); localStorage.setItem('bo_tips_off','1'); localStorage.setItem('bo_card_off','1'); };
 async function game(ctx, name) {
   const P = await ctx.newPage(), errs = [];
   P.on('pageerror', e => errs.push(e.message)); P.on('console', m => m.type() === 'error' && errs.push(m.text()));

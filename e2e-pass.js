@@ -6,7 +6,7 @@ const OUT = 'shots/pass/'; fs.mkdirSync(OUT, { recursive: true });
 (async () => {
   const b = await webkit.launch(), errs = [];
   const c = await b.newContext({ ...devices['iPhone 13'] }), P = await c.newPage();
-  await P.addInitScript(() => { localStorage.setItem('bo_hs_off','1'); localStorage.setItem('bo_tut_seen', '1'); localStorage.setItem('bo_walk_blue','1'); localStorage.setItem('bo_walk_red','1'); localStorage.setItem('bo_tips_off','1'); ['blue', 'red'].forEach(r => localStorage.setItem('bo_cs_' + r, '9')); });
+  await P.addInitScript(() => { localStorage.setItem('bo_hs_off','1'); localStorage.setItem('bo_tut_seen', '1'); localStorage.setItem('bo_walk_blue','1'); localStorage.setItem('bo_walk_red','1'); localStorage.setItem('bo_tips_off','1'); localStorage.setItem('bo_card_off', '1'); ['blue', 'red'].forEach(r => localStorage.setItem('bo_cs_' + r, '9')); });
   P.on('pageerror', e => errs.push(e.message));
   const cell = (x, y) => P.locator('.cell').nth(y * 9 + x);
   await P.goto('http://localhost:3997/');

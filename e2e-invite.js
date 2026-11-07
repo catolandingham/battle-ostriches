@@ -5,7 +5,7 @@ const THEMES = ['classic','nature','notes','golden','paper','arcade','toybox','t
 const vis = p => p.evaluate(() => { const w = document.getElementById('wait'), r = w.getBoundingClientRect(); return getComputedStyle(w).display !== 'none' && r.height > 0 ? r.height : 0; });
 (async () => {
   const b = await webkit.launch(), errs = [];
-  const mk = async () => { const c = await b.newContext({ ...devices['iPhone 13'] }); const p = await c.newPage(); await p.addInitScript(() => { localStorage.setItem('bo_hs_off','1'); localStorage.setItem('bo_tut_seen', '1'); localStorage.setItem('bo_walk_blue','1'); localStorage.setItem('bo_walk_red','1'); localStorage.setItem('bo_tips_off','1'); ['blue', 'red'].forEach(r => localStorage.setItem('bo_cs_' + r, '9')); }); p.on('pageerror', e => errs.push(e.message)); return [p, c]; };
+  const mk = async () => { const c = await b.newContext({ ...devices['iPhone 13'] }); const p = await c.newPage(); await p.addInitScript(() => { localStorage.setItem('bo_hs_off','1'); localStorage.setItem('bo_tut_seen', '1'); localStorage.setItem('bo_walk_blue','1'); localStorage.setItem('bo_walk_red','1'); localStorage.setItem('bo_tips_off','1'); localStorage.setItem('bo_card_off', '1'); ['blue', 'red'].forEach(r => localStorage.setItem('bo_cs_' + r, '9')); }); p.on('pageerror', e => errs.push(e.message)); return [p, c]; };
   const cell = (p, x, y) => p.locator('.cell').nth(y * 9 + x);
   for (const th of (process.env.THEMES ? process.env.THEMES.split(',') : THEMES)) {
     const [A, cA] = await mk(), [V, cV] = await mk();

@@ -15,7 +15,7 @@ const phone = { viewport: { width: 390, height: 844 } };
   const open = async () => {
     const page = await (await browser.newContext(phone)).newPage();
     page.on('pageerror', e => errs.push(e.message));
-    await page.addInitScript(() => { localStorage.setItem('bo_tut_seen', '1'); localStorage.setItem('bo_walk_blue', '1'); localStorage.setItem('bo_walk_red', '1'); localStorage.setItem('bo_hs_off', '1'); localStorage.setItem('bo_tips_off', '1'); });
+    await page.addInitScript(() => { localStorage.setItem('bo_tut_seen', '1'); localStorage.setItem('bo_walk_blue', '1'); localStorage.setItem('bo_walk_red', '1'); localStorage.setItem('bo_hs_off', '1'); localStorage.setItem('bo_tips_off', '1'); localStorage.setItem('bo_card_off', '1'); });
     await page.goto('http://127.0.0.1:3983/', { timeout: 20000 });
     return page;
   };

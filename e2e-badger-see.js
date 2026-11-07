@@ -29,7 +29,7 @@ function contrast(a, b) {
   const open = async () => {
     const p = await (await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true })).newPage();
     await p.addInitScript(() => {
-      for (const k of ['bo_hs_off', 'bo_tut_seen', 'bo_walk_blue', 'bo_walk_red', 'bo_walk_hunter', 'bo_tips_off', 'bo_muted']) localStorage.setItem(k, '1');
+      for (const k of ['bo_hs_off', 'bo_tut_seen', 'bo_walk_blue', 'bo_walk_red', 'bo_walk_hunter', 'bo_tips_off', 'bo_card_off', 'bo_muted']) localStorage.setItem(k, '1');
       window.AudioContext = undefined; window.webkitAudioContext = undefined;
     });
     p.on('pageerror', e => errs.push(e.message));

@@ -126,11 +126,30 @@ const WALK={blue:[['🥚','Your goal','Hide '+C0.eggs+' eggs. Keep at least one 
 let wi=0,wr='blue',wDone=null;
 function maybeWalk(r){if(!WALK[r]||localStorage.getItem('bo_walk_'+r))return;walk(r);}
 function walk(role,done){wr=(role&&WALK[role]&&role)||(S&&WALK[S.role]&&S.role)||'blue';if(!WALK[wr])return;wi=0;wDone=done||null;drawWalk();$('walk').classList.remove('hidden');}
-function closeWalk(){$('walk').classList.add('hidden');localStorage.setItem('bo_walk_'+wr,'1');const d=wDone;wDone=null;d&&d();}
+function closeWalk(){$('walk').classList.add('hidden');localStorage.setItem('bo_walk_'+wr,'1');const d=wDone;wDone=null;d&&d();maybeCard();}
 function drawWalk(){const st=WALK[wr],cur=st[wi],W=$('walk');
  W.innerHTML=`<div class="wcard"><div class="wart"><span style="width:56px;height:56px;display:inline-block">${wr==='red'?VUL:OST}</span><span style="font-size:44px">${cur[0]}</span></div><h2>${cur[1]}</h2><p id="wText">${cur[2]}</p><div class="wdots">${st.map((_,k)=>`<span class="${k===wi?'on':''}"></span>`).join('')}</div><div class="wnav"><button id="wSkip">Skip</button><button id="wNext">${wi===st.length-1?"Let's play":'Next'}</button></div></div>`;
  tapper($('wSkip'),closeWalk);tapper($('wNext'),()=>{if(wi<st.length-1){wi++;drawWalk();}else closeWalk();});}
-window.UI={walk(){walk();},rules(){$('rules').classList.remove('hidden');const b=document.getElementById('guideToggle');if(b){const on=!localStorage.getItem('bo_hs_off');b.textContent=on?'Ostrich guides: ON (tap to turn off)':'Ostrich guides: OFF (tap to turn on)';}},closeRules(){$('rules').classList.add('hidden')},
+// --- role card: one card per animal per phone, shown at the first play state for that seat (words in roles.js) ---
+let cardOpen=null;
+const cardSeen=id=>{try{return localStorage.getItem('bo_card_'+id)||localStorage.getItem('bo_card_off')}catch(e){return 1}};
+function cardMode(s){return !s.three?'2':s.h3&&s.h3.team?String(s.h3.n):s.h3&&s.h3.hunt?'4h':'3';}
+function cardFor(s){if(!s||!window.Roles||!s.rules)return null;const h=s.h3||{};
+ return Roles.roleCard(h.mySeat||s.role,s.role==='hunter'?(s.kind||h.kind):h.kind,cardMode(s),s.rules);}
+function cardArt(k){return k==='ostrich'?OST:k==='vulture'?VUL:window.T3UI&&T3UI.KIND[k]?T3UI.KIND[k].art:'';}
+const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function showCard(c,picked,again){const el=$('rolecard');if(!el||!c)return;cardOpen={id:c.id,again:!!again};
+ el.innerHTML=`<div class="rc" data-animal="${c.animal}"><span class="rpic">${cardArt(c.picture)}</span><h2>${esc(c.title)}</h2>${picked?`<p class="rpicked">${esc(Roles.PICKED)}</p>`:''}<p class="rgoal">${esc(c.goal)}</p><ul class="rmoves">${c.moves.map(m=>`<li>${esc(m)}</li>`).join('')}</ul><p class="rlose">${esc(c.lose)}</p><button type="button" class="rok">Got it</button></div>`;
+ el.classList.remove('hidden');}
+function closeCard(){const el=$('rolecard');if(!el||!cardOpen)return;el.classList.add('hidden');
+ if(!cardOpen.again)try{localStorage.setItem('bo_card_'+cardOpen.id,'1')}catch(e){}cardOpen=null;}
+function maybeCard(){if(cardOpen||!S||S.phase!=='play'||S.god)return;const h=S.h3;
+ if(h&&(h.ready===false||h.needKind||(h.team&&h.teamSetup&&h.teamSetup!=='done')))return;
+ if(h&&h.birds&&h.birds[h.mySeat||S.role]&&h.birds[h.mySeat||S.role].out)return;
+ const walk=$('walk'),tut=document.getElementById('tut');if(!walk.classList.contains('hidden')||(tut&&!tut.classList.contains('hidden')))return;
+ const c=cardFor(S);if(!c||cardSeen(c.id))return;showCard(c,S.picked,false);}
+tapper($('rolecard'),closeCard);
+window.UI={card(){showCard(cardFor(S),S&&S.picked,true);},walk(){walk();},rules(){$('rules').classList.remove('hidden');const rb=$('roleCardBtn');if(rb)rb.classList.toggle('hidden',!cardFor(S));const b=document.getElementById('guideToggle');if(b){const on=!localStorage.getItem('bo_hs_off');b.textContent=on?'Ostrich guides: ON (tap to turn off)':'Ostrich guides: OFF (tap to turn on)';}},closeRules(){$('rules').classList.add('hidden')},
  setMode(m){if(locked||!S||!S.myTurn)return;mode=m;if(m==='throw')coachDid('throw');render();},act(a){if(locked||!S||!S.myTurn)return;if(a==='sit'&&!(S.can&&S.can.sit))return nope(S.mustLeave?`You sat ${S.cfg.maxSit} turns in a row. Step off this turn.`:'Sit only works while you stand on an egg.');coachDid(a);if(a==='sit'&&G&&G.id==='start')gSet('start','1');send({t:'act',a})},guides(on){if(on)localStorage.removeItem('bo_hs_off');else localStorage.setItem('bo_hs_off','1');const b=document.getElementById('guideToggle');if(b)b.textContent=on?'Ostrich guides: ON (tap to turn off)':'Ostrich guides: OFF (tap to turn on)';if(S)render();},replayCoach(){Object.keys(localStorage).filter(k=>k.startsWith('bo_g_')).forEach(k=>localStorage.removeItem(k));['blue','red'].forEach(r=>localStorage.removeItem('bo_cs_'+r));localStorage.removeItem('bo_tips_off');Object.keys(localStorage).filter(k=>k.startsWith('bo_tip_')).forEach(k=>localStorage.removeItem(k));if(S)render();},rematch(how){holder=null;lastBy={};sniffSeen={};send({t:'act',a:'rematch',how:how||'same'})},
  _rr(){if(S)render();},open(m){open(m);},pause(ms){sniffUntil=Math.max(sniffUntil,Date.now()+ms);},send(o){send(o);},_tip:t=>tipBar(t),_S:()=>S,_legal:()=>legalNow(),_locked:()=>locked,menu(){S=null;localStorage.removeItem('bo_me');location.href='/';}};
 // --- learn-by-playing coach marks: one hint, anchored, everything else dimmed; advances when the player does it ---
@@ -214,7 +233,7 @@ function guideApply(){if(S&&!S._o)S._o={m:S.moves,c:S.carryMoves,cc:S.can&&S.can
  if(G.sit&&S.can&&S.can.sit){S.moves=[];S.carryMoves=[];S.can.carry=false;}else{S.moves=f(S.moves);S.carryMoves=f(S.carryMoves);}
  G.path=[];let p=o.slice();for(let k=0;k<20&&gd(p,G.t)>0;k++){p=[p[0]+Math.sign(G.t[0]-p[0]),p[1]+Math.sign(G.t[1]-p[1])];G.path.push(key(p));}}
 function render(prev){
- $('lobby').classList.add('hidden');const C=S.cfg,blue=S.role==='blue',body=document.body;body.className=(S.role==='hunter'?'hunter':blue?'blue':'red')+(S.three?' three':'')+(S.god?' godview':'');
+ maybeCard();$('lobby').classList.add('hidden');const C=S.cfg,blue=S.role==='blue',body=document.body;body.className=(S.role==='hunter'?'hunter':blue?'blue':'red')+(S.three?' three':'')+(S.god?' godview':'');
  $('turnTag').innerHTML=S.role==='hunter'||(S.h3&&S.h3.team)?window.T3UI.tag(S):`<span style="display:inline-block;width:26px;height:26px;vertical-align:middle">${blue?OST:VUL}</span> ${blue?'OSTRICH':'VULTURE'}`;
  $('roundsLeft').textContent=C.rounds-S.round+1;$('eggsLeft').textContent=S.eggsLeft;
  // HUD: ostrich hunger (leaf + turns left) and vulture stones, both public
