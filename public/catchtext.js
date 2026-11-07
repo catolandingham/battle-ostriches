@@ -15,11 +15,12 @@
   }
   // viewer: your seat ('blue', 'red', 'o1'..'v2', 'hunter', 'hyena', 'badger'). kind: 'hyena' or 'badger', the animal that made the catch.
   // catchesLeft: catches the caught bird can still take after this one (ignored when lastCatch.ko).
-  // A badger that jumps out of its burrow onto a bird (lc.ambush, set by the rules only for that) gets a tag line, said to every player.
-  const AMBUSH_TAG = " Honey badger don't care.";
+  // A catch by the honey badger ends with one of its quotes, said to every player who sees the catch (the words live in badgerlines.js):
+  // out of the burrow (lc.ambush), a bird that walked onto it (lc.walked), or a catch in the open.
+  const BL = typeof module !== 'undefined' ? require('./badgerlines.js') : window.BadgerLines;
   function catchLine(lc, viewer, kind, left) {
     const line = baseLine(lc, viewer, kind, left);
-    return lc.ambush && !lc.walked ? line + AMBUSH_TAG : line;
+    return hunterWord(kind || lc.by) === 'honey badger' ? line + ' ' + BL.catchTail(lc) : line;
   }
   function baseLine(lc, viewer, kind, left) {
     const hunter = hunterWord(kind || lc.by), bird = birdWord(lc.bird);

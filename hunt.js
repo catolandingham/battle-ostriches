@@ -115,7 +115,7 @@ function hunterMoves(g, h = g.turn) {
 function hunterMove(g, p) {
   const h = g.turn; if (!hunterMoves(g, h).some(q => K(q) === K(p))) return false;
   const t = g.hunt, x = t.hs[h], o = h === 'hyena' ? 'badger' : 'hyena', y = t.hs[o], from = x.p.slice(), dir = [sgn(p[0] - from[0]), sgn(p[1] - from[1])], wasP = x.pounce, wasBur = x.burrowed;
-  x.burrowed = false; x.dig = 0;
+  x.burrowed = false; x.dig = 0; t.popout = null;
   if (K(y.p) === K(p)) { // fearless rivalry: the hyena always ends up 2 squares away; nobody is hurt
     if (h === 'badger') { y.burrowed = false; y.dig = 0; x.p = p.slice(); y.p = push(g, p, dir, TH.rivalKnock, 'hyena'); t.rival = { by: 'badger', at: p.slice(), to: y.p.slice(), seq: ++t.seq, round: g.round }; }
     else { y.burrowed = false; y.dig = 0; x.p = push(g, p, [-dir[0], -dir[1]], TH.rivalKnock, 'hyena'); t.rival = { by: 'hyena', at: p.slice(), to: x.p.slice(), seq: ++t.seq, round: g.round }; }
@@ -124,6 +124,7 @@ function hunterMove(g, p) {
   x.p = p.slice(); let caught = false;
   const b = birdAt(g, p); if (b && g.phase === 'play') { catchBird(g, b, h, dir); caught = true; }
   if (caught && wasBur && t.lastCatch) t.lastCatch.ambush = true; // the badger jumped out of its burrow onto the bird
+  t.popout = !caught && wasBur ? { seq: ++t.seq, round: g.round } : null; // popped out of the burrow without a catch (shown only to who can see the badger)
   x.last = { type: 'move', from, to: p.slice(), caught, pounce: wasP };
   if (g.phase === 'over') return true;
   if (!caught && !wasP && h === 'hyena' && x.sense) { x.pounce = true; x.sense = senses(g, h); x.senseSeq++; return true; } // Pounce
@@ -131,7 +132,7 @@ function hunterMove(g, p) {
 }
 function hunterStay(g) {
   const h = g.turn; if (g.phase !== 'play' || !isH(h)) return false;
-  const x = g.hunt.hs[h]; if (!x.pounce && h === 'badger') { x.dig = 2; x.burrowed = true; } // one still turn always burrows
+  g.hunt.popout = null; const x = g.hunt.hs[h]; if (!x.pounce && h === 'badger') { x.dig = 2; x.burrowed = true; } // one still turn always burrows
   x.last = { type: x.pounce ? 'skip' : 'stay' }; endHunter(g, h); return true;
 }
 function timeout(g) {

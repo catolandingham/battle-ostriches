@@ -96,7 +96,7 @@ function tOver(S){const h=S.h3,w=S.winner,me=h.mySeat,C=S.cfg,mySide=me==='hunte
  const why=w==='hunter'?`The ${hName(S)} knocked out an ostrich and a vulture by round ${S.round}.`:w==='blue'?`The ostriches kept ${S.eggsLeft} egg(s) alive for ${C.rounds} rounds.`
   :w==='red'?(S.winBy==='cold'?`The last egg went cold in round ${S.round}.`:S.winBy==='ostriches-out'?'Both ostriches were out.':`The vultures smashed every egg by round ${S.round}.`)
   :'Every bird that could win was out.';
- return `<div class="lobbybox"><div class="bigost">${art}</div><h1>${title}</h1><p>${why}</p>${endBits(S)}</div>`;}
+ return `<div class="lobbybox"><div class="bigost">${art}</div><h1>${title}</h1><p>${why}</p>${winNote(S)}${endBits(S)}</div>`;}
 // --- 4 players "Hunters": ostrich + vulture + hyena + honey badger (rival hunters) ---
 function hChips(S){let bar=$('h3bar');if(!bar){bar=document.createElement('div');bar.id='h3bar';$('hud').after(bar);
   bar.addEventListener('click',e=>{const c=e.target.closest('[data-tip]');if(c&&UI._tip)UI._tip(c.dataset.tip);});}
@@ -122,7 +122,7 @@ function hOver(S){const h=S.h3,w=S.winner,me=h.mySeat,C=S.cfg;
  const ko=`Knock-outs: hyena ${h.hkos.hyena}, honey badger ${h.hkos.badger}.`;
  const why=w==='hyena'||w==='badger'?`Both birds were out. ${ko}${h.hkos.hyena===h.hkos.badger?' Tie: the last knock-out wins.':''}`:w==='blue'?`The ostrich kept ${S.eggsLeft} egg(s) alive for ${C.rounds} rounds.`
   :w==='red'?(S.winBy==='cold'?`The last egg went cold in round ${S.round}.`:S.winBy==='starved'?'The ostrich was out and no eggs were left.':`The vulture smashed every egg by round ${S.round}.`):`No hunter got a knock-out. ${ko}`;
- return `<div class="lobbybox"><div class="bigost">${art}</div><h1>${title}</h1><p>${why}</p>${endBits(S)}</div>`;}
+ return `<div class="lobbybox"><div class="bigost">${art}</div><h1>${title}</h1><p>${why}</p>${winNote(S)}${endBits(S)}</div>`;}
 // --- in game ---
 let lastSense='',lastCatch=0,deadline=0,clockMs=10000,raf=0,lastTurnKey='',nearSeen=null;
 function warnNear(S,board){if(!window.BORing)return;if(!S||S.phase!=='play'){nearSeen=null;return;}
@@ -176,8 +176,22 @@ function outBanner(S,prev){const birds=S.h3.birds;if(!birds)return;
   const mine=r===(S.h3.mySeat||S.role);
   if(!first&&!mine&&S.phase==='play'){const txt=window.CatchText.outLine(r);outNote={txt,until:Date.now()+4000};noteBanner('no',txt,true);setTimeout(()=>{const bn=$('banner');if(bn&&bn.textContent===txt){bn.textContent='';bn.className='hidden';}},4000);}}
  if(outNote&&Date.now()<outNote.until)noteBanner('no',outNote.txt);}
+// The honey badger's quotes (public/badgerlines.js): one line at a time near the badger's square, about 3 seconds each. They sit in their own
+// element, not in the board, so the next state redrawing the board does not wipe them. The words and who may see them live in badgerlines.js.
+const BL=window.BadgerLines;let bPicker=BL.createPicker(),bLastS=null,bBusy=false;const bQ=[];
+const winNote=S=>{const t=BL.winLine(S);return t?`<p class="badgerwin">${t}</p>`:'';};
+function badgerSay(text){if(bQ.length<4)bQ.push(text);setTimeout(()=>bPump(0),60);} // after this state's board is drawn, so the badger's square is there to point at
+function bPump(tries){if(bBusy||!bQ.length)return;
+ if(document.querySelector('#board .h3pop')&&tries<10){setTimeout(()=>bPump(tries+1),400);return;}
+ bBusy=true;const o=document.createElement('div');o.id='badgerline';o.className='h3pop badger';o.textContent=bQ.shift();document.body.appendChild(o);
+ const cell=document.querySelector('#board .pc.ph.hbadger'),bd=document.getElementById('board'),r=(cell||bd).getBoundingClientRect(),w=o.offsetWidth,h=o.offsetHeight,vw=window.innerWidth;
+ let x=r.left+r.width/2,y=cell?r.top-8-h/2:r.top+r.height/2;x=Math.max(w/2+8,Math.min(vw-w/2-8,x));if(y<h/2+8)y=r.bottom+8+h/2;
+ o.style.left=x+'px';o.style.top=y+'px';
+ setTimeout(()=>{o.remove();bBusy=false;bPump(0);},3000);}
+function badgerLines(S,prev){if(S===bLastS)return;bLastS=S;if(!prev||(prev.round!=null&&S.round<prev.round))bPicker=BL.createPicker();
+ for(const e of BL.detect(prev,S,bPicker))badgerSay(e.text);}
 function pop(board,txt,cls){const o=document.createElement('div');o.className='h3pop '+cls;o.textContent=txt;board.appendChild(o);setTimeout(()=>o.remove(),cls==='catch'?3400:1800);}
-function after(S,prev,board){chips(S);clock(S);kindPick(S);if(S.h3.team)tPieces(S,board);if(S.h3.hunt)hPieces(S,board,prev);
+function after(S,prev,board){badgerLines(S,prev);chips(S);clock(S);kindPick(S);if(S.h3.team)tPieces(S,board);if(S.h3.hunt)hPieces(S,board,prev);
  rulesMode(S.h3.hunt?'4h':S.h3.team?String(S.h3.n):'3');
  const h=S.h3,k=h.kind||'hyena',me=S.role;
  // hunter piece: the hunter always sees itself; a bird only sees it within 2 squares (never a burrowed badger)
@@ -226,7 +240,7 @@ function over(S){if(S.h3.hunt)return hOver(S);if(S.h3.team)return tOver(S);const
  const why=w==='hunter'?`The ${hName(S)} knocked out both birds in round ${S.round}.`:w==='blue'?`The ostrich kept ${S.eggsLeft} egg(s) alive for ${C.rounds} rounds.`
   :w==='red'?(S.winBy==='cold'?`The last egg went cold in round ${S.round}.`:S.winBy==='starved'?'The ostrich was out and no eggs were left.':`The vulture smashed every egg by round ${S.round}.`)
   :S.winBy==='time'?'Time ran out: the ostrich was out and the vulture never got every egg.':'The eggs were lost, but the vulture was already out.';
- return `<div class="lobbybox"><div class="bigost">${art}</div><h1>${title}</h1><p>${why}</p>${endBits(S)}</div>`;}
+ return `<div class="lobbybox"><div class="bigost">${art}</div><h1>${title}</h1><p>${why}</p>${winNote(S)}${endBits(S)}</div>`;}
 window.T3UI={after,hint,tag,waitMsg,nopeMsg,over,endBits,KIND};
 document.readyState==='loading'?document.addEventListener('DOMContentLoaded',lobby):lobby();
 })();

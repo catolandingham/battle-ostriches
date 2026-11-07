@@ -48,7 +48,7 @@ const at = { state: 'attached' };
   // game over: both birds out, the badger has more KOs
   if (room.g.phase === 'play') { H.knockout(room.g, 'red', 'caught', 'badger'); H.knockout(room.g, 'blue', 'caught', 'badger'); server.broadcast(room); }
   await A.waitForSelector('#over:not(.hidden)'); assert.ok(/You win/.test(await A.textContent('#over'))); await Y.waitForSelector('#over:not(.hidden)');
-  assert.ok(/Honey badger wins/.test(await Y.textContent('#over'))); await shot(A, '7-over');
+  assert.ok(/Honey badger wins/.test(await Y.textContent('#over'))); await shot(A, '7-over'); assert.ok((await A.textContent('#over')).includes('Look at this nasty badass.') && (await Y.textContent('#over')).includes('Look at this nasty badass.'), 'the badger win line is on both phones');
   console.log('errors', errs); assert.equal(errs.length, 0);
   await b.close(); server.close(); console.log('PASS e2e-hunt'); process.exit(0);
 })().catch(e => { console.error(e); process.exit(1); });

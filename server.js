@@ -105,7 +105,8 @@ function view3(room, role) {
     at: role === t.lastCatch.bird || role === 'hunter' || over ? t.lastCatch.at : null, to: role !== 'hunter' || over ? t.lastCatch.to : null };
   const h3 = Object.assign(T.status3(g), { seats, ready: ready3(room), needKind: role === 'hunter' && !t.kind, lastCatch: lc, lost: t.lost || null,
     clockLeft: room.deadline && g.phase === 'play' ? Math.max(0, room.deadline - Date.now()) : null, clockMs: T.T3.clockMs, senseRange: T.T3.sense,
-    hunter: over || role === 'hunter' || T.hunterSeenBy(g, role) ? t.h : null, burrowed: role === 'hunter' || over ? t.burrowed : false, range: T.hunterRange(g) });
+    hunter: over || role === 'hunter' || T.hunterSeenBy(g, role) ? t.h : null, burrowed: role === 'hunter' || over ? t.burrowed : false, range: T.hunterRange(g),
+    popout: role === 'hunter' || T.hunterSeenBy(g, role) ? t.popout || null : null });
   let v;
   if (role === 'hunter') {
     v = { role, code: room.code, phase: g.phase, turn: g.turn, round: g.round, cfg: g.cfg, winner: g.winner, winBy: g.winBy, eggsLeft: B.aliveEggs(g).length,
@@ -209,6 +210,7 @@ function viewT(room, seat) {
   const h3 = Object.assign(TT.status(g), { team: true, seats, ready, needKind: seat === 'hunter' && g.h && !g.h.kind, lastCatch: lc, lost: g.lost, mySeat: seat, pieces, setupStep: step, teamSetup, eggsToPlace: isO && setup ? Math.max(0, TT.TM.eggs - TT.nestOf(g, seat).length) : null,
     clockLeft: room.deadline && g.phase === 'play' ? Math.max(0, room.deadline - Date.now()) : null, clockMs: TT.TM.clockMs, senseRange: TT.TM.sense,
     hunter: g.h && (over || seat === 'hunter' || TT.hunterSeenBy(g, seat)) ? g.h.p : null, burrowed: g.h && (seat === 'hunter' || over) ? g.h.burrowed : false, range: TT.hunterRange(g),
+    popout: g.h && (seat === 'hunter' || TT.hunterSeenBy(g, seat)) ? g.popout || null : null,
     block: TT.TM.vStarts.concat(g.h ? [g.h.p] : []), mateSniff: isV && g.phase === 'play' ? g.sniffs[TT.mate(seat)] || null : null, eggsTotal: g.eggs.length });
   const eggs = () => g.eggs.map(e => { const c = TT.OS.find(o => g.b[o].carrying === e.id);
     return { pos: e.pos || (c && c !== seat ? g.b[c].pos : null), alive: e.alive, coldIn: B.coldIn(g, e), carried: c === seat, nest: e.nest, mine: isO && e.nest === myB.nest }; });
@@ -299,7 +301,7 @@ function viewH(room, seat) {
   const rv = t.rival && { by: t.rival.by, seq: t.rival.seq, round: t.rival.round, to: isH || over ? t.rival.to : null };
   const h3 = Object.assign(HU.statusH(g), { seats, ready: readyH(room), needKind: false, kind: isH ? seat : null, mySeat: seat, hunters, hunter: null, burrowed: false,
     lastCatch: lc, rival: rv, lost: t.lost || null, clockLeft: room.deadline && g.phase === 'play' ? Math.max(0, room.deadline - Date.now()) : null, clockMs: HU.TH.clockMs,
-    senseRange: HU.TH.sense, range: 1 });
+    senseRange: HU.TH.sense, range: 1, popout: seat === 'badger' || HU.seen(g, seat, 'badger') ? t.popout || null : null });
   let v;
   if (isH) { const x = t.hs[seat];
     v = { role: 'hunter', code: room.code, phase: g.phase, turn: HU.isH(g.turn) ? (g.turn === seat ? 'hunter' : g.turn) : g.turn, round: g.round, cfg: g.cfg, winner: g.winner, winBy: g.winBy,

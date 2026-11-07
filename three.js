@@ -102,6 +102,7 @@ function hunterMove(g, p) {
   let caught = false;
   for (const b of BIRDS) if (g.phase === 'play' && !isOut(g, b) && K(pos(g, b)) === K(p)) { catchBird(g, b, [sgn(p[0] - from[0]), sgn(p[1] - from[1])]); caught = true; }
   if (caught && wasBur && t.lastCatch) t.lastCatch.ambush = true; // the badger jumped out of its burrow onto the bird
+  t.popout = !caught && wasBur ? { seq: ++t.seq, round: g.round } : null; // popped out of the burrow without a catch (shown only to who can see the badger)
   t.lastHunter = { type: 'move', from, to: p.slice(), caught, pounce: wasP };
   if (g.phase === 'over') return true;
   // Hyena Pounce: its sense said a bird is within 2 -> one extra 1-square move this same turn
@@ -110,7 +111,7 @@ function hunterMove(g, p) {
 }
 function hunterStay(g) { // badger: staying still burrows it (invisible to birds). During a pounce: skip the extra move.
   if (g.phase !== 'play' || g.turn !== 'hunter') return false;
-  const t = g.three; if (!t.pounce && t.kind === 'badger') { t.dig = 2; t.burrowed = true; } // one still turn always burrows
+  const t = g.three; t.popout = null; if (!t.pounce && t.kind === 'badger') { t.dig = 2; t.burrowed = true; } // one still turn always burrows
   t.lastHunter = { type: t.pounce ? 'skip' : 'stay' }; endHunter(g); return true;
 }
 // shot clock ran out: the current player's turn ends (vulture passes, ostrich stays put, hunter stays put)
