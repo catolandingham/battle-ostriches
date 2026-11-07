@@ -197,7 +197,7 @@ function after(S,prev,board){chips(S);clock(S);kindPick(S);if(S.h3.team)tPieces(
    if(tc)tc.classList.add('h3kb');
    const byOther=h.hunt&&me==='hunter'&&lc.by!==h.mySeat;
    const mineBird=me===lc.bird||(S.h3.team&&S.h3.mySeat===lc.bird);
-   pop(board,byOther?`${striker} struck the ${word}!`:me==='hunter'?`Found ${word}!`:mineBird?`${striker} struck you!`:`${striker} struck the ${word}!`,'catch');
+   pop(board,byOther?`${striker} ${lc.ko?'knocked out':'caught'} the ${word}!`:me==='hunter'?(lc.ko?`Found ${word}! Knocked out!`:`Found ${word}! Caught, not out yet.`):mineBird?(lc.ko?`${striker} knocked you out!`:`${striker} caught you! Knocked back 2.`):`${striker} ${lc.ko?'knocked out':'caught'} the ${word}!`,'catch');
    const ch=document.querySelector('#h3bar .bchip.'+lc.bird);ch&&ch.classList.add('hitnow');window.SFX&&SFX.play(me==='hunter'?'win':'warn');}}
  markHurt(S,board); warnNear(S,board);
  // waiting panel text: which seats are still open
