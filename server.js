@@ -539,16 +539,20 @@ wss.on('connection', ws => {
       }
       const back = (r.arrivals || []).find(a => m.token && a.token === m.token);
       if (back) { back.ws = ws; ws._bo = { room: r, seat: null, hid: back.id, arrival: true }; send({ t: 'joined', code: r.code, role: null, token: back.token, lobby: true }); send({ t: 'state', lobby: true, state: LB.benchView(r, back) }); return broadcast(r); }
-      if (r.flow && r.g && r.g.phase === 'over') {
+      seat = SEATS.find(s => !r.players[s]);
+      const over = !!(r.g && r.g.phase === 'over');
+      if (r.flow && (over || !seat)) {
         const count = (r.roster || []).filter(x => !x.bot).length + (r.arrivals || []).length;
         if (count >= 8) return send({ t: 'error', msg: 'That room is full.' });
         const a = { id: hid(), token: tok(), ws, name: 'Player ' + (count + 1) };
+        if (!over) a.late = true; // joined while a game is running: the bench says so (lobby.js benchView)
         r.arrivals = r.arrivals || []; r.arrivals.push(a); ws._bo = { room: r, seat: null, hid: a.id, arrival: true }; r.touched = Date.now();
         send({ t: 'joined', code: r.code, role: null, token: a.token, lobby: true });
-        send({ t: 'state', lobby: true, state: LB.benchView(r, a) }); return broadcast(r);
+        send({ t: 'state', lobby: true, state: LB.benchView(r, a) });
+        // between games the players see the new name; mid-game nothing on their screens changes, so only save
+        return over ? broadcast(r) : persist(r);
       }
-      seat = SEATS.find(s => !r.players[s]);
-      if (!seat) return send({ t: 'error', msg: r.hunt ? 'That game already has 4 players.' : r.team ? `That game already has ${r.n} players.` : r.three ? 'That game already has three players.' : r.ai ? 'That is a single-player game.' : 'That game already has two players.' });
+      if (!seat) return send({ t: 'error', msg: 'That game is full and already started. Ask for a new code.' });
       const token = tok(); r.players[seat] = { ws, token }; ws._bo = { room: r, seat, hid: null }; r.touched = Date.now();
       send({ t: 'joined', code: r.code, role: clientRole(r, seat), token }); return broadcast(r);
     }
