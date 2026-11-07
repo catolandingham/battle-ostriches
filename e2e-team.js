@@ -7,7 +7,7 @@ const shot = (p, n) => p.screenshot({ path: OUT + n + '.jpg', type: 'jpeg', qual
 const at = { state: 'attached' };
 (async () => {
   const b = await webkit.launch(), errs = [];
-  const mk = async () => { const c = await b.newContext({ ...devices['iPhone 13'] }); const p = await c.newPage(); await p.addInitScript(() => { for (const k of ['bo_hs_off', 'bo_tut_seen', 'bo_walk_blue', 'bo_walk_red', 'bo_walk_hunter', 'bo_tips_off']) localStorage.setItem(k, '1'); ['blue', 'red'].forEach(r => localStorage.setItem('bo_cs_' + r, '9')); });
+  const mk = async () => { const c = await b.newContext({ ...devices['iPhone 13'] }); const p = await c.newPage(); await p.addInitScript(() => { for (const k of ['bo_hs_off', 'bo_tut_seen', 'bo_walk_blue', 'bo_walk_red', 'bo_walk_hunter', 'bo_tips_off', 'bo_card_off']) localStorage.setItem(k, '1'); ['blue', 'red'].forEach(r => localStorage.setItem('bo_cs_' + r, '9')); });
     p.on('pageerror', e => errs.push(e.message)); return p; };
   const cell = (p, x, y) => p.locator('.cell').nth(y * 9 + x);
   // ---- 4 players: me = Ostrich 1, a friend = Vulture 1, computers = Ostrich 2 + Vulture 2 ----

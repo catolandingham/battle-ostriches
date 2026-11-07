@@ -4,7 +4,7 @@ const { webkit, devices } = require('playwright-core'); const assert = require('
 process.env.PORT = 3991; const server = require('./server.js');
 (async () => {
   const b = await webkit.launch(); const errs = [];
-  const mk = async () => { const c = await b.newContext({ ...devices['iPhone 13'] }); const p = await c.newPage(); await p.addInitScript(() => { localStorage.setItem('bo_hs_off','1'); for (const k of ['bo_tut_seen','bo_walk_blue','bo_walk_red','bo_tips_off']) localStorage.setItem(k, '1'); ['blue', 'red'].forEach(r => localStorage.setItem('bo_cs_' + r, '9')); }); p.on('pageerror', e => errs.push(e.message)); return p; };
+  const mk = async () => { const c = await b.newContext({ ...devices['iPhone 13'] }); const p = await c.newPage(); await p.addInitScript(() => { localStorage.setItem('bo_hs_off','1'); for (const k of ['bo_tut_seen','bo_walk_blue','bo_walk_red','bo_tips_off', 'bo_card_off']) localStorage.setItem(k, '1'); ['blue', 'red'].forEach(r => localStorage.setItem('bo_cs_' + r, '9')); }); p.on('pageerror', e => errs.push(e.message)); return p; };
   const A = await mk(), V = await mk(); const U = 'http://localhost:3991/', cell = (p, x, y) => p.locator('.cell').nth(y * 9 + x);
   await A.goto(U); await A.click('#playFriend'); await A.waitForSelector('#lobbyCode:not(:empty)');
   await V.goto((await A.inputValue('#lobbyLink')).replace(/^http:\/\/[^/]+/, 'http://localhost:3991')); await V.waitForSelector('#roomLobby');

@@ -229,3 +229,17 @@ html #board .cell.rockcall::after{content:'';position:absolute;inset:0;border-ra
 /* Step/Carry/Sit stay on screen on short phones even when a tip shows */
 #actions{position:sticky;bottom:max(6px,env(safe-area-inset-bottom));z-index:30}
 #gone{position:fixed;inset:0;z-index:200;background:rgba(10,15,25,.92);display:flex;align-items:center;justify-content:center;padding:20px}#gone .gbox{background:#fff;color:#111;border:5px solid #111;border-radius:20px;padding:22px;max-width:360px;text-align:center}#gone .gt{font:900 30px/1.1 system-ui,sans-serif;margin-bottom:8px}#gone p{font-weight:600;margin:0 0 14px}#gone button{width:100%}
+/* role card: one white card on a dark screen, fixed colours so it reads in every theme (same idea as #walk) */
+#rolecard{position:fixed;inset:0;z-index:9100;background:rgba(0,0,0,.82);display:flex;align-items:center;justify-content:center;padding:12px;font-family:system-ui,-apple-system,sans-serif}
+#rolecard.hidden{display:none}
+#rolecard .rc{background:#fff;color:#111;border-radius:18px;padding:12px 16px 14px;max-width:360px;width:100%;max-height:100%;overflow:auto;text-align:left;line-height:1.28}
+#rolecard .rpic{display:block;width:52px;height:52px;margin:0 auto 2px}
+#rolecard .rpic svg{width:100%;height:100%}
+#rolecard h2{margin:2px 0 6px;font-size:1.3rem;text-align:center}
+#rolecard .rpicked{margin:0 0 6px;text-align:center;font-size:.9rem;font-style:italic;color:#444}
+#rolecard .rgoal{margin:0 0 6px;font-size:1.02rem;font-weight:800}
+#rolecard .rmoves{margin:0 0 6px;padding-left:20px;font-size:.93rem}
+#rolecard .rmoves li{margin:0 0 4px}
+#rolecard .rlose{margin:0 0 10px;font-size:.93rem;color:#7a1b1b;font-weight:600}
+#rolecard .rok{display:block;width:100%;min-height:46px;border:0;border-radius:12px;background:#111!important;color:#fff!important;font-weight:800;font-size:1rem}
+#rolecard .rc,#rolecard .rc *{text-shadow:none}
