@@ -482,12 +482,21 @@ function openLobby(ws, m) {
   try { ws.send(JSON.stringify({ t: 'joined', code: c, role: null, token, lobby: true })); } catch {}
   lobbyBroadcast(room);
 }
+// A square from a client must be exactly [x, y] with whole numbers on the board. Actions that move something need one; the others must not carry a bad one.
+const SQUARE_ACTS = new Set(['place', 'step', 'carry', 'fly', 'throw', 'kick', 'hmove']);
+const validSquare = p => Array.isArray(p) && p.length === 2 && Number.isInteger(p[0]) && Number.isInteger(p[1]) && p[0] >= 0 && p[1] >= 0 && p[0] < B.CONFIG.cols && p[1] < B.CONFIG.rows;
+function validMove(m) {
+  if (m.t === 'seat') return typeof m.role === 'string' && (m.p === undefined || validSquare(m.p));
+  if (typeof m.a !== 'string') return false;
+  return SQUARE_ACTS.has(m.a) ? validSquare(m.p) : m.p === undefined || validSquare(m.p);
+}
 const wss = new WebSocketServer({ server, path: '/ws' });
 wss.on('connection', ws => {
   ws.isAlive = true; ws.on('pong', () => { ws.isAlive = true; });
   const send = o => { try { ws.send(JSON.stringify(o)); } catch {} };
-  ws.on('message', async raw => {
+  const onMessage = async raw => {
     let m; try { m = JSON.parse(raw); } catch { return; }
+    if (!m || typeof m !== 'object' || Array.isArray(m)) return;
     if (m.t === 'ping') return send({ t: 'pong' });
     if (m.t === 'create' && (m.friends || m.solo)) return openLobby(ws, m);
     if (m.t === 'create' && m.hunt) { const rh = createH(m, ws); ws._bo = { room: rh.room, seat: rh.role, hid: null }; send({ t: 'joined', code: rh.room.code, role: HU.isH(rh.role) ? 'hunter' : rh.role, token: rh.token, three: true }); return broadcast(rh.room); }
@@ -579,6 +588,7 @@ wss.on('connection', ws => {
       send({ t: 'joined', code: r.code, role: clientRole(r, seat), token }); return broadcast(r);
     }
     const b = ws._bo, room = b && b.room, role = b && b.seat;
+    if ((m.t === 'act' || m.t === 'seat') && !validMove(m)) return send({ t: 'error', msg: 'Not a legal move right now.', soft: true }); // a malformed square never reaches the rules
     if (m.t === 'seat' && room && !room.lobby && !room.pass && !room.ai && room.g) {
       const g = room.g, fresh = room.team ? g.phase === 'setup' && !g.eggs.length : g.phase === 'setupEggs' && !g.eggs.length;
       const to = m.role; const SE = room.hunt ? SEATSH : room.team ? Object.keys(room.players) : room.three ? SEATS3 : ['blue', 'red'];
@@ -593,7 +603,9 @@ wss.on('connection', ws => {
       if (act(room, who, m)) { room.touched = Date.now(); broadcast(room); }
       else send({ t: 'error', msg: 'Not a legal move right now.', soft: true });
     }
-  });
+  };
+  // one bad message must never take the server (and every game on it) down
+  ws.on('message', async raw => { try { await onMessage(raw); } catch (e) { console.error('message handler error:', e && e.message); send({ t: 'error', msg: 'Not a legal move right now.', soft: true }); } });
   ws.on('close', () => {
     const b = ws._bo; if (!b) return; const room = b.room;
     if (room.lobby) {
