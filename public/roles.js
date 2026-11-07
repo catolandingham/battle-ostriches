@@ -36,6 +36,15 @@
   // "You lose if A, B, or C."
   const loseList = (lead, items) => `${lead} if ${items.length < 2 ? items[0] : items.length === 2 && !/ or /.test(items.join('|')) ? items.join(' or ') : items.slice(0, -1).join(', ') + ', or ' + items[items.length - 1]}.`;
 
+  // One line for the start of a game and for How to play: who hunts what, naming only the animals in the game.
+  // kind: the hunter in the game ('hyena' or 'badger'); when the phone does not know it yet, "The hyena or honey badger".
+  function huntLine(mode, kind) {
+    const m = String(mode || '2');
+    if (m === '2') return 'The vulture hunts eggs.';
+    if (m === '4') return 'The vultures hunt eggs.';
+    if (m === '4h') return 'The vulture hunts eggs. The hyena and honey badger hunt birds.';
+    return `The ${m === '5' ? 'vultures hunt' : 'vulture hunts'} eggs. The ${HUNTERS[kind] || 'hyena or honey badger'} hunts birds.`;
+  }
   function ostrich(mode, kind, R) {
     const c = R.cfg, team = mode === '4' || mode === '5', hunt = mode === '3' || mode === '4h' || mode === '5';
     const hl = hunt ? birdHunterLose(mode, kind, R) : [];
@@ -111,6 +120,6 @@
     return [a, bird && m === '3' && HUNTERS[kind] ? kind : '', m].join('_'); // only the 3-player bird cards change with the hunter
   }
 
-  const API = { roleCard, cardId, animal, rulesFromModules, PICKED };
+  const API = { roleCard, cardId, huntLine, animal, rulesFromModules, PICKED };
   if (typeof module !== 'undefined') module.exports = API; else window.Roles = API;
 })();
