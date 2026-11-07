@@ -1,6 +1,6 @@
 // Runs every unit and phone (e2e) suite one at a time and prints one PASS or FAIL line each.
 // Usage: node tests/run-all.js [name-filter ...]   (e.g. `node tests/run-all.js lobby` runs testlobby.js and e2e-lobby*.js)
-// Each suite gets 4 minutes (e2e-consistency.js, which plays 13 full games, gets 12). Logs go to shots/test-logs/<suite>.log. Exits 1 if any suite fails.
+// Each suite gets 4 minutes (e2e-consistency.js, which plays 13 full games, gets 15). Logs go to shots/test-logs/<suite>.log. Exits 1 if any suite fails.
 const fs = require('fs'), path = require('path'), { spawn } = require('child_process');
 const ROOT = path.join(__dirname, '..'), LOGS = path.join(ROOT, 'shots', 'test-logs'), LIMIT = 4 * 60 * 1000, LONG = { 'e2e-consistency.js': 15 * 60 * 1000 };
 const SKIP = new Set(['e2e-live.js']); // e2e-live.js plays against the live site, not a local server
