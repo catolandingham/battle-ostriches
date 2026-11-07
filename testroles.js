@@ -4,7 +4,7 @@ const B = require('./game.js'), T = require('./three.js'), H = require('./hunt.j
 let n = 0; const ok = (name, f) => { f(); n++; console.log('ok', name); };
 const C = B.CONFIG;
 const text = (c) => [c.title, c.goal, ...c.moves, c.lose].join('\n');
-const POUNCE = 'When the shaded box says a bird is near, you get one extra square. Land on the bird to catch it.';
+const POUNCE = 'When rose dots show a bird is near, you get one extra square after your move. Land on the bird to catch it.';
 
 // every card a phone can be shown: [role, kind, mode]
 const ALL = [

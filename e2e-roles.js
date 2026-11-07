@@ -39,7 +39,7 @@ const R = require('./public/roles.js'), THEMES = fs.readFileSync('./public/theme
   const lines = (c) => [c.title, c.goal, ...c.moves, c.lose];
   const has = (t, c) => lines(c).forEach(l => assert.ok(t.includes(l), `card is missing: ${l}\n--- got ---\n${t}`));
   has(ta, want('blue', 'hyena', '3')); has(tv, want('red', 'hyena', '3')); has(th, want('hunter', 'hyena', '3'));
-  assert.ok(th.includes('Pounce: When the shaded box says a bird is near, you get one extra square. Land on the bird to catch it.'), 'the hyena card says Pounce');
+  assert.ok(th.includes('Pounce: When rose dots show a bird is near, you get one extra square after your move. Land on the bird to catch it.'), 'the hyena card says Pounce');
   assert.ok(th.includes('A bird is out after 2 catches.'));
   // only its own: no other animal's title, and nobody was told "We picked" (all three chose)
   assert.ok(/You are the Ostrich/.test(ta) && !/You are the (Vulture|Hyena|Honey)/.test(ta), 'ostrich card is the ostrich card');

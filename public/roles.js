@@ -81,11 +81,11 @@
       : `Goal: Knock out both birds before round ${c.rounds} ends.`;
     const lose = mode === '4h' ? `You lose if a bird wins first, or if the ${other} knocks out more birds than you.`
       : mode === '5' ? 'You lose if the ostriches or the vultures win first.' : 'You lose if a bird wins first.';
-    const sense = `A shaded box around you means a bird is within ${m.sense} squares. It does not say where the bird is.`;
+    const sense = `When a bird is within ${m.sense} squares, rose dots show the squares where it may be.`;
     if (who === 'hyena') return {
       title: 'You are the Hyena', goal,
       moves: [`Move 1 square a turn. ${sense}`,
-        'Pounce: When the shaded box says a bird is near, you get one extra square. Land on the bird to catch it.',
+        'Pounce: When rose dots show a bird is near, you get one extra square after your move. Land on the bird to catch it.',
         `A bird is out after ${catches(n)}.`],
       lose, picture: 'hyena' };
     return {
