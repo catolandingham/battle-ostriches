@@ -21,3 +21,31 @@
 .sm-reveal svg{width:70%;height:70%}
 .sm-reveal b{font:900 20px/1 system-ui,sans-serif;letter-spacing:.5px;padding:3px 6px;border-radius:6px;color:#fff;white-space:nowrap;margin-top:2px}
 .sm-reveal.yes b{background:#1f9d3a}.sm-reveal.no b{background:#d22}
+/* Cause before result (fx.js, CAUSE): stone into the count, carried egg slide, cold egg dims, badger sinks. Each is at most .7 s. JS sets --fxd (length) and --fxdel (negative: how far in it already is). */
+#causefx{position:fixed;inset:0;pointer-events:none;z-index:61;overflow:hidden}
+#causefx>.fxc-box{position:fixed;left:0;top:0;will-change:transform}
+.fxc-box svg{width:100%;height:100%;display:block;filter:drop-shadow(0 2px 2px rgba(0,0,0,.45))}
+.cell.fxpick .ic-rock{animation:fxpile var(--fxd,.7s) ease-out var(--fxdel,0s) both}
+@keyframes fxpile{0%{transform:translate(-50%,-50%) scale(1)}25%{transform:translate(-50%,-50%) scale(.8,1.15)}55%{transform:translate(-50%,-50%) scale(1.08,.94)}100%{transform:translate(-50%,-50%) scale(1)}}
+#stats .hs.fxfill{animation:fxchip var(--fxd,.7s) ease-out var(--fxdel,0s) both}
+@keyframes fxchip{0%,80%{transform:scale(1);box-shadow:0 0 0 0 #ffd34d00}90%{transform:scale(1.28);box-shadow:0 0 0 3px #ffd34d}100%{transform:scale(1);box-shadow:0 0 0 0 #ffd34d00}}
+.fxheld{position:relative;color:transparent!important;text-shadow:none!important}
+.fxheld::after{content:attr(data-old);position:absolute;left:0;top:0;color:var(--held,#fff);text-shadow:var(--heldsh,none)}
+.cell.fxslide>.carry,.cell.fxslide .ic-myegg,.cell.fxslide>.wring,.cell.fxslide>.wnum{visibility:hidden}
+.cell.fxslideo .pc.po{visibility:hidden}
+.cell .fxghost{position:absolute;inset:8%;z-index:5;pointer-events:none;animation:fxdim var(--fxd,.7s) ease-in var(--fxdel,0s) both}
+.cell .fxghost svg{width:100%;height:100%;display:block}
+.cell .fxghost .wring{position:absolute;left:0;top:0}
+@keyframes fxdim{0%{opacity:1;filter:none}60%{opacity:.6;filter:grayscale(.9) brightness(.75)}100%{opacity:0;filter:grayscale(1) brightness(.55)}}
+.cell.fxburrow .pc.ph.bur{animation:fxmound var(--fxd,.7s) ease-out var(--fxdel,0s) both}
+@keyframes fxmound{from{opacity:.4;transform:translateY(35%) scale(.65)}to{opacity:1;transform:none}}
+.pc.ph .fxsink{position:absolute;inset:0;pointer-events:none;clip-path:inset(-20% -30% 14% -30%)}
+.pc.ph .fxsink>span{display:block;width:100%;height:100%;animation:fxsink var(--fxd,.7s) ease-in var(--fxdel,0s) both}
+.pc.ph .fxsink svg{width:100%;height:100%}
+@keyframes fxsink{0%{transform:none;opacity:1}70%{transform:translateY(70%) scale(.85);opacity:1}100%{transform:translateY(95%) scale(.7);opacity:0}}
+@media (prefers-reduced-motion:reduce){
+ .cell.fxpick .ic-rock,.cell.fxburrow .pc.ph.bur,.pc.ph .fxsink>span,#stats .hs.fxfill{animation-name:fxfade}
+ .cell .fxghost{animation-name:fxfadeout}
+ @keyframes fxfade{from{opacity:.45}to{opacity:1}}
+ @keyframes fxfadeout{from{opacity:1}to{opacity:.3}}
+}
