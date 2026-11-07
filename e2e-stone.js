@@ -29,7 +29,8 @@ const THEMES = ['classic', 'nature', 'notes', 'golden', 'paper', 'arcade', 'toyb
   const turnHint = async () => (await hint()).replace(/^YOUR TURN · /, '');
   const dist = (a, q) => Math.max(Math.abs(a[0] - q[0]), Math.abs(a[1] - q[1]));
   // what the phone shows for the rock piles and the Throw button right now
-  const look = S => P.evaluate(rocks => {
+  // the action buttons are redrawn on each state; wait until the Throw button is on screen before reading it
+  const look = async S => { await P.waitForFunction(() => [...document.querySelectorAll('#actions button')].some(x => /Throw/.test(x.textContent)), null, { timeout: 5000 }); return P.evaluate(rocks => {
     const cs = [...document.querySelectorAll('#board .cell')], cols = rocks.cols;
     const glow = cs.map((e, i) => e.classList.contains('rockcall') ? i : -1).filter(i => i >= 0);
     const th = [...document.querySelectorAll('#actions button')].find(x => /Throw/.test(x.textContent));
@@ -37,7 +38,7 @@ const THEMES = ['classic', 'nature', 'notes', 'golden', 'paper', 'arcade', 'toyb
     return { glow, want: rocks.list.map(p => p[1] * cols + p[0]), th: th.textContent.trim(), thDis: th.disabled, thOpacity: getComputedStyle(th).opacity,
       ring: glow.length ? after(cs[glow[0]]) : null, legalOnRock: rocks.list.map(p => cs[p[1] * cols + p[0]].classList.contains('legal')),
       guide: document.querySelectorAll('#hint.guide,#skipGuide,.gtarget,.gpath').length };
-  }, { list: S.cfg.rocks, cols: S.cfg.cols });
+  }, { list: S.cfg.rocks, cols: S.cfg.cols }); };
   const assertNoStoneTurn = async (S, label) => {
     assert.equal(S.stones, 0, label + ': no stone');
     const L = await look(S), h = await turnHint();
