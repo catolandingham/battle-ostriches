@@ -272,14 +272,19 @@ function setHunterKind(room, kind, hid) {
   if (h) h.kind = kind;
   return { ok: true };
 }
+const PICK_FIRST = 'Pick your animal first.';
 // Assign every playing human a seat, then bots take what is left. Mutates roles.
-function plan(room) {
+// Each human who gets a seat without choosing one is marked picked: true; humans who chose get picked: false.
+// A solo room never starts without the player's pick. opts.preview skips that refusal so the lobby can
+// show who the computers would be (the caller restores the humans afterwards).
+function plan(room, opts) {
   const p = effective(room);
   if (!p.ok) {
     if (p.reason === 'mix') return { error: p.hint };
     if (p.reason === 'unsupported') return { error: 'Too many players for one game. Play as 5, or wait for someone to leave.' };
     return { error: 'Add a computer or wait for a friend.' };
   }
+  if (room.solo && !(opts && opts.preview) && room.humans.some(h => !animalOf(h))) return { error: PICK_FIRST };
   if (p.setup === '4' || p.setup === '4h') placeClaimed(p.humans.filter(h => !(p.bench || []).includes(h)), p.setup);
   const seats = SETUPS[p.setup].seats.slice(), bench = new Set((p.bench || []).map(h => h.id));
   const playing = room.humans.filter(h => !bench.has(h.id)), taken = {};
@@ -293,10 +298,10 @@ function plan(room) {
   if (stuck.length) return { error: p.hint || 'Those roles do not fit. Switch someone, then start.' };
   const open = seats.filter(s => !taken[s]);
   for (const h of playing) {
-    if (taken[h.role] === h) continue;
+    if (taken[h.role] === h) { h.picked = false; continue; }
     const seat = open.shift();
     if (!seat) return { error: 'Not enough roles.' };
-    h.role = seat;
+    h.role = seat; h.picked = true;
     if (seat === 'hunter') h.kind = room.hunterKind === 'badger' || room.hunterKind === 'hyena' ? room.hunterKind : 'hyena';
     else if (seat === 'hyena' || seat === 'badger') h.kind = seat;
     else h.kind = null;
@@ -328,19 +333,32 @@ function animalCards(humans, setup, hid) {
     };
   });
 }
-function computerSeatNames(room) {
-  const snap = room.humans.map(h => ({ role: h.role, kind: h.kind, animal: h.animal }));
-  let names = [];
+// Run plan() as a preview and put every human back exactly as they were, so looking at the lobby never seats or marks anyone.
+function previewPlan(room, fn) {
+  const snap = room.humans.map(h => ({ role: h.role, kind: h.kind, animal: h.animal, had: Object.prototype.hasOwnProperty.call(h, 'picked'), picked: h.picked }));
   try {
-    const planned = plan(room);
-    if (planned && planned.ok) {
-      const label = { blue: 'Ostrich', red: 'Vulture', o1: 'Ostrich', o2: 'Ostrich', v1: 'Vulture', v2: 'Vulture', hyena: 'Hyena', badger: 'Honey Badger' };
-      names = planned.botSeats.map(s => s === 'hunter' ? (planned.kind === 'badger' ? 'Honey Badger' : 'Hyena') : (label[s] || s));
-    }
+    const planned = plan(room, { preview: true });
+    return fn(planned && planned.ok ? planned : null);
   } finally {
-    room.humans.forEach((h, i) => { h.role = snap[i].role; h.kind = snap[i].kind; h.animal = snap[i].animal; });
+    room.humans.forEach((h, i) => {
+      h.role = snap[i].role; h.kind = snap[i].kind; h.animal = snap[i].animal;
+      if (snap[i].had) h.picked = snap[i].picked; else delete h.picked;
+    });
   }
-  return names;
+}
+function computerSeatNames(room) {
+  return previewPlan(room, planned => {
+    if (!planned) return [];
+    const label = { blue: 'Ostrich', red: 'Vulture', o1: 'Ostrich', o2: 'Ostrich', v1: 'Vulture', v2: 'Vulture', hyena: 'Hyena', badger: 'Honey Badger' };
+    return planned.botSeats.map(s => s === 'hunter' ? (planned.kind === 'badger' ? 'Honey Badger' : 'Hyena') : (label[s] || s));
+  });
+}
+// The animal Start would give this player if they pick nothing ('Ostrich', 'Vulture', 'Hyena' or 'Honey Badger'), or ''.
+function animalStartGives(room, me) {
+  return previewPlan(room, planned => {
+    if (!planned || !planned.assignments.some(a => a.human === me)) return '';
+    return shownAnimal(me);
+  });
 }
 function view(room, hid) {
   const p = effective(room), setupId = p.ok ? p.setup : (p.reason === 'mix' ? p.setup : (p.preview || null));
@@ -374,16 +392,20 @@ function view(room, hid) {
   if (setupId === '2' && !room.solo && room.humans.length >= 2) roles = roles.concat(hunterCards());
   const needKind = !!(me && me.role === 'hunter' && me.kind !== 'hyena' && me.kind !== 'badger');
   const host = !!(me && me.host);
-  const canStart = host && p.ok && !needKind;
+  const needPick = !!(room.solo && host && p.ok && !animalOf(me));
+  const canStart = host && p.ok && !needKind && !needPick;
   const alone = !room.solo && p.reason === 'need';
   const youAre = me && animalOf(me) ? 'YOU ARE ' + shownAnimal(me) : 'Choose an animal';
   const choose = me && !animalOf(me) && roles.some(r => r.taken) ? 'Choose another bird or hunter.' : '';
-  const status = p.hint ? p.hint
+  const status = needPick ? PICK_FIRST
+    : p.hint ? p.hint
     : choose ? choose
     : alone ? 'Just you. Pick Ostrich or Vulture. A friend joins with this code, or add a computer. Start needs 2.'
     : (setupId && SETUPS[setupId] ? SETUPS[setupId].label : '');
   const people = room.humans.length;
+  const gives = canStart && !room.solo && !animalOf(me) ? animalStartGives(room, me) : '';
   const startLabel = !p.ok ? 'Start game'
+    : gives ? 'Start · you\'ll be the ' + gives
     : (!room.solo && people === 1 && p.bots > 0) ? 'Start with computers'
     : (people >= 2 && p.bots === 0) ? 'Start · ' + people + ' people'
     : 'Start game';
@@ -398,7 +420,7 @@ function view(room, hid) {
     })),
     botsWanted: p.bots, maxBots: maxBots(room), total: p.total, humanCount: room.humans.length,
     setup: p.ok ? p.setup : null, preview: setupId, setupLabel: status,
-    reason: p.ok ? null : p.reason, hint: p.reason === 'mix' ? p.hint : (p.hint || choose), recovery: room.recovery || null, roles, startLabel, youAre,
+    reason: p.ok ? null : p.reason, hint: needPick ? PICK_FIRST : p.reason === 'mix' ? p.hint : (p.hint || choose), recovery: room.recovery || null, roles, startLabel, youAre,
     computers: p.bots > 0 ? computerSeatNames(room).join(', ') : '',
     hunterKind: room.hunterKind || null,
     showHunterKind: (setupId === '3' || setupId === '5') && p.bots > 0 && !room.humans.some(h => animalOf(h) === 'hyena' || animalOf(h) === 'badger'),

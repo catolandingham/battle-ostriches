@@ -12,7 +12,7 @@ let seed = 7; const rnd = n => { seed = (seed * 16807) % 2147483647; return seed
     P.on('pageerror', e => errs.push(e.message));
     await P.goto('http://localhost:3992/?theme=' + theme);
     if (kind === 'pass') { await P.click('#playPass'); await P.click('#passGo'); await P.click('#hGo'); }
-    else { await P.click('#playSolo'); await P.click('[data-bots="1"]'); await P.click('#soloGo'); if (kind === 'ai-red') await P.click('[data-role="red"]'); await P.click('#startGame'); }
+    else { await P.click('#playSolo'); await P.click('[data-bots="1"]'); await P.click('#soloGo'); await P.click(kind === 'ai-red' ? '[data-role="red"]' : '[data-role="blue"]'); await P.click('#startGame'); } // a solo Start needs a picked animal (T7)
     const cells = P.locator('#board .cell'); let lastTurn = null;
     const progress = () => P.evaluate(() => { const S = UI._S(); return JSON.stringify([S.turn, S.round, S.phase, S.ostrich, S.vulture, S.stones, S.sitRun, S.carried, S.lastAction, S.eggs, S.marks]); });
     // The hints a player can legitimately see at the start of a turn (wording from public/ui.js render()), by what the turn is.

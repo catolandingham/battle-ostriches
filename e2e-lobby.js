@@ -62,6 +62,29 @@ const server = require('./server.js');
   assert.ok(/HUNTERS|HYENA|hunter/i.test(await S.textContent('#turnTag') + await S.evaluate(() => document.body.className)));
   console.log('ok solo 3 bots uses Hyena to play Hunters');
 
+  // Brian's 2026-11-06 pane playtest: solo, Honey Badger, two computers, Start. It must not seat him as the ostrich.
+  const T = await mk(); await T.goto('http://localhost:3990/');
+  await T.click('#playSolo'); await T.click('[data-bots="2"]'); await T.click('#soloGo');
+  await T.waitForSelector('#startGame'); await T.waitForSelector('[data-role="badger"]');
+  assert.ok(await T.locator('#startGame').isDisabled(), 'Start is off until an animal is picked');
+  assert.match(await T.textContent('#roomLobby'), /Pick your animal first\./);
+  await T.evaluate(() => document.getElementById('startGame').click());
+  await T.waitForTimeout(400);
+  assert.equal(await T.locator('#board .cell').count(), 0, 'a tap on the off Start button does not start a game');
+  assert.ok(await T.evaluate(() => LobbyUI.get().lobby !== false && !!document.getElementById('startGame')), 'still in the room');
+  await T.click('[data-role="badger"]');
+  await T.waitForFunction(() => LobbyUI.get().canStart && LobbyUI.get().roles.some(r => r.id === 'badger' && r.mine));
+  assert.ok(await T.locator('#startGame').isEnabled(), 'Start is on once Honey Badger is picked');
+  assert.doesNotMatch(await T.textContent('#roomLobby'), /Pick your animal first\./);
+  await T.click('#startGame'); await T.waitForSelector('#board .cell');
+  const badgerRoom = [...server.rooms.values()].find(r => r.flow && !r.lobby && r.roster && r.roster.some(x => !x.bot && x.kind === 'badger'));
+  assert.ok(badgerRoom, 'the game started with the player as the Honey Badger');
+  assert.equal(badgerRoom.three, true); assert.equal(badgerRoom.g.three.kind, 'badger');
+  const me = badgerRoom.roster.find(x => !x.bot);
+  assert.equal(me.role, 'hunter'); assert.equal(me.picked, false);
+  assert.ok(/badger/i.test(await T.textContent('#turnTag') + await T.evaluate(() => document.body.className + ' ' + document.body.innerText)), 'the screen shows the badger');
+  console.log('ok solo Honey Badger with two computers starts as the badger, and not before a pick');
+
   const phoneCtx = await b.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 });
   const phone = await phoneCtx.newPage();
   await phone.addInitScript(() => localStorage.setItem('bo_tut_seen', '1'));
