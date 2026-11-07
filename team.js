@@ -2,7 +2,7 @@
 // vultures (v1, v2); in 5 players a hunter (hyena / honey badger) moves last. Turn order: V1, O1, V2, O2 (, hunter).
 // Reuses the 2-player CONFIG and the 3-player hunter rules (sense, pounce, burrow, catches, knock-back).
 const B = require('./game.js'), K = B.key, D = B.dist;
-const TM = { eggs: 2, vStarts: [[4, 2], [4, 4]], sense: 2, see: 2, pounce: 2, knock: 2, clockMs: 10000, ko: { hyena: 2, badger: 2 }, hStarts: [[0, 3], [8, 3]] };
+const TM = { eggs: 2, vStarts: [[4, 2], [4, 4]], sense: 2, see: 2, knock: 2, clockMs: 10000, ko: { hyena: 2, badger: 2 }, hStarts: [[0, 3], [8, 3]] };
 const OFF = [-99, -99], OS = ['o1', 'o2'], VS = ['v1', 'v2'], sgn = Math.sign;
 const isO = s => s === 'o1' || s === 'o2', isV = s => s === 'v1' || s === 'v2';
 const mate = s => ({ o1: 'o2', o2: 'o1', v1: 'v2', v2: 'v1' })[s];
@@ -138,30 +138,29 @@ const senses = g => birdsIn(g).some(s => D(g.b[s].pos, g.h.p) <= TM.sense);
 // ambush sight: a burrowed badger sees the exact square of any living bird next to it (1 square). Nobody else learns anything.
 const ambushSight = g => !g.h || g.h.kind !== 'badger' || !g.h.burrowed ? [] : birdsIn(g).filter(s => D(g.b[s].pos, g.h.p) === 1).map(s => ({ seat: s, type: isO(s) ? 'o' : 'v', p: g.b[s].pos.slice() }));
 const hunterSeenBy = (g, s) => !!(g.h && (isO(s) || isV(s)) && live(g, s) && !g.h.burrowed && D(g.b[s].pos, g.h.p) <= TM.see);
-// Pounce: a hyena whose sense says a bird is near may move up to TM.pounce squares in one move this turn; otherwise every hunter moves 1.
-const hunterRange = g => !g.h ? 0 : g.h.kind === 'hyena' && g.h.sense ? TM.pounce : 1;
-const hunterReach = g => !g.h ? 0 : g.h.kind === 'hyena' ? TM.pounce : 1; // the farthest it can reach on any turn
+const hunterRange = g => !g.h ? 0 : 1; // the hunter always moves 1 square (no speed-up after a knock-out)
 function hunterMoves(g) {
   if (!myTurn(g, 'hunter')) return [];
   const h = g.h.p, n = hunterRange(g), r = [];
   for (let x = 0; x < g.cfg.cols; x++) for (let y = 0; y < g.cfg.rows; y++) { const d = D([x, y], h); if (d >= 1 && d <= n) r.push([x, y]); }
   return r;
 }
-function startHunter(g) { const h = g.h; h.sense = senses(g); h.senseSeq++; }
+function startHunter(g) { const h = g.h; h.pounce = false; h.sense = senses(g); h.senseSeq++; }
 function hunterMove(g, p) {
   if (!hunterMoves(g).some(q => K(q) === K(p))) return false;
-  const h = g.h, from = h.p.slice(), wasBur = h.burrowed; h.p = p.slice(); h.burrowed = false; h.dig = 0; let caught = false;
+  const h = g.h, from = h.p.slice(), wasP = h.pounce, wasBur = h.burrowed; h.p = p.slice(); h.burrowed = false; h.dig = 0; let caught = false;
   for (const s of birdsIn(g)) if (g.phase === 'play' && K(g.b[s].pos) === K(p)) { catchBird(g, s, [sgn(p[0] - from[0]), sgn(p[1] - from[1])]); caught = true; }
   if (caught && wasBur && g.lastCatch) g.lastCatch.ambush = true; // the badger jumped out of its burrow onto the bird
   g.popout = !caught && wasBur ? { seq: g.popSeq = (g.popSeq || 0) + 1, round: g.round } : null; // popped out of the burrow without a catch (shown only to who can see the badger)
-  h.last = { type: 'move', from, to: p.slice(), caught };
+  h.last = { type: 'move', from, to: p.slice(), caught, pounce: wasP };
   if (g.phase === 'over') return true;
-  next(g); return true;
+  if (!caught && !wasP && h.kind === 'hyena' && h.sense) { h.pounce = true; h.sense = senses(g); h.senseSeq++; return true; } // Pounce
+  h.pounce = false; next(g); return true;
 }
 function hunterStay(g) {
   if (!myTurn(g, 'hunter')) return false;
-  g.popout = null; const h = g.h; if (h.kind === 'badger') { h.dig = 2; h.burrowed = true; } // one still turn always burrows
-  h.last = { type: 'stay' }; next(g); return true;
+  g.popout = null; const h = g.h; if (!h.pounce && h.kind === 'badger') { h.dig = 2; h.burrowed = true; } // one still turn always burrows
+  h.last = { type: h.pounce ? 'skip' : 'stay' }; h.pounce = false; next(g); return true;
 }
 // --- catches, knock-outs, game end ---
 function knockout(g, s, why) {

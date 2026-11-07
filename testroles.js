@@ -4,7 +4,7 @@ const B = require('./game.js'), T = require('./three.js'), H = require('./hunt.j
 let n = 0; const ok = (name, f) => { f(); n++; console.log('ok', name); };
 const C = B.CONFIG;
 const text = (c) => [c.title, c.goal, ...c.moves, c.lose].join('\n');
-const POUNCE = (n) => `When rose dots show a bird is near, you can move up to ${n} squares that turn. Land on the bird to catch it.`;
+const POUNCE = 'When rose dots show a bird is near, you get one extra square after your move. Land on the bird to catch it.';
 
 // every card a phone can be shown: [role, kind, mode]
 const ALL = [
@@ -95,7 +95,7 @@ ok('change every constant: every number on every card follows, and no other numb
 ok('the hyena card says Pounce plainly, in every mode with a hyena; the honey badger card does not', () => {
   for (const [role, kind, mode] of [['hunter', 'hyena', '3'], ['hyena', null, '4h'], ['hunter', 'hyena', '5']]) {
     const c = R.roleCard(role, kind, mode);
-    assert.ok(c.moves.some((m) => m === 'Pounce: ' + POUNCE(R.rulesFromModules().modes[mode].pounce)), mode + ' hyena: ' + c.moves.join(' | ')); assert.ok(c.moves.some((m) => m === 'Pounce: ' + POUNCE(2)), 'up to 2 squares');
+    assert.ok(c.moves.some((m) => m === 'Pounce: ' + POUNCE), mode + ' hyena: ' + c.moves.join(' | '));
   }
   for (const [role, kind, mode] of [['hunter', 'badger', '3'], ['badger', null, '4h'], ['hunter', 'badger', '5']]) {
     const c = R.roleCard(role, kind, mode);
@@ -126,8 +126,7 @@ ok('the start-of-game line names only the animals in the game', () => {
 
 ok('a hunter card never sounds like the other hunter: hyena has no burrow, honey badger has no pounce', () => {
   assert.ok(!/burrow/i.test(text(R.roleCard('hunter', 'hyena', '3'))));
-  assert.ok(!/pounce/i.test(text(R.roleCard('hunter', 'badger', '3'))));
-  assert.ok(R.roleCard('hunter', 'hyena', '3', { cfg: R.rulesFromModules().cfg, modes: { '3': { ko: { hyena: 2, badger: 2 }, sense: 2, pounce: 29 } } }).moves.some((m) => m.includes('up to 29 squares that turn')), 'the pounce distance on the card comes from the rules');
+  assert.ok(!/pounce|extra square/i.test(text(R.roleCard('hunter', 'badger', '3'))));
 });
 
 ok('card ids: one per animal, hunter and mode (a bird card only changes with the hunter in 3 players)', () => {

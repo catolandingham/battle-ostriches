@@ -31,6 +31,7 @@
     const C = S.cfg || {};
     if (S.role === 'hunter') {
       const k = (S.h3 && S.h3.kind) || S.kind || 'hyena';
+      if (S.pounce) return [{ id: 'hstay', label: 'Stop', detail: 'Skip this extra move. You will not catch the bird.', enabled: true, run: 'hstay' }];
       if (k === 'badger') {
         if (S.burrowed) return [{ id: 'hstay', label: 'Stay', detail: 'Stay burrowed. Birds still cannot see you.', enabled: true, run: 'hstay' }];
         return [{ id: 'hstay', label: 'Burrow', detail: 'Stay still to burrow.', enabled: true, run: 'hstay' }];
@@ -100,6 +101,7 @@
     if (t.startsWith('kick')) return 'kick';
     if (t.startsWith('fly')) return 'fly';
     if (t.startsWith('throw')) return 'throw';
+    if (t.startsWith('stop')) return 'hstay';
     return '';
   }
   function arm(el, fn) {

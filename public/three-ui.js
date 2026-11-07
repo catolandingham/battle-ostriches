@@ -9,7 +9,7 @@ const MOUND='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" aria-hi
 const CLAW='<svg viewBox="0 0 40 40" aria-hidden="true"><path d="M10 6 L18 34 M19 4 L25 34 M28 6 L32 32" stroke="#000" stroke-width="8" stroke-linecap="round"/><path d="M10 6 L18 34 M19 4 L25 34 M28 6 L32 32" stroke="#ff2a6d" stroke-width="4.5" stroke-linecap="round"/></svg>';
 const OSTI='<svg viewBox="0 0 40 40"><path d="M6 26 L18 18 L30 22 L24 32 L10 32 Z" fill="#38d6f0" stroke="#000" stroke-width="3" stroke-linejoin="round"/><path d="M26 22 L28 6 L34 7" fill="none" stroke="#000" stroke-width="4" stroke-linecap="round"/></svg>';
 const VULI='<svg viewBox="0 0 40 40"><path d="M4 18 L20 12 L36 18 L26 22 L20 32 L14 22 Z" fill="#2b3245" stroke="#000" stroke-width="3" stroke-linejoin="round"/><circle cx="20" cy="11" r="5" fill="#f3dfae" stroke="#000" stroke-width="2.5"/></svg>';
-const KIND={hyena:{n:'Hyena',art:HYENA,pw:'Pounce',pwTxt:'When rose dots show a bird is near, you can move up to 2 squares that turn. A bird is out after 2 catches.'},
+const KIND={hyena:{n:'Hyena',art:HYENA,pw:'Pounce',pwTxt:'If your sense says a bird is within 2, you get one extra 1-square move that turn. A bird is out after 2 catches.'},
  badger:{n:'Honey badger',art:BADGER,pw:'Burrow',pwTxt:'Stay still to burrow. Birds cannot see you then. Moving pops you up, and you can catch on that move. A bird is out after 2 catches.'}};
 const BN={blue:'Ostrich',red:'Vulture',hunter:'Hunter'};
 const hName=S=>S.h3&&S.h3.kind?KIND[S.h3.kind].n:'Hunter';
@@ -130,12 +130,13 @@ function warnNear(S,board){if(!window.BORing)return;if(!S||S.phase!=='play'){nea
  added.forEach(k=>pop(board,BORing.hunterNearLabel(k),'near'));}
 function tag(S){if(S.h3&&S.h3.team&&S.h3.mySeat!=='hunter')return tTag(S);const k=S.h3&&S.h3.kind||'hyena';return `<span style="display:inline-block;width:30px;height:30px;vertical-align:middle">${KIND[k].art}</span> ${KIND[k].n.toUpperCase()}`;}
 function waitMsg(S){return `Wait, it's the ${tname(S,S.turn)}'s turn.`;}
-function nopeMsg(S){return `Move ${S.h3.range>1?'up to ':''}${S.h3.range} square${S.h3.range>1?'s':''}: tap a glowing square.`;}
+function nopeMsg(S){return `Move ${S.h3.range} square${S.h3.range>1?'s':''}: tap a glowing square.`;}
 function hint(S,a){if(S.h3.team&&!hint.in){hint.in=1;try{return tHint(S,a);}finally{hint.in=0;}}const r=S.role,t=S.turn;
  if(r==='hunter'&&S.myTurn){const k=S.h3.kind;
-  a.innerHTML=`<button title="${k==='badger'?(S.burrowed?'Stay burrowed. Birds still cannot see you.':'Stay still to burrow.'):'Stay put and end your turn.'}" onclick="UI.send({t:'act',a:'hstay'})">${k==='badger'?(S.burrowed?'Stay':'Burrow'):'Stay'}</button>`;
+  a.innerHTML=S.pounce?'<button class="on" title="Skip this extra move. You will not catch the bird." onclick="UI.send({t:\'act\',a:\'hstay\'})">Stop</button>':`<button title="${k==='badger'?(S.burrowed?'Stay burrowed. Birds still cannot see you.':'Stay still to burrow.'):'Stay put and end your turn.'}" onclick="UI.send({t:'act',a:'hstay'})">${k==='badger'?(S.burrowed?'Stay':'Burrow'):'Stay'}</button>`;
+  if(S.pounce)return 'POUNCE: a bird is within 2. Land on it to catch it — this extra move is still your turn.';
   const burrowNote=k!=='badger'||S.burrowed?'':'Stay still to burrow. ';
-  return burrowNote+(S.sense?`A bird is near: you can move ${S.h3.range>1?'up to '+S.h3.range+' squares':'1 square'}. The rose dots show where it may be.`:'No bird near: move 1 square.');}
+  return burrowNote+`Tap a glowing square to move ${S.h3.range}. ${S.sense?'A bird is within 2. It is not pointed at.':'No bird within 2, so no bird is drawn.'}`;}
  if(!S.h3.ready)return S.h3.needKind?'Pick your hunter.':`Waiting for all ${S.h3.hunt?4:3} players…`;
  const lost=S.h3.lost;if(r!=='hunter'&&lost&&lost.bird===r&&lost.round>=S.round-1&&t!==r)return 'Caught! You lost this turn. '+tname(S,t)+'\'s turn…';
  if(r!=='hunter'&&S.h3.birds[r]&&S.h3.birds[r].out)return `You're out (${S.h3.birds[r].why==='starved'?'starved':'knocked out'}). Watching the board — no moves.`;
@@ -232,8 +233,11 @@ function after(S,prev,board){badgerLines(S,prev);chips(S);clock(S);kindPick(S);i
    const c=board.children[y*S.cfg.cols+x];if(!c||!c.classList||!c.classList.contains('cell'))continue;if(c.querySelector('.pc.po,.pc.pv'))continue;
    c.classList.add('maybird');const had=c.getAttribute('aria-label')||'';if(!/Bird may be here/.test(had))c.setAttribute('aria-label',had?had+'. Bird may be here':'Bird may be here');}}
   const sk=S.round+':'+S.senseSeq;if(sk!==lastSense){lastSense=sk;UI.pause(1100);
-   pop(board,S.sense?'Bird may be here.':'Nothing near',S.sense?'yes':'no');
-   window.SFX&&SFX.play(S.sense?'sniffYes':'sniffNo');}}
+   pop(board,S.sense?(S.pounce?'Still close.':'Bird may be here.'):'Nothing near',S.sense?'yes':'no');
+   window.SFX&&SFX.play(S.sense?'sniffYes':'sniffNo');}
+  if(S.pounce)noteBanner('pounce','POUNCE: land on the bird to catch it.',true);}
+ if(S.pounce&&S.myTurn&&me==='hunter'){const mine=board.querySelector('.pc.ph.mine');const cell=hc||(mine&&mine.closest('.cell'));
+  if(cell&&!cell.querySelector('.pouncetag')){const t=document.createElement('span');t.className='pouncetag';t.textContent='CAN CATCH';cell.appendChild(t);}}
  // catch + knockback feedback
  if(S.phase&&S.phase.startsWith('setup'))lastCatch=0;
  const lc=h.lastCatch;if(lc&&lc.seq!==lastCatch){const fresh=lastCatch!==0||(prev&&prev.h3);lastCatch=lc.seq;

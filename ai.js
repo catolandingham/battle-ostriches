@@ -103,14 +103,14 @@ function hunter(v, mem = {}) {
   for (let x = 0; x < C.cols; x++) for (let y = 0; y < C.rows; y++) sq.push([x, y]);
   if (!mem.bel || mem.reset) { mem.bel = {}; sq.forEach(p => mem.bel[K(p)] = mem.lastCatch ? (D(p, mem.lastCatch) <= 2 ? 6 : .5) : 1); mem.reset = false; mem.lastCatch = null; }
   if (mem.turnKey !== v.round + ':' + v.senseSeq) { mem.turnKey = v.round + ':' + v.senseSeq;
-    { const nb = {}; sq.forEach(p => { let s = 0, c = 0; sq.forEach(q => { if (D(p, q) <= 1) { s += mem.bel[K(q)]; c++; } }); nb[K(p)] = .5 * mem.bel[K(p)] + .5 * s / c + .02; }); mem.bel = nb; }
+    if (!v.pounce) { const nb = {}; sq.forEach(p => { let s = 0, c = 0; sq.forEach(q => { if (D(p, q) <= 1) { s += mem.bel[K(q)]; c++; } }); nb[K(p)] = .5 * mem.bel[K(p)] + .5 * s / c + .02; }); mem.bel = nb; }
     const mk = Object.values(v.marks).filter(m => m === 'hit' || m === 'stone').length;
     if (mem.markN !== undefined && mk > mem.markN) { const fresh = Object.keys(v.marks).filter(k => !(mem.marks || {})[k]).map(k => k.split(',').map(Number));
       fresh.forEach(f => sq.forEach(p => { if (D(p, f) <= 1) mem.bel[K(p)] *= 2; })); }
     mem.markN = mk; mem.marks = Object.assign({}, v.marks);
     sq.forEach(p => { const inR = D(p, h) <= v.senseRange; mem.bel[K(p)] *= v.sense ? (inR ? 4 : .3) : (inR ? 0 : 1); });
     mem.bel[K(h)] = v.sense ? mem.bel[K(h)] : 0; }
-  if (v.kind === 'badger') { // burrow when something is near and we're not already hidden; ambush, then pop up
+  if (v.kind === 'badger' && !v.pounce) { // burrow when something is near and we're not already hidden; ambush, then pop up
     // burrowed with a bird next to us (ambush sight shows its exact square): jump out onto it
     if (v.burrowed && v.seenBirds && v.seenBirds.length) { const t = v.seenBirds[0].p, m = v.hmoves.find(q => K(q) === K(t)); if (m) return { a: 'hmove', p: m }; }
     if (v.sense && !v.burrowed && Math.random() < .6) return { a: 'hstay' };

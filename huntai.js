@@ -1,12 +1,12 @@
 // Bots for the 4-player Hunters mode (ostrich + vulture + hyena + honey badger). Each bot sees only what its seat may see.
 const B = require('./game.js'), AI = require('./ai.js'), H = require('./hunt.js');
 function hunterView(g, h) { const x = g.hunt.hs[h];
-  return { cfg: g.cfg, round: g.round, hunter: x.p, kind: h, sense: g.turn === h ? x.sense : null, senseSeq: x.senseSeq, senseRange: H.TH.sense,
+  return { cfg: g.cfg, round: g.round, hunter: x.p, kind: h, sense: g.turn === h ? x.sense : null, senseSeq: x.senseSeq, senseRange: H.TH.sense, pounce: x.pounce,
     burrowed: x.burrowed, dig: x.dig, hmoves: H.hunterMoves(g, h), seenBirds: h === 'badger' ? H.ambushSight(g) : [], marks: Object.fromEntries(Object.entries(g.marks).filter(([, m]) => m !== 'spotted')) }; }
-// nearest hunter this bird can see, and how far it could reach next turn (hyena: 2 with Pounce, badger: 1)
+// nearest hunter this bird can see, and how far it could reach next turn (hyena: 1 + pounce)
 function threat(g, b) { const at = H.pos(g, b);
   const vis = H.HUNTERS.filter(h => H.seen(g, b, h)).sort((x, y) => B.dist(g.hunt.hs[x].p, at) - B.dist(g.hunt.hs[y].p, at))[0];
-  return vis ? { hv: g.hunt.hs[vis].p, reach: H.hunterReach(vis) } : { hv: null, reach: 1 }; }
+  return vis ? { hv: g.hunt.hs[vis].p, reach: vis === 'hyena' ? 2 : 1 } : { hv: null, reach: 1 }; }
 function move(g, r, mem, level = 'normal') {
   if (H.isH(r)) { const t = g.hunt; if (t.lastCatch && t.lastCatch.by === r && mem.seenCatch !== t.lastCatch.seq) { mem.seenCatch = t.lastCatch.seq; mem.reset = true; mem.lastCatch = t.hs[r].p.slice(); }
     return AI.hunter(hunterView(g, r), mem); }
