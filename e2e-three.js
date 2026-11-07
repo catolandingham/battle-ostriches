@@ -29,7 +29,8 @@ const shot = (p, n) => p.screenshot({ path: OUT + n + '.jpg', type: 'jpeg', qual
   await H.waitForTimeout(800); await shot(H, '4-hunter-view');
   await cell(H, 8, 4).click(); await H.waitForFunction(() => /POUNCE/.test(document.getElementById('hint').textContent)); // hyena pounce: extra square
   await H.waitForTimeout(1200); await cell(H, 7, 5).click();
-  await A.waitForSelector('.h3pop.catch'); await H.waitForSelector('.h3pop.catch'); await A.waitForTimeout(250); await shot(A, '5-catch-ostrich'); await shot(H, '5-catch-hunter');
+  const said = () => /caught|knocked/i.test((document.getElementById('announce') || {}).textContent || ''); // the catch line (the start-of-game line may be up first)
+  await A.waitForFunction(said, null, { timeout: 15000 }); await H.waitForFunction(said, null, { timeout: 15000 }); await A.waitForTimeout(250); await shot(A, '5-catch-ostrich'); await shot(H, '5-catch-hunter');
   assert.equal(await A.locator('#h3bar .bchip.blue .pip.on').count(), 1, 'header shows catch');
   assert.equal(await A.locator('.cell').nth(6 * 9 + 6).locator('.pc.po').count(), 1, 'ostrich knocked back to (6,6)');
   // round 2: vulture lets the clock run out -> pass; ostrich lost its turn -> hunter

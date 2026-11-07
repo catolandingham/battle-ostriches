@@ -126,16 +126,17 @@ function hunterMoves(g) {
 function startHunter(g) { const h = g.h; h.pounce = false; h.sense = senses(g); h.senseSeq++; }
 function hunterMove(g, p) {
   if (!hunterMoves(g).some(q => K(q) === K(p))) return false;
-  const h = g.h, from = h.p.slice(), wasP = h.pounce; h.p = p.slice(); h.burrowed = false; h.dig = 0; let caught = false;
+  const h = g.h, from = h.p.slice(), wasP = h.pounce, wasBur = h.burrowed; h.p = p.slice(); h.burrowed = false; h.dig = 0; let caught = false;
   for (const s of birdsIn(g)) if (g.phase === 'play' && K(g.b[s].pos) === K(p)) { catchBird(g, s, [sgn(p[0] - from[0]), sgn(p[1] - from[1])]); caught = true; }
   h.last = { type: 'move', from, to: p.slice(), caught, pounce: wasP };
+  g.popout = !caught && wasBur ? { seq: g.popSeq = (g.popSeq || 0) + 1, round: g.round } : null; // came out of the burrow without a catch: announced to every player, the square only to who can see the badger
   if (g.phase === 'over') return true;
   if (!caught && !wasP && h.kind === 'hyena' && h.sense) { h.pounce = true; h.sense = senses(g); h.senseSeq++; return true; } // Pounce
   h.pounce = false; next(g); return true;
 }
 function hunterStay(g) {
   if (!myTurn(g, 'hunter')) return false;
-  const h = g.h; if (!h.pounce && h.kind === 'badger') { h.dig = h.dig ? 2 : (Math.random() < TOUGH5 ? 1 : 2); h.burrowed = h.dig >= 2; } // tough ground: some digs take 2 still turns
+  const h = g.h; g.popout = null; if (!h.pounce && h.kind === 'badger') { h.dig = h.dig ? 2 : (Math.random() < TOUGH5 ? 1 : 2); h.burrowed = h.dig >= 2; } // tough ground: some digs take 2 still turns
   h.last = { type: h.pounce ? 'skip' : 'stay' }; h.pounce = false; next(g); return true;
 }
 // --- catches, knock-outs, game end ---

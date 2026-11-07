@@ -114,8 +114,7 @@ function hPieces(S,board,prev){const h=S.h3,me=h.mySeat;
   c.dataset.tip=(c.dataset.tip?c.dataset.tip+' · ':'')+(x.me?(bur?'You, burrowed: nobody can see you':'You ('+KIND[x.kind].n+')'):me==='hyena'||me==='badger'?`Your rival, the ${KIND[x.kind].n}. ${x.kind==='badger'?'If it moves onto you, you are knocked back 2. If you move onto it, you bounce back 2.':'If you move onto it, it is knocked back 2.'}`:`${KIND[x.kind].n}! It catches a bird by landing on it (or if you step onto it)`);
   if(bur){const l=document.createElement('span');l.className='burtag';l.textContent='BURROWED';c.appendChild(l);}
   else if(x.me&&x.kind==='badger'&&S.dig===1){const l=document.createElement('span');l.className='burtag dig';l.textContent='TOUGH GROUND';c.appendChild(l);c.dataset.tip+=' · Tough ground: stay still once more to burrow';}}
- const rv=h.rival;if(rv&&rv.seq!==hPieces.rv){const fresh=hPieces.rv!==undefined;hPieces.rv=rv.seq;
-  if(fresh){const t=cellAt(board,S,rv.to);t&&t.classList.add('h3kb');pop(board,rv.by==='badger'?'Badger shoved the hyena back 2!':'Hyena bounced off the badger!','catch');}}}
+}
 function hOver(S){const h=S.h3,w=S.winner,me=h.mySeat,C=S.cfg;
  const art=w==='hyena'||w==='badger'?KIND[w].art:w==='blue'?OSTI:w==='red'?VULI:'🤝';
  const title=w==='none'?'No winner':w===me?'You win!':`${tname(S,w)} wins!`;
@@ -177,6 +176,22 @@ function outBanner(S,prev){const birds=S.h3.birds;if(!birds)return;
   if(!first&&!mine&&S.phase==='play'){const txt=window.CatchText.outLine(r);outNote={txt,until:Date.now()+4000};noteBanner('no',txt,true);setTimeout(()=>{const bn=$('banner');if(bn&&bn.textContent===txt){bn.textContent='';bn.className='hidden';}},4000);}}
  if(outNote&&Date.now()<outNote.until)noteBanner('no',outNote.txt);}
 function pop(board,txt,cls){const o=document.createElement('div');o.className='h3pop '+cls;o.textContent=txt;board.appendChild(o);setTimeout(()=>o.remove(),cls==='catch'?3400:1800);}
+// --- Announcements: one plain line for a big event (catch, knock-out, the hunters meeting, the badger coming out) on every phone.
+// The line lives in #announce, outside #board, so a board redraw never erases it. Each line stays up about 3 seconds, one at a time, in order.
+// Where the event happened (a square highlight) is drawn on the board only when the view carries that square, and the server sends it only to a player who can see it. ---
+const ANN_MS=3000,annQ=[];let annBusy=false;
+function announce(txt){if(!txt)return;annQ.push(txt);if(annQ.length>4)annQ.shift();annPump();}
+function annPump(){if(annBusy||!annQ.length)return;annBusy=true;
+ let o=$('announce');if(!o){o=document.createElement('div');o.id='announce';o.setAttribute('role','status');o.setAttribute('aria-live','polite');document.body.appendChild(o);}
+ o.textContent=annQ.shift();o.className='show';
+ setTimeout(()=>{o.className='';o.textContent='';setTimeout(()=>{annBusy=false;annPump();},120);},ANN_MS);}
+const evSeen={pop:0,rival:0};
+function events(S,prev,board){
+ if(!S)return;if(!S.three)rulesMode('2');
+ const h=S.h3||{};
+ for(const e of window.CatchText.newEvents(evSeen,S,prev)){announce(e.text);
+  // the square highlight: the hyena's landing square for the meeting; the badger's own square for a pop-out, only if this phone can see the badger
+  const sq=e.kind==='rival'?e.square:e.seen?(h.hunters?(h.hunters.find(x=>x.kind==='badger')||{}).p:h.hunter):null,c=cellAt(board,S,sq);c&&c.classList.add('h3kb');}}
 function after(S,prev,board){chips(S);clock(S);kindPick(S);if(S.h3.team)tPieces(S,board);if(S.h3.hunt)hPieces(S,board,prev);
  rulesMode(S.h3.hunt?'4h':S.h3.team?String(S.h3.n):'3');
  const h=S.h3,k=h.kind||'hyena',me=S.role;
@@ -199,6 +214,7 @@ function after(S,prev,board){chips(S);clock(S);kindPick(S);if(S.h3.team)tPieces(
  if(S.pounce&&S.myTurn&&me==='hunter'){const mine=board.querySelector('.pc.ph.mine');const cell=hc||(mine&&mine.closest('.cell'));
   if(cell&&!cell.querySelector('.pouncetag')){const t=document.createElement('span');t.className='pouncetag';t.textContent='CAN CATCH';cell.appendChild(t);}}
  // catch + knockback feedback
+ if(S.phase&&S.phase.startsWith('setup'))lastCatch=0;
  const lc=h.lastCatch;if(lc&&lc.seq!==lastCatch){const fresh=lastCatch!==0||(prev&&prev.h3);lastCatch=lc.seq;
   if(fresh){const ac=cellAt(board,S,lc.at),tc=cellAt(board,S,lc.to);
    const word=lc.bird==='red'||lc.bird==='v1'||lc.bird==='v2'?'vulture':'ostrich';
@@ -207,7 +223,7 @@ function after(S,prev,board){chips(S);clock(S);kindPick(S);if(S.h3.team)tPieces(
    if(tc)tc.classList.add('h3kb');
    // what the catch means, in words: hurt or out, and who did it (catchtext.js)
    const CT=window.CatchText,seat=h.mySeat||me,by=lc.by||k;
-   pop(board,CT.catchLine(lc,seat,by,CT.catchesLeft(h,lc)),'catch');
+   announce(CT.catchLine(lc,seat,by,CT.catchesLeft(h,lc)));
    const ch=document.querySelector('#h3bar .bchip.'+lc.bird);ch&&ch.classList.add('hitnow');window.SFX&&SFX.play(me==='hunter'?'win':'warn');}}
  outBanner(S,prev);
  markHurt(S,board); warnNear(S,board);
@@ -223,6 +239,6 @@ function over(S){if(S.h3.hunt)return hOver(S);if(S.h3.team)return tOver(S);const
   :w==='red'?(S.winBy==='cold'?`The last egg went cold in round ${S.round}.`:S.winBy==='starved'?'The ostrich was out and no eggs were left.':`The vulture smashed every egg by round ${S.round}.`)
   :S.winBy==='time'?'Time ran out: the ostrich was out and the vulture never got every egg.':'The eggs were lost, but the vulture was already out.';
  return `<div class="lobbybox"><div class="bigost">${art}</div><h1>${title}</h1><p>${why}</p>${endBits(S)}</div>`;}
-window.T3UI={after,hint,tag,waitMsg,nopeMsg,over,endBits,KIND};
+window.T3UI={after,events,announce,hint,tag,waitMsg,nopeMsg,over,endBits,KIND};
 document.readyState==='loading'?document.addEventListener('DOMContentLoaded',lobby):lobby();
 })();

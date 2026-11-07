@@ -29,6 +29,9 @@ const tok = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
 // Display preference only. Missing or any value other than false means the round counter and shot clock are shown.
 // The 10s clock still expires the turn when it is hidden. Lobby code can set this at create time via settings.showTimers.
 function timersOn(room) { if (room && room.clock === false) return false; return !(room && room.settings && room.settings.showTimers === false); }
+// A big event is announced to every seat (a plain line on every phone); where it happened goes only to a seat that can see that square.
+// popout: the badger came out of its burrow without a catch. Every seat gets the event (seq, round); `seen` says whether this seat can see the badger.
+const popView = (po, seen) => po ? { seq: po.seq, round: po.round, seen: !!seen } : null;
 function eggView(g) { return g.eggs.map(e => ({ pos: e.pos, alive: e.alive, coldIn: B.coldIn(g, e), carried: g.carrying === e.id })); }
 function view(room, role) {
   if (room.hunt) return viewH(room, role);
@@ -102,10 +105,11 @@ function view3(room, role) {
   const g = room.g, t = g.three, over = g.phase === 'over', pub = AI.redView(g), mine = g.phase === 'play' && g.turn === role && ready3(room);
   const seats = Object.fromEntries(SEATS3.map(s => [s, room.bots.includes(s) ? 'bot' : room.players[s] ? (room.players[s].ws ? 'on' : 'off') : 'open']));
   const lc = t.lastCatch && { bird: t.lastCatch.bird, ko: t.lastCatch.ko, walked: !!t.lastCatch.walked, seq: t.lastCatch.seq, round: t.lastCatch.round,
-    at: role === t.lastCatch.bird || role === 'hunter' || over ? t.lastCatch.at : null, to: role !== 'hunter' || over ? t.lastCatch.to : null };
+    at: role === t.lastCatch.bird || role === 'hunter' || over || T.hunterSeenBy(g, role) ? t.lastCatch.at : null, to: role !== 'hunter' || over ? t.lastCatch.to : null }; // a bird sees where the catch was only if it can see the hunter now (birds see birds, so `to` is public to them)
   const h3 = Object.assign(T.status3(g), { seats, ready: ready3(room), needKind: role === 'hunter' && !t.kind, lastCatch: lc, lost: t.lost || null,
     clockLeft: room.deadline && g.phase === 'play' ? Math.max(0, room.deadline - Date.now()) : null, clockMs: T.T3.clockMs, senseRange: T.T3.sense,
-    hunter: over || role === 'hunter' || T.hunterSeenBy(g, role) ? t.h : null, burrowed: role === 'hunter' || over ? t.burrowed : false, range: T.hunterRange(g) });
+    hunter: over || role === 'hunter' || T.hunterSeenBy(g, role) ? t.h : null, burrowed: role === 'hunter' || over ? t.burrowed : false, range: T.hunterRange(g),
+    popout: popView(t.popout, role === 'hunter' || over || T.hunterSeenBy(g, role)) });
   let v;
   if (role === 'hunter') {
     v = { role, code: room.code, phase: g.phase, turn: g.turn, round: g.round, cfg: g.cfg, winner: g.winner, winBy: g.winBy, eggsLeft: B.aliveEggs(g).length,
@@ -123,7 +127,7 @@ function view3(room, role) {
     if (g.phase === 'play' && T.isOut(g, role)) {
       v.god = true; v.myTurn = false; v.moves = []; v.carryMoves = []; v.fly = []; v.throw = []; v.hmoves = [];
       v.can = { sit: false, carry: false }; v.ostrich = g.ostrich; v.vulture = g.vulture; v.eggs = eggView(g);
-      h3.hunter = t.h.slice(); h3.burrowed = !!t.burrowed;
+      h3.hunter = t.h.slice(); h3.burrowed = !!t.burrowed; if (h3.popout) h3.popout.seen = true; if (lc) lc.at = t.lastCatch.at;
     }
   }
   v.h3 = h3; v.three = true; v.showTimers = timersOn(room); return stamp(room, v, role);
@@ -200,7 +204,7 @@ function viewT(room, seat) {
   const isO = TT.isO(seat), isV = TT.isV(seat), myB = g.b[seat], step = TT.setupStep(g, seat);
   const seats = Object.fromEntries(tseats(g).map(s => [s, room.bots.includes(s) ? 'bot' : room.players[s] ? (room.players[s].ws ? 'on' : 'off') : 'open']));
   const lc = g.lastCatch && { bird: g.lastCatch.bird, ko: g.lastCatch.ko, walked: !!g.lastCatch.walked, seq: g.lastCatch.seq, round: g.lastCatch.round,
-    at: seat === g.lastCatch.bird || seat === 'hunter' || over ? g.lastCatch.at : null, to: seat !== 'hunter' || over ? g.lastCatch.to : null };
+    at: seat === g.lastCatch.bird || seat === 'hunter' || over || TT.hunterSeenBy(g, seat) ? g.lastCatch.at : null, to: seat !== 'hunter' || over ? g.lastCatch.to : null }; // a bird sees where the catch was only if it can see the hunter now
   const pub = Object.fromEntries(Object.entries(g.marks).filter(([, m]) => m === 'spotted' || m === 'hit' || m === 'stone'));
   // other birds on the board: birds always see each other (vultures don't see where the ostriches start until play begins); the hunter sees none
   const pieces = seat === 'hunter' && !over ? [] : TT.OS.concat(TT.VS).filter(s => s !== seat && TT.live(g, s) && !(setup && isV && TT.isO(s)))
@@ -209,9 +213,11 @@ function viewT(room, seat) {
   const h3 = Object.assign(TT.status(g), { team: true, seats, ready, needKind: seat === 'hunter' && g.h && !g.h.kind, lastCatch: lc, lost: g.lost, mySeat: seat, pieces, setupStep: step, teamSetup, eggsToPlace: isO && setup ? Math.max(0, TT.TM.eggs - TT.nestOf(g, seat).length) : null,
     clockLeft: room.deadline && g.phase === 'play' ? Math.max(0, room.deadline - Date.now()) : null, clockMs: TT.TM.clockMs, senseRange: TT.TM.sense,
     hunter: g.h && (over || seat === 'hunter' || TT.hunterSeenBy(g, seat)) ? g.h.p : null, burrowed: g.h && (seat === 'hunter' || over) ? g.h.burrowed : false, range: TT.hunterRange(g),
-    block: TT.TM.vStarts.concat(g.h ? [g.h.p] : []), mateSniff: isV && g.phase === 'play' ? g.sniffs[TT.mate(seat)] || null : null, eggsTotal: g.eggs.length });
+    popout: g.h ? popView(g.popout, seat === 'hunter' || over || TT.hunterSeenBy(g, seat)) : null,
+    block: setup ? TT.TM.vStarts.concat(g.h ? [g.h.p] : []) : [], mateSniff: isV && g.phase === 'play' ? g.sniffs[TT.mate(seat)] || null : null, eggsTotal: g.eggs.length });
   const eggs = () => g.eggs.map(e => { const c = TT.OS.find(o => g.b[o].carrying === e.id);
     return { pos: e.pos || (c && c !== seat ? g.b[c].pos : null), alive: e.alive, coldIn: B.coldIn(g, e), carried: c === seat, nest: e.nest, mine: isO && e.nest === myB.nest }; });
+  // block (setup taps skip these squares) is empty once play starts, so the hunter's square never goes to a bird that cannot see it
   const base = { code: room.code, turn: g.turn, round: g.round, winner: g.winner, winBy: g.winBy, eggsLeft: TT.alive(g).length, marks: over ? g.marks : pub,
     lastCold: (g.lastCold || []).length, myTurn: mine, opponent: true, joined: tseats(g).every(s => room.players[s]), ai: null, pass: false, three: true, h3, showTimers: timersOn(room) };
   if (seat === 'hunter') return stamp(room, Object.assign(base, { role: 'hunter', phase: setup ? 'setupEggs' : g.phase, cfg: g.cfg, vulture: TT.OFF, ostrich: TT.OFF, stones: Math.max(0, ...TT.VS.filter(x => !g.b[x].out).map(x => g.b[x].stones)), hungerLeft: Math.min(g.cfg.food, ...TT.OS.filter(x => !g.b[x].out).map(x => g.b[x].hunger)), sniff: null,
@@ -231,7 +237,7 @@ function viewT(room, seat) {
     v.can = { sit: false, carry: false }; v.eggs = eggs();
     v.h3.pieces = TT.OS.concat(TT.VS).filter(s => s !== seat && TT.live(g, s))
       .map(s => ({ seat: s, type: TT.isO(s) ? 'o' : 'v', p: g.b[s].pos, mate: (TT.isO(s) && isO) || (TT.isV(s) && isV), carrying: isO && TT.isO(s) && g.b[s].carrying != null }));
-    if (g.h) { v.h3.hunter = g.h.p.slice(); v.h3.burrowed = !!g.h.burrowed; }
+    if (g.h) { v.h3.hunter = g.h.p.slice(); v.h3.burrowed = !!g.h.burrowed; if (v.h3.popout) v.h3.popout.seen = true; if (lc) lc.at = g.lastCatch.at; }
   } else if (myB.out) { v.myTurn = false; v.moves = []; v.carryMoves = []; v.fly = []; v.throw = []; }
   return stamp(room, v, seat);
 }
@@ -294,12 +300,12 @@ function viewH(room, seat) {
   const g = room.g, t = g.hunt, over = g.phase === 'over', pub = AI.redView(g), mine = g.phase === 'play' && g.turn === seat && readyH(room), isH = HU.isH(seat);
   const seats = Object.fromEntries(SEATSH.map(s => [s, room.bots.includes(s) ? 'bot' : room.players[s] ? (room.players[s].ws ? 'on' : 'off') : 'open']));
   const lc = t.lastCatch && { bird: t.lastCatch.bird, by: t.lastCatch.by, ko: t.lastCatch.ko, walked: !!t.lastCatch.walked, seq: t.lastCatch.seq, round: t.lastCatch.round,
-    at: seat === t.lastCatch.bird || seat === t.lastCatch.by || over ? t.lastCatch.at : null, to: seat === t.lastCatch.bird || over ? t.lastCatch.to : null };
+    at: seat === t.lastCatch.bird || seat === t.lastCatch.by || over || (!isH && HU.seen(g, seat, t.lastCatch.by)) ? t.lastCatch.at : null, to: !isH || over ? t.lastCatch.to : null }; // birds see birds; a bird sees where the catch was only if it can see that hunter now; the hunter that made it knows the square, the other hunter sees no bird
   const hunters = HU.HUNTERS.filter(h => over || HU.seen(g, seat, h)).map(h => ({ kind: h, p: t.hs[h].p, burrowed: (h === seat || over) && t.hs[h].burrowed, me: h === seat }));
-  const rv = t.rival && { by: t.rival.by, seq: t.rival.seq, round: t.rival.round, to: isH || over ? t.rival.to : null };
+  const rv = t.rival && { by: t.rival.by, seq: t.rival.seq, round: t.rival.round, n: HU.TH.rivalKnock, to: isH || over || HU.seen(g, seat, 'hyena') ? t.rival.to : null }; // the meeting is announced to every seat; the square only to a seat that can see the hyena
   const h3 = Object.assign(HU.statusH(g), { seats, ready: readyH(room), needKind: false, kind: isH ? seat : null, mySeat: seat, hunters, hunter: null, burrowed: false,
     lastCatch: lc, rival: rv, lost: t.lost || null, clockLeft: room.deadline && g.phase === 'play' ? Math.max(0, room.deadline - Date.now()) : null, clockMs: HU.TH.clockMs,
-    senseRange: HU.TH.sense, range: 1 });
+    senseRange: HU.TH.sense, range: 1, popout: popView(t.popout, over || HU.seen(g, seat, 'badger')) });
   let v;
   if (isH) { const x = t.hs[seat];
     v = { role: 'hunter', code: room.code, phase: g.phase, turn: HU.isH(g.turn) ? (g.turn === seat ? 'hunter' : g.turn) : g.turn, round: g.round, cfg: g.cfg, winner: g.winner, winBy: g.winBy,
@@ -317,6 +323,7 @@ function viewH(room, seat) {
       v.god = true; v.myTurn = false; v.moves = []; v.carryMoves = []; v.fly = []; v.throw = []; v.hmoves = [];
       v.can = { sit: false, carry: false }; v.ostrich = g.ostrich; v.vulture = g.vulture; v.eggs = eggView(g);
       h3.hunters = HU.HUNTERS.map(h => ({ kind: h, p: t.hs[h].p.slice(), burrowed: !!t.hs[h].burrowed, me: false }));
+      if (h3.rival) h3.rival.to = t.rival.to; if (h3.popout) h3.popout.seen = true; if (lc) lc.at = t.lastCatch.at;
     }
   }
   v.h3 = h3; v.three = true; v.showTimers = timersOn(room); return stamp(room, v, seat);
