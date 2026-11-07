@@ -102,7 +102,7 @@ function hunterMove(g, p) {
   let caught = false;
   for (const b of BIRDS) if (g.phase === 'play' && !isOut(g, b) && K(pos(g, b)) === K(p)) { catchBird(g, b, [sgn(p[0] - from[0]), sgn(p[1] - from[1])]); caught = true; }
   if (caught && wasBur && t.lastCatch) t.lastCatch.ambush = true; // the badger jumped out of its burrow onto the bird
-  t.popout = !caught && wasBur ? { seq: ++t.seq, round: g.round } : null; // popped out of the burrow without a catch (shown only to who can see the badger)
+  t.popout = !caught && wasBur ? { seq: t.popSeq = (t.popSeq || 0) + 1, round: g.round } : null; // popped out of the burrow without a catch (shown only to who can see the badger)
   t.lastHunter = { type: 'move', from, to: p.slice(), caught, pounce: wasP };
   if (g.phase === 'over') return true;
   // Hyena Pounce: its sense said a bird is within 2 -> one extra 1-square move this same turn

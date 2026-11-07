@@ -124,7 +124,7 @@ function hunterMove(g, p) {
   x.p = p.slice(); let caught = false;
   const b = birdAt(g, p); if (b && g.phase === 'play') { catchBird(g, b, h, dir); caught = true; }
   if (caught && wasBur && t.lastCatch) t.lastCatch.ambush = true; // the badger jumped out of its burrow onto the bird
-  t.popout = !caught && wasBur ? { seq: ++t.seq, round: g.round } : null; // popped out of the burrow without a catch (shown only to who can see the badger)
+  t.popout = !caught && wasBur ? { seq: t.popSeq = (t.popSeq || 0) + 1, round: g.round } : null; // popped out of the burrow without a catch (shown only to who can see the badger)
   x.last = { type: 'move', from, to: p.slice(), caught, pounce: wasP };
   if (g.phase === 'over') return true;
   if (!caught && !wasP && h === 'hyena' && x.sense) { x.pounce = true; x.sense = senses(g, h); x.senseSeq++; return true; } // Pounce
