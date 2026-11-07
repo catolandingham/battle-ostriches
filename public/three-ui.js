@@ -80,7 +80,7 @@ function tChips(S){let bar=$('h3bar');if(!bar){bar=document.createElement('div')
   const tip=`${SN[r]}${r===h.mySeat?' (you)':''}${five?`: caught ${b.catches} of ${ko} times`:''}${b.out?' · OUT ('+(b.why==='starved'?'starved':'knocked out')+')':b.catches?' · HURT'+(b.skip?' · loses its next turn':''):''}`;
   return `<span class="bchip ${isOs(r)?'blue':'red'} s${r}${b.out?' out':''}${b.catches&&!b.out?' injured':''}${live&&S.turn===r?' now':''}${r===h.mySeat?' me':''}" data-tip="${tip}" data-b="${r}">${sp(isOs(r)?OSTI:VULI,22)}<b class="cnum">${NUM(r)}</b>${five?`<span class="pips">${pips}</span>`:''}${b.out?'<b class="ko">OUT</b>':''}</span>`;};
  const k=h.kind||'hyena';
- bar.innerHTML=h.order.filter(r=>r!=='hunter').map(bird).join('')+(five?`<span class="bchip hunter${live&&S.turn==='hunter'?' now':''}" data-tip="${KIND[k].n}: ${KIND[k].pw}. Moves ${h.boost?2:1} square${h.boost?'s (boost after its first knock-out)':''}. Wins by knocking out an ostrich AND a vulture.">${sp(KIND[k].art,24)}<b>${h.boost?'⚡2':'1'}</b></span>`:'');}
+ bar.innerHTML=h.order.filter(r=>r!=='hunter').map(bird).join('')+(five?`<span class="bchip hunter${live&&S.turn==='hunter'?' now':''}" data-tip="${KIND[k].n}: ${KIND[k].pw}. Moves 1 square a turn. Wins by knocking out an ostrich AND a vulture.">${sp(KIND[k].art,24)}<b>1</b></span>`:'');}
 function tPieces(S,board){const h=S.h3,me=h.mySeat;
  const badge=(c,r,mate)=>{const b=document.createElement('b');b.className='snum '+(isOs(r)?'o':'v')+(mate?' mate':'')+(r===me?' me':'');b.textContent=NUM(r);c.appendChild(b);};
  for(const q of h.pieces){if(h.birds&&h.birds[q.seat]&&h.birds[q.seat].out)continue;const c=cellAt(board,S,q.p);if(!c||q.p[0]<0)continue;const d=document.createElement('div');d.className='pc '+(q.type==='o'?'po':'pv')+' other'+(q.mate?' mate':' opp');
@@ -137,7 +137,7 @@ function hint(S,a){if(S.h3.team&&!hint.in){hint.in=1;try{return tHint(S,a);}fina
   a.innerHTML=S.pounce?'<button class="on" title="Skip this extra move. You will not catch the bird." onclick="UI.send({t:\'act\',a:\'hstay\'})">Stop</button>':`<button title="${k==='badger'?(S.burrowed?'Stay burrowed. Birds still cannot see you.':'Stay still to burrow.'):'Stay put and end your turn.'}" onclick="UI.send({t:'act',a:'hstay'})">${k==='badger'?(S.burrowed?'Stay':'Burrow'):'Stay'}</button>`;
   if(S.pounce)return 'POUNCE: a bird is within 2. Land on it to catch it — this extra move is still your turn.';
   const burrowNote=k!=='badger'||S.burrowed?'':'Stay still to burrow. ';
-  return burrowNote+`Tap a glowing square to move ${S.h3.range}${S.h3.boost?' (boost!)':''}. ${S.sense?'A bird is within 2. It is not pointed at.':'No bird within 2, so no bird is drawn.'}`;}
+  return burrowNote+`Tap a glowing square to move ${S.h3.range}. ${S.sense?'A bird is within 2. It is not pointed at.':'No bird within 2, so no bird is drawn.'}`;}
  if(!S.h3.ready)return S.h3.needKind?'Pick your hunter.':`Waiting for all ${S.h3.hunt?4:3} players…`;
  const lost=S.h3.lost;if(r!=='hunter'&&lost&&lost.bird===r&&lost.round>=S.round-1&&t!==r)return 'Caught! You lost this turn. '+tname(S,t)+'\'s turn…';
  if(r!=='hunter'&&S.h3.birds[r]&&S.h3.birds[r].out)return `You're out (${S.h3.birds[r].why==='starved'?'starved':'knocked out'}). Watching the board — no moves.`;
@@ -149,7 +149,7 @@ function chips(S){if(S.h3.hunt)return hChips(S);if(S.h3.team)return tChips(S);le
   const tip=`${BN[r]}: caught ${b.catches} of ${ko} times${b.out?' · OUT ('+(b.why==='starved'?'starved':'knocked out')+')':b.catches?' · HURT'+(b.skip?' · loses its next turn':''):''}`;
   return `<span class="bchip ${r}${b.out?' out':''}${b.catches&&!b.out?' injured':''}${live&&S.turn===r?' now':''}" data-tip="${tip}" data-b="${r}">${sp(r==='blue'?OSTI:VULI,24)}<span class="pips">${pips}</span>${b.out?'<b class="ko">OUT</b>':''}</span>`;};
  const k=h.kind||'hyena';
- bar.innerHTML=bird('red')+bird('blue')+`<span class="bchip hunter${live&&S.turn==='hunter'?' now':''}" data-tip="${KIND[k].n}: ${KIND[k].pw}. Moves ${h.boost?2:1} square${h.boost?'s (boost after the first knock-out)':''}. Wins by knocking out both birds.">${sp(KIND[k].art,26)}<b>${h.boost?'⚡2':'1'}</b></span>`;}
+ bar.innerHTML=bird('red')+bird('blue')+`<span class="bchip hunter${live&&S.turn==='hunter'?' now':''}" data-tip="${KIND[k].n}: ${KIND[k].pw}. Moves 1 square a turn. Wins by knocking out both birds.">${sp(KIND[k].art,26)}<b>1</b></span>`;}
 function clock(S){let c=$('clock3');if(!c){c=document.createElement('div');c.id='clock3';c.innerHTML='<div class="cfill"></div><span class="ctxt"></span>';$('h3bar').after(c);}
  const on=S.phase==='play'&&S.h3.clockLeft!=null;c.classList.toggle('hidden',!on);if(!on){cancelAnimationFrame(raf);return;}
  const tk=S.round+':'+S.turn+':'+S.h3.clockLeft,local=Math.max(0,deadline-Date.now());if(tk!==lastTurnKey||Math.abs(local-S.h3.clockLeft)>1500){lastTurnKey=tk;deadline=Date.now()+S.h3.clockLeft;clockMs=S.h3.clockMs;}

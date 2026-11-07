@@ -51,10 +51,10 @@ ok('ambush catch (5p): a catch on the move out of the burrow sets ambush; an ope
   const w = ready(5, 'badger'); T.timeout(w); w.h.p = [1, 2]; w.h.burrowed = true; assert.equal(w.turn, 'o1'); assert.ok(T.ostrichAct(w, 'o1', 'step', [1, 2])); assert.equal(w.lastCatch.walked, true); assert.ok(!w.lastCatch.ambush, 'walk-in'); });
 ok('5p: hyena pounce gives one extra square when the sense says yes', () => { const g = ready(5, 'hyena', [8, 3]); for (let i = 0; i < 4; i++) T.timeout(g);
   g.h.sense = true; g.b.o2.pos = [6, 5]; T.hunterMove(g, [8, 4]); assert.equal(g.h.pounce, true); assert.equal(g.turn, 'hunter'); assert.ok(T.hunterMove(g, [7, 5])); assert.equal(g.turn, 'v1'); });
-ok('5p: hunter wins only with an ostrich AND a vulture knocked out; boost 2 after the first knock-out', () => { const g = ready(5, 'badger', [8, 3]);
+ok('5p: hunter wins only with an ostrich AND a vulture knocked out; no speed boost after the first knock-out', () => { const g = ready(5, 'badger', [8, 3]);
   for (let i = 0; i < 4; i++) T.timeout(g); assert.equal(T.hunterRange(g), 1); g.b.o2.pos = [7, 3]; g.b.o2.catches = 1; g.b.v2.catches = 1; T.hunterMove(g, [7, 3]); assert.equal(g.b.o2.out, true);
-  assert.equal(g.phase, 'play'); for (let i = 0; i < 3; i++) T.timeout(g); assert.equal(T.hunterRange(g), 2);
-  g.b.v2.pos = [5, 3]; T.hunterMove(g, [5, 3]); assert.equal(g.winner, 'hunter'); });
+  assert.equal(g.phase, 'play'); for (let i = 0; i < 3; i++) T.timeout(g); assert.equal(T.hunterRange(g), 1); assert.ok(T.hunterMoves(g).every(p => Math.max(Math.abs(p[0] - g.h.p[0]), Math.abs(p[1] - g.h.p[1])) === 1)); assert.equal(T.status(g).boost, undefined); assert.equal(T.TM.boost, undefined);
+  g.b.v2.pos = [6, 3]; T.hunterMove(g, [6, 3]); assert.equal(g.winner, 'hunter'); });
 ok('5p: two ostriches knocked out but no vulture -> vultures win, not the hunter', () => { const g = ready(5, 'badger'); T.knockout(g, 'o1', 'caught'); T.knockout(g, 'o2', 'caught'); assert.equal(g.winner, 'red'); });
 ok('5p: badger burrows by staying; birds never see a burrowed badger', () => { const g = ready(5, 'badger', [8, 3]); for (let i = 0; i < 4; i++) T.timeout(g);
   g.b.o2.pos = [7, 2]; assert.equal(T.hunterSeenBy(g, 'o2'), true); T.hunterStay(g); assert.equal(g.h.burrowed, true, 'one still turn always burrows'); assert.equal(T.hunterSeenBy(g, 'o2'), false); });

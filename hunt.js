@@ -1,6 +1,6 @@
 // 4-player "Hunters" mode: ostrich (blue) + vulture (red) + hyena + honey badger, one seat each. Wraps the 2-player rules in
 // game.js without changing them (like three.js). Turn order each round: vulture, ostrich, hyena, badger. 10s shot clock.
-// Hyena: Pounce, 2 catches knock a bird out. Badger: Burrow, 1 catch knocks a bird out. No speed boost in this mode.
+// Hyena: Pounce, 2 catches knock a bird out. Badger: Burrow, 1 catch knocks a bird out.
 // Fearless rivalry: badger moves onto the hyena -> the hyena is knocked back 2; hyena moves onto the badger -> the hyena
 // bounces back 2. Nobody is hurt. Hunters win when both birds are out (more KOs wins, a tie goes to the last KO).
 const B = require('./game.js'), K = B.key, D = B.dist;
@@ -105,7 +105,7 @@ function ostrichActH(g, a, p) {
   if (h) { catchBird(g, 'blue', h, [sgn(from[0] - p[0]), sgn(from[1] - p[1])]); g.hunt.lastCatch.walked = true; } // the ostrich stepped onto a hunter
   afterOstrich(g); return true;
 }
-const hunterRange = () => 1; // no speed boost in this mode
+const hunterRange = () => 1; // hunters always move 1 square (no speed-up after a knock-out)
 function hunterMoves(g, h = g.turn) {
   if (g.phase !== 'play' || g.turn !== h || !isH(h)) return [];
   const at = g.hunt.hs[h].p, r = [];
@@ -142,6 +142,6 @@ function timeout(g) {
   ostrichStay(g); if (g.lastAction) g.lastAction.timeout = true; afterOstrich(g); return true;
 }
 function statusH(g) { const t = g.hunt;
-  return { hunt: true, ko: TH.ko, boost: false, birds: JSON.parse(JSON.stringify(t.birds)), order: ORDER, hkos: { hyena: t.hs.hyena.kos, badger: t.hs.badger.kos } }; }
+  return { hunt: true, ko: TH.ko, birds: JSON.parse(JSON.stringify(t.birds)), order: ORDER, hkos: { hyena: t.hs.hyena.kos, badger: t.hs.badger.kos } }; }
 module.exports = { TH, OFF, BIRDS, HUNTERS, ORDER, isH, newHunt, senses, seen, ambushSight, hunterMoves, hunterMove, hunterStay, hunterRange, placeOstrichH, vultureFlyH,
   vultureThrowH, ostrichActH, timeout, statusH, isOut, pos, advance, catchBird, knockout, hunterAt };

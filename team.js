@@ -1,8 +1,8 @@
 // 4-player (2v2) and 5-player (2v2 + hunter) modes. Two ostriches (o1, o2), each with its own 2-egg nest, against two
 // vultures (v1, v2); in 5 players a hunter (hyena / honey badger) moves last. Turn order: V1, O1, V2, O2 (, hunter).
-// Reuses the 2-player CONFIG and the 3-player hunter rules (sense, pounce, burrow, catches, knock-back, boost).
+// Reuses the 2-player CONFIG and the 3-player hunter rules (sense, pounce, burrow, catches, knock-back).
 const B = require('./game.js'), K = B.key, D = B.dist;
-const TM = { eggs: 2, vStarts: [[4, 2], [4, 4]], sense: 2, see: 2, knock: 2, clockMs: 10000, ko: { hyena: 2, badger: 2 }, boost: 2, hStarts: [[0, 3], [8, 3]] };
+const TM = { eggs: 2, vStarts: [[4, 2], [4, 4]], sense: 2, see: 2, knock: 2, clockMs: 10000, ko: { hyena: 2, badger: 2 }, hStarts: [[0, 3], [8, 3]] };
 const OFF = [-99, -99], OS = ['o1', 'o2'], VS = ['v1', 'v2'], sgn = Math.sign;
 const isO = s => s === 'o1' || s === 'o2', isV = s => s === 'v1' || s === 'v2';
 const mate = s => ({ o1: 'o2', o2: 'o1', v1: 'v2', v2: 'v1' })[s];
@@ -114,7 +114,7 @@ const senses = g => birdsIn(g).some(s => D(g.b[s].pos, g.h.p) <= TM.sense);
 // ambush sight: a burrowed badger sees the exact square of any living bird next to it (1 square). Nobody else learns anything.
 const ambushSight = g => !g.h || g.h.kind !== 'badger' || !g.h.burrowed ? [] : birdsIn(g).filter(s => D(g.b[s].pos, g.h.p) === 1).map(s => ({ seat: s, type: isO(s) ? 'o' : 'v', p: g.b[s].pos.slice() }));
 const hunterSeenBy = (g, s) => !!(g.h && (isO(s) || isV(s)) && live(g, s) && !g.h.burrowed && D(g.b[s].pos, g.h.p) <= TM.see);
-const hunterRange = g => !g.h ? 0 : g.h.pounce ? 1 : kos(g) ? TM.boost : 1;
+const hunterRange = g => !g.h ? 0 : 1; // the hunter always moves 1 square (no speed-up after a knock-out)
 function hunterMoves(g) {
   if (!myTurn(g, 'hunter')) return [];
   const h = g.h.p, n = hunterRange(g), r = [];
@@ -199,7 +199,7 @@ function timeout(g) { // shot clock ran out: vulture passes, ostrich stays put (
 }
 // public status every seat may see: no positions
 function status(g) {
-  return { n: g.n, order: g.order, kind: g.h ? g.h.kind : null, ko: koAt(g), boost: !!kos(g), hkos: g.h ? { ...g.h.kos } : null,
+  return { n: g.n, order: g.order, kind: g.h ? g.h.kind : null, ko: koAt(g), hkos: g.h ? { ...g.h.kos } : null,
     birds: Object.fromEntries(OS.concat(VS).map(s => [s, { out: g.b[s].out, why: g.b[s].why, catches: g.b[s].catches, skip: g.b[s].skip }])) };
 }
 module.exports = { TM, OFF, OS, VS, isO, isV, mate, newTeam, place, canPlaceEgg, setupStep, nestOf, ostrichMoves, ostrichAct, canSit, canCarry, mustLeave, onEgg,

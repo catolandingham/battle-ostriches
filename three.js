@@ -1,7 +1,7 @@
 // 3-player mode: ostrich (blue) + vulture (red) + a hunter (hyena or honey badger). Wraps the 2-player rules in game.js
 // without changing them. Turn order each round: vulture, ostrich, hunter. All tuning lives in T3.
 const B = require('./game.js'), K = B.key, D = B.dist;
-const T3 = { sense: 2, see: 2, knock: 2, clockMs: 10000, ko: { hyena: 2, badger: 2 }, boost: 2, starts: [[0, 3], [8, 3]] };
+const T3 = { sense: 2, see: 2, knock: 2, clockMs: 10000, ko: { hyena: 2, badger: 2 }, starts: [[0, 3], [8, 3]] };
 const OFF = [-99, -99], BIRDS = ['red', 'blue'], NAME = { red: 'vulture', blue: 'ostrich', hunter: 'hunter' };
 const sgn = Math.sign;
 function newGame3(kind, cfg = B.CONFIG, start) {
@@ -13,7 +13,6 @@ function newGame3(kind, cfg = B.CONFIG, start) {
 }
 const pos = (g, b) => b === 'blue' ? g.ostrich : g.vulture;
 const isOut = (g, b) => g.three.birds[b].out;
-const anyOut = g => BIRDS.some(b => isOut(g, b));
 const koAt = g => T3.ko[g.three.kind || 'hyena'];
 // yes/no: is any bird (still in the game) within 2 squares of the hunter? No direction.
 const senses = g => BIRDS.some(b => !isOut(g, b) && pos(g, b) && D(pos(g, b), g.three.h) <= T3.sense);
@@ -89,7 +88,7 @@ function ostrichAct3(g, a, p) {
   if (!(g.phase === 'over' && g.winBy === 'starved') && a !== 'sit' && K(g.ostrich) === K(g.three.h)) { catchBird(g, 'blue', [sgn(from[0] - p[0]), sgn(from[1] - p[1])]); g.three.lastCatch.walked = true; } // the ostrich stepped onto the hunter
   afterOstrich(g); return true;
 }
-function hunterRange(g) { return g.three.pounce ? 1 : anyOut(g) ? T3.boost : 1; }
+function hunterRange(g) { return 1; } // the hunter always moves 1 square (no speed-up after a knock-out)
 function hunterMoves(g) {
   if (g.phase !== 'play' || g.turn !== 'hunter') return [];
   const h = g.three.h, n = hunterRange(g), r = [];
@@ -123,6 +122,6 @@ function timeout(g) {
 }
 // Public 3-player status every seat may see (no positions).
 function status3(g) { const t = g.three;
-  return { kind: t.kind, ko: koAt(g), boost: anyOut(g), birds: JSON.parse(JSON.stringify(t.birds)), order: ['red', 'blue', 'hunter'] }; }
+  return { kind: t.kind, ko: koAt(g), birds: JSON.parse(JSON.stringify(t.birds)), order: ['red', 'blue', 'hunter'] }; }
 module.exports = { T3, OFF, NAME, newGame3, senses, hunterSeenBy, ambushSight, hunterMoves, hunterMove, hunterStay, hunterRange, placeOstrich3, vultureFly3, vultureThrow3,
-  ostrichAct3, timeout, status3, anyOut, isOut, pos, advance, catchBird, knockout };
+  ostrichAct3, timeout, status3, isOut, pos, advance, catchBird, knockout };
