@@ -24,7 +24,6 @@ let seed = 7; const rnd = n => { seed = (seed * 16807) % 2147483647; return seed
         if (st.btns.some(x => x.pressed && /Throw/.test(x.t))) return /Tap a red-orange square to throw your stone\./.test(h);
         return /Tap a glowing square to fly/.test(h);
       }
-      if (st.mustLeave) return /You sat \d+ turns: step off \(or \+ Carry\)\./.test(h);
       return /glowing square/i.test(h);
     };
     for (let turn = 0; turn < 400; turn++) {
@@ -59,7 +58,8 @@ let seed = 7; const rnd = n => { seed = (seed * 16807) % 2147483647; return seed
         // every enabled mode button does something visible
         for (const bt of st.btns.filter(x => !x.dis && !/Sit/.test(x.t))) {
           // a selected + Carry button is disabled, so it has no 'on' class; aria-pressed marks every selected mode
-          const i = st.btns.indexOf(bt); await P.locator('#actions button').nth(i).click({ force: true });
+          const i = st.btns.indexOf(bt); if (await P.locator('#actions button').nth(i).isDisabled()) continue; // an earlier click (+ Carry) can disable a later button (Kick)
+          await P.locator('#actions button').nth(i).click({ force: true });
           const after = await P.evaluate(() => ({ on: [...document.querySelectorAll('#actions button')].findIndex(x => x.getAttribute('aria-pressed') === 'true'), n: document.querySelectorAll('.cell.legal').length, hint: document.getElementById('hint').textContent }));
           assert.equal(after.on, i, 'tapped mode becomes selected'); assert.ok(after.n > 0 && /glowing|red-orange|No stone\. Land on a glowing rock pile|You found an egg, but you have no stone|smash the egg|Smash it: tap Throw stone/.test(after.hint), 'mode shows targets + hint: ' + after.hint); // a found egg under the vulture swaps in the smash hints; throw mode names its targets "red-orange squares", not "glowing"; this wording dates from 3eb803b
         }

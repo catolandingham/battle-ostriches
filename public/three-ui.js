@@ -130,13 +130,13 @@ function warnNear(S,board){if(!window.BORing)return;if(!S||S.phase!=='play'){nea
  added.forEach(k=>pop(board,BORing.hunterNearLabel(k),'near'));}
 function tag(S){if(S.h3&&S.h3.team&&S.h3.mySeat!=='hunter')return tTag(S);const k=S.h3&&S.h3.kind||'hyena';return `<span style="display:inline-block;width:30px;height:30px;vertical-align:middle">${KIND[k].art}</span> ${KIND[k].n.toUpperCase()}`;}
 function waitMsg(S){return `Wait, it's the ${tname(S,S.turn)}'s turn.`;}
-function nopeMsg(S){return `Move ${S.h3.range} square${S.h3.range>1?'s':''}: tap a glowing square.`;}
+function nopeMsg(S){return `Move up to ${S.h3.range} square${S.h3.range>1?'s':''}: tap a glowing square.`;}
 function hint(S,a){if(S.h3.team&&!hint.in){hint.in=1;try{return tHint(S,a);}finally{hint.in=0;}}const r=S.role,t=S.turn;
  if(r==='hunter'&&S.myTurn){const k=S.h3.kind;
   a.innerHTML=S.pounce?'<button class="on" title="Skip this extra move. You will not catch the bird." onclick="UI.send({t:\'act\',a:\'hstay\'})">Stop</button>':`<button title="${k==='badger'?(S.burrowed?'Stay burrowed. Birds still cannot see you.':'Stay still to burrow.'):'Stay put and end your turn.'}" onclick="UI.send({t:'act',a:'hstay'})">${k==='badger'?(S.burrowed?'Stay':'Burrow'):'Stay'}</button>`;
   if(S.pounce)return 'One more square. Bright dots: the bird is most likely here.';
   const burrowNote=k!=='badger'||S.burrowed?'':'Stay still to burrow. ';
-  return burrowNote+`Tap a glowing square to move ${S.h3.range}. ${S.sense?'A bird is within 2. It is not pointed at.':'No bird within 2, so no bird is drawn.'}`;}
+  return burrowNote+`Tap a glowing square to move up to ${S.h3.range}. ${S.sense?'Rose dots: a bird may be here.':'No bird near.'}`;}
  if(!S.h3.ready)return S.h3.needKind?'Pick your hunter.':`Waiting for all ${S.h3.hunt?4:3} players…`;
  const lost=S.h3.lost;if(r!=='hunter'&&lost&&lost.bird===r&&lost.round>=S.round-1&&t!==r)return 'Caught! You lost this turn. '+tname(S,t)+'\'s turn…';
  if(r!=='hunter'&&S.h3.birds[r]&&S.h3.birds[r].out)return `You're out (${S.h3.birds[r].why==='starved'?'starved':'knocked out'}). Watching the board — no moves.`;

@@ -255,6 +255,9 @@ function youTag(board){
  const el=Date.now()-youAt;if(el>=600)return;
  const p=document.createElement('span');p.className='youpulse';p.style.animationDelay=(-el)+'ms';cell.appendChild(p);
  setTimeout(()=>document.querySelectorAll('.youpulse').forEach(e=>e.remove()),650-el);}
+// Kick preview: the direction and how far, nothing about what lies there. It wraps at the edge and may stop early.
+function kickTip(x,y){const o=S.ostrich,dx=Math.sign(x-o[0]),dy=Math.sign(y-o[1]),A={'0,-1':'up','0,1':'down','-1,0':'left','1,0':'right','-1,-1':'up and left','1,-1':'up and right','-1,1':'down and left','1,1':'down and right'};
+ return 'Kick it '+(A[dx+','+dy]||'away')+', up to '+S.cfg.kickPush+' squares ('+S.cfg.kickPushBadger+' for a honey badger). It may stop early.';}
 function render(prev){
  maybeCard();$('lobby').classList.add('hidden');const C=S.cfg,blue=S.role==='blue',body=document.body;body.className=(S.role==='hunter'?'hunter':blue?'blue':'red')+(S.three?' three':'')+(S.god?' godview':'');
  $('turnTag').innerHTML=S.role==='hunter'||(S.h3&&S.h3.team)?window.T3UI.tag(S):`<span style="display:inline-block;width:26px;height:26px;vertical-align:middle">${blue?OST:VUL}</span> ${blue?'OSTRICH':'VULTURE'}`;
@@ -326,7 +329,7 @@ function render(prev){
   if(k===vk){h+=`<div class="pc pv">${VUL}</div>`;tip.push(blue?'The vulture':'You (vulture)');tags.push(blue?'vul':'me');}
   if(k===ok){if(blue&&e){d.classList.add('sat');}h+=`<div class="pc po">${OST}</div>`+(S.carried?'<span class="carry">'+MYEGG+'</span>':'');tip.push(blue?'You (ostrich)'+(S.carried?', carrying an egg':''):'The ostrich'+(S.carried?' (carrying something)':''));tags.push(blue?'me':'ost');
    if(blue&&S.carried&&S.eggs&&S.eggs[S.carrying])h+=warmRing(S.eggs[S.carrying].coldIn,C.warmth);}
-  if(legal)tip.push(kicking?'Kick it back':throwing?'Throw a stone here':setup?(S.phase==='setupEggs'?'Hide an egg here':'Start here'):blue?'Move here':'Fly here');
+  if(legal)tip.push(kicking?kickTip(x,y):throwing?'Throw a stone here':setup?(S.phase==='setupEggs'?'Hide an egg here':'Start here'):blue?'Move here':'Fly here');
   d.innerHTML=h;d.dataset.tip=[...new Set(tip)].join(' · ');
   d.dataset.tags=tags.join(' ');if(tags.includes('me'))d.id='current';d.onclick=()=>{if(Date.now()<noClick)return;tap(x,y);};board.appendChild(d);}
  {const cs=getComputedStyle(board),gap=parseFloat(cs.columnGap)||0,pad=parseFloat(cs.paddingLeft)+parseFloat(cs.paddingRight),inner=board.clientWidth-pad,w=(inner-gap*(C.cols-1))/C.cols;if(w>1){board.style.gridAutoRows='0';board.style.gridTemplateRows=`repeat(${C.rows},${w}px)`;}}

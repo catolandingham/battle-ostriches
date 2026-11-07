@@ -76,7 +76,7 @@ const phone = { viewport: { width: 390, height: 844 } };
   };
   const desk = await lay(H);
   assert.ok(desk.legal >= 3, 'hunter has steps ' + desk.legal);
-  assert.match(desk.hint, /No bird near: move 1 square\.|A bird is near: you can move/);
+  assert.match(desk.hint, /No bird near\.|Rose dots: a bird may be here\./);
   assert.ok(desk.tipH < 2, 'hidden tip does not reserve a band');
   // The "Legal step / Bird may be here" key now sits between the hint and the board, so it is not counted as empty space.
   assert.ok(desk.gapNoKey < 90, 'gap under the hint, not counting the key, is ' + desk.gapNoKey + ' (key ' + desk.keyH + ')');

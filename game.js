@@ -249,7 +249,7 @@ function vultureThrow(g, p, mkW) {
   if (!throwTargets(g).some(q => key(q) === key(p))) return false;
   g.stones--; g.sniff = null; parkEliminated(g);
   const from = g.vulture.slice(), r = resolveThrow(g, (mkW || classicW)(g), p);
-  g.lastAction = { type: 'throw', from, p: p.slice(), result: r.result, line: r.line, kickedBack: r.kickedBack, hop: r.hop, used: r.used, pushed: r.pushed };
+  g.lastAction = { type: 'throw', from, p: p.slice(), result: r.result, line: r.line, kickedBack: r.kickedBack, hop: r.hop, used: r.used };
   if (r.result === 'bounce') g.lastAction.egg = !!(g.carrying !== null || eggAt(g, p)); // a kicked stone does not say what the ostrich guards
   if (r.line) g.lastStone = { seq: ++g.stoneSeq, text: r.line, round: g.round };
   if (!aliveEggs(g).length) { g.winner = 'red'; g.winBy = 'smashed'; g.phase = 'over'; } else { g.turn = 'blue'; dropCarried(g); }
