@@ -108,3 +108,5 @@ html #board .cell.fix{outline:4px solid #fff;outline-offset:-4px;animation:fixou
 .mini .pc,html[data-theme] .mini .pc{background:none!important;border:0!important;box-shadow:none!important;border-radius:0!important;filter:drop-shadow(0 0 2px #fff) drop-shadow(0 0 1px #fff)}
 .mini .ic-hit svg path:first-child{stroke:#111!important}.mini .ic-hit svg path:last-child{stroke:#d9dde4!important}
 html[data-theme] #board .cell.sat>.wring.sq,html #board .cell.sat>.wring.sq{left:0!important;top:0!important;width:100%!important;height:100%!important;inset:auto!important;z-index:41!important}
+/* on your egg the square's own ring and the YOU tag mark you: the round ring under the animal would only cut across the egg */
+html #board .cell.sat .youring,html #board .cell.vfound .youring{display:none}
