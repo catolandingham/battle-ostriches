@@ -25,15 +25,17 @@ html #board .cell.gpath::after,html #board .cell.gtarget::after,html #board .cel
 :is(#board,.mini,.lgs) .cmark .mk-d{stroke:#111;stroke-width:6.9}
 :is(#board,.mini,.lgs) .cmark.cm-egg .mk{stroke-dasharray:9 7.67}
 :is(#board,.mini,.lgs) .cmark.cm-egg .mk-d{stroke-dasharray:12 4.67;stroke-dashoffset:1.5}
-:is(#board,.mini,.lgs) .cmark.cm-bird .mk{stroke-dasharray:6.5 6}
-:is(#board,.mini,.lgs) .cmark.cm-bird .mk-d{stroke-dasharray:9.5 3;stroke-dashoffset:1.5}
+:is(#board,.mini,.lgs) .cmark.cm-bird .mk,:is(#board,.mini,.lgs) .cmark.cm-bird .mk-d{stroke-dasharray:none}
+:is(#board,.mini,.lgs) .cmark.cm-bird .mk{stroke-width:3.4}
+:is(#board,.mini,.lgs) .cmark.cm-bird .mk-d{stroke-width:6.4}
+:is(#board,.mini,.lgs) .cmark.cm-bird{width:54%;height:54%}
+:is(#board,.mini,.lgs) .cmark .mk-eye{fill:#111}
+:is(#board,.mini,.lgs) .cmark.cm-badger.is{width:58%;height:58%}
 :is(#board,.mini,.lgs) .cmark.cm-badger .mk{stroke-dasharray:8 6.29}
 :is(#board,.mini,.lgs) .cmark.cm-badger .mk-d{stroke-dasharray:11 3.29;stroke-dashoffset:1.5}
-:is(#board,.mini,.lgs) .cmark .mk-line{display:none}
 /* is here: the same shape, same size, filled white with a dark edge */
 :is(#board,.mini,.lgs) .cmark.is .mk-d{display:none}
 :is(#board,.mini,.lgs) .cmark.is .mk{fill:#fff;stroke:#111;stroke-width:4.4;stroke-dasharray:none}
-:is(#board,.mini,.lgs) .cmark.is .mk-line{display:inline;fill:none;stroke-dasharray:none}
 :is(#board,.mini) .cell>.cmark.cue{animation:cuepulse 1.4s ease-in-out infinite}
 @media (prefers-reduced-motion:reduce){:is(#board,.mini) .cell>.cmark.cue{animation:none}}
 /* an egg you know about (your own egg, or one the vulture found): the wrapper only holds the corner egg and its countdown number; the animal on the square stays full size */
