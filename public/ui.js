@@ -17,7 +17,7 @@ const STONE='<svg viewBox="0 0 40 40" aria-hidden="true"><path d="M7 27l5-13 13-
 const XMARK='<svg viewBox="0 0 40 40" aria-hidden="true"><path d="M9 9L31 31M31 9L9 31" stroke="#1a0000" stroke-width="11" stroke-linecap="round"/><path d="M9 9L31 31M31 9L9 31" stroke="#ff2a1f" stroke-width="7" stroke-linecap="round"/></svg>';
 const EGG='<svg viewBox="0 0 40 40" aria-hidden="true"><ellipse cx="20" cy="22" rx="12" ry="15" fill="#ffd21f" stroke="#3a2a00" stroke-width="3"/><ellipse cx="15" cy="15" rx="3" ry="5" fill="#fff6c0"/></svg>';
 const MYEGG='<svg viewBox="0 0 40 40" aria-hidden="true"><ellipse cx="20" cy="21" rx="11" ry="14" fill="#fffaf0" stroke="#2a2418" stroke-width="2.5"/></svg>';
-const MAYBE='<svg viewBox="0 0 40 40" aria-hidden="true"><ellipse cx="20" cy="21" rx="11" ry="14" fill="none" stroke="#fff" stroke-width="3" stroke-dasharray="5 3"/><text x="20" y="28" text-anchor="middle" font-size="19" font-weight="900" fill="#fff" font-family="sans-serif">?</text></svg>';
+const MAYBE='<svg viewBox="0 0 40 40" aria-hidden="true"><ellipse cx="20" cy="21" rx="11" ry="14" fill="none" stroke="#111" stroke-width="6"/><ellipse cx="20" cy="21" rx="11" ry="14" fill="none" stroke="#fff" stroke-width="3" stroke-dasharray="5 3"/></svg>'; // a dashed egg outline: an egg may be here
 let sniffSeen={},sniffUntil=0,overHold=0,kickPick=null; // kickPick: the animal chosen to kick (tap it again to kick)
 const VOCAB={maybe:[MAYBE,'Egg may be here.'],legal:['','Move here.'],target:['','Throw here.'],stone:[STONE,'Wrecked. Can\'t land.'],food:[LEAF,'Food.'],
  rock:[ROCKS,'Rocks: get a stone.'],hit:[XMARK,'Smashed. Can\'t land.'],spot:[EGG,'Found egg.'],

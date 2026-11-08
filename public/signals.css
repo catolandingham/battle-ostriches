@@ -54,3 +54,7 @@ html[data-theme] #board .cell.stone,#board .cell.stone,html[data-theme] #board .
 #board .cell>.karrow::after{content:'';position:absolute;right:-6px;top:-9px;border-left:10px solid #ffd21f;border-top:7px solid transparent;border-bottom:7px solid transparent}
 /* fog of war for birds: squares beyond 2 from your bird (where it cannot see a hunter) are a little darker. Subtle; hunters get none. */
 html[data-theme] #board .cell.fog,#board .cell.fog{box-shadow:inset 0 0 0 1px rgba(255,255,255,.2),inset 0 0 0 2px rgba(0,0,0,.30),inset 0 0 0 60px rgba(0,0,0,.14)!important}
+/* the hunter's "a bird may be here": one dashed outline around the area; the part inside both Pounce readings is filled */
+#board .cell.maybird::after,#board .cell.maybird.bright::after{display:none!important}
+#board>.senseArea{position:absolute;box-sizing:border-box;border:3px dashed #fff;box-shadow:0 0 0 2px #111,inset 0 0 0 2px #111;border-radius:6px;z-index:5;pointer-events:none;grid-column:auto;grid-row:auto}
+#board>.senseArea.overlap{background:rgba(255,255,255,.3);border-style:solid;border-width:2px;z-index:6}

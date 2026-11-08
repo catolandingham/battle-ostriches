@@ -190,6 +190,12 @@ function bPump(tries){if(bBusy||!bQ.length)return;
  setTimeout(()=>{o.remove();bBusy=false;bPump(0);},3000);}
 function badgerLines(S,prev){if(S===bLastS)return;bLastS=S;if(!prev||(prev.round!=null&&S.round<prev.round))bPicker=BL.createPicker();
  for(const e of BL.detect(prev,S,bPicker))badgerSay(e.text);}
+// Where a bird may be: ONE dashed outline around the whole area (not a dot on every square). On the second Pounce reading the part that is inside both readings is filled.
+function senseArea(board,S,hx,hy,range){const C=S.cfg,box=(cx,cy)=>({x0:Math.max(0,cx-range),y0:Math.max(0,cy-range),x1:Math.min(C.cols-1,cx+range),y1:Math.min(C.rows-1,cy+range)});
+ const place=(b,cls)=>{const a=board.children[b.y0*C.cols+b.x0],z=board.children[b.y1*C.cols+b.x1];if(!a||!z||!a.offsetWidth)return;
+  const o=document.createElement('div');o.className=cls;o.style.left=a.offsetLeft+'px';o.style.top=a.offsetTop+'px';o.style.width=(z.offsetLeft+z.offsetWidth-a.offsetLeft)+'px';o.style.height=(z.offsetTop+z.offsetHeight-a.offsetTop)+'px';board.appendChild(o);};
+ const cur=box(hx,hy);place(cur,'senseArea');
+ if(S.pounce&&S.firstAt){const f=box(S.firstAt[0],S.firstAt[1]),i={x0:Math.max(cur.x0,f.x0),y0:Math.max(cur.y0,f.y0),x1:Math.min(cur.x1,f.x1),y1:Math.min(cur.y1,f.y1)};if(i.x0<=i.x1&&i.y0<=i.y1)place(i,'senseArea overlap');}}
 function pop(board,txt,cls){const o=document.createElement('div');o.className='h3pop '+cls;o.textContent=txt;board.appendChild(o);setTimeout(()=>o.remove(),cls==='catch'?3400:1800);}
 // --- Announcements: one plain line for a big event (catch, knock-out, the hunters meeting, the badger coming out, the start-of-game line) on every phone.
 // The line lives in #announce, outside #board, so a board redraw never erases it. Each line stays up about 3 seconds, one at a time, in order.
@@ -235,6 +241,7 @@ function after(S,prev,board){badgerLines(S,prev);chips(S);clock(S);kindPick(S);i
   if(S.sense){for(let y=0;y<S.cfg.rows;y++)for(let x=0;x<S.cfg.cols;x++){const dx=x-hx,dy=y-hy;if(!dx&&!dy)continue;if(Math.max(Math.abs(dx),Math.abs(dy))>range)continue;
    const c=board.children[y*S.cfg.cols+x];if(!c||!c.classList||!c.classList.contains('cell'))continue;if(c.querySelector('.pc.po,.pc.pv'))continue;
    c.classList.add('maybird');if(S.pounce&&S.firstAt&&Math.max(Math.abs(x-S.firstAt[0]),Math.abs(y-S.firstAt[1]))<=range)c.classList.add('bright');const had=c.getAttribute('aria-label')||'';if(!/Bird may be here/.test(had))c.setAttribute('aria-label',had?had+'. Bird may be here':'Bird may be here');}}
+  if(S.sense)senseArea(board,S,hx,hy,range);
   const sk=S.round+':'+S.senseSeq;if(sk!==lastSense){lastSense=sk;UI.pause(1100);
    pop(board,S.sense?(S.pounce?'Still near.':'Bird near.'):'Nothing near.',S.sense?'yes':'no');
    window.SFX&&SFX.play(S.sense?'sniffYes':'sniffNo');}
