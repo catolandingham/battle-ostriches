@@ -38,6 +38,7 @@ Brian Howe is the designer and playtester, not a programmer. He plays with his f
   - `npm run setup:e2e` installs WebKit once.
   - `node tests/run-all.js <name>` runs one group.
   - `e2e-consistency.js` plays 13 full games and takes about 10 minutes.
+  - `tools/shots-real-play.js` takes phone screenshots from real play, and `tools/icon-tests/` draws candidate icons at real size (see section 7).
   - PR #18 with the 2026-11-08 icons (commit 251fa8e) passed 41 of 42 on 2026-11-08. The one failure, `e2e-stone.js`, is a known flaky test that reads the board mid-redraw, and it passed when rerun alone.
 - **The Grok thread archive** lives in the other repo, `catolandingham/space-snack-quest`:
   - `docs/grok-archive/ostrich-thread.md` and the `ostrich-project-*.md` files
@@ -374,3 +375,49 @@ All of these are in rulebook v2 and live, unless marked otherwise.
 - Nothing merges without his yes. Never merge during a family game (a deploy wipes rooms).
 - When state changes or Brian decides something, write a dated line for his Drive `STATE.md` and `DECISIONS.md` and hand it to him. The repo snapshots are not updated.
 - Watch the credit pool. Brian would rather stop early with things pushed than run out mid-change.
+
+---
+
+## 7. Lessons from testing (added 2026-11-08)
+
+### 7.1 Two tools for the way Brian reviews looks
+
+- **`tools/shots-real-play.js`** takes phone-size screenshots (390x664, classic theme) of real game moments, in the order a player meets them.
+  - Run `node tools/shots-real-play.js <out-folder> [vulture,ostrich,hyena,badger,howto]`.
+  - It starts the server on port 4172 and plays real turns through the game rules, so every screen is one a player could reach.
+  - Server settings it uses: `BO_NOSTORE` (no saving), `BO_BOTMS` (slow computers), `BO_CLOCKMS` (long turn timer), `BO_H3START` and `BO_H4START` (hunters' start squares).
+  - It also sets browser storage keys so the tutorial, role card and tips stay closed: `bo_hs_off`, `bo_tut_seen`, `bo_card_off`, `bo_walk_*`, `bo_tips_off`, `bo_muted`, `bo_cs_*`.
+  - Set up a hyena or Pounce moment the way real play reaches it. For example, the hyena walks 2 squares before the Pounce screen. A hyena that moves 1 square marks nearly every square and misleads.
+  - Add a new sequence for each new screen Brian needs to see, such as each theme.
+- **`tools/icon-tests/`** draws candidate icons at their true size on four tile colors, including a lit square.
+  - `birds.html` holds the bird and mound options Brian chose from.
+  - `faces.html` holds the badger faces.
+  - Render with `node tools/icon-tests/shot.js birds.html out.png`.
+  - Copy a page to compare new options.
+
+### 7.2 How the tests behave
+
+- Three suites sometimes fail on timing, then pass when rerun alone:
+  - `e2e-stone.js` reads the board in the middle of a redraw
+  - `e2e-consistency.js` has a tap land while the board is briefly locked for an animation (the game drops such taps on purpose)
+  - the hunter suites
+- Rerun a failed suite alone with `node tests/run-all.js <name>` before treating it as real, and say so in the PR.
+- Never run two test suites at the same time: they clash over ports.
+- `npm test` points Playwright at the project's own WebKit (`node_modules/.pw-browsers`). A phone test or tool run directly needs the same `PLAYWRIGHT_BROWSERS_PATH`. Both tools above set it.
+- Macs have no `timeout` command. A script that uses it fails without saying why.
+- Never use `git stash` while more than one worktree is open. The stash list is shared across worktrees, and on 2026-11-07 two stashes got swapped.
+
+### 7.3 What the icon work showed
+
+- Dashing works only on very simple shapes, like the egg oval. A detailed shape (a bird, a badger) breaks into a jumble at board size, about 17 pixels. That's why the hunter's bird is a plain line.
+- A dashed mark stays crisp on every tile, lit yellow included, only when drawn as a white dash over a slightly longer dark dash.
+- Faces read better than side views at this size. The striped badger face won over every side view.
+- Brian reviews on his phone. Inline chat previews and HTML files don't open there. Send PNG images or a published page.
+- The game's sound doesn't play in the Brave browser unless Brave Shields are turned off for the site. Brian found this with the other game, and it applies here too.
+
+### 7.4 Small issues noticed and not yet fixed
+
+- The ostrich's screen shows the vulture's dashed "egg may be here" marks. The ostrich already knows where its eggs are, so these likely confuse it. Ask Brian whether the ostrich should see them.
+- Eggs the ostrich is not standing on no longer show their warmth color, only the countdown number. The ring around the ostrich's own square still shows it.
+- On a found egg, the throw target still partly hides the vulture.
+- A bird that saw the badger dig in can still step onto the burrow (it's lit as a move) and gets caught. This is the current rule. Ask Brian whether it should stay.
