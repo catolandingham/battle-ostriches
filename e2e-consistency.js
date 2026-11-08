@@ -75,21 +75,23 @@ let seed = 7; const rnd = n => { seed = (seed * 16807) % 2147483647; return seed
         const still = await P.evaluate(() => { const S = UI._S(); return { turn: S.turn, round: S.round, myTurn: S.myTurn, last: JSON.stringify(S.lastAction) }; });
         assert.ok(still.myTurn === st.myTurn && still.turn === st.turn && still.round === st.round, 'a tap on a non-glowing square never plays a move or ends the turn: ' + JSON.stringify(still) + ' | ' + dump); }
       // act: sometimes Sit, else random glowing square in current mode
-      const before = await progress();
+      const before = await progress(); let target = null;
       const sit = await P.locator('#actions button:has-text("Sit"):not([disabled])');
       if (await sit.count() && rnd(3) === 0) await sit.click({ force: true });
       else {
         const L = await P.evaluate(() => { const S = UI._S(); return (S.myTurn || S.phase.startsWith('setup') && S.role === 'blue') ? UI._legal().map(p => p[1] * S.cfg.cols + p[0]) : []; });
         if (!L.length) continue; // no longer this player's turn: loop again, the wait at the top handles it
-        const target = cells.nth(L[rnd(L.length)]), aim = (await target.evaluate(e => e.classList.contains('aimcue'))) && (await P.evaluate(() => UI._mode && UI._mode() === 'fly')); await target.click({ force: true });
+        target = cells.nth(L[rnd(L.length)]); const aim = (await target.evaluate(e => e.classList.contains('aimcue'))) && (await P.evaluate(() => UI._mode && UI._mode() === 'fly')); await target.click({ force: true });
         if (aim) await P.waitForFunction(() => UI._mode && UI._mode() === 'throw', null, { timeout: 4000 }).then(() => target.click({ force: true })); // the crosshair on a found egg: the first tap picks Throw, the second throws it
         if (await P.evaluate(() => !!document.querySelector('#board .cell.confirm'))) await target.click({ force: true }); // aiming the only stone at a square that is not a found egg asks once more: tap it again to throw
         if (await P.evaluate(() => UI._mode && UI._mode() === 'kick')) { await P.waitForSelector('.kpath', { timeout: 4000 }); await target.click({ force: true }); } // a kick is two taps: the first shows where it goes (after a sniff pause), the second kicks: pick the animal, tap it again
       }
       // Wait for the server's answer, so the next pass never reads the old turn (the stale state still said myTurn, with Throw left selected).
       // The pass-and-play cover also counts: the handoff screen shows once the move was played.
-      await P.waitForFunction(b => { const S = UI._S(); return !document.getElementById('handoff').classList.contains('hidden') || JSON.stringify([S.turn, S.round, S.phase, S.ostrich, S.vulture, S.stones, S.sitRun, S.carried, S.lastAction, S.eggs, S.marks]) !== b; }, before, { timeout: 10000 })
-        .catch(() => { throw new Error('the move was never answered | ' + dump); });
+      const answered = (ms) => P.waitForFunction(b => { const S = UI._S(); return !document.getElementById('handoff').classList.contains('hidden') || JSON.stringify([S.turn, S.round, S.phase, S.ostrich, S.vulture, S.stones, S.sitRun, S.carried, S.lastAction, S.eggs, S.marks]) !== b; }, before, { timeout: ms });
+      // a tap that lands while the board is locked for an animation is dropped by design (a player taps again), so a move with no answer after 5 seconds is tapped once more
+      await answered(5000).catch(async () => { await P.waitForFunction(() => !UI._locked(), null, { timeout: 5000 }); if (target && await P.evaluate(() => UI._S().myTurn)) { await target.click({ force: true }); if (await P.evaluate(() => !!document.querySelector('#board .cell.confirm'))) await target.click({ force: true }); } })
+        .then(() => answered(8000)).catch(() => { throw new Error('the move was never answered | ' + dump); });
       assert.ok(!/Not a legal/.test(await P.textContent('#log')), 'legal tap accepted');
     }
     await P.waitForSelector('#over:not(.hidden)', { timeout: 20000 }); await c.close();
