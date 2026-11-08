@@ -1,8 +1,16 @@
+# This file is NOT linked to a Render Blueprint (checked 2026-11-08). The live site is a plain
+# web service that auto-deploys from main and ignores this file:
+#   name: ostriches   id: srv-dbkn336gekts73ekp0s0   url: https://ostriches.onrender.com
+# Render matches Blueprint services by NAME. Keep the name below exactly "ostriches" so that, if a
+# Blueprint is ever created from this file, it adopts the live service instead of creating a second site.
+# Do not rename it. The old "battle-ostriches" service was deleted; do not bring that name back.
 services:
   - type: web
-    name: battle-ostriches
+    name: ostriches
     runtime: node
+    region: oregon
     plan: free
+    branch: main
     buildCommand: npm install --omit=dev
     startCommand: node server.js
     healthCheckPath: /healthz
