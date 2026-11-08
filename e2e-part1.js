@@ -134,8 +134,14 @@ const hint = p => p.evaluate(() => document.getElementById('hint').textContent.t
   await cell(V, 2, 3).click(); await sleep(250); st = await V.evaluate(() => ({ turn: UI._S().turn })); assert.equal(st.turn, 'red', 'a different square moves the confirm, it does not throw');
   assert.equal(await V.evaluate(() => [...document.querySelectorAll('#board .cell.confirm')].map(c => [...c.parentNode.children].indexOf(c)).join()), String(idx(2, 3)));
   await V.evaluate(() => UI.setMode('fly')); await sleep(200); assert.equal((await cueState(V)).confirm, 0, 'changing mode clears the confirm');
+  { const gg = room2().g, eg = B.eggAt(gg, [2, 3]); if (eg) eg.pos = [8, 0]; if (key(gg.ostrich) === '2,3') gg.ostrich = [8, 1]; await push(); } // make sure the throw at (2,3) is a plain miss
   await V.evaluate(() => UI.setMode('throw')); await sleep(150); await cell(V, 2, 3).click(); await sleep(200); await cell(V, 2, 3).click();
-  await V.waitForFunction(() => UI._S().turn === 'blue', null, { timeout: 5000 }); assert.equal(room2().g.stones, 0); ok('aiming the only stone anywhere but at a found egg asks first; the second tap throws');
+  await V.waitForFunction(() => UI._S().turn === 'blue', null, { timeout: 5000 }); assert.equal(room2().g.stones, 0);
+  // a miss: the message says so and the right option (the rock piles, there being no stone left) pulses
+  await V.waitForFunction(() => document.querySelectorAll('#board .cell.fix').length >= 1, null, { timeout: 3000 });
+  { const mf = await V.evaluate(() => ({ hint: document.getElementById('hint').textContent.trim(), fix: [...document.querySelectorAll('#board .cell.fix')].map(c => [...c.parentNode.children].indexOf(c)).sort((a, c) => a - c) }));
+    assert.ok(/^Miss\./.test(mf.hint), 'the miss is said: ' + mf.hint); assert.deepEqual(mf.fix, room2().g.cfg.rocks.map(r => idx(...r)).sort((a, c) => a - c), 'after the miss the rock piles pulse'); }
+  ok('aiming the only stone anywhere but at a found egg asks first; the second tap throws');
   await V.context().close();
 
   // ================= classic: human ostrich =================
