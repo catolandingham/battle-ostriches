@@ -4,7 +4,8 @@
 const $=id=>document.getElementById(id),key=p=>p[0]+','+p[1],D=(a,b)=>Math.max(Math.abs(a[0]-b[0]),Math.abs(a[1]-b[1]));
 // --- marks: bold, one per square, distinct by SHAPE and colour, same in every theme ---
 const HYENA='<svg viewBox="0 0 40 40" aria-hidden="true"><path d="M4 30 L8 17 L14 13 L27 13 L31 9 L33 3 L36 9 L38 17 L32 21 L30 30 L26 30 L25 23 L14 23 L12 30 Z" fill="#e0a34a" stroke="#1d1206" stroke-width="2.6" stroke-linejoin="round"/><path d="M8 17 L4 9 L12 14" fill="#e0a34a" stroke="#1d1206" stroke-width="2.4" stroke-linejoin="round"/><circle cx="15" cy="17" r="2.2" fill="#3b2410"/><circle cx="21" cy="19" r="2" fill="#3b2410"/><circle cx="26" cy="16" r="1.8" fill="#3b2410"/><path d="M8 13 L22 10" stroke="#3b2410" stroke-width="3" stroke-linecap="round"/><circle cx="33" cy="12" r="1.8" fill="#000"/><path d="M36 17 L32 18" stroke="#1d1206" stroke-width="2"/></svg>';
-const BADGER='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" aria-hidden="true"><path d="M5 29 C5 15 13 8 22 8 L32 11 C38 14 39 22 36 27 L33 33 L12 34 C7 33 5 31 5 29Z" fill="#f7f4ee" stroke="#1a120c" stroke-width="2.6" stroke-linejoin="round"/><path d="M14 31 l2 6 M22 33 l1 6 M30 31 l2 5" stroke="#1a120c" stroke-width="3.2" fill="none" stroke-linecap="round"/><path d="M18 15 L35 17.5 L34 21 L18 18.5Z" fill="#1a120c"/><circle cx="31" cy="17.6" r="2" fill="#fff"/><circle cx="31.6" cy="17.8" r="1" fill="#111"/></svg>';
+// The honey badger, face on: a white face with two dark stripes and angry brows (Brian, 2026-11-08).
+const BADGER='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" aria-hidden="true"><circle cx="8.5" cy="11" r="4.2" fill="#1a1512" stroke="#1a120c" stroke-width="2.4" stroke-linejoin="round"/><circle cx="31.5" cy="11" r="4.2" fill="#1a1512" stroke="#1a120c" stroke-width="2.4" stroke-linejoin="round"/><path d="M4 17C4 9 11 4 20 4C29 4 36 9 36 17C36 27 27 38 20 38C13 38 4 27 4 17Z" fill="#f4f1ea" stroke="#1a120c" stroke-width="2.4" stroke-linejoin="round"/><path d="M9 8C11 16 14 25 17.5 34L13.5 33C10 26 6.5 18 6 11Z" fill="#1a1512"/><path d="M31 8C29 16 26 25 22.5 34L26.5 33C30 26 33.5 18 34 11Z" fill="#1a1512"/><path d="M8.5 17.5L15.5 20M31.5 17.5L24.5 20" stroke="#1a1512" stroke-width="2.6" stroke-linecap="round"/><circle cx="12.6" cy="21.4" r="2.1" fill="#fff"/><circle cx="27.4" cy="21.4" r="2.1" fill="#fff"/><circle cx="12.9" cy="21.6" r="1" fill="#111"/><circle cx="27.1" cy="21.6" r="1" fill="#111"/><ellipse cx="20" cy="34" rx="3.6" ry="2.6" fill="#111"/></svg>';
 const MOUND='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" aria-hidden="true"><path d="M2 36 Q8 8 20 6 Q32 8 38 36 Z" fill="#f6e2a8" stroke="#1a1008" stroke-width="3.2" stroke-linejoin="round"/><path d="M10 26 q3-2 6 0M24 22 q3-2 6 0M16 32 q3-2 6 0" stroke="#6b4420" stroke-width="2.2" fill="none" stroke-linecap="round"/><circle cx="17" cy="20" r="2.6" fill="#fff" stroke="#111" stroke-width="1"/><circle cx="23" cy="20" r="2.6" fill="#fff" stroke="#111" stroke-width="1"/><circle cx="17" cy="20.6" r="1.2" fill="#111"/><circle cx="23" cy="20.6" r="1.2" fill="#111"/></svg>';
 const CLAW='<svg viewBox="0 0 40 40" aria-hidden="true"><path d="M10 6 L18 34 M19 4 L25 34 M28 6 L32 32" stroke="#000" stroke-width="8" stroke-linecap="round"/><path d="M10 6 L18 34 M19 4 L25 34 M28 6 L32 32" stroke="#ff2a6d" stroke-width="4.5" stroke-linecap="round"/></svg>';
 const OSTI='<svg viewBox="0 0 40 40"><path d="M6 26 L18 18 L30 22 L24 32 L10 32 Z" fill="#38d6f0" stroke="#000" stroke-width="3" stroke-linejoin="round"/><path d="M26 22 L28 6 L34 7" fill="none" stroke="#000" stroke-width="4" stroke-linecap="round"/></svg>';
@@ -112,7 +113,6 @@ function hPieces(S,board,prev){const h=S.h3,me=h.mySeat;
   pc.className='pc ph h'+x.kind+(bur?' bur':'')+(x.me?' mine':' rival');pc.innerHTML=bur?MOUND:KIND[x.kind].art;c.appendChild(pc);c.classList.add('hcell');
   if(x.me){const old=document.getElementById('current');if(old&&old!==c)old.removeAttribute('id');c.id='current';}
   c.dataset.tip=(c.dataset.tip?c.dataset.tip+' · ':'')+(x.me?(bur?'You, hidden.':'You.'):me==='hyena'||me==='badger'?'Rival. Landing on it shoves it.':KIND[x.kind].n+'. Don\'t let it land on you.');
-  if(bur){const l=document.createElement('span');l.className='burtag';l.textContent='BURROWED';c.appendChild(l);}
 }
 }
 function hOver(S){const h=S.h3,w=S.winner,me=h.mySeat,C=S.cfg;
@@ -182,29 +182,45 @@ const BL=window.BadgerLines;let bPicker=BL.createPicker(),bLastS=null,bBusy=fals
 const winNote=S=>{const t=BL.winLine(S);return t?`<p class="badgerwin">${t}</p>`:'';};
 function badgerSay(text){if(bQ.length<4)bQ.push(text);setTimeout(()=>bPump(0),60);} // after this state's board is drawn, so the badger's square is there to point at
 function bPump(tries){if(bBusy||!bQ.length)return;
- if((document.querySelector('#board .h3pop')||document.getElementById('announce')&&document.getElementById('announce').classList.contains('show'))&&tries<10){setTimeout(()=>bPump(tries+1),400);return;}
- bBusy=true;const o=document.createElement('div');o.id='badgerline';o.className='h3pop badger';o.textContent=bQ.shift();document.body.appendChild(o);
- const cell=document.querySelector('#board .pc.ph.hbadger'),bd=document.getElementById('board'),r=(cell||bd).getBoundingClientRect(),w=o.offsetWidth,h=o.offsetHeight,vw=window.innerWidth;
- let x=r.left+r.width/2,y=cell?r.top-8-h/2:r.top+r.height/2;x=Math.max(w/2+8,Math.min(vw-w/2-8,x));if(y<h/2+8)y=r.bottom+8+h/2;
- o.style.left=x+'px';o.style.top=y+'px';
+ if((document.querySelector('#msgslot .h3pop')||document.getElementById('announce')&&document.getElementById('announce').classList.contains('show'))&&tries<10){setTimeout(()=>bPump(tries+1),400);return;}
+ bBusy=true;const o=document.createElement('div');o.id='badgerline';o.className='h3pop badger';o.textContent=bQ.shift();document.getElementById('msgslot').appendChild(o); // the badger's quote goes in the message slot, not over the board
  setTimeout(()=>{o.remove();bBusy=false;bPump(0);},3000);}
 function badgerLines(S,prev){if(S===bLastS)return;bLastS=S;if(!prev||(prev.round!=null&&S.round<prev.round))bPicker=BL.createPicker();
  for(const e of BL.detect(prev,S,bPicker))badgerSay(e.text);}
-// Where a bird may be: ONE dashed outline around the whole area (not a dot on every square). On the second Pounce reading the part that is inside both readings is filled.
-function senseArea(board,S,hx,hy,range){const C=S.cfg,box=(cx,cy)=>({x0:Math.max(0,cx-range),y0:Math.max(0,cy-range),x1:Math.min(C.cols-1,cx+range),y1:Math.min(C.rows-1,cy+range)});
- const place=(b,cls)=>{const a=board.children[b.y0*C.cols+b.x0],z=board.children[b.y1*C.cols+b.x1];if(!a||!z||!a.offsetWidth)return;
-  const o=document.createElement('div');o.className=cls;o.style.left=a.offsetLeft+'px';o.style.top=a.offsetTop+'px';o.style.width=(z.offsetLeft+z.offsetWidth-a.offsetLeft)+'px';o.style.height=(z.offsetTop+z.offsetHeight-a.offsetTop)+'px';board.appendChild(o);};
- const cur=box(hx,hy);place(cur,'senseArea');
- if(S.pounce&&S.firstAt){const f=box(S.firstAt[0],S.firstAt[1]),i={x0:Math.max(cur.x0,f.x0),y0:Math.max(cur.y0,f.y0),x1:Math.min(cur.x1,f.x1),y1:Math.min(cur.y1,f.y1)};if(i.x0<=i.x1&&i.y0<=i.y1)place(i,'senseArea overlap');}}
-function pop(board,txt,cls){const o=document.createElement('div');o.className='h3pop '+cls;o.textContent=txt;board.appendChild(o);setTimeout(()=>o.remove(),cls==='catch'?3400:1800);}
+// One look per meaning, in one corner of the square (never over its middle). "May be here" is the animal's small outline, dashed and unfilled. "Is here" (known to be there) is the same small shape filled white with a dark edge. Animals themselves stay full size.
+// The shapes: an egg for the vulture's sniff and for eggs you know, a bird for the hunters' sense, a badger for a burrow a bird saw being dug. Style (dashed or filled) lives in part1.css.
+// The bird is a plain (not dashed) side-view line: dashes break a small detailed shape apart, and a hunter only ever sees "may be here" birds, so there is no filled bird to mix it up with.
+// The badger's dig-in spot is a pile of dirt, filled white like every other "is here" mark.
+const EGGD='M6 21A14 17.5 0 1 1 34 21A14 17.5 0 1 1 6 21Z',BIRDD='M3 15L12 21C11 30 18 36 26 33C32 31 35 26 33 20L39 17L32 15C31 9 25 7 21 11C19 13 19 16 20 19C15 18 9 16 3 15Z',MOUNDD='M2 34C6 26 10 25 13 21C16 15 24 15 27 21C30 25 34 26 38 34Z';
+// each outline is drawn twice: a wider dark line underneath (mk-d) and the white line on top (mk), so it stays crisp on any tile
+const two=d=>'<path class="mk-d" pathLength="100" d="'+d+'"/><path class="mk" pathLength="100" d="'+d+'"/>';
+const CM={
+ egg:'<svg viewBox="0 0 40 40" aria-hidden="true">'+two(EGGD)+'</svg>',
+ bird:'<svg viewBox="0 0 40 40" aria-hidden="true">'+two(BIRDD)+'<circle class="mk-eye" cx="27" cy="13.5" r="2.2"/></svg>',
+ badger:'<svg viewBox="0 0 40 40" aria-hidden="true">'+two(MOUNDD)+'<circle class="mk-eye" cx="15" cy="28" r="1.8"/><circle class="mk-eye" cx="24" cy="25" r="1.8"/><circle class="mk-eye" cx="29" cy="30" r="1.8"/></svg>'};
+function markHTML(kind,cls){return CM[kind]?'<i class="cmark cm-'+kind+(cls?' '+cls:'')+'" aria-hidden="true">'+CM[kind]+'</i>':'';}
+function mark(cell,kind,cls){if(!cell||!CM[kind])return null;
+ // one mark per square: what is known ("is here", solid) replaces a "may be here" outline on the same square, and never the other way round
+ const ex=cell.querySelector('.cmark');if(ex){if(/(^| )is( |$)/.test(cls||'')&&!ex.classList.contains('is'))ex.remove();else return null;}
+ const i=document.createElement('i');i.className='cmark cm-'+kind+(cls?' '+cls:'');i.setAttribute('aria-hidden','true');i.innerHTML=CM[kind];cell.appendChild(i);return i;}
+// the same mark in every square of the box around (cx,cy), clipped to the board; the centre square is left out
+// An egg can never be on a rock pile, on or next to a leaf, or on a wrecked square, so those squares never get an egg mark.
+const noEgg=(S,x,y)=>{const C=S.cfg,m=(S.marks||{})[x+','+y];return (C.rocks||[]).some(q=>q[0]===x&&q[1]===y)||(C.foods||[]).some(f=>Math.max(Math.abs(f[0]-x),Math.abs(f[1]-y))<=1)||m==='hit'||m==='stone';};
+function marksAround(board,S,cx,cy,range,kind,cls){const C=S.cfg;let n=0;
+ for(let y=Math.max(0,cy-range);y<=Math.min(C.rows-1,cy+range);y++)for(let x=Math.max(0,cx-range);x<=Math.min(C.cols-1,cx+range);x++){if(x===cx&&y===cy)continue;if(kind==='egg'&&S.cfg&&noEgg(S,x,y))continue;const c=board.children[y*C.cols+x];if(c&&c.classList&&c.classList.contains('cell')&&mark(c,kind,cls))n++;}
+ return n;}
+function pop(board,txt,cls){const o=document.createElement('div');o.className='h3pop '+cls;o.textContent=txt;const slot=document.getElementById('msgslot');slot.querySelectorAll('.h3pop:not(#badgerline)').forEach(x=>x.remove());slot.appendChild(o);setTimeout(()=>o.remove(),cls==='catch'?3400:1800);} // in the message slot above the board, never over it
 // --- Announcements: one plain line for a big event (catch, knock-out, the hunters meeting, the badger coming out, the start-of-game line) on every phone.
 // The line lives in #announce, outside #board, so a board redraw never erases it. Each line stays up about 3 seconds, one at a time, in order.
 // Where the event happened (a square highlight) is drawn on the board only when the view carries that square, and the server sends it only to a player who can see it. ---
 const ANN_MS=3000,annQ=[];let annBusy=false;
 function announce(txt){if(!txt)return;annQ.push(txt);if(annQ.length>4)annQ.shift();annPump();}
-function annPump(){if(annBusy||!annQ.length)return;annBusy=true;
- let o=$('announce');if(!o){o=document.createElement('div');o.id='announce';o.setAttribute('role','status');o.setAttribute('aria-live','polite');document.body.appendChild(o);}
- const t=annQ.shift(),bd=document.getElementById('board');o.textContent=t;o.className='show'+(/^Caught!|^A hidden|knocked you out/.test(t)?' bad':'');if(bd)o.style.top=(bd.getBoundingClientRect().top+8)+'px'; // a one-line toast at the top edge of the board; red only for bad news to this phone
+function annPump(){if(annBusy||!annQ.length)return;
+ const rc=document.getElementById('rolecard');if(rc&&!rc.classList.contains('hidden')){setTimeout(annPump,400);return;} // the start line waits until the role card is closed, so it never sits on the card
+ annBusy=true;
+ let o=$('announce');if(!o){o=document.createElement('div');o.id='announce';o.setAttribute('role','status');o.setAttribute('aria-live','polite');}
+ if(o.parentNode!==$('msgslot'))$('msgslot').appendChild(o);
+ const t=annQ.shift();o.textContent=t;o.className='show'+(/^Caught!|^A hidden|knocked you out/.test(t)?' bad':''); // a one-line toast in the message slot above the board; red only for bad news to this phone
  setTimeout(()=>{o.className='';o.textContent='';setTimeout(()=>{annBusy=false;annPump();},120);},ANN_MS);}
 const evSeen={kick:0,pop:0,rival:0,stone:0,dug:0,burst:0};
 function events(S,prev,board){
@@ -226,22 +242,22 @@ function after(S,prev,board){badgerLines(S,prev);chips(S);clock(S);kindPick(S);i
  // hunter piece: the hunter always sees itself; a bird only sees it within 2 squares (never a burrowed badger)
  const hp=h.hunter,hc=cellAt(board,S,hp);
  // a mound where the badger dug in, only for a bird that saw it dig and only while it stays buried (the server sends h.mound to nobody else)
- if(h.mound){const mc=cellAt(board,S,h.mound);if(mc&&!mc.querySelector('.pc.mound')){const d=document.createElement('div');d.className='pc ph bur mound';d.innerHTML=MOUND;mc.appendChild(d);mc.dataset.tip=(mc.dataset.tip?mc.dataset.tip+' · ':'')+'The honey badger dug in here';mc.setAttribute('aria-label',(mc.getAttribute('aria-label')?mc.getAttribute('aria-label')+'. ':'')+'Honey badger dug in here');}}
+ if(h.mound){const mc=cellAt(board,S,h.mound);if(mc&&!mc.querySelector('.cmark.cm-badger')){mark(mc,'badger','is');mc.dataset.tip=(mc.dataset.tip?mc.dataset.tip+' · ':'')+'The honey badger dug in here';mc.setAttribute('aria-label',(mc.getAttribute('aria-label')?mc.getAttribute('aria-label')+'. ':'')+'Honey badger dug in here');}}
  if(hc){const bur=me==='hunter'&&S.burrowed;const pc=document.createElement('div');pc.className='pc ph h'+k+(bur?' bur':'')+(me==='hunter'?' mine':'');pc.innerHTML=bur?MOUND:KIND[k].art;hc.appendChild(pc);hc.classList.add('hcell');if(me==='hunter'){const old=document.getElementById('current');if(old&&old!==hc)old.removeAttribute('id');hc.id='current';}
   hc.dataset.tip=(hc.dataset.tip?hc.dataset.tip+' · ':'')+(me==='hunter'?(bur?'You, hidden.':'You.'):KIND[k].n+'. Don\'t let it land on you.');
-  if(bur){const l=document.createElement('span');l.className='burtag';l.textContent='BURROWED';hc.appendChild(l);}
 }
  // ambush sight: a burrowed badger sees the exact square of any bird next to it (S.seenBirds comes from the rules only while burrowed)
  if(me==='hunter'&&S.phase==='play'&&S.burrowed&&S.seenBirds)for(const q of S.seenBirds){const c=cellAt(board,S,q.p);if(!c||c.querySelector('.pc.po,.pc.pv'))continue;
   const d=document.createElement('div');d.className='pc '+(q.type==='o'?'po':'pv')+' ambushsee';d.innerHTML=q.type==='o'?OSTI:VULI;c.appendChild(d);
+  const rg=document.createElement('i');rg.className='kring cue';c.appendChild(rg); // the act-on ring: a bird you can catch
   c.dataset.tip=(c.dataset.tip?c.dataset.tip+' · ':'')+'Bird next to you.';c.setAttribute('aria-label',(c.getAttribute('aria-label')?c.getAttribute('aria-label')+'. ':'')+'Bird next to you');}
  // sense: hunter only. The shaded box is yes or no. It does not name a direction or draw a compass.
  if(me==='hunter'&&S.phase==='play'&&S.sense!=null&&S.myTurn){
-  const hx=S.hunter[0],hy=S.hunter[1],range=h.senseRange;
+  const hx=S.hunter[0],hy=S.hunter[1],range=h.senseRange,area=!!(window.NextStep&&NextStep.compute(S).kind==='area');
   if(S.sense){for(let y=0;y<S.cfg.rows;y++)for(let x=0;x<S.cfg.cols;x++){const dx=x-hx,dy=y-hy;if(!dx&&!dy)continue;if(Math.max(Math.abs(dx),Math.abs(dy))>range)continue;
    const c=board.children[y*S.cfg.cols+x];if(!c||!c.classList||!c.classList.contains('cell'))continue;if(c.querySelector('.pc.po,.pc.pv'))continue;
-   c.classList.add('maybird');if(S.pounce&&S.firstAt&&Math.max(Math.abs(x-S.firstAt[0]),Math.abs(y-S.firstAt[1]))<=range)c.classList.add('bright');const had=c.getAttribute('aria-label')||'';if(!/Bird may be here/.test(had))c.setAttribute('aria-label',had?had+'. Bird may be here':'Bird may be here');}}
-  if(S.sense)senseArea(board,S,hx,hy,range);
+   const both=S.pounce&&S.firstAt&&Math.max(Math.abs(x-S.firstAt[0]),Math.abs(y-S.firstAt[1]))<=range;if(S.pounce&&!both)continue; // the Pounce marks only the squares inside both readings
+   c.classList.add('maybird');mark(c,'bird',area?'cue':'');const had=c.getAttribute('aria-label')||'';if(!/Bird may be here/.test(had))c.setAttribute('aria-label',had?had+'. Bird may be here':'Bird may be here');}}
   const sk=S.round+':'+S.senseSeq;if(sk!==lastSense){lastSense=sk;UI.pause(1100);
    pop(board,S.sense?(S.pounce?'Still near.':'Bird near.'):'Nothing near.',S.sense?'yes':'no');
    window.SFX&&SFX.play(S.sense?'sniffYes':'sniffNo');}
@@ -274,6 +290,6 @@ function over(S){if(S.h3.hunt)return hOver(S);if(S.h3.team)return tOver(S);const
   :w==='red'?(S.winBy==='cold'?`The last egg went cold in round ${S.round}.`:S.winBy==='starved'?'The ostrich was out and no eggs were left.':`The vulture smashed every egg by round ${S.round}.`)
   :S.winBy==='time'?'Time ran out: the ostrich was out and the vulture never got every egg.':'The eggs were lost, but the vulture was already out.';
  return `<div class="lobbybox"><div class="bigost">${art}</div><h1>${title}</h1><p>${S.endWhy||why}</p>${winNote(S)}${endBits(S)}</div>`;}
-window.T3UI={after,events,startLine,announce,hint,tag,waitMsg,nopeMsg,over,endBits,KIND};
+window.T3UI={mark,markHTML,marksAround,after,events,startLine,announce,hint,tag,waitMsg,nopeMsg,over,endBits,KIND};
 document.readyState==='loading'?document.addEventListener('DOMContentLoaded',lobby):lobby();
 })();

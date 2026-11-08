@@ -63,7 +63,7 @@ const THEMES = ['classic', 'nature', 'notes', 'golden', 'paper', 'arcade', 'toyb
   let L = await look(S); assert.deepEqual(L.glow, [], 'stone in hand: no rock glow'); assert.equal(L.th, 'Throw'); assert.equal(L.thDis, false);
   assert.ok(!/No stone/.test(await hint()), 'stone in hand: hint does not say no stone');
   await P.click('#actions button:has-text("Throw")', { force: true });
-  const tgt = (await P.evaluate(() => UI._legal()))[0]; await cellAt(S, tgt).click(); // throw the one stone (may smash or miss)
+  const tgt = (await P.evaluate(() => UI._legal()))[0]; await cellAt(S, tgt).click(); if (await P.evaluate(() => !!document.querySelector('#board .cell.confirm'))) await cellAt(S, tgt).click(); // throw the one stone (may smash or miss); the only stone at a square that is not a found egg asks once more
 
   // 2) two turns with no stone: fly toward the nearest rock pile without landing on it
   const rocks = S.cfg.rocks;

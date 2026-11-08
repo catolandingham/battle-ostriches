@@ -25,15 +25,18 @@ const PIECE = { ostrich: '.pc.po', vulture: '.pc.pv', hyena: '.pc.ph.mine', badg
     const r = await p.evaluate(sel => {
       const all = [...document.querySelectorAll('.youtag')], vis = all.filter(t => { const s = getComputedStyle(t), q = t.getBoundingClientRect(); return s.display !== 'none' && s.visibility !== 'hidden' && +s.opacity > 0.9 && q.width > 4 && q.height > 4; });
       if (vis.length !== 1) return { n: vis.length, all: all.length };
-      const t = vis[0], c = t.closest('.cell'), q = t.getBoundingClientRect(), cr = c.getBoundingClientRect(), s = getComputedStyle(t);
+      const t = vis[0], q = t.getBoundingClientRect(), s = getComputedStyle(t);
+      // the tag hangs above the square that holds my piece: find that square (the one right under the tag's middle)
+      const c = [...document.querySelectorAll('#board .cell')].find(x => { const r = x.getBoundingClientRect(); return Math.abs((r.left + r.right) / 2 - (q.left + q.right) / 2) < 3 && Math.abs(r.top - q.bottom) <= 4; });
+      if (!c) return { n: 1, noSquare: true }; const cr = c.getBoundingClientRect();
       const rgb = x => (x.match(/[\d.]+/g) || []).slice(0, 3).map(Number), lum = a => { const [R, G, B] = a.map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }); return 0.2126 * R + 0.7152 * G + 0.0722 * B; };
       const l1 = lum(rgb(s.color)), l2 = lum(rgb(s.backgroundColor)), ratio = (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
       const mid = document.elementFromPoint(q.left + q.width / 2, q.top + q.height / 2);
-      return { n: 1, text: t.textContent, piece: !!c.querySelector(sel), inside: q.left >= cr.left - 0.5 && q.right <= cr.right + 0.5 && q.top >= cr.top - 0.5 && q.bottom <= cr.bottom + 0.5, ratio, pe: s.pointerEvents, font: parseFloat(s.fontSize), through: mid !== t, board: !!c.closest('#board') };
+      return { n: 1, text: t.textContent, piece: !!c.querySelector(sel), inside: q.bottom <= cr.top + 3 && q.top < cr.top, ratio, pe: s.pointerEvents, font: parseFloat(s.fontSize), through: mid !== t, board: !!c.closest('#board') };
     }, PIECE[role]);
     const w = role + ' ' + where;
     assert.equal(r.n, 1, w + ': exactly one visible YOU tag, saw ' + JSON.stringify(r)); assert.equal(r.text, 'YOU', w); assert.ok(r.piece, w + ': tag sits on the square with my ' + role);
-    assert.ok(r.inside, w + ': tag stays inside its square'); assert.ok(r.ratio >= 4.5, w + ': contrast ' + r.ratio.toFixed(1)); assert.equal(r.pe, 'none', w); assert.ok(r.through, w + ': taps go through the tag'); assert.ok(r.font >= 8.5, w + ': font ' + r.font);
+    assert.ok(r.inside, w + ': the tag hangs above its square, not on it'); assert.ok(r.ratio >= 4.5, w + ': contrast ' + r.ratio.toFixed(1)); assert.equal(r.pe, 'none', w); assert.ok(r.through, w + ': taps go through the tag'); assert.ok(r.font >= 8.5, w + ': font ' + r.font);
   };
   const setTheme = async (p, t) => { await p.evaluate(x => THEME.set(x), t); };
   const allThemes = async (phones, label) => {
@@ -43,7 +46,7 @@ const PIECE = { ostrich: '.pc.po', vulture: '.pc.pv', hyena: '.pc.ph.mine', badg
   // a tap on a legal square right beside my own still moves me (the tag does not steal it)
   const tapNeighbour = async p => {
     await reveal(p);
-    const pt = await p.evaluate(() => { const cells = [...document.querySelectorAll('#board .cell')], me = document.querySelector('.youtag').closest('.cell'), mi = cells.indexOf(me), tg = document.querySelector('.youtag').getBoundingClientRect();
+    const pt = await p.evaluate(() => { const cells = [...document.querySelectorAll('#board .cell')], me = document.querySelector('#board .youring').closest('.cell'), mi = cells.indexOf(me), tg = document.querySelector('.youtag').getBoundingClientRect();
       for (const c of cells) { const i = cells.indexOf(c); if (!c.classList.contains('legal') || Math.max(Math.abs(i % 9 - mi % 9), Math.abs(Math.floor(i / 9) - Math.floor(mi / 9))) !== 1) continue;
         const q = c.getBoundingClientRect(); return { x: Math.min(q.right - 3, Math.max(q.left + 3, tg.left + tg.width / 2)), y: Math.min(q.bottom - 3, Math.max(q.top + 3, tg.top + tg.height / 2)), i }; } return null; });
     assert.ok(pt, 'a legal square next to me'); await p.touchscreen.tap(pt.x, pt.y); return pt.i; };
@@ -94,7 +97,7 @@ const PIECE = { ostrich: '.pc.po', vulture: '.pc.pv', hyena: '.pc.ph.mine', badg
   await A4.waitForSelector('#actions.mine', { state: 'attached', timeout: 20000 }); await A4.waitForTimeout(250);
   assert.ok((await pulses(A4)).adds >= 1, 'badger: pulse at turn start'); await A4.waitForTimeout(900); const pb = await pulses(A4); assert.equal(pb.live, 0); assert.ok(pb.lastRem - pb.first <= 1000);
   await A4.locator('#actions button').first().click({ force: true }); // burrow
-  await A4.waitForSelector('.pc.ph.bur', { state: 'attached', timeout: 8000 }); await A4.waitForSelector('.burtag'); await A4.waitForTimeout(300);
+  await A4.waitForSelector('.pc.ph.bur', { state: 'attached', timeout: 8000 }); await A4.waitForTimeout(300);
   await check(A4, 'badger', 'burrowed'); await shot(A4, 'badger'); await allThemes([[A4, 'badger']], 'burrowed');
   await A4.context().close(); await Y.context().close();
 

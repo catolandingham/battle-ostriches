@@ -42,7 +42,7 @@ const shot = (p, n) => p.screenshot({ path: OUT + n + '.jpg', type: 'jpeg', qual
   // 1 human hunter (honey badger) vs 2 computer birds
   const P = await mk(); await P.goto(U); await P.click('#playSolo'); await P.click('[data-bots="2"]'); await P.click('#soloGo'); await P.click('[data-role="badger"]'); await P.click('#startGame');
   await P.waitForSelector('#actions.mine', { state: 'attached', timeout: 15000 }); assert.ok(/BADGER/.test(await P.textContent('#turnTag')));
-  await P.locator('#actions button').click({ force: true }); await P.waitForSelector('.burtag'); await shot(P, '7-badger-burrowed');
+  await P.locator('#actions button').click({ force: true }); await P.waitForSelector('.pc.ph.bur'); await shot(P, '7-badger-burrowed');
   for (let i = 0; i < 4; i++) { await P.waitForSelector('#actions.mine, #over:not(.hidden)', { state: 'attached', timeout: 15000 }); if (await P.locator('#over:not(.hidden)').count()) break;
     await P.waitForTimeout(1200); await P.locator('.cell.legal').first().click(); await P.waitForTimeout(300); }
   console.log('errors', errs); assert.equal(errs.length, 0);

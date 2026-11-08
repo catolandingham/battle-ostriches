@@ -1,4 +1,4 @@
-// Signals on a phone (WebKit, 390 x 664): (1) the "you can move here" dot meets 3:1 contrast against the tile on all 13 themes (measured from screenshot
+// Signals on a phone (WebKit, 390 x 664): (1) a square you can move to is LIT and the lit square meets 3:1 contrast against an unlit tile on all 13 themes (measured from screenshot
 // pixels, the way the UX audit did), (2) the whole 9 x 7 board is on screen above the buttons, (3) one ring under your own animal in every theme,
 // (4) no hint longer than 7 words on the ostrich and vulture turns, (5) UX screenshots for the designer -> shots/ux/.
 process.env.PORT = 3961; process.env.BO_BOTMS = '200'; process.env.BO_CLOCKMS = '60000';
@@ -23,18 +23,29 @@ const ratio = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) +
   const rows = [];
   for (const t of THEMES) {
     await p.evaluate(x => THEME.set(x), t); await p.waitForTimeout(250);
-    const r = await p.evaluate(() => { const d = [...document.querySelectorAll('#board .cell.legal > .mvdot')].pop(); if (!d) return null; const q = d.getBoundingClientRect(), cr = d.parentElement.getBoundingClientRect(); return { cx: q.left + q.width / 2, cy: q.top + q.height / 2, w: q.width, left: cr.left, top: cr.top, cw: cr.width }; });
-    assert.ok(r, t + ': a move dot is drawn');
-    const half = r.w / 2, [centre, dark, light, tile] = await pixels(null, [[r.cx, r.cy], [r.cx - half - 1, r.cy], [r.cx - half - 3, r.cy], [r.left + 4, r.top + 4]]);
-    const cs = { fill: ratio(centre, dark), vsTile: Math.max(ratio(light, tile), ratio(dark, tile)) };
-    rows.push(t + ' dot/edge ' + cs.fill.toFixed(1) + ' edge/tile ' + cs.vsTile.toFixed(1));
-    assert.ok(cs.vsTile >= 3, t + ': the move dot reads against the tile, ' + cs.vsTile.toFixed(2) + ' (needs 3.0)');
-    assert.ok(cs.fill >= 3, t + ': the dot fill reads against its own edge, ' + cs.fill.toFixed(2));
+    // a lit square (an empty one, so its middle is the plain fill) and an empty unlit square next to the board's lit ones
+    const r = await p.evaluate(() => { const cells = [...document.querySelectorAll('#board .cell')], empty = c => !c.querySelector('.pc,.ic,.carry,.cmark'), lit = cells.filter(c => c.classList.contains('legal') && !c.classList.contains('target') && empty(c)).pop(), tile = cells.filter(c => !c.classList.contains('legal') && empty(c) && c.classList.contains('alt') === lit.classList.contains('alt'))[0]; if (!lit || !tile) return null; const q = lit.getBoundingClientRect(), t = tile.getBoundingClientRect(); return { lx: q.left, ly: q.top, w: q.width, tx: t.left, ty: t.top, dots: document.querySelectorAll('#board .mvdot,#board .mvring').length, litN: cells.filter(c => c.classList.contains('legal')).length }; });
+    assert.ok(r, t + ': a lit square and an unlit square are on the board'); assert.equal(r.dots, 0, t + ': no move dots'); assert.ok(r.litN >= 3, t + ': the squares you can move to are lit');
+    // fill = the middle of the lit square; edge = the darkest pixel across its inner edge; tile = the same kind of unlit square, away from its own edge
+    const px = await pixels(null, [[r.lx + r.w / 2, r.ly + r.w / 2], [r.lx + 1, r.ly + r.w / 2], [r.lx + 1.5, r.ly + r.w / 2], [r.lx + 2, r.ly + r.w / 2], [r.lx + r.w / 2, r.ly + 1], [r.tx + r.w / 2, r.ty + r.w / 2]]);
+    const sum = c => c[0] + c[1] + c[2], fill = px[0], edge = px.slice(1, 5).sort((a, c) => sum(a) - sum(c))[0], tile = px[5];
+    const cs = { fill: ratio(fill, edge), vsTile: Math.max(ratio(fill, tile), ratio(edge, tile)), fillTile: ratio(fill, tile), edgeTile: ratio(edge, tile) };
+    rows.push(t + ' fill/edge ' + cs.fill.toFixed(1) + ' lit/tile ' + cs.vsTile.toFixed(1) + ' (fill ' + cs.fillTile.toFixed(1) + ', edge ' + cs.edgeTile.toFixed(1) + ')');
+    assert.ok(cs.vsTile >= 3, t + ': a lit square reads against an unlit tile, ' + cs.vsTile.toFixed(2) + ' (needs 3.0)');
+    assert.ok(cs.fill >= 3, t + ': the lit fill reads against its own edge, ' + cs.fill.toFixed(2));
     // the whole board is on screen, above the buttons; one ring under my animal
     const fit = await p.evaluate(() => { const cells = [...document.querySelectorAll('#board .cell')], a = document.getElementById('actions').getBoundingClientRect(), vh = innerHeight;
       const last = cells[cells.length - 1].getBoundingClientRect(), first = cells[0].getBoundingClientRect(); return { n: cells.length, top: first.top, bottom: last.bottom, actionsTop: a.top, vh, rings: document.querySelectorAll('#board .youring').length }; });
     assert.equal(fit.n, 63, t + ': 63 squares'); assert.ok(fit.top >= 0 && fit.bottom <= fit.actionsTop + 1 && fit.bottom <= fit.vh, t + ': the whole board fits above the buttons ' + JSON.stringify(fit));
     assert.equal(fit.rings, 1, t + ': exactly one ring under my own animal');
+    // "may be here" is a dashed white outline and "is here" is the same shape filled white: the dashes must be clearly visible in every theme (about 6 separate bright dashes round the egg, with dark between the dark edge and the tile)
+    const mk = await p.evaluate(() => { const cells = [...document.querySelectorAll('#board .cell')], c = cells.filter(c => !c.classList.contains('legal') && !c.querySelector('.pc,.ic,.carry,.cmark'))[3]; const m = T3UI.mark(c, 'egg'); const q = m.getBoundingClientRect(); return { x: q.left, y: q.top, w: q.width, h: q.height }; });
+    const ring = await p.evaluate(async png => { const img = await createImageBitmap(await (await fetch('data:image/png;base64,' + png)).blob()), cv = document.createElement('canvas'); cv.width = img.width; cv.height = img.height; const g = cv.getContext('2d'); g.drawImage(img, 0, 0);
+      const W = img.width, H = img.height, d = g.getImageData(0, 0, W, H).data, on = new Uint8Array(W * H); let n = 0; for (let i = 0; i < W * H; i++) if (Math.min(d[i * 4], d[i * 4 + 1], d[i * 4 + 2]) >= 250) { on[i] = 1; n++; }
+      let comps = 0; const seen = new Uint8Array(W * H); for (let i = 0; i < W * H; i++) { if (!on[i] || seen[i]) continue; let size = 0; const st = [i]; seen[i] = 1; while (st.length) { const j = st.pop(); size++; const x = j % W, y = (j - x) / W; for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const xx = x + dx, yy = y + dy; if (xx < 0 || yy < 0 || xx >= W || yy >= H) continue; const k = yy * W + xx; if (on[k] && !seen[k]) { seen[k] = 1; st.push(k); } } } if (size >= 4) comps++; }
+      return { dashes: comps, brightPx: n }; }, (await p.screenshot({ clip: { x: mk.x - 3, y: mk.y - 3, width: mk.w + 6, height: mk.h + 6 } })).toString('base64'));
+    assert.ok(ring.dashes >= 5 && ring.dashes <= 7 && ring.brightPx >= 30, t + ': the dashed "may be here" outline shows about 6 clear separate dashes, ' + JSON.stringify(ring));
+    await p.evaluate(() => document.querySelectorAll('#board .cmark').forEach(m => m.remove()));
     const hint = await p.textContent('#hint'); assert.ok(hint.trim().split(/\s+/).length <= 7, t + ': hint is short: "' + hint + '"');
   }
   console.log(rows.join('\n'));
