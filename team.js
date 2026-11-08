@@ -169,7 +169,10 @@ function hunterMove(g, p) {
 }
 function hunterStay(g) {
   if (!myTurn(g, 'hunter')) return false;
-  g.popout = null; const h = g.h; if (!h.pounce && h.kind === 'badger') { h.dig = 2; h.burrowed = true; } // one still turn always burrows
+  g.popout = null; const h = g.h;
+  if (!h.pounce && h.kind === 'badger') { // one still turn always burrows, on any square
+    if (!h.burrowed) { g.dug = { seq: g.digSeq = (g.digSeq || 0) + 1, round: g.round }; g.mound = { at: h.p.slice(), seenBy: birdsIn(g).filter(s => hunterSeenBy(g, s)) }; } // the birds that could see it dig see the spot
+    h.dig = 2; h.burrowed = true; }
   h.last = { type: h.pounce ? 'skip' : 'stay' }; h.pounce = false; next(g); return true;
 }
 // --- catches, knock-outs, game end ---

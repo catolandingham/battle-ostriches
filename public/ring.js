@@ -5,7 +5,7 @@
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.BORing = api;
 })(typeof window !== 'undefined' ? window : globalThis, function () {
-  const IDS = ['step', 'carry', 'sit', 'kick', 'fly', 'throw', 'hstay'];
+  const IDS = ['step', 'carry', 'sit', 'kick', 'fly', 'throw', 'hstay', 'hburst'];
   function bearing(dx, dy) {
     if (!dx && !dy) return { key: 'here', name: 'here', dx: 0, dy: 0 };
     const ns = dy < 0 ? 'north' : dy > 0 ? 'south' : '';
@@ -33,7 +33,7 @@
       const k = (S.h3 && S.h3.kind) || S.kind || 'hyena';
       if (S.pounce) return [{ id: 'hstay', label: 'Stop', detail: 'Skip this extra move. You will not catch the bird.', enabled: true, run: 'hstay' }];
       if (k === 'badger') {
-        if (S.burrowed) return [{ id: 'hstay', label: 'Stay', detail: 'Stay burrowed. Birds still cannot see you.', enabled: true, run: 'hstay' }];
+        if (S.burrowed) return [{ id: 'hstay', label: 'Stay', detail: 'Stay burrowed. Birds still cannot see you.', enabled: true, run: 'hstay' }].concat(S.canBurst ? [{ id: 'hburst', label: 'Burst out', detail: 'Come up and shove the hyena back.', enabled: true, run: 'hburst' }] : []);
         return [{ id: 'hstay', label: 'Burrow', detail: 'Stay still to burrow.', enabled: true, run: 'hstay' }];
       }
       return [{ id: 'hstay', label: 'Stay', detail: 'Stay put and end your turn.', enabled: true, run: 'hstay' }];
@@ -179,6 +179,7 @@
         if (it.mode) UI.setMode(it.mode);
         else if (it.act) UI.act(it.act);
         else if (it.run === 'hstay') UI.send({ t: 'act', a: 'hstay' });
+        else if (it.run === 'hburst') UI.send({ t: 'act', a: 'hburst' });
       });
       root.appendChild(b);
     });

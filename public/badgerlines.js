@@ -30,6 +30,7 @@
     const out = [], h = S && S.h3; if (!prev || !h || S.phase !== 'play') return out;
     const ph = prev.h3 || {};
     if (h.rival && h.rival.by === 'badger' && (!ph.rival || ph.rival.seq !== h.rival.seq)) out.push({ event: 'shove', text: LINES.shove });
+    else if (h.burst && (!ph.burst || ph.burst.seq !== h.burst.seq)) out.push({ event: 'shove', text: LINES.shove }); // bursting out from under the hyena shoves it too
     else if (h.popout && h.popout.seen && (prev.turn === 'hunter' || prev.turn === 'badger') && S.turn !== prev.turn && (!ph.popout || ph.popout.seq !== h.popout.seq)) out.push({ event: 'popOut', text: LINES.popOut });
     if (S.kick && S.kick.who === 'badger' && (!prev.kick || prev.kick.seq !== S.kick.seq)) out.push({ event: 'kicked', text: LINES.kicked });
     if (isBadgerPlayer(S) && prev.phase === 'play') {
