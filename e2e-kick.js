@@ -48,7 +48,7 @@ const at = { state: 'attached' };
   assert.equal(await A.locator('.cell.legal').count(), 1, 'only the badger glows'); await cell(A, 3, 5).click();
   for (let i = 0; i < 100 && !g.lastKick; i++) await A.waitForTimeout(50);
   assert.deepEqual(g.hunt.hs.badger.p, [5, 5], 'pushed 2 squares straight away: ' + JSON.stringify([g.hunt.hs.badger.p, g.hunt.hs.hyena.p, g.vulture, g.ostrich])); assert.deepEqual(g.ostrich, [2, 5], 'the ostrich stays'); assert.equal(g.lastKick.who, 'badger');
-  const line = 'The ostrich kicked the honey badger back 2 squares.';
+  const line = 'Ostrich kicked the honey badger 2 squares away.';
   for (const [P, name] of [[A, 'ostrich'], [Y, 'badger']]) await P.waitForFunction(t => (document.getElementById('announce') || {}).textContent === t, line, { timeout: 6000 }).catch(e => { throw new Error(name + ' phone never showed the kick line: ' + e.message); });
   for (const P of [A, Y]) await P.waitForFunction(t => (document.getElementById('badgerline') || {}).textContent === t, BL.LINES.kicked, { timeout: 8000 });
   assert.equal(BL.LINES.kicked, "Ouch. I mean... honey badger don't care.");

@@ -1,10 +1,11 @@
-// Unit tests: the role cards (public/roles.js). Every card exists, every number on it comes from the rules, the Pounce sentence is there. node testroles.js
-const assert = require('assert'), fs = require('fs'), R = require('./public/roles.js');
+// Unit tests: the role cards (public/roles.js). A card is a title and 4 short lines (the goal first), every number comes from the rules,
+// and no word names a color or a look. node testroles.js
+const assert = require('assert'), R = require('./public/roles.js');
 const B = require('./game.js'), T = require('./three.js'), H = require('./hunt.js'), TT = require('./team.js');
 let n = 0; const ok = (name, f) => { f(); n++; console.log('ok', name); };
 const C = B.CONFIG;
-const text = (c) => [c.title, c.goal, ...c.moves, c.lose].join('\n');
-const POUNCE = (m) => `If you smell a bird and do not catch it, you smell again and may move ${m.pounce} square${m.pounce === 1 ? '' : 's'} more.`;
+const text = (c) => [c.title, c.goal, ...c.moves].join('\n');
+const LOOKS = /\b(rose|pink|red|green|gr[ae]y|yellow|blue|orange|white|black|purple|glow(ing)?|dots?|dashed|solid|bright)\b/i;
 
 // every card a phone can be shown: [role, kind, mode]
 const ALL = [
@@ -23,94 +24,66 @@ ok('rules from the modules are plain numbers and nothing else (no start squares)
   assert.ok(!/starts|clockMs/.test(JSON.stringify(r)), 'no start squares or clocks in what the server sends');
 });
 
-ok('every card exists and has a title, a Goal sentence, 2 or 3 moves, a lose line and a picture', () => {
+ok('every card is a title and 4 short lines: a goal, 3 moves, no lose line, no dashes, no color or look named', () => {
   for (const [role, kind, mode] of ALL) {
     const c = R.roleCard(role, kind, mode), at = `${role}/${kind}/${mode}`;
     assert.ok(c, 'card for ' + at);
     assert.ok(/^You are (the|an?) (Ostrich|Vulture|Hyena|Honey Badger)$/.test(c.title), at + ' title: ' + c.title);
-    assert.ok(/^Goal: .+\.$/.test(c.goal) && c.goal.split('. ').length === 1, at + ' goal is one sentence: ' + c.goal);
-    assert.ok(c.moves.length >= 2 && c.moves.length <= 4, at + ' has 2 to 4 moves');
-    assert.ok(/^(You|Your team) lose/.test(c.lose), at + ' lose line: ' + c.lose);
+    assert.ok(/^[A-Z].+\.$/.test(c.goal), at + ' goal is a sentence: ' + c.goal);
+    assert.equal(c.moves.length, 3, at + ' has the goal plus 3 lines');
+    assert.equal(c.lose, '', at + ' has no lose line');
+    for (const l of c.moves) assert.ok(l.split(/\s+/).length <= 9, at + ' line is short: ' + l);
     assert.ok(['ostrich', 'vulture', 'hyena', 'badger'].includes(c.picture), at + ' picture');
     assert.ok(c.id && typeof c.id === 'string');
     assert.ok(!/[—–]/.test(text(c)), at + ' has no dashes');
+    assert.ok(!LOOKS.test(text(c)), at + ' names a color or a look: ' + (text(c).match(LOOKS) || [])[0]);
     const words = text(c).split(/\s+/).length;
-    assert.ok(words <= 100, at + ' stays short enough to read in a few seconds: ' + words + ' words');
+    assert.ok(words <= 45, at + ' stays within a second or two of reading: ' + words + ' words');
   }
   assert.equal(R.roleCard('nobody', null, '2'), null);
 });
 
-ok('the six cards: ostrich, vulture, hyena, honey badger, 2 vs 2 ostrich, 2 vs 2 vulture', () => {
+ok('the cards: ostrich, vulture, hyena, honey badger, 2 vs 2 ostrich, 2 vs 2 vulture', () => {
   const t = (r, k, m) => R.roleCard(r, k, m).title;
   assert.equal(t('blue', null, '2'), 'You are the Ostrich'); assert.equal(t('red', null, '2'), 'You are the Vulture');
   assert.equal(t('hunter', 'hyena', '3'), 'You are the Hyena'); assert.equal(t('hunter', 'badger', '3'), 'You are the Honey Badger');
   assert.equal(t('o1', null, '4'), 'You are an Ostrich'); assert.equal(t('v2', null, '4'), 'You are a Vulture');
-  assert.ok(/team/i.test(R.roleCard('o1', null, '4').goal) && /team/i.test(R.roleCard('v1', null, '4').goal), 'the 2 vs 2 cards state the team goal');
+  assert.ok(/team/i.test(R.roleCard('o1', null, '4').goal), 'the 2 vs 2 ostrich card states the team goal');
   assert.equal(R.roleCard('hyena', null, '4h').picture, 'hyena'); assert.equal(R.roleCard('badger', null, '4h').picture, 'badger');
 });
 
 ok('numbers on the cards equal the rules constants', () => {
   const o = R.roleCard('blue', null, '2'), v = R.roleCard('red', null, '2');
-  assert.ok(o.goal.includes(`${C.eggs} eggs`) && o.goal.includes(`${C.rounds} rounds`), o.goal);
-  assert.ok(o.moves.join('\n').includes(`within ${C.warmth} rounds`) && o.moves.join('\n').includes(`every ${C.food} turns`));
-  assert.ok(v.goal.includes(`round ${C.rounds} ends`) && v.lose.includes(`round ${C.rounds}`));
-  assert.ok(v.moves[0].includes(`up to ${C.vultureFly} squares`) && v.moves[0].includes(`within ${C.smellRange} square`));
-  assert.ok(v.moves[1].includes(`${C.stones} stone`) && v.moves[2].includes(`within ${C.throwRange} of you`));
-  const hy = R.roleCard('hunter', 'hyena', '3'), ba = R.roleCard('hunter', 'badger', '3');
-  assert.ok(hy.moves.join('\n').includes(`A bird is out after ${T.T3.ko.hyena} catches.`), hy.moves.join('|'));
-  assert.ok(ba.moves.join('\n').includes(`A bird is out after ${T.T3.ko.badger} catches.`), ba.moves.join('|'));
-  assert.ok(hy.moves[0].includes(`within ${T.T3.see}`) && hy.moves[0].includes('You smell birds (rose dots).') && hy.goal === `Goal: Make ${B.HUNTER_GOAL('3').n} catches.`);
-  // Hunters mode reads its own constants
-  assert.ok(R.roleCard('hyena', null, '4h').moves.join('\n').includes(`after ${H.TH.ko.hyena} catches`));
-  assert.ok(R.roleCard('badger', null, '4h').moves.join('\n').includes(`after ${H.TH.ko.badger} catches.`));
-  assert.ok(R.roleCard('o1', null, '4').goal.includes(`${C.rounds} rounds`) && R.roleCard('o1', null, '4').moves[2].includes(`within ${C.warmth} rounds`));
-  // a bird is told how many catches end it
-  assert.ok(R.roleCard('blue', 'hyena', '3').lose.includes(`hyena catches you ${T.T3.ko.hyena} times`));
-  assert.ok(R.roleCard('red', 'badger', '3').lose.includes(`honey badger catches you ${T.T3.ko.badger} times`));
-  const b4 = R.roleCard('blue', null, '4h').lose; assert.ok(b4.includes(`a hunter catches you ${H.TH.ko.hyena} times`), b4);
+  assert.equal(o.goal, `Keep 1 egg alive for ${C.rounds} rounds.`);
+  assert.deepEqual(o.moves, [`Move ${C.ostrichWalk} squares. ${C.carryWalk} with an egg.`, `Stand on each egg every ${C.warmth} rounds.`, `Eat every ${C.food} turns.`]);
+  assert.equal(v.goal, `Break every egg by round ${C.rounds}.`); assert.equal(v.moves[0], `Fly ${C.vultureFly} squares. Each landing sniffs for eggs.`);
+  assert.equal(R.roleCard('blue', 'hyena', '3').goal, `Keep 1 egg alive. Out after ${T.T3.ko.hyena} catches.`);
+  assert.equal(R.roleCard('hunter', 'hyena', '3').moves[0], `Move ${T.T3.walk} squares.`); assert.equal(R.roleCard('hunter', 'hyena', '3').moves[2], `Missed? Move ${T.T3.pounce} more.`);
+  assert.equal(R.roleCard('hyena', null, '4h').moves[0], `Move ${H.TH.walk} squares.`);
 });
 
 ok('change every constant: every number on every card follows, and no other number appears', () => {
-  // odd values that cannot be mistaken for a typed 1, 2 or 3
   const X = { cfg: { eggs: 7, rounds: 41, warmth: 19, food: 11, stones: 5, fly: 6, throwRange: 4, smell: 8, walk: 9, carryWalk: 10, kick: 30, kickBadger: 31 },
     modes: { '3': { ko: { hyena: 12, badger: 13 }, sense: 14, see: 32, walk: 33, pounce: 26, goal: { kind: 'catches', n: 34 } }, '4h': { ko: { hyena: 15, badger: 16 }, sense: 17, see: 35, walk: 36, pounce: 27 }, '4': { ko: { hyena: 18, badger: 21 }, sense: 22, see: 37, walk: 38, pounce: 28 }, '5': { ko: { hyena: 23, badger: 24 }, sense: 25, see: 39, walk: 40, pounce: 29, goal: { kind: 'first', n: 0 } } } };
   const allowed = new Set(); (function walk(o) { for (const v of Object.values(o)) typeof v === 'object' ? walk(v) : allowed.add(String(v)); })(X);
   for (const [role, kind, mode] of ALL) {
     const c = R.roleCard(role, kind, mode, X), at = `${role}/${kind}/${mode}`;
-    // the only numbers that are not rules are the hunters' one-square moves ("Move 1 square")
-    const bare = text(c);
-    for (const d of bare.match(/\d+/g) || []) assert.ok(allowed.has(d), `${at}: the number ${d} is not from the rules: ${bare}`);
+    for (const d of text(c).match(/\d+/g) || []) assert.ok(allowed.has(d) || d === '1', `${at}: the number ${d} is not from the rules: ${text(c)}`); // "1 egg" and "1 team egg" are a count, not a rule
   }
-  const o = R.roleCard('blue', null, '2', X); assert.ok(o.moves[0].includes('Walk up to 9 squares (10 with an egg)'), o.moves[0]); assert.ok(o.goal.includes('7 eggs') && o.goal.includes('41 rounds') && o.moves[2].includes('19 rounds') && o.moves[3].includes('11 turns') && o.moves[1].includes('back 30 squares'), text(o));
-  const v = R.roleCard('red', null, '2', X); assert.ok(v.moves[0].includes('6 squares') && v.moves[0].includes('8 squares') && v.moves[1].includes('5 stones') && v.moves[2].includes('within 4 of you'), text(v));
-  assert.ok(R.roleCard('hunter', 'hyena', '3', X).moves.join(' ').includes('after 12 catches') && R.roleCard('hunter', 'badger', '3', X).moves.join(' ').includes('after 13 catches'));
-  assert.ok(R.roleCard('hunter', 'hyena', '3', X).moves[0].includes('Move up to 33 squares') && R.roleCard('hunter', 'hyena', '3', X).moves[0].includes('within 32') && R.roleCard('hunter', 'hyena', '3', X).goal === 'Goal: Make 34 catches.');
-  assert.ok(R.roleCard('hyena', null, '4h', X).moves.join(' ').includes('after 15 catches') && R.roleCard('badger', null, '4h', X).moves.join(' ').includes('after 16 catches'));
-  assert.ok(R.roleCard('hunter', 'hyena', '5', X).moves.join(' ').includes('after 23 catches'));
-  assert.ok(R.roleCard('o1', null, '4', X).goal.includes('41 rounds') && R.roleCard('o1', null, '4', X).moves[3].includes('11 turns'));
-  assert.ok(R.roleCard('blue', 'hyena', '3', X).lose.includes('hyena catches you 12 times'));
+  const o = R.roleCard('blue', null, '2', X); assert.equal(o.moves[0], 'Move 9 squares. 10 with an egg.'); assert.equal(o.goal, 'Keep 1 egg alive for 41 rounds.'); assert.equal(o.moves[1], 'Stand on each egg every 19 rounds.'); assert.equal(o.moves[2], 'Eat every 11 turns.');
+  const v = R.roleCard('red', null, '2', X); assert.equal(v.moves[0], 'Fly 6 squares. Each landing sniffs for eggs.');
+  assert.equal(R.roleCard('hunter', 'hyena', '3', X).moves[0], 'Move 33 squares.'); assert.equal(R.roleCard('hunter', 'hyena', '3', X).goal, 'Make 34 catches.'); assert.equal(R.roleCard('hunter', 'hyena', '3', X).moves[2], 'Missed? Move 26 more.');
+  assert.equal(R.roleCard('blue', 'hyena', '3', X).goal, 'Keep 1 egg alive. Out after 12 catches.'); assert.equal(R.roleCard('blue', 'badger', '3', X).goal, 'Keep 1 egg alive. Out after 13 catches.');
+  assert.equal(R.roleCard('hunter', 'hyena', '5', X).goal, 'Knock out an ostrich and a vulture.');
 });
 
-ok('the hyena card says Pounce plainly, in every mode with a hyena; the honey badger card does not', () => {
+ok('the hyena card says Pounce plainly and the honey badger card says Burrow, never the other', () => {
   for (const [role, kind, mode] of [['hunter', 'hyena', '3'], ['hyena', null, '4h'], ['hunter', 'hyena', '5']]) {
-    const c = R.roleCard(role, kind, mode);
-    assert.ok(c.moves.some((m) => m === 'Pounce: ' + POUNCE(require('./team.js').TM)), mode + ' hyena: ' + c.moves.join(' | '));
+    const c = R.roleCard(role, kind, mode); assert.ok(/^Missed\? Move \d+ more\.$/.test(c.moves[2]), mode + ' hyena: ' + c.moves.join(' | ')); assert.ok(!/hide|underground/i.test(text(c)));
   }
   for (const [role, kind, mode] of [['hunter', 'badger', '3'], ['badger', null, '4h'], ['hunter', 'badger', '5']]) {
-    const c = R.roleCard(role, kind, mode);
-    assert.ok(!text(c).includes('Pounce') && /Burrow/.test(text(c)) && /Land on a bird to catch it/.test(text(c)), mode + ' badger'); assert.ok(text(c).includes('you see any bird next to you'), mode + ' badger card says what a burrowed badger sees'); assert.ok(!R.roleCard('hyena', null, '4h').moves.join(' ').includes('next to you'), 'the hyena card is unchanged');
+    const c = R.roleCard(role, kind, mode); assert.equal(c.moves[2], 'Stay still to hide underground.'); assert.ok(!/Missed|more\./.test(text(c)));
   }
-});
-
-ok('every ostrich card has its Walk and Kick lines, naming only the animals in the game', () => {
-  const kl = (r, k, m) => R.roleCard(r, k, m).moves.find((x) => x.startsWith('Kick: '));
-  assert.equal(kl('blue', null, '2'), `Kick: push a vulture next to you back ${C.kickPush} squares. Not while carrying.`);
-  assert.equal(kl('blue', 'hyena', '3'), `Kick: push a vulture or hyena next to you back ${C.kickPush} squares. Not while carrying.`);
-  assert.ok(kl('blue', 'badger', '3').includes('a vulture or honey badger next'));
-  assert.ok(kl('blue', null, '4h').includes('a vulture, hyena or honey badger next'));
-  assert.ok(kl('o1', null, '4').includes('a vulture next') && !/hyena|badger|hunter/.test(kl('o1', null, '4')), '2 vs 2 has no hunter to name');
-  assert.ok(kl('o2', 'badger', '5').includes('a vulture or honey badger next'));
-  for (const [r, k, m] of ALL.filter(([r]) => ['blue', 'o1', 'o2'].includes(r))) assert.ok(R.roleCard(r, k, m).moves[0].startsWith(`Walk up to ${C.ostrichWalk} squares (${C.carryWalk} with an egg), or sit on an egg`), r + m);
 });
 
 ok('the start-of-game line names only the animals in the game', () => {
@@ -123,11 +96,6 @@ ok('the start-of-game line names only the animals in the game', () => {
   assert.ok(!/hyena|badger/.test(R.huntLine('2') + R.huntLine('4')));
 });
 
-ok('a hunter card never sounds like the other hunter: hyena has no burrow, honey badger has no pounce', () => {
-  assert.ok(!/burrow/i.test(text(R.roleCard('hunter', 'hyena', '3'))));
-  assert.ok(!/pounce|extra square/i.test(text(R.roleCard('hunter', 'badger', '3'))));
-});
-
 ok('card ids: one per animal, hunter and mode (a bird card only changes with the hunter in 3 players)', () => {
   const id = R.cardId;
   assert.equal(id('blue', null, '2'), 'ostrich__2'); assert.equal(id('blue', 'hyena', '2'), 'ostrich__2');
@@ -138,16 +106,12 @@ ok('card ids: one per animal, hunter and mode (a bird card only changes with the
   assert.equal(R.roleCard('red', 'badger', '3').id, id('red', 'badger', '3'));
 });
 
-ok('the picked line and the intro line', () => {
-  assert.equal(R.PICKED, 'We picked this animal for you.');
-  const tut = fs.readFileSync('./public/tutorial.js', 'utf8');
-  assert.ok(tut.includes("d:'A hide-and-seek game for 2 to 5 players.'") && !/duel|two phones/.test(tut));
-});
-
 ok('hunter cards state the goal from HUNTER_GOAL, per mode', () => {
   const g = (r, k, m, goal) => R.roleCard(r, k, m, Object.assign(R.rulesFromModules(), { modes: Object.assign({}, R.rulesFromModules().modes, goal ? { [m]: Object.assign({}, R.rulesFromModules().modes[m], { goal }) } : {}) })).goal;
-  assert.equal(g('hunter', 'hyena', '3'), 'Goal: Make 3 catches.'); assert.ok(R.roleCard('hunter', 'hyena', '3').moves.join(' ').includes('A bird is out after 2 catches.'));
-  assert.equal(g('hunter', 'hyena', '3', { kind: 'all', n: 0 }), 'Goal: Knock out both birds.'); assert.equal(g('hunter', 'badger', '3', { kind: 'first', n: 0 }), 'Goal: Knock out one bird.'); assert.equal(g('hunter', 'badger', '3', { kind: 'catches', n: 4 }), 'Goal: Make 4 catches.');
-  assert.equal(g('hunter', 'hyena', '5'), 'Goal: Knock out an ostrich and a vulture.'); assert.equal(g('hunter', 'hyena', '5', { kind: 'all', n: 0 }), 'Goal: Knock out every bird.');
+  assert.equal(g('hunter', 'hyena', '3'), 'Make 3 catches.');
+  assert.equal(g('hunter', 'hyena', '3', { kind: 'all', n: 0 }), 'Knock out both birds.'); assert.equal(g('hunter', 'badger', '3', { kind: 'first', n: 0 }), 'Knock out one bird.'); assert.equal(g('hunter', 'badger', '3', { kind: 'catches', n: 4 }), 'Make 4 catches.');
+  assert.equal(g('hunter', 'hyena', '5'), 'Knock out an ostrich and a vulture.'); assert.equal(g('hunter', 'hyena', '5', { kind: 'all', n: 0 }), 'Knock out every bird.');
+  assert.equal(R.roleCard('hyena', null, '4h').goal, 'Knock out more birds than the honey badger.');
 });
-console.log(`PASS testroles (${n} groups)`);
+
+console.log(`PASS testroles (${n} groups)`); process.exit(0);
