@@ -99,3 +99,9 @@
 #roomLobby .footnote{text-align:center;color:#4a6070;font-size:13px;font-weight:700;margin:8px 0}
 #over .arrive{font-weight:700}
 #over button.alt{background:#fff;color:#1a2a3a}
+/* waiting for a second player: the seat list, one row per seat */
+#roomLobby .who.seats{display:block;margin:14px 0 8px;border-top:2px solid currentColor}
+#roomLobby .who.seats li{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:52px;padding:6px 4px;border-bottom:2px solid currentColor;font-size:18px}
+#roomLobby .who.seats .openseat .opentxt{margin:0;opacity:.6;font-weight:700;color:inherit}
+#roomLobby .who.seats .addcomp{width:auto;flex:none;margin:0;padding:8px 14px;font-size:16px;font-weight:800}
+#roomLobby .who.seats .seatwho{margin:0;color:inherit;font-weight:400}

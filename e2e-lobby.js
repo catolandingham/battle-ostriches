@@ -30,13 +30,14 @@ const server = require('./server.js');
   await A.click('#lobbyGear');
   await A.waitForSelector('#clockToggle');
   assert.equal(await A.getAttribute('#clockToggle', 'aria-pressed'), 'true', 'turn timer defaults on');
+  assert.equal(await A.locator('#roomLobby [data-role]').count(), 0, 'no animal choice until a second player is in');
+  const link = (await A.inputValue('#lobbyLink')).replace(/^http:\/\/[^/]+/, 'http://localhost:3990');
+  const V = await mk(); await V.goto(link); await V.waitForSelector('#roomLobby');
+  await A.waitForFunction(() => LobbyUI.get().setup === '2' && LobbyUI.get().humanCount === 2);
   await A.click('[data-role="red"]');
   await A.waitForFunction(() => LobbyUI.get().roles.some(r => r.id === 'red' && r.mine));
   await A.click('[data-role="blue"]');
   await A.waitForFunction(() => LobbyUI.get().roles.some(r => r.id === 'blue' && r.mine) && !LobbyUI.get().roles.some(r => r.id === 'red' && r.mine));
-  const link = (await A.inputValue('#lobbyLink')).replace(/^http:\/\/[^/]+/, 'http://localhost:3990');
-  const V = await mk(); await V.goto(link); await V.waitForSelector('#roomLobby');
-  await A.waitForFunction(() => LobbyUI.get().setup === '2' && LobbyUI.get().humanCount === 2);
   await A.click('#startGame');
   await A.waitForSelector('#board .cell'); await V.waitForSelector('#board .cell');
   assert.equal(await A.evaluate(() => document.body.className), 'blue');
@@ -99,7 +100,7 @@ const server = require('./server.js');
     return { w: innerWidth, h: innerHeight, code: code.top >= 0 && code.bottom <= innerHeight, share: share.bottom <= innerHeight && share.width > 40, linkHidden: link.height < 5, start: !!document.getElementById('startGame'), gears: document.querySelectorAll('.corner .iconbtn, #lobbyGear').length };
   });
   assert.equal(phoneFit.w, 390); assert.equal(phoneFit.h, 844);
-  assert.ok(phoneFit.code && phoneFit.share && phoneFit.linkHidden && phoneFit.start, JSON.stringify(phoneFit));
+  assert.ok(phoneFit.code && phoneFit.share && phoneFit.linkHidden && !phoneFit.start, JSON.stringify(phoneFit));
   console.log('ok phone 390x844 friends room');
 
   const desk = await b.newContext({ viewport: { width: 1280, height: 800 } });
@@ -112,14 +113,14 @@ const server = require('./server.js');
   const wide = await D.evaluate(() => ({ w: innerWidth, h: innerHeight, overflow: document.documentElement.scrollWidth <= innerWidth + 1 }));
   assert.equal(wide.w, 1280); assert.equal(wide.h, 800); assert.ok(wide.overflow, 'desktop lobby wider than the window');
   await D.focus('#lobbyGear'); await D.keyboard.press('Enter'); await D.waitForSelector('#lobbyMenu:not(.hidden)');
-  await D.focus('[data-role="blue"]'); await D.keyboard.press('Enter');
-  await D.waitForFunction(() => LobbyUI.get().roles.some(r => r.id === 'blue' && r.mine));
   const deskLink = (await D.inputValue('#lobbyLink')).replace(/^http:\/\/[^/]+/, 'http://localhost:3990');
   const mates = [];
   for (let i = 0; i < 3; i++) {
     const c = await b.newContext({ viewport: { width: 1280, height: 800 } }); const q = await c.newPage();
     await q.addInitScript(() => localStorage.setItem('bo_tut_seen', '1'));
     q.on('pageerror', e => errs.push('mate ' + e.message)); await q.goto(deskLink); mates.push(q);
+    if (i === 0) { await D.waitForFunction(() => LobbyUI.get().humanCount === 2); await D.focus('[data-role="blue"]'); await D.keyboard.press('Enter');
+      await D.waitForFunction(() => LobbyUI.get().roles.some(r => r.id === 'blue' && r.mine)); }
   }
   await D.waitForFunction(() => LobbyUI.get().humanCount === 4);
   await D.click('[data-role="ostrich"]'); await mates[0].waitForSelector('[data-role="ostrich"]'); await mates[0].click('[data-role="ostrich"]');

@@ -98,9 +98,8 @@ fs.mkdirSync(OUT, { recursive: true });
       codeTop: cr.top,
       shareTop: share.getBoundingClientRect().top,
       hit: hit && (hit.id || hit.textContent.slice(0, 12)),
-      startDisabled: start.disabled,
-      startText: start.textContent,
-      status: document.querySelector('.statusline').textContent,
+      noStart: !start,
+      open: (document.querySelector('.openseat') || {}).textContent || '',
       vh: innerHeight
     };
   });
@@ -108,9 +107,9 @@ fs.mkdirSync(OUT, { recursive: true });
   assert.equal(room.menuHidden, true);
   assert.ok(room.codeTop < 220 && room.shareTop < 220, 'code and Share are at the top');
   assert.ok(room.codeTop < room.vh && room.shareTop < room.vh);
-  assert.equal(room.startDisabled, true);
-  assert.match(room.status, /add a computer/);
-  assert.match(room.status, /Start needs 2/);
+  assert.equal(room.noStart, true, 'no Start until a second player is in');
+  assert.match(room.open, /Open seat/);
+  assert.match(room.open, /\+ Computer/);
   await page.screenshot({ path: OUT + '/lobby-after-room.png' });
   await page.evaluate(() => UI.send({ t: 'lobby', a: 'bots', n: 1 }));
   await page.waitForFunction(() => !document.getElementById('startGame').disabled);

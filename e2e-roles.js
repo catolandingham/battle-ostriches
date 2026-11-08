@@ -75,7 +75,7 @@ const R = require('./public/roles.js'), THEMES = fs.readFileSync('./public/theme
   await P.click('#rolecard'); assert.equal(await shown(P).count(), 0);
 
   // Start chose the animal: friends room, host never picked, one computer -> the ostrich, and the card says so
-  const F = await mk(); await F.goto(U); await F.click('#playFriend'); await F.waitForSelector('#startGame');
+  const F = await mk(); await F.goto(U); await F.click('#playFriend'); await F.waitForSelector('#botPlus');
   await F.evaluate(() => UI.send({ t: 'lobby', a: 'bots', n: 1 })); await F.waitForFunction(() => LobbyUI.get().canStart);
   assert.equal(await F.textContent('#startGame'), "Start · you'll be the Ostrich"); await F.click('#startGame'); await F.waitForSelector('#board .cell');
   for (const [x, y] of [[2, 1], [6, 1], [2, 5], [7, 6]]) { await cell(F, x, y).click(); await F.waitForTimeout(150); }

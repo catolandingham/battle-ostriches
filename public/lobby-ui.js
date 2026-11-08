@@ -59,6 +59,21 @@
       <input id="lobbyLink" class="visually-hidden" readonly tabindex="0" aria-label="Room link" value="${link}"></div>
       <p id="copyStatus" class="visually-hidden" aria-live="polite"></p>`;
     const bots = s.host && max ? `<div class="botstep"><span id="botLabel">Computers</span><button type="button" id="botMinus" aria-label="Fewer computers" ${s.botsWanted <= (s.solo ? 1 : 0) ? 'disabled' : ''}>−</button><b id="botCount" aria-live="polite">${s.botsWanted}</b><button type="button" id="botPlus" aria-label="More computers" ${s.botsWanted >= max ? 'disabled' : ''}>+</button></div>` : '';
+    // Until a second player (a friend or a computer) is in, show only the code, Share and the seats: you, and one open seat with "+ Computer".
+    // The animal choice and Start appear once someone is in.
+    if (!s.solo && s.host && (s.humans || []).length + (s.botsWanted || 0) < 2) {
+      const mine = (s.humans || []).map(h => `<li><span class="seatwho"><b>${esc(h.you ? 'You' : h.name)}</b>${h.host ? ' · host' : ''}</span></li>`).join('');
+      box.innerHTML = `<div class="toolbar"><button class="linkbtn" id="lobbyHome" type="button">← Home</button><button class="gear" id="lobbyGear" type="button" aria-expanded="${gear}" aria-controls="lobbyMenu" aria-label="More">⚙</button></div>
+      <div class="menu${gear ? '' : ' hidden'}" id="lobbyMenu" role="group" aria-label="Help and settings">
+        <button type="button" data-tool="rules">How to play</button>
+        <button type="button" data-tool="sound">${sound}</button>
+        <button type="button" data-tool="theme">Theme</button>
+        <div class="toggle"><span>Turn timer</span><button type="button" class="switch${s.clock ? '' : ' off'}" id="clockToggle" aria-pressed="${s.clock ? 'true' : 'false'}" aria-label="Turn timer ${s.clock ? 'on' : 'off'}"></button></div>
+      </div>
+      ${share}
+      <ul class="who seats" aria-label="Roster">${mine}<li class="openseat"><span class="opentxt">Open seat</span>${max ? '<button type="button" id="botPlus" class="addcomp">+ Computer</button>' : ''}</li></ul>`;
+      return;
+    }
     box.innerHTML = `<div class="toolbar"><button class="linkbtn" id="lobbyHome" type="button">← Home</button><button class="gear" id="lobbyGear" type="button" aria-expanded="${gear}" aria-controls="lobbyMenu" aria-label="More">⚙</button></div>
       <div class="menu${gear ? '' : ' hidden'}" id="lobbyMenu" role="group" aria-label="Help and settings">
         <button type="button" data-tool="rules">How to play</button>

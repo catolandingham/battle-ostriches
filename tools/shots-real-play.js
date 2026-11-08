@@ -1,5 +1,5 @@
 // Real-play phone screenshots (390x664, classic theme), in the order a player meets them.
-// Usage: node tools/shots-real-play.js <outdir> [vulture,ostrich,hyena,badger,howto]
+// Usage: node tools/shots-real-play.js <outdir> [vulture,ostrich,hyena,badger,howto,lobby]
 // It starts the game server on port 4172 and plays real turns; BO_* settings slow the computers and fix the hunters' start squares,
 // and the localStorage keys below skip the tutorial, role card and tips so the board is clear. Run `npm run setup:e2e` once first.
 process.env.PORT = 4172; process.env.BO_NOSTORE = '1'; process.env.BO_BOTMS = '4000'; process.env.BO_CLOCKMS = '900000'; process.env.BO_H3START = '8,3'; process.env.BO_H4START = '2,3,4,3';
@@ -23,6 +23,11 @@ const shot = (p, n) => p.screenshot({ path: OUT + '/' + n + '.png' });
 const near = (a, c) => Math.max(Math.abs(a[0] - c[0]), Math.abs(a[1] - c[1]));
 (async () => {
   const b = await webkit.launch();
+  if (want('lobby')) { // friends room: alone (code, Share, seats), then a friend joins; and a fresh room where the host taps + Computer
+    const A = await phone(b); await A.goto(U); await A.click('#playFriend'); await A.waitForSelector('.openseat'); await sleep(800); await shot(A, 'lobby-a-alone');
+    const link = (await A.inputValue('#lobbyLink')).replace(/^http:\/\/[^/]+/, 'http://localhost:4172'); const F = await phone(b); await F.goto(link);
+    await A.waitForSelector('[data-role]'); await sleep(900); await shot(A, 'lobby-b-friend-joined'); await F.context().close(); await A.context().close();
+    const C = await phone(b); await C.goto(U); await C.click('#playFriend'); await C.waitForSelector('#botPlus'); await C.click('#botPlus'); await C.waitForSelector('[data-role]'); await sleep(900); await shot(C, 'lobby-c-added-computer'); await C.context().close(); }
   if (want('vulture')) {
     const V = await solo2(b, 'red'); const g = room2().g;
     // (a) fly to a square next to a hidden egg (not onto it), the way a player would
