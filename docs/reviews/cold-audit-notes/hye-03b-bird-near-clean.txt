@@ -1,0 +1,40 @@
+SITUATION (not shown to reviewer): Same moment as hye-03-bird-near after the pop has faded: ostrich really at column 6, row 3; hyena at column 8, row 4.
+
+HINT: Your turn. Tap to move.
+TIP BAR: Hover or tap a square to see what it is. / Turn off tips
+ACTION BUTTONS: Stay
+
+--- TEXT INSIDE THE VISIBLE SCREEN (top to bottom) ---
+ROUNDS 28
+EGGS 3
+?
+13
+Timer on
+1/1
+1
+10s
+Your turn. Tap to move.
+Hover or tap a square to see what it is.
+Turn off tips
+YOU
+Stay
+
+--- ALL TEXT IN THE PAGE (document.body.innerText; includes anything scrolled or clipped out of view) ---
+ROUNDS 28
+EGGS 3
+13
+1/1
+ HYENA
+
+?
+
+
+Timer on
+1
+ 10s
+Your turn. Tap to move.
+Hover or tap a square to see what it is.
+Turn off tips
+YOU
+Stay
+

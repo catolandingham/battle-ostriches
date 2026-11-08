@@ -1,0 +1,30 @@
+SITUATION (not shown to reviewer): Round 3. The vulture threw its only stone at an empty square next to it (a miss: that square is now wrecked). Stone count is now 0. The vulture is still standing on the found egg. Ostrich to move (frozen).
+
+HINT: Miss. Ostrich's turn…
+TIP BAR: Wrecked. Nobody can land here. / Turn off tips
+
+--- TEXT INSIDE THE VISIBLE SCREEN (top to bottom) ---
+ROUNDS 28
+EGGS 3
+?
+13
+0/1
+Miss. Ostrich's turn…
+Wrecked. Nobody can land here.
+Turn off tips
+YOU
+
+--- ALL TEXT IN THE PAGE (document.body.innerText; includes anything scrolled or clipped out of view) ---
+ROUNDS 28
+EGGS 3
+13
+0/1
+ VULTURE
+?
+
+
+Miss. Ostrich's turn…
+Wrecked. Nobody can land here.
+Turn off tips
+YOU
+

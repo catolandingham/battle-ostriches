@@ -1,0 +1,32 @@
+SITUATION (not shown to reviewer): Round 1, vulture to move, standing on its start square. 3 eggs are hidden; none found; nothing sniffed yet. Vulture holds its 1 stone.
+
+HINT: Your turn. Tap to fly.
+TOAST: The vulture hunts eggs.
+ACTION BUTTONS: ✓ Fly / Throw
+
+--- TEXT INSIDE THE VISIBLE SCREEN (top to bottom) ---
+ROUNDS 30
+EGGS 3
+?
+15
+1/1
+Your turn. Tap to fly.
+The vulture hunts eggs.
+YOU
+✓ Fly
+Throw
+
+--- ALL TEXT IN THE PAGE (document.body.innerText; includes anything scrolled or clipped out of view) ---
+ROUNDS 30
+EGGS 3
+15
+1/1
+ VULTURE
+?
+
+
+Your turn. Tap to fly.
+YOU
+✓ Fly
+Throw
+The vulture hunts eggs.

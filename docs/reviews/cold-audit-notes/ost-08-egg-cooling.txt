@@ -1,0 +1,35 @@
+SITUATION (not shown to reviewer): Round 9, ostrich to move. One egg (at column 4, row 3) has not been warmed for 9 rounds (the script set this), so it has 6 rounds before going cold. The ostrich is not standing on it.
+
+HINT: Egg cooling. Go back.Skip guide
+ACTION BUTTONS: ✓ Walk
+
+--- TEXT INSIDE THE VISIBLE SCREEN (top to bottom) ---
+ROUNDS 21
+EGGS 3
+?
+13
+1/1
+Egg cooling. Go back.
+Skip guide
+15
+6
+YOU
+15
+✓ Walk
+
+--- ALL TEXT IN THE PAGE (document.body.innerText; includes anything scrolled or clipped out of view) ---
+ROUNDS 21
+EGGS 3
+13
+1/1
+ OSTRICH
+?
+
+
+Egg cooling. Go back.Skip guide
+15
+6
+YOU
+15
+✓ Walk
+

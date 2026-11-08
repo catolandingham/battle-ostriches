@@ -1,0 +1,41 @@
+SITUATION (not shown to reviewer): Round 8, ostrich to move. Kick was tapped and the vulture was tapped once: a preview shows the path (it wraps around the left edge to the far right side) and where it would land. One more tap on the vulture would kick it.
+
+HINT: Kick it away.
+TIP BAR: Kick: push the animal next to you back 3 squares instead of walking. / Turn off tips
+ACTION BUTTONS: Walk / ✓ Kick
+
+--- TEXT INSIDE THE VISIBLE SCREEN (top to bottom) ---
+ROUNDS 22
+EGGS 3
+?
+14
+1/1
+Kick it away.
+Kick: push the animal next to you back 3 squares instead of walking.
+Turn off tips
+15
+15
+YOU
+15
+✓ Kick
+Walk
+
+--- ALL TEXT IN THE PAGE (document.body.innerText; includes anything scrolled or clipped out of view) ---
+ROUNDS 22
+EGGS 3
+14
+1/1
+ OSTRICH
+?
+
+
+Kick it away.
+Kick: push the animal next to you back 3 squares instead of walking.
+Turn off tips
+15
+15
+YOU
+15
+Walk
+✓ Kick
+

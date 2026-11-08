@@ -1,0 +1,35 @@
+SITUATION (not shown to reviewer): Round 5, vulture to move. No stone. It flew off the found egg; the nearest rock pile is 3 squares away. Both rock piles are highlighted.
+
+HINT: No stone. Go to rocks.
+TIP BAR: Hover or tap a square to see what it is. / Turn off tips
+ACTION BUTTONS: ✓ Fly / Throw
+
+--- TEXT INSIDE THE VISIBLE SCREEN (top to bottom) ---
+ROUNDS 26
+EGGS 3
+?
+11
+0/1
+No stone. Go to rocks.
+Hover or tap a square to see what it is.
+Turn off tips
+YOU
+✓ Fly
+Throw
+
+--- ALL TEXT IN THE PAGE (document.body.innerText; includes anything scrolled or clipped out of view) ---
+ROUNDS 26
+EGGS 3
+11
+0/1
+ VULTURE
+?
+
+
+No stone. Go to rocks.
+Hover or tap a square to see what it is.
+Turn off tips
+YOU
+✓ Fly
+Throw
+

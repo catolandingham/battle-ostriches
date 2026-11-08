@@ -1,0 +1,40 @@
+SITUATION (not shown to reviewer): Round 2, hyena mid-turn. It moved to column 7, row 4, which is one square from the ostrich (column 6, row 3); it smelled a bird at the start of its turn and did not catch, so it gets one more square (Pounce). The bird is really diagonal-adjacent.
+
+HINT: Pounce: 1 more square.
+BANNER: Pounce!
+ACTION BUTTONS: Stop
+
+--- TEXT INSIDE THE VISIBLE SCREEN (top to bottom) ---
+ROUNDS 28
+EGGS 3
+?
+13
+Timer on
+1/1
+1
+10s
+Pounce: 1 more square.
+Pounce!
+Still near.
+YOU
+Stop
+
+--- ALL TEXT IN THE PAGE (document.body.innerText; includes anything scrolled or clipped out of view) ---
+ROUNDS 28
+EGGS 3
+13
+1/1
+ HYENA
+
+?
+
+
+Timer on
+1
+ 10s
+Pounce: 1 more square.
+Pounce!
+YOU
+Still near.
+Stop
+

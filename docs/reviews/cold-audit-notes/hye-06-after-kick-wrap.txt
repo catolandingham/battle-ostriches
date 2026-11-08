@@ -1,0 +1,39 @@
+SITUATION (not shown to reviewer): Round 3, hyena to move. The ostrich kicked the hyena 3 squares west; it went off the left edge and wrapped around to the right side (now column 7, row 3).
+
+HINT: Your turn. Tap to move. No bird near.
+TOAST: Ostrich kicked the hyena 3 squares away.
+ACTION BUTTONS: Stay
+
+--- TEXT INSIDE THE VISIBLE SCREEN (top to bottom) ---
+ROUNDS 27
+EGGS 3
+?
+12
+Timer on
+1/1
+1
+10s
+Your turn. Tap to move. No bird near.
+Ostrich kicked the hyena 3 squares away.
+YOU
+Nothing near.
+Stay
+
+--- ALL TEXT IN THE PAGE (document.body.innerText; includes anything scrolled or clipped out of view) ---
+ROUNDS 27
+EGGS 3
+12
+1/1
+ HYENA
+
+?
+
+
+Timer on
+1
+ 10s
+Your turn. Tap to move. No bird near.
+YOU
+Nothing near.
+Stay
+Ostrich kicked the hyena 3 squares away.

@@ -1,0 +1,43 @@
+SITUATION (not shown to reviewer): Round 3, ostrich on its egg, Carry button just tapped (before choosing where to put the egg down).
+
+HINT: Pick where the egg goes.
+TIP BAR: Hover or tap a square to see what it is. / Turn off tips
+ACTION BUTTONS: Walk / Carry / Sit
+
+--- TEXT INSIDE THE VISIBLE SCREEN (top to bottom) ---
+ROUNDS 28
+EGGS 3
+?
+13
+1/1
+Pick where the egg goes.
+Hover or tap a square to see what it is.
+Turn off tips
+YOU
+14
+12
+sitting
+12
+Walk
+Carry
+Sit
+
+--- ALL TEXT IN THE PAGE (document.body.innerText; includes anything scrolled or clipped out of view) ---
+ROUNDS 28
+EGGS 3
+13
+1/1
+ OSTRICH
+?
+
+
+Pick where the egg goes.
+Hover or tap a square to see what it is.
+Turn off tips
+14sittingYOU
+12
+12
+Walk
+Carry
+Sit
+

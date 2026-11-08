@@ -1,0 +1,37 @@
+SITUATION (not shown to reviewer): Round 1, vulture to move (computer, held by the script). First play state for the hyena player, so the role card shows. The hyena stands on its start square at the right edge (column 9, row 4).
+
+HINT: Vulture's turn…
+TOAST: The vulture hunts eggs. The hyena hunts birds.
+ROLE CARD: You are the Hyena / Make 3 catches. / Move 2 squares. / The outline shows where a bird may be. / Missed? Move 1 more. / Got it
+
+--- TEXT INSIDE THE VISIBLE SCREEN (top to bottom) ---
+The vulture hunts eggs. The hyena hunts birds.
+You are the Hyena
+Make 3 catches.
+Move 2 squares.
+The outline shows where a bird may be.
+Missed? Move 1 more.
+Got it
+
+--- ALL TEXT IN THE PAGE (document.body.innerText; includes anything scrolled or clipped out of view) ---
+ROUNDS 30
+EGGS 3
+15
+1/1
+ HYENA
+
+?
+
+
+Timer on
+1
+ 900s
+Vulture's turn…
+YOU
+You are the Hyena
+Make 3 catches.
+Move 2 squares.
+The outline shows where a bird may be.
+Missed? Move 1 more.
+Got it
+The vulture hunts eggs. The hyena hunts birds.

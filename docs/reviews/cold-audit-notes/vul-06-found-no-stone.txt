@@ -1,0 +1,35 @@
+SITUATION (not shown to reviewer): Round 4, vulture to move. It stands on the found egg, which is still unbroken, but has no stone. The nearest rock pile is 1 squares away.
+
+HINT: Found it. Get a stone first.
+TIP BAR: Wrecked. Nobody can land here. / Turn off tips
+ACTION BUTTONS: ✓ Fly / Throw
+
+--- TEXT INSIDE THE VISIBLE SCREEN (top to bottom) ---
+ROUNDS 27
+EGGS 3
+?
+12
+0/1
+Found it. Get a stone first.
+Wrecked. Nobody can land here.
+Turn off tips
+YOU
+✓ Fly
+Throw
+
+--- ALL TEXT IN THE PAGE (document.body.innerText; includes anything scrolled or clipped out of view) ---
+ROUNDS 27
+EGGS 3
+12
+0/1
+ VULTURE
+?
+
+
+Found it. Get a stone first.
+Wrecked. Nobody can land here.
+Turn off tips
+YOU
+✓ Fly
+Throw
+

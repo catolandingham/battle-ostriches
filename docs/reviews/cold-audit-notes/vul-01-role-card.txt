@@ -1,0 +1,36 @@
+SITUATION (not shown to reviewer): Round 1, vulture to move. The role card is the first thing a new player sees once the computer ostrich has hidden its eggs.
+
+HINT: Your turn. Tap to fly.
+TOAST: The vulture hunts eggs.
+ACTION BUTTONS: ✓ Fly / Throw
+ROLE CARD: You are the Vulture / Break every egg by round 30. / Fly 2 squares. Each landing sniffs for eggs. / Land on rocks to get a stone. / Throw at your square or next to it. / Got it
+
+--- TEXT INSIDE THE VISIBLE SCREEN (top to bottom) ---
+The vulture hunts eggs.
+You are the Vulture
+Break every egg by round 30.
+Fly 2 squares. Each landing sniffs for eggs.
+Land on rocks to get a stone.
+Throw at your square or next to it.
+Got it
+
+--- ALL TEXT IN THE PAGE (document.body.innerText; includes anything scrolled or clipped out of view) ---
+ROUNDS 30
+EGGS 3
+15
+1/1
+ VULTURE
+?
+
+
+Your turn. Tap to fly.
+YOU
+✓ Fly
+Throw
+You are the Vulture
+Break every egg by round 30.
+Fly 2 squares. Each landing sniffs for eggs.
+Land on rocks to get a stone.
+Throw at your square or next to it.
+Got it
+The vulture hunts eggs.

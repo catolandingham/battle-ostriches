@@ -1,0 +1,33 @@
+SITUATION (not shown to reviewer): The vulture threw its stone onto the egg it was standing on and smashed it: 2 eggs remain hidden. Stone count is 0 again. Ostrich to move (frozen).
+
+HINT: Smashed! Ostrich's turn…
+BANNER: Smashed!
+TIP BAR: Smashed. Nobody can land here. / Turn off tips
+
+--- TEXT INSIDE THE VISIBLE SCREEN (top to bottom) ---
+ROUNDS 23
+EGGS 2
+?
+8
+0/1
+Smashed! Ostrich's turn…
+Smashed. Nobody can land here.
+Turn off tips
+YOU
+Smashed!
+
+--- ALL TEXT IN THE PAGE (document.body.innerText; includes anything scrolled or clipped out of view) ---
+ROUNDS 23
+EGGS 2
+8
+0/1
+ VULTURE
+?
+
+
+Smashed! Ostrich's turn…
+Smashed. Nobody can land here.
+Turn off tips
+Smashed!
+YOU
+

@@ -1,0 +1,35 @@
+SITUATION (not shown to reviewer): Round 2. The hyena landed on the ostrich with its Pounce step: a catch. The ostrich scrambled 2 squares in a random direction (the hyena is not told where). The ostrich now has 1 catch (2 knock it out).
+
+HINT: Vulture's turn…
+TOAST: Caught the ostrich!
+
+--- TEXT INSIDE THE VISIBLE SCREEN (top to bottom) ---
+ROUNDS 28
+EGGS 3
+?
+13
+Timer on
+1/1
+1
+10s
+Vulture's turn…
+Caught the ostrich!
+YOU
+♥
+
+--- ALL TEXT IN THE PAGE (document.body.innerText; includes anything scrolled or clipped out of view) ---
+ROUNDS 28
+EGGS 3
+13
+1/1
+ HYENA
+
+?
+
+
+Timer on
+1
+ 10s
+Vulture's turn…
+♥YOU
+Caught the ostrich!

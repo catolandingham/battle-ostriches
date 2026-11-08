@@ -1,0 +1,19 @@
+SITUATION (not shown to reviewer): Setup. All 3 eggs are hidden (at columns 3 and 7 row 2, column 3 row 6 counting from 1). The ostrich must now pick where to start.
+
+HINT: Pick your start.
+
+--- TEXT INSIDE THE VISIBLE SCREEN (top to bottom) ---
+ROUNDS 30
+?
+EGGS 3
+Pick your start.
+
+--- ALL TEXT IN THE PAGE (document.body.innerText; includes anything scrolled or clipped out of view) ---
+ROUNDS 30
+EGGS 3
+ OSTRICH
+?
+
+
+Pick your start.
+

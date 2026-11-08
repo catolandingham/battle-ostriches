@@ -1,0 +1,34 @@
+SITUATION (not shown to reviewer): Round 5. The ostrich just landed on the leaf and ate; hunger restored. Vulture to move (frozen).
+
+HINT: Vulture's turn…
+BANNER: Ate the leaf. Hunger restored.
+
+--- TEXT INSIDE THE VISIBLE SCREEN (top to bottom) ---
+ROUNDS 25
+EGGS 3
+?
+15
+1/1
+Vulture's turn…
+YOU
+Ate the leaf. Hunger restored.
+9
+11
+9
+
+--- ALL TEXT IN THE PAGE (document.body.innerText; includes anything scrolled or clipped out of view) ---
+ROUNDS 25
+EGGS 3
+15
+1/1
+ OSTRICH
+?
+
+
+Vulture's turn…
+Ate the leaf. Hunger restored.
+YOU
+9
+11
+9
+

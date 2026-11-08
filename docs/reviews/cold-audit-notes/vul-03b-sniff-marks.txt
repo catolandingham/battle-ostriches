@@ -1,0 +1,30 @@
+SITUATION (not shown to reviewer): Round 2, vulture to move. Last turn the vulture landed next to a hidden egg and smelled it, so the "egg may be here" marks cover the squares around it. The egg is really on one of those marks, adjacent to the vulture (the cell the script flies to next).
+
+HINT: Your turn. Tap to fly.
+ACTION BUTTONS: ✓ Fly / Throw
+
+--- TEXT INSIDE THE VISIBLE SCREEN (top to bottom) ---
+ROUNDS 29
+EGGS 3
+?
+14
+1/1
+Your turn. Tap to fly.
+YOU
+✓ Fly
+Throw
+
+--- ALL TEXT IN THE PAGE (document.body.innerText; includes anything scrolled or clipped out of view) ---
+ROUNDS 29
+EGGS 3
+14
+1/1
+ VULTURE
+?
+
+
+Your turn. Tap to fly.
+YOU
+✓ Fly
+Throw
+

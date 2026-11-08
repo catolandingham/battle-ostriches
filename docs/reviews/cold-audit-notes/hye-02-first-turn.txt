@@ -1,0 +1,39 @@
+SITUATION (not shown to reviewer): Round 1, hyena to move, a moment after its turn began (the start-of-game line may still be up).
+
+HINT: Your turn. Tap to move. No bird near.
+TOAST: The vulture hunts eggs. The hyena hunts birds.
+ACTION BUTTONS: Stay
+
+--- TEXT INSIDE THE VISIBLE SCREEN (top to bottom) ---
+ROUNDS 29
+EGGS 3
+?
+14
+Timer on
+1/1
+1
+10s
+Your turn. Tap to move. No bird near.
+The vulture hunts eggs. The hyena hunts birds.
+Nothing near.
+YOU
+Stay
+
+--- ALL TEXT IN THE PAGE (document.body.innerText; includes anything scrolled or clipped out of view) ---
+ROUNDS 29
+EGGS 3
+14
+1/1
+ HYENA
+
+?
+
+
+Timer on
+1
+ 10s
+Your turn. Tap to move. No bird near.
+YOU
+Nothing near.
+Stay
+The vulture hunts eggs. The hyena hunts birds.

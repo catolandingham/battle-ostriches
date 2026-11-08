@@ -1,0 +1,41 @@
+SITUATION (not shown to reviewer): Home screen with the gear menu open.
+
+HINT: Hint
+
+--- TEXT INSIDE THE VISIBLE SCREEN (top to bottom) ---
+ROUNDS 30
+?
+EGGS 3
+⚙
+Hint
+How to play
+Sound on
+Battle Ostriches
+Theme
+Hide your eggs. Outwit the hunters.
+Play with friends Play solo
+Have a code? Type it here to join.
+Join
+Pass & Play on this device?
+
+--- ALL TEXT IN THE PAGE (document.body.innerText; includes anything scrolled or clipped out of view) ---
+ROUNDS 30
+EGGS 3
+BLUE
+?
+
+
+Hint
+⚙
+How to play
+Sound on
+Theme
+Battle
+Ostriches
+Hide your eggs. Outwit the hunters.
+
+Play with friends Play solo
+Have a code? Type it here to join.
+Join
+Pass & Play on this device?
+

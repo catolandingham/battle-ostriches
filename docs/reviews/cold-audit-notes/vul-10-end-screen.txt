@@ -1,0 +1,30 @@
+SITUATION (not shown to reviewer): The vulture smashed the last egg and won by round 9. (Script note: to reach the end quickly the script marked 2 of the 3 eggs as already gone and gave the vulture a stone beside the last egg before the final throw.)
+
+HINT: Smashed!
+BANNER: Smashed!
+END SCREEN: You win! / vs computer (normal) / The vulture smashed every egg by round 9. / Rematch · Same rolesRematch · Change rolesNew Game
+
+--- TEXT INSIDE THE VISIBLE SCREEN (top to bottom) ---
+You win!
+vs computer (normal)
+The vulture smashed every egg by round 9.
+Rematch · Same roles Rematch · Change roles New Game
+
+--- ALL TEXT IN THE PAGE (document.body.innerText; includes anything scrolled or clipped out of view) ---
+ROUNDS 22
+EGGS 0
+7
+0/1
+ VULTURE
+?
+
+
+Smashed!
+Smashed!
+You win!
+vs computer (normal)
+
+The vulture smashed every egg by round 9.
+
+Rematch · Same rolesRematch · Change rolesNew Game
+

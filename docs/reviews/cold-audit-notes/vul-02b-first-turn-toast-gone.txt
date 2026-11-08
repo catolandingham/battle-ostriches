@@ -1,0 +1,30 @@
+SITUATION (not shown to reviewer): Same moment as vul-02-first-turn, a few seconds later, after the "The vulture hunts eggs." line has faded.
+
+HINT: Your turn. Tap to fly.
+ACTION BUTTONS: ✓ Fly / Throw
+
+--- TEXT INSIDE THE VISIBLE SCREEN (top to bottom) ---
+ROUNDS 30
+EGGS 3
+?
+15
+1/1
+Your turn. Tap to fly.
+YOU
+✓ Fly
+Throw
+
+--- ALL TEXT IN THE PAGE (document.body.innerText; includes anything scrolled or clipped out of view) ---
+ROUNDS 30
+EGGS 3
+15
+1/1
+ VULTURE
+?
+
+
+Your turn. Tap to fly.
+YOU
+✓ Fly
+Throw
+

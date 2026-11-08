@@ -1,0 +1,36 @@
+SITUATION (not shown to reviewer): Round 1, vulture to move (computer, frozen). The ostrich just picked its start square; this is the first play state, so the role card shows.
+
+HINT: Vulture's turn…
+TOAST: The vulture hunts eggs.
+ROLE CARD: You are the Ostrich / Keep 1 egg alive for 30 rounds. / Move 2 squares. 1 with an egg. / Stand on each egg every 15 rounds. / Eat every 15 turns. / Got it
+
+--- TEXT INSIDE THE VISIBLE SCREEN (top to bottom) ---
+The vulture hunts eggs.
+You are the Ostrich
+Keep 1 egg alive for 30 rounds.
+Move 2 squares. 1 with an egg.
+Stand on each egg every 15 rounds.
+Eat every 15 turns.
+Got it
+
+--- ALL TEXT IN THE PAGE (document.body.innerText; includes anything scrolled or clipped out of view) ---
+ROUNDS 30
+EGGS 3
+15
+1/1
+ OSTRICH
+?
+
+
+Vulture's turn…
+14
+14
+YOU
+14
+You are the Ostrich
+Keep 1 egg alive for 30 rounds.
+Move 2 squares. 1 with an egg.
+Stand on each egg every 15 rounds.
+Eat every 15 turns.
+Got it
+The vulture hunts eggs.

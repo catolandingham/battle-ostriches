@@ -1,0 +1,42 @@
+SITUATION (not shown to reviewer): Round 2, ostrich to move. It stands on its own egg (column 3 row 2). The vulture has not found any egg.
+
+HINT: Your turn. Tap to move.
+TIP BAR: Stand on an egg to warm it. / Turn off tips
+ACTION BUTTONS: ✓ Walk / Carry / Sit
+
+--- TEXT INSIDE THE VISIBLE SCREEN (top to bottom) ---
+ROUNDS 29
+EGGS 3
+?
+14
+1/1
+Your turn. Tap to move.
+Stand on an egg to warm it.
+Turn off tips
+YOU
+14
+13
+13
+✓ Walk
+Carry
+Sit
+
+--- ALL TEXT IN THE PAGE (document.body.innerText; includes anything scrolled or clipped out of view) ---
+ROUNDS 29
+EGGS 3
+14
+1/1
+ OSTRICH
+?
+
+
+Your turn. Tap to move.
+Stand on an egg to warm it.
+Turn off tips
+14YOU
+13
+13
+✓ Walk
+Carry
+Sit
+

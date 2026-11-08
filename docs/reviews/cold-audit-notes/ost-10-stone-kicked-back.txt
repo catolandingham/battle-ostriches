@@ -1,0 +1,39 @@
+SITUATION (not shown to reviewer): Round 7, ostrich to move. The vulture stood next to the ostrich and threw its stone AT the ostrich square; the ostrich kicked it back. The vulture lost its stone (0/1) and was set down on the nearest open square. No egg was harmed.
+
+HINT: Kicked it back! Your turn. Tap to move.
+TOAST: The ostrich kicked the stone right back!
+ACTION BUTTONS: ✓ Walk
+
+--- TEXT INSIDE THE VISIBLE SCREEN (top to bottom) ---
+ROUNDS 23
+EGGS 3
+?
+15
+0/1
+Kicked it back! Your turn. Tap to move.
+YOU
+🪶
+The ostrich kicked the stone right back!
+NO EGG
+14
+14
+14
+✓ Walk
+
+--- ALL TEXT IN THE PAGE (document.body.innerText; includes anything scrolled or clipped out of view) ---
+ROUNDS 23
+EGGS 3
+15
+0/1
+ OSTRICH
+?
+
+
+Kicked it back! Your turn. Tap to move.
+YOU
+14
+14
+14
+✓ Walk
+The ostrich kicked the stone right back!🪶
+NO EGG

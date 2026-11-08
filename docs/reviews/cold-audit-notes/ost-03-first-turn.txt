@@ -1,0 +1,37 @@
+SITUATION (not shown to reviewer): Round 1, ostrich to move. The 3 eggs are hidden under squares the ostrich knows (columns 3 and 7 row 2, column 3 row 6). The computer vulture flew once and smelled nothing. The ostrich stands 2 squares from its egg at column 3 row 2 and is not on an egg.
+
+HINT: Sit on eggs to warm them.Skip guide
+TOAST: The vulture hunts eggs.
+ACTION BUTTONS: ✓ Walk
+
+--- TEXT INSIDE THE VISIBLE SCREEN (top to bottom) ---
+ROUNDS 30
+EGGS 3
+?
+15
+1/1
+Sit on eggs to warm them.
+Skip guide
+The vulture hunts eggs.
+14
+14
+YOU
+14
+✓ Walk
+
+--- ALL TEXT IN THE PAGE (document.body.innerText; includes anything scrolled or clipped out of view) ---
+ROUNDS 30
+EGGS 3
+15
+1/1
+ OSTRICH
+?
+
+
+Sit on eggs to warm them.Skip guide
+14
+14
+YOU
+14
+✓ Walk
+The vulture hunts eggs.

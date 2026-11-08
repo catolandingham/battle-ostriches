@@ -1,0 +1,37 @@
+SITUATION (not shown to reviewer): Round 6, ostrich to move. On its turn the vulture just landed on a square next to one of the ostrich eggs (not on it) and smelled it: "egg nearby". The vulture does not know which square holds the egg. The ostrich was told the vulture sniffed an egg.
+
+HINT: Your turn. Tap to move.
+SNIFF POP: Vulture sniffed an egg.
+ACTION BUTTONS: ✓ Walk
+
+--- TEXT INSIDE THE VISIBLE SCREEN (top to bottom) ---
+ROUNDS 24
+EGGS 3
+?
+14
+1/1
+Your turn. Tap to move.
+Vulture sniffed an egg.
+YOU
+15
+15
+15
+✓ Walk
+
+--- ALL TEXT IN THE PAGE (document.body.innerText; includes anything scrolled or clipped out of view) ---
+ROUNDS 24
+EGGS 3
+14
+1/1
+ OSTRICH
+?
+
+
+Your turn. Tap to move.
+YOU
+15
+15
+15
+Vulture sniffed an egg.
+✓ Walk
+

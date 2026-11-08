@@ -1,0 +1,43 @@
+SITUATION (not shown to reviewer): Round 4, ostrich to move. Its hunger counter was set by the script to 4 turns left (a normal game reaches this around round 11). The nearest leaf is 3 squares away (top left).
+
+HINT: Hungry! Go eat.Skip guide
+TIP BAR: Carry moves an egg 1 square. / Turn off tips
+ACTION BUTTONS: ✓ Walk / Carry / Sit
+
+--- TEXT INSIDE THE VISIBLE SCREEN (top to bottom) ---
+ROUNDS 27
+EGGS 3
+?
+4
+1/1
+Hungry! Go eat.
+Skip guide
+Carry moves an egg 1 square.
+Turn off tips
+11
+13
+YOU
+11
+✓ Walk
+Carry
+Sit
+
+--- ALL TEXT IN THE PAGE (document.body.innerText; includes anything scrolled or clipped out of view) ---
+ROUNDS 27
+EGGS 3
+4
+1/1
+ OSTRICH
+?
+
+
+Hungry! Go eat.Skip guide
+Carry moves an egg 1 square.
+Turn off tips
+11
+13YOU
+11
+✓ Walk
+Carry
+Sit
+

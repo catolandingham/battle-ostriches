@@ -1,0 +1,38 @@
+SITUATION (not shown to reviewer): Round 3, vulture to move. It stands on a found egg (the egg is really there and still unbroken) and holds its stone.
+
+HINT: Throw on your own square.
+BANNER: Found egg!
+TIP BAR: Found. It stays found until moved. / Turn off tips
+ACTION BUTTONS: ✓ Fly / Throw
+
+--- TEXT INSIDE THE VISIBLE SCREEN (top to bottom) ---
+ROUNDS 28
+EGGS 3
+?
+13
+1/1
+Throw on your own square.
+Found. It stays found until moved.
+Turn off tips
+Found egg!
+YOU
+✓ Fly
+Throw
+
+--- ALL TEXT IN THE PAGE (document.body.innerText; includes anything scrolled or clipped out of view) ---
+ROUNDS 28
+EGGS 3
+13
+1/1
+ VULTURE
+?
+
+
+Throw on your own square.
+Found. It stays found until moved.
+Turn off tips
+Found egg!
+YOU
+✓ Fly
+Throw
+

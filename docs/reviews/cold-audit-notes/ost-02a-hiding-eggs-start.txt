@@ -1,0 +1,19 @@
+SITUATION (not shown to reviewer): Setup. The ostrich has not placed any egg yet (3 to place). The vulture stands on its start square (4,3). Round 1 has not begun.
+
+HINT: Hide your eggs. 3 left.
+
+--- TEXT INSIDE THE VISIBLE SCREEN (top to bottom) ---
+ROUNDS 30
+?
+EGGS 0
+Hide your eggs. 3 left.
+
+--- ALL TEXT IN THE PAGE (document.body.innerText; includes anything scrolled or clipped out of view) ---
+ROUNDS 30
+EGGS 0
+ OSTRICH
+?
+
+
+Hide your eggs. 3 left.
+

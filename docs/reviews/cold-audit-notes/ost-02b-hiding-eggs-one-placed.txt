@@ -1,0 +1,19 @@
+SITUATION (not shown to reviewer): Setup. One egg placed at the top left area, 2 left to place.
+
+HINT: Hide your eggs. 2 left.
+
+--- TEXT INSIDE THE VISIBLE SCREEN (top to bottom) ---
+ROUNDS 30
+?
+EGGS 1
+Hide your eggs. 2 left.
+
+--- ALL TEXT IN THE PAGE (document.body.innerText; includes anything scrolled or clipped out of view) ---
+ROUNDS 30
+EGGS 1
+ OSTRICH
+?
+
+
+Hide your eggs. 2 left.
+

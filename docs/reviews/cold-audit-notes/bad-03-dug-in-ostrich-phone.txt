@@ -1,0 +1,40 @@
+SITUATION (not shown to reviewer): Round 1, the human ostrich's phone right after the badger dug in. The ostrich was within 2 squares so it saw the badger dig; the badger is now buried and invisible to it, but its mound stays marked. Vulture to move (held).
+
+HINT: Vulture's turn…
+TOAST: The honey badger dug in!
+
+--- TEXT INSIDE THE VISIBLE SCREEN (top to bottom) ---
+ROUNDS 29
+EGGS 3
+?
+14
+Timer on
+1/1
+1
+10s
+Vulture's turn…
+The honey badger dug in!
+13
+13
+YOU
+13
+
+--- ALL TEXT IN THE PAGE (document.body.innerText; includes anything scrolled or clipped out of view) ---
+ROUNDS 29
+EGGS 3
+14
+1/1
+ OSTRICH
+
+?
+
+
+Timer on
+1
+ 10s
+Vulture's turn…
+13
+13
+YOU
+13
+The honey badger dug in!

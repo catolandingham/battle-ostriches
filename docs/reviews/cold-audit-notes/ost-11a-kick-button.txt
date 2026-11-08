@@ -1,0 +1,41 @@
+SITUATION (not shown to reviewer): Round 8, ostrich to move. The vulture stands right next to the ostrich (west), so a Kick button appears. (Script moved both animals to be neighbours at the left edge.)
+
+HINT: Your turn. Tap to move.
+TIP BAR: Kick: push the animal next to you back 3 squares instead of walking. / Turn off tips
+ACTION BUTTONS: ✓ Walk / Kick
+
+--- TEXT INSIDE THE VISIBLE SCREEN (top to bottom) ---
+ROUNDS 22
+EGGS 3
+?
+14
+1/1
+Your turn. Tap to move.
+Kick: push the animal next to you back 3 squares instead of walking.
+Turn off tips
+15
+15
+YOU
+15
+✓ Walk
+Kick
+
+--- ALL TEXT IN THE PAGE (document.body.innerText; includes anything scrolled or clipped out of view) ---
+ROUNDS 22
+EGGS 3
+14
+1/1
+ OSTRICH
+?
+
+
+Your turn. Tap to move.
+Kick: push the animal next to you back 3 squares instead of walking.
+Turn off tips
+15
+15
+YOU
+15
+✓ Walk
+Kick
+

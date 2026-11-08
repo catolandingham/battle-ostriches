@@ -1,0 +1,36 @@
+SITUATION (not shown to reviewer): Round 2. The vulture just landed on the hidden egg: found. It still holds its stone. Ostrich to move (frozen).
+
+HINT: Ostrich's turn…
+BANNER: Found egg!
+TIP BAR: Found. It stays found until moved. / Turn off tips
+SNIFF POP: Found egg!
+
+--- TEXT INSIDE THE VISIBLE SCREEN (top to bottom) ---
+ROUNDS 29
+EGGS 3
+?
+14
+1/1
+Ostrich's turn…
+Found. It stays found until moved.
+Turn off tips
+Found egg!
+YOU
+Found egg!
+
+--- ALL TEXT IN THE PAGE (document.body.innerText; includes anything scrolled or clipped out of view) ---
+ROUNDS 29
+EGGS 3
+14
+1/1
+ VULTURE
+?
+
+
+Ostrich's turn…
+Found. It stays found until moved.
+Turn off tips
+Found egg!
+YOU
+Found egg!
+

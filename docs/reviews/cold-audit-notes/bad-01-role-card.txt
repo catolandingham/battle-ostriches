@@ -1,0 +1,37 @@
+SITUATION (not shown to reviewer): Round 1, vulture to move (computer, held). First play state for the honey badger player, so its role card shows. The badger starts on the right edge (column 9, row 4); the human ostrich stands on (column 7, row 4).
+
+HINT: Vulture's turn…
+TOAST: The vulture hunts eggs. The honey badger hunts birds.
+ROLE CARD: You are the Honey Badger / Make 3 catches. / Move 2 squares. / The outline shows where a bird may be. / Stay still to hide underground. / Got it
+
+--- TEXT INSIDE THE VISIBLE SCREEN (top to bottom) ---
+The vulture hunts eggs. The honey badger hunts birds.
+You are the Honey Badger
+Make 3 catches.
+Move 2 squares.
+The outline shows where a bird may be.
+Stay still to hide underground.
+Got it
+
+--- ALL TEXT IN THE PAGE (document.body.innerText; includes anything scrolled or clipped out of view) ---
+ROUNDS 30
+EGGS 3
+15
+1/1
+ HONEY BADGER
+
+?
+
+
+Timer on
+1
+ 900s
+Vulture's turn…
+YOU
+You are the Honey Badger
+Make 3 catches.
+Move 2 squares.
+The outline shows where a bird may be.
+Stay still to hide underground.
+Got it
+The vulture hunts eggs. The honey badger hunts birds.

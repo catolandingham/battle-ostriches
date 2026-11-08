@@ -1,0 +1,26 @@
+SITUATION (not shown to reviewer): The ostrich took its turn in round 30 with eggs alive, so it wins by surviving. (Script note: the round counter was set to 30 to reach the end quickly.)
+
+END SCREEN: You win! / vs computer (normal) / The ostrich kept 3 egg(s) alive for 30 rounds. / Rematch · Same rolesRematch · Change rolesNew Game
+
+--- TEXT INSIDE THE VISIBLE SCREEN (top to bottom) ---
+You win!
+vs computer (normal)
+The ostrich kept 3 egg(s) alive for 30 rounds.
+Rematch · Same roles Rematch · Change roles New Game
+
+--- ALL TEXT IN THE PAGE (document.body.innerText; includes anything scrolled or clipped out of view) ---
+ROUNDS 1
+EGGS 3
+12
+1/1
+ OSTRICH
+?
+
+
+You win!
+vs computer (normal)
+
+The ostrich kept 3 egg(s) alive for 30 rounds.
+
+Rematch · Same rolesRematch · Change rolesNew Game
+

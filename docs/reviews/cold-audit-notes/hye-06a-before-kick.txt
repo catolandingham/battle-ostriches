@@ -1,0 +1,32 @@
+SITUATION (not shown to reviewer): Round 3, ostrich to move (computer, held by the script). The hyena (this phone) stands on the left edge (column 1, row 3). The computer ostrich really stands right next to it (column 2, row 3) and is about to kick it. The hyena cannot see the ostrich.
+
+HINT: Ostrich's turn…
+
+--- TEXT INSIDE THE VISIBLE SCREEN (top to bottom) ---
+ROUNDS 28
+EGGS 3
+?
+13
+Timer on
+1/1
+1
+10s
+Ostrich's turn…
+YOU
+
+--- ALL TEXT IN THE PAGE (document.body.innerText; includes anything scrolled or clipped out of view) ---
+ROUNDS 28
+EGGS 3
+13
+1/1
+ HYENA
+
+?
+
+
+Timer on
+1
+ 10s
+Ostrich's turn…
+YOU
+

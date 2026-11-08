@@ -1,0 +1,31 @@
+SITUATION (not shown to reviewer): The vulture landed on a rock pile and picked up a stone. Ostrich to move (frozen).
+
+HINT: Picked up a stone. Ostrich's turn…
+BANNER: Egg nearby!
+SNIFF POP: Egg nearby!
+
+--- TEXT INSIDE THE VISIBLE SCREEN (top to bottom) ---
+ROUNDS 25
+EGGS 3
+?
+10
+1/1
+Picked up a stone. Ostrich's turn…
+YOU
+Egg nearby!
+Egg nearby!
+
+--- ALL TEXT IN THE PAGE (document.body.innerText; includes anything scrolled or clipped out of view) ---
+ROUNDS 25
+EGGS 3
+10
+1/1
+ VULTURE
+?
+
+
+Picked up a stone. Ostrich's turn…
+Egg nearby!
+YOU
+Egg nearby!
+

@@ -1,0 +1,35 @@
+SITUATION (not shown to reviewer): Same moment as ost-03-first-turn, a few seconds later, after the "The vulture hunts eggs." line has faded.
+
+HINT: Sit on eggs to warm them.Skip guide
+ACTION BUTTONS: ✓ Walk
+
+--- TEXT INSIDE THE VISIBLE SCREEN (top to bottom) ---
+ROUNDS 30
+EGGS 3
+?
+15
+1/1
+Sit on eggs to warm them.
+Skip guide
+14
+14
+YOU
+14
+✓ Walk
+
+--- ALL TEXT IN THE PAGE (document.body.innerText; includes anything scrolled or clipped out of view) ---
+ROUNDS 30
+EGGS 3
+15
+1/1
+ OSTRICH
+?
+
+
+Sit on eggs to warm them.Skip guide
+14
+14
+YOU
+14
+✓ Walk
+

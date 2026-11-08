@@ -1,0 +1,59 @@
+<title>Ostrich move styles</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: one column, style tabs, caption, 7x7 board, key */
+:root{--bg:#f4f5f7;--fg:#1d2230;--muted:#5b6275;--tile-a:#36446a;--tile-b:#2e3b5d;--lit:#6f8fcf;--accent:#1d6fd6;--egg:#f2c14e;--maybe:#c9b8ff;--bird:#3cc7e8;--line:#c9ced9;--card:#ffffff}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#13161d;--fg:#e8ebf2;--muted:#a3aabb;--accent:#6aa6ff;--line:#38404f;--card:#1c2029;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#13161d;--fg:#e8ebf2;--muted:#a3aabb;--accent:#6aa6ff;--line:#38404f;--card:#1c2029;color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font:16px/1.5 -apple-system,system-ui,sans-serif;padding-block:16px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.tabs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+button{font:inherit;font-size:15px;padding:10px 12px;border-radius:10px;border:2px solid var(--line);background:var(--card);color:var(--fg)}
+.tabs button.on{border-color:var(--accent)}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+#cap{margin:4px 0 12px;color:var(--muted);min-height:1.5em}
+svg{width:100%;max-width:420px;display:block;touch-action:none}
+.row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.key{display:flex;flex-wrap:wrap;gap:14px;margin-top:12px;color:var(--muted);font-size:14px}
+.key span{display:inline-flex;align-items:center;gap:6px}
+.sw{width:14px;height:14px;border-radius:4px;display:inline-block}
+</style>
+<div class="tabs" id="tabs"></div>
+<div id="cap"></div>
+<svg id="b" viewBox="0 0 248 248" aria-label="Small game board"></svg>
+<div class="row"><button id="peek" hidden>Hold to see what you smelled</button><button id="reset">Reset</button></div>
+<div class="key"><span><i class="sw" style="background:var(--bird);border-radius:50%"></i>you (vulture)</span><span><i class="sw" style="background:var(--lit)"></i>you can fly here</span><span><i class="sw" style="background:var(--egg);border-radius:45%"></i>egg you found</span><span>rocks: get a stone</span></div>
+<script>
+const S=32,G=4,N=7,sniffAt=[3,3],found=[0,6],rocks=[[6,0]];
+let me=[3,3],mode='E',peek=false;
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const names={E:'E. Outline around sniff',F:'F. Small eggs in corners',G:'G. Striped squares',H:'H. Hold to see'};
+const caps={E:'You just landed and smelled an egg next to you. Lit squares: where you can fly. The outline: where the egg may be.',
+F:'Lit squares: where you can fly. Small faint eggs: where the egg may be.',
+G:'Lit squares: where you can fly. Striped squares: where the egg may be.',
+H:'Lit squares: where you can fly. Hold the button to see where the egg may be.'};
+const reach=(x,y)=>Math.max(Math.abs(x-me[0]),Math.abs(y-me[1]))<=2&&!(x===me[0]&&y===me[1]);
+const isMaybe=(x,y)=>Math.max(Math.abs(x-sniffAt[0]),Math.abs(y-sniffAt[1]))===1;
+const svg=document.getElementById('b');
+function draw(){const lit=css('--lit'),egg=css('--egg'),mb=css('--maybe');let s=`<defs><pattern id="st" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="2.5" height="6" fill="${mb}" opacity="0.8"/></pattern></defs>`;
+for(let y=0;y<N;y++)for(let x=0;x<N;x++){const X=x*(S+G),Y=y*(S+G),r=reach(x,y);
+s+=`<rect x="${X}" y="${Y}" width="${S}" height="${S}" rx="5" fill="${r?lit:((x+y)%2?css('--tile-a'):css('--tile-b'))}"/>`;
+const m=isMaybe(x,y);
+if(m&&mode==='G') s+=`<rect x="${X}" y="${Y}" width="${S}" height="${S}" rx="5" fill="url(#st)"/>`;
+if(m&&(mode==='F'||(mode==='H'&&peek))) s+=`<ellipse cx="${X+S-8}" cy="${Y+9}" rx="4.5" ry="5.5" fill="none" stroke="${mb}" stroke-width="2"/>`;
+if(x===found[0]&&y===found[1]) s+=`<ellipse cx="${X+S/2}" cy="${Y+S/2+1}" rx="8" ry="10" fill="${egg}" stroke="#3a2a00" stroke-width="2"/>`;
+if(rocks.some(q=>q[0]===x&&q[1]===y)) s+=`<path d="M${X+7} ${Y+24} L${X+13} ${Y+12} L${X+19} ${Y+18} L${X+23} ${Y+10} L${X+27} ${Y+24} Z" fill="#c9ced9" stroke="#55606e" stroke-width="1.5"/>`;}
+if(mode==='E'){const X=(sniffAt[0]-1)*(S+G)-2,Y=(sniffAt[1]-1)*(S+G)-2,W=3*(S+G)-G+4;
+ s+=`<rect x="${X}" y="${Y}" width="${W}" height="${W}" rx="8" fill="none" stroke="${mb}" stroke-width="3" stroke-dasharray="7 5"/>`;}
+s+=`<circle cx="${me[0]*(S+G)+S/2}" cy="${me[1]*(S+G)+S/2}" r="12" fill="${css('--bird')}" stroke="#0b3a47" stroke-width="2"/>`;
+svg.innerHTML=s;}
+function cellAt(e){const r=svg.getBoundingClientRect(),k=248/r.width;return [Math.floor((e.clientX-r.left)*k/(S+G)),Math.floor((e.clientY-r.top)*k/(S+G))];}
+svg.addEventListener('pointerdown',e=>{const [x,y]=cellAt(e);if(reach(x,y)){me=[x,y];draw();}});
+const pk=document.getElementById('peek');
+pk.addEventListener('pointerdown',()=>{peek=true;draw();});['pointerup','pointerleave','pointercancel'].forEach(t=>pk.addEventListener(t,()=>{peek=false;draw();}));
+function setMode(m){mode=m;me=[3,3];peek=false;pk.hidden=m!=='H';document.getElementById('cap').textContent=caps[m];
+ document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.m===m));draw();}
+document.getElementById('tabs').innerHTML=Object.keys(names).map(m=>`<button id="tab${m}" data-m="${m}">${names[m]}</button>`).join('');
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>setMode(b.dataset.m));
+document.getElementById('reset').onclick=()=>setMode(mode);
+setMode('E');
+</script>

@@ -1,0 +1,33 @@
+SITUATION (not shown to reviewer): Round 8. The ostrich kicked the vulture; it flew 3 squares west, wrapped around the left edge, and landed on the far right side of the board (column 7, row 4). Vulture to move (frozen).
+
+HINT: Vulture's turn…
+TOAST: Ostrich kicked the vulture 3 squares away.
+
+--- TEXT INSIDE THE VISIBLE SCREEN (top to bottom) ---
+ROUNDS 21
+EGGS 3
+?
+13
+1/1
+Vulture's turn…
+Ostrich kicked the vulture 3 squares away.
+14
+14
+YOU
+14
+
+--- ALL TEXT IN THE PAGE (document.body.innerText; includes anything scrolled or clipped out of view) ---
+ROUNDS 21
+EGGS 3
+13
+1/1
+ OSTRICH
+?
+
+
+Vulture's turn…
+14
+14
+YOU
+14
+Ostrich kicked the vulture 3 squares away.

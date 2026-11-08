@@ -1,0 +1,31 @@
+SITUATION (not shown to reviewer): Round 1. The vulture just landed on a square next to a hidden egg (not on it). The landing sniffed "egg nearby". The computer ostrich has not moved yet.
+
+HINT: Ostrich's turn…
+BANNER: Egg nearby!
+SNIFF POP: Egg nearby!
+
+--- TEXT INSIDE THE VISIBLE SCREEN (top to bottom) ---
+ROUNDS 30
+EGGS 3
+?
+15
+1/1
+Ostrich's turn…
+Egg nearby!
+YOU
+Egg nearby!
+
+--- ALL TEXT IN THE PAGE (document.body.innerText; includes anything scrolled or clipped out of view) ---
+ROUNDS 30
+EGGS 3
+15
+1/1
+ VULTURE
+?
+
+
+Ostrich's turn…
+Egg nearby!
+YOU
+Egg nearby!
+

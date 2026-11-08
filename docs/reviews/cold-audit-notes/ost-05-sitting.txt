@@ -1,0 +1,36 @@
+SITUATION (not shown to reviewer): Round 2, just after the ostrich pressed Sit on its egg. A sitting ostrich is visible to the vulture. Vulture to move (frozen).
+
+HINT: The vulture sees you sit.
+TIP BAR: Hover or tap a square to see what it is. / Turn off tips
+
+--- TEXT INSIDE THE VISIBLE SCREEN (top to bottom) ---
+ROUNDS 28
+EGGS 3
+?
+13
+1/1
+The vulture sees you sit.
+Hover or tap a square to see what it is.
+Turn off tips
+YOU
+14
+12
+sitting
+12
+
+--- ALL TEXT IN THE PAGE (document.body.innerText; includes anything scrolled or clipped out of view) ---
+ROUNDS 28
+EGGS 3
+13
+1/1
+ OSTRICH
+?
+
+
+The vulture sees you sit.
+Hover or tap a square to see what it is.
+Turn off tips
+14sittingYOU
+12
+12
+

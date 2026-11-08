@@ -1,0 +1,30 @@
+SITUATION (not shown to reviewer): Round 3, just after the ostrich carried its egg one square (to column 4 row 3). The egg is in its beak this vulture turn and is set down automatically after. Vulture to move (frozen).
+
+HINT: Vulture's turn…
+
+--- TEXT INSIDE THE VISIBLE SCREEN (top to bottom) ---
+ROUNDS 27
+EGGS 3
+?
+12
+1/1
+Vulture's turn…
+11
+YOU
+13
+11
+
+--- ALL TEXT IN THE PAGE (document.body.innerText; includes anything scrolled or clipped out of view) ---
+ROUNDS 27
+EGGS 3
+12
+1/1
+ OSTRICH
+?
+
+
+Vulture's turn…
+11
+13YOU
+11
+

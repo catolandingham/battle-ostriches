@@ -1,0 +1,66 @@
+SITUATION (not shown to reviewer): How to play, scrolled down (1062 of 987 px).
+
+HINT: Hint
+HOW TO PLAY: How to play / Ostrich / Keep one of your 3 eggs alive for 30 rounds. Both birds always see each other; your eggs stay hidden. / Walk up to 2 squares. You may pass over anything, but not land on a wrecked square or on an animal you can see. Carry an egg 1 square, never onto or next to a leaf. / Sit on an egg as long as you like. A sitting ostrich is seen by anyone who can see it. / Kick an animal next to you instead of walking: it goes away 3 squares (the honey badger 2), around the edge of the board if needed. It stops early before a wrecked square or another animal. Not while carrying, and not a buried honey badger. / Stand or sit on each egg within 15 rounds or it goes cold. A carried egg is not warmed. The ring on an egg counts down. / Land on a leaf, or stay on one, every 15 turns or you starve. / A stone thrown at your square is kicked back at the vulture. Squares next to you are not safe. / Vulture / Break every egg. Cold eggs and a starved ostrich count too. / Fly up to 2 squares, or Throw at your square or one next to it. A stone wrecks the square it lands on, except a leaf or a rock pile, and pushes any animal there 2 squares away from you. Never at your teammate's square. / Each landing sniffs: Egg nearby! or No egg nearby (within 1 square). The result stays until you fly again. / You hold 1 stone. Land on rocks to get another. Landing on an egg finds it. / Marks / Move here / Throw here / Kick this animal / Wrecked: can't land / Rocks: get a stone / Food / Egg or bird may be here / Found egg / Got it Replay intro Replay tipsOstrich guides: ON (tap to turn off)
+
+--- TEXT INSIDE THE VISIBLE SCREEN (top to bottom) ---
+stone. Land on rocks to get another. Landing on an egg finds it.
+Marks
+Move here
+Throw here
+Kick this animal
+Wrecked: can't land
+Rocks: get a stone
+Food
+Egg or bird may be here
+Found egg
+Got it Replay intro Replay tips Ostrich guides: ON (tap to turn off)
+
+--- ALL TEXT IN THE PAGE (document.body.innerText; includes anything scrolled or clipped out of view) ---
+ROUNDS 30
+EGGS 3
+BLUE
+?
+
+
+Hint
+⚙
+How to play
+Sound on
+Theme
+Battle
+Ostriches
+Hide your eggs. Outwit the hunters.
+
+Play with friends Play solo
+Have a code? Type it here to join.
+Join
+Pass & Play on this device?
+How to play
+
+Ostrich
+
+Keep one of your 3 eggs alive for 30 rounds. Both birds always see each other; your eggs stay hidden.
+Walk up to 2 squares. You may pass over anything, but not land on a wrecked square or on an animal you can see. Carry an egg 1 square, never onto or next to a leaf.
+Sit on an egg as long as you like. A sitting ostrich is seen by anyone who can see it.
+Kick an animal next to you instead of walking: it goes away 3 squares (the honey badger 2), around the edge of the board if needed. It stops early before a wrecked square or another animal. Not while carrying, and not a buried honey badger.
+Stand or sit on each egg within 15 rounds or it goes cold. A carried egg is not warmed. The ring on an egg counts down.
+Land on a leaf, or stay on one, every 15 turns or you starve.
+A stone thrown at your square is kicked back at the vulture. Squares next to you are not safe.
+Vulture
+
+Break every egg. Cold eggs and a starved ostrich count too.
+Fly up to 2 squares, or Throw at your square or one next to it. A stone wrecks the square it lands on, except a leaf or a rock pile, and pushes any animal there 2 squares away from you. Never at your teammate's square.
+Each landing sniffs: Egg nearby! or No egg nearby (within 1 square). The result stays until you fly again.
+You hold 1 stone. Land on rocks to get another. Landing on an egg finds it.
+Marks
+
+Move here
+Throw here
+Kick this animal
+Wrecked: can't land
+Rocks: get a stone
+Food
+Egg or bird may be here
+Found egg
+Got it Replay intro Replay tipsOstrich guides: ON (tap to turn off)
