@@ -108,7 +108,7 @@ const R = require('./public/roles.js'), THEMES = fs.readFileSync('./public/theme
   console.log('ok Hunters mode and 2 vs 2 cards');
 
   // the card reads in every theme: dark text on the white card, the button readable, the card still on a 390 x 664 screen
-  const themes = THEMES.match(/var T=\[([^\]]+)\]/)[1].split(',').map(x => x.replace(/'/g, '')); assert.equal(themes.length, 13);
+  const themes = THEMES.match(/var T=\[([^\]]+)\]/)[1].split(',').map(x => x.replace(/'/g, '')); assert.equal(themes.length, 14);
   for (const t of themes) {
     await F.evaluate(x => { THEME.set(x); UI.card(); }, t); await F.waitForSelector('#rolecard:not(.hidden)');
     const c = await F.evaluate(() => {

@@ -1,0 +1,50 @@
+
+> battle-ostriches@1.0.0 test
+> node tests/run-all.js
+
+PASS  ai-test.js                    3s  
+PASS  test.js                       0s  
+PASS  test3.js                      1s  
+PASS  testannounce.js               0s  
+PASS  testbadgerlines.js            0s  
+PASS  testcatch.js                  0s  
+PASS  testhunt.js                   3s  
+PASS  testinput.js                  0s  
+PASS  testlobby.js                  2s  
+PASS  testplay.js                   0s  
+PASS  testrestore.js                1s  
+PASS  testroles.js                  0s  
+PASS  testrules.js                  2s  
+PASS  teststep.js                   0s  
+PASS  testteam.js                   1s  
+PASS  testv2.js                     0s  
+PASS  e2e-announce.js              11s  
+PASS  e2e-badger-lines.js          15s  
+PASS  e2e-badger-see.js             6s  
+PASS  e2e-bw.js                     3s  
+PASS  e2e-cause.js                 20s  
+PASS  e2e-consistency.js          657s  
+PASS  e2e-hardstop.js               9s  
+PASS  e2e-hunt.js                  11s  
+PASS  e2e-hunter-phone.js           8s  
+PASS  e2e-invite.js               154s  
+FAIL  e2e-join-code.js              1s      at /workspace/bo-lobby/e2e-join-code.js:116:14
+PASS  e2e-kick.js                  14s  
+PASS  e2e-lobby-contrast.js         3s  
+PASS  e2e-lobby-wait.js             3s  
+PASS  e2e-lobby.js                  8s  
+PASS  e2e-part1.js                 64s  
+PASS  e2e-pass.js                  67s  
+PASS  e2e-roles.js                 32s  
+PASS  e2e-share.js                 10s  
+PASS  e2e-signals.js               12s  
+PASS  e2e-sniff.js                 13s  
+FAIL  e2e-stone.js                  5s      at /workspace/bo-lobby/e2e-stone.js:84:23
+PASS  e2e-team.js                  25s  
+PASS  e2e-three.js                 49s  
+PASS  e2e-tooltip.js                9s  
+PASS  e2e-two-start.js              1s  
+PASS  e2e-you.js                   33s  
+PASS  e2e.js                        9s  
+
+42 of 44 suites passed. Logs: shots/test-logs/

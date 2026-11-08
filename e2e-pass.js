@@ -25,7 +25,7 @@ const OUT = 'shots/pass/'; fs.mkdirSync(OUT, { recursive: true });
   const vultureTurn = async (shot) => {
     await P.waitForSelector('#handoff.red'); assert.match(await P.textContent('#hTitle'), /Pass to the Vulture/);
     assert.equal(await P.locator('#board .ic-myegg').count(), 0, 'cover: nothing behind');
-    const bg = await P.evaluate(() => getComputedStyle(document.getElementById('handoff')).backgroundImage); assert.ok(/gradient/.test(bg), 'opaque cover');
+    const bg = await P.evaluate(() => { const s = getComputedStyle(document.getElementById('handoff')); return { img: s.backgroundImage, col: s.backgroundColor }; }); assert.ok(/gradient/.test(bg.img) || /^rgb\(/.test(bg.col), 'opaque cover ' + JSON.stringify(bg));
     if (shot) await P.screenshot({ path: OUT + 'handoff-vulture.jpg', type: 'jpeg', quality: 85 });
     await P.click('#hGo'); await P.waitForSelector('#actions.mine', { state: 'attached' });
     assert.equal(await P.evaluate(() => document.body.className), 'red');

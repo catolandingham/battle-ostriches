@@ -1,0 +1,109 @@
+/* Black-and-white theme (the default): white board, thin even black lines, simple type, no gradients or shadows. */
+
+html[data-theme="bw"]{--bg:#fff;--fg:#000;--mid:#d6d6d6;--litbg:#e6e6e6;--w:2.2px;--bd:1.5px;--font:-apple-system,"Helvetica Neue",Helvetica,Arial,sans-serif;--tt:none;--ls:.02em}
+html[data-theme="bw"] body:not(#_a):not(#_b), html[data-theme="bw"] body *:not(#_a):not(#_b){background-color:transparent!important;background-image:none!important;box-shadow:none!important;text-shadow:none!important;filter:none!important;border-color:var(--fg)!important;color:var(--fg)!important;font-family:var(--font)!important;border-radius:0!important}
+html[data-theme="bw"] body:not(#_a):not(#_b),html[data-theme="bw"] #app:not(#_a):not(#_b),html[data-theme="bw"] #lobby:not(#_a):not(#_b),html[data-theme="bw"] #rules:not(#_a):not(#_b),html[data-theme="bw"] #over:not(#_a):not(#_b),html[data-theme="bw"] #roomLobby:not(#_a):not(#_b),html[data-theme="bw"] #handoff:not(#_a):not(#_b),html[data-theme="bw"] #rolecard:not(#_a):not(#_b),html[data-theme="bw"] #wait:not(#_a):not(#_b),html[data-theme="bw"] .lobbybox:not(#_a):not(#_b),html[data-theme="bw"] #homeMenu:not(#_a):not(#_b){background-color:var(--bg)!important}
+html[data-theme="bw"] button:not(#_a):not(#_b),html[data-theme="bw"] .btn:not(#_a):not(#_b),html[data-theme="bw"] input:not(#_a):not(#_b){background-color:var(--bg)!important;border:var(--bd) solid var(--fg)!important;color:var(--fg)!important;text-transform:var(--tt)!important;letter-spacing:var(--ls)!important;font-weight:500!important}
+html[data-theme="bw"] button.primary:not(#_a):not(#_b),html[data-theme="bw"] button.on:not(#_a):not(#_b),html[data-theme="bw"] button[aria-pressed="true"]:not(#_a):not(#_b),html[data-theme="bw"] #actions button.on:not(#_a):not(#_b),html[data-theme="bw"] #startGame:not(#_a):not(#_b),html[data-theme="bw"] #playFriend:not(#_a):not(#_b),html[data-theme="bw"] #soloGo:not(#_a):not(#_b){background-color:var(--fg)!important;color:var(--bg)!important;outline:none!important;font-weight:700!important}
+html[data-theme="bw"] button.primary *:not(#_a):not(#_b),html[data-theme="bw"] #actions button.on *:not(#_a):not(#_b),html[data-theme="bw"] #startGame *:not(#_a):not(#_b),html[data-theme="bw"] #playFriend *:not(#_a):not(#_b),html[data-theme="bw"] #soloGo *:not(#_a):not(#_b){color:var(--bg)!important}
+html[data-theme="bw"] #actions button:disabled:not(#_a):not(#_b){opacity:.35!important}
+html[data-theme="bw"] h1:not(#_a):not(#_b),html[data-theme="bw"] h2:not(#_a):not(#_b),html[data-theme="bw"] h3:not(#_a):not(#_b){text-transform:var(--tt)!important;letter-spacing:var(--ls)!important;font-weight:700!important}
+html[data-theme="bw"] #hud:not(#_a):not(#_b),html[data-theme="bw"] #banner:not(#_a):not(#_b),html[data-theme="bw"] #hint:not(#_a):not(#_b),html[data-theme="bw"] #tipbar:not(#_a):not(#_b),html[data-theme="bw"] #msgslot>*:not(#_a):not(#_b){border:var(--bd) solid var(--fg)!important;background-color:var(--bg)!important}
+html[data-theme="bw"] #banner.show:not(#_a):not(#_b),html[data-theme="bw"] #banner.good:not(#_a):not(#_b),html[data-theme="bw"] #banner.found:not(#_a):not(#_b),html[data-theme="bw"] #banner.pounce:not(#_a):not(#_b){background-color:var(--fg)!important;color:var(--bg)!important}
+html[data-theme="bw"] #banner.pounce *:not(#_a):not(#_b),html[data-theme="bw"] #banner.found *:not(#_a):not(#_b){color:var(--bg)!important}
+/* board */
+html[data-theme="bw"] #board:not(#_a):not(#_b){background-color:var(--bg)!important;gap:3px!important;border:0!important}
+html[data-theme="bw"] #board .cell:not(#_a):not(#_b){background-color:var(--bg)!important;border:1px solid var(--mid)!important;outline:none!important}
+html[data-theme="bw"] #board .cell.fog:not(#_a):not(#_b){opacity:1!important}
+html[data-theme="bw"] #board .cell.legal:not(#_a):not(#_b),html[data-theme="bw"] #board .cell.target:not(#_a):not(#_b){background-color:var(--litbg)!important;border:2px solid var(--fg)!important}
+html[data-theme="bw"] #board .cell:not(#_a):not(#_b)::before,html[data-theme="bw"] #board .cell:not(#_a):not(#_b)::after{background:none!important;box-shadow:none!important}
+html[data-theme="bw"] #board .cell.cue:not(#_a):not(#_b)::after{border:2px solid var(--fg)!important}
+/* icons: thin uniform line on every svg */
+html[data-theme="bw"] svg *:not(#_a):not(#_b){fill:none!important;stroke:var(--fg)!important;stroke-width:var(--w)!important;stroke-linecap:round!important;stroke-linejoin:round!important}
+html[data-theme="bw"] svg text:not(#_a):not(#_b){fill:var(--fg)!important;stroke:none!important}
+/* filled = is here; your egg */
+/* dashed = may be here: keep dash, dark under-stroke takes the board colour */
+html[data-theme="bw"] .ic-maybe svg *:first-child:not(#_a):not(#_b){stroke:var(--bg)!important}
+html[data-theme="bw"] .ic-maybe svg *:last-child:not(#_a):not(#_b){stroke:var(--fg)!important}
+html[data-theme="bw"] .ic-maybe svg *:last-child[stroke-dasharray]:not(#_a):not(#_b){}
+/* warmth ring & number */
+html[data-theme="bw"] .wring *:not(#_a):not(#_b){stroke:var(--fg)!important}
+html[data-theme="bw"] .wnum:not(#_a):not(#_b){background-color:var(--bg)!important;color:var(--fg)!important;border:0!important;font-weight:700!important}
+html[data-theme="bw"] .wnum.low:not(#_a):not(#_b){background-color:var(--fg)!important;color:var(--bg)!important}
+html[data-theme="bw"] #board .pc:not(#_a):not(#_b){background-color:var(--bg)!important;border:0!important}
+html[data-theme="bw"] #board .cell.me:not(#_a):not(#_b),html[data-theme="bw"] #board .cell.you:not(#_a):not(#_b){border:2.5px solid var(--fg)!important}
+
+html[data-theme="bw"] body *:not(#_a):not(#_b){-webkit-text-fill-color:currentColor!important}
+html[data-theme="bw"] .rolebtn:not(#_a):not(#_b),html[data-theme="bw"] .rolebtn *:not(#_a):not(#_b){opacity:1!important}
+html[data-theme="bw"] button:disabled:not(#_a):not(#_b){background-color:var(--bg)!important;color:var(--fg)!important;opacity:.35!important}
+html[data-theme="bw"] button:disabled *:not(#_a):not(#_b){color:var(--fg)!important}
+html[data-theme="bw"] #lobbyCode:not(#_a):not(#_b){font-weight:700!important;letter-spacing:.3em!important}
+
+/* fixes after icon tests */
+html[data-theme="bw"] #board .pc:not(#_a):not(#_b),html[data-theme="bw"] .mini .pc:not(#_a):not(#_b),html[data-theme="bw"] #board .ic:not(#_a):not(#_b){background-color:transparent!important}
+html[data-theme="bw"] .cmark.is svg *:not(#_a):not(#_b){fill:var(--fg)!important;stroke:var(--fg)!important}
+html[data-theme="bw"] .cmark.open.cm-egg:not(#_a):not(#_b){width:var(--mw,56%)!important;height:var(--mw,56%)!important}
+html[data-theme="bw"] .cmark.open.cm-egg .mk:not(#_a):not(#_b){stroke-dasharray:var(--md,8 4.5)!important;stroke-width:var(--mkw,2.8px)!important;stroke-linecap:butt!important}
+html[data-theme="bw"] .cell.hit:not(#_a):not(#_b)::before{content:none!important;display:none!important}
+html[data-theme="bw"] button.on svg *:not(#_a):not(#_b),html[data-theme="bw"] button[aria-pressed="true"] svg *:not(#_a):not(#_b),html[data-theme="bw"] #actions button.on svg *:not(#_a):not(#_b){stroke:var(--bg)!important}
+html[data-theme="bw"] #startGame:disabled:not(#_a):not(#_b),html[data-theme="bw"] button.primary:disabled:not(#_a):not(#_b){background-color:var(--bg)!important;color:var(--fg)!important;opacity:.35!important}
+html[data-theme="bw"] #startGame:disabled *:not(#_a):not(#_b){color:var(--fg)!important}
+html[data-theme="bw"] .bchip:not(#_a):not(#_b){background-color:var(--bg)!important;border:var(--bd) solid var(--fg)!important}
+html[data-theme="bw"] .bchip.now:not(#_a):not(#_b),html[data-theme="bw"] #h3bar .bchip.me:not(#_a):not(#_b){outline:var(--bd) solid var(--fg)!important;outline-offset:2px}
+
+/* tile-aware marks: the under-stroke takes the tile colour so dashes stay crisp on plain and lit squares */
+html[data-theme="bw"] #board .cell:not(#_a):not(#_b),html[data-theme="bw"] .mini .cell:not(#_a):not(#_b){--tile:var(--bg);--ink:var(--fg)}
+html[data-theme="bw"] #board .cell.legal:not(#_a):not(#_b),html[data-theme="bw"] #board .cell.target:not(#_a):not(#_b),html[data-theme="bw"] .mini .cell.legal:not(#_a):not(#_b){--tile:var(--litbg)}
+html[data-theme="bw"] #board .cell svg *:not(#_a):not(#_b),html[data-theme="bw"] .mini .cell svg *:not(#_a):not(#_b){stroke:var(--ink)!important}
+html[data-theme="bw"] :is(#board,.mini) .cell .cmark.is svg *:not(#_a):not(#_b),html[data-theme="bw"] :is(#board,.mini) .cell .ic-spot svg *:not(#_a):not(#_b),html[data-theme="bw"] :is(#board,.mini) .cell .ic-myegg svg *:not(#_a):not(#_b){fill:var(--ink)!important;stroke:var(--ink)!important}
+
+/* white boards: the countdown sits beside the egg, not over it */
+html[data-theme="bw"] #board .ic-myegg>.wnum:not(#_a):not(#_b){left:auto!important;top:auto!important;right:0!important;bottom:0!important;background-color:transparent!important;transform:none!important;font-size:11px!important;line-height:1!important;padding:0 1px!important}
+
+
+
+html[data-theme="bw"] #board .ic.ic-myegg:not(#_a):not(#_b){overflow:visible!important}
+html[data-theme="bw"] #board .ic.ic-myegg>svg:not(#_a):not(#_b){width:66%!important;height:66%!important;position:absolute!important;left:0!important;top:0!important}
+html[data-theme="bw"] #board .ic-myegg>.wnum.low:not(#_a):not(#_b){background-color:var(--fg)!important;color:var(--bg)!important}
+/* throw target, kick ring and the marks key: the same thin black lines */
+html[data-theme="bw"] #board .cell>.aim:not(#_a):not(#_b),html[data-theme="bw"] .mini .cell>.aim:not(#_a):not(#_b),html[data-theme="bw"] .lgs.aim:not(#_a):not(#_b)::before{border:2px solid var(--fg)!important;border-radius:50%!important;box-shadow:none!important;background:linear-gradient(var(--fg),var(--fg)) center/2px 70% no-repeat,linear-gradient(var(--fg),var(--fg)) center/70% 2px no-repeat!important}
+html[data-theme="bw"] #board .cell>.aim.ask:not(#_a):not(#_b){background:var(--fg)!important}
+html[data-theme="bw"] #board .cell>.aim.ask:not(#_a):not(#_b)::after{border-color:var(--bg)!important;filter:none!important}
+html[data-theme="bw"] #board .cell>.kring:not(#_a):not(#_b),html[data-theme="bw"] .mini .cell>.kring:not(#_a):not(#_b),html[data-theme="bw"] .lgs.kring:not(#_a):not(#_b)::before{border:4px solid var(--fg)!important;border-radius:50%!important;box-shadow:none!important;background:transparent!important}
+html[data-theme="bw"] .lgs:not(#_a):not(#_b){background:var(--bg)!important;border:1px solid var(--mid)!important;box-shadow:none!important}
+html[data-theme="bw"] .lgs.lit:not(#_a):not(#_b){background:var(--litbg)!important;border:2px solid var(--fg)!important}
+html[data-theme="bw"] .lgs.wrecked:not(#_a):not(#_b)::before{background:linear-gradient(45deg,transparent 46%,var(--fg) 46% 54%,transparent 54%),linear-gradient(-45deg,transparent 46%,var(--fg) 46% 54%,transparent 54%)!important}
+html[data-theme="bw"] .youtag:not(#_a):not(#_b),html[data-theme="bw"] #stage>.youflag:not(#_a):not(#_b){background-color:var(--fg)!important;color:var(--bg)!important;border:0!important}
+/* cards and pop-ups stay opaque */
+html[data-theme="bw"] #rolecard .rc:not(#_a):not(#_b),html[data-theme="bw"] .tutcard:not(#_a):not(#_b),html[data-theme="bw"] .hbox:not(#_a):not(#_b),html[data-theme="bw"] .wcard:not(#_a):not(#_b),html[data-theme="bw"] #snpop:not(#_a):not(#_b),html[data-theme="bw"] #announce:not(#_a):not(#_b),html[data-theme="bw"] .toolmenu:not(#_a):not(#_b),html[data-theme="bw"] #roomLobby .menu:not(#_a):not(#_b),html[data-theme="bw"] #walk:not(#_a):not(#_b),html[data-theme="bw"] #tut:not(#_a):not(#_b),html[data-theme="bw"] #wait:not(#_a):not(#_b){background-color:var(--bg)!important}
+/* square edges are drawn inside the square, so pieces, eggs and the warmth ring keep their full size */
+html[data-theme="bw"] #board .cell:not(#_a):not(#_b){border:0!important;box-shadow:inset 0 0 0 1px var(--mid)!important}
+html[data-theme="bw"] #board .cell.legal:not(#_a):not(#_b),html[data-theme="bw"] #board .cell.target:not(#_a):not(#_b){border:0!important;box-shadow:inset 0 0 0 2px var(--fg)!important}
+html[data-theme="bw"] #board .cell.me:not(#_a):not(#_b),html[data-theme="bw"] #board .cell.you:not(#_a):not(#_b){border:0!important;box-shadow:inset 0 0 0 2.5px var(--fg)!important}
+/* a square with an animal and an egg: egg on the left, animal on the right, never overlapping */
+html[data-theme="bw"] #board .cell:has(>.pc):has(.ic-myegg,.ic-spot)>.pc:not(#_a):not(#_b){left:42%!important;top:18%!important;width:56%!important;height:68%!important}
+html[data-theme="bw"] #board .cell:has(>.pc) .ic-myegg:not(#_a):not(#_b),html[data-theme="bw"] #board .cell:has(>.pc)>.ic-spot:not(#_a):not(#_b){inset:auto!important;left:2%!important;top:16%!important;width:40%!important;height:66%!important;position:absolute!important}
+html[data-theme="bw"] #board .cell:has(>.pc) .ic-myegg .cmark:not(#_a):not(#_b){left:0!important;top:0!important;width:100%!important;height:100%!important}
+html[data-theme="bw"] #board .cell:has(>.pc) .ic-spot svg:not(#_a):not(#_b){width:100%!important;height:100%!important}
+html[data-theme="bw"] #board .cell:has(>.pc):has(.ic-myegg,.ic-spot) .wnum:not(#_a):not(#_b){left:4%!important;right:auto!important;top:auto!important;bottom:3%!important;width:34%!important;text-align:center!important;transform:none!important}
+/* a shorter header and message line, so the board gets the room */
+html[data-theme="bw"] #hud:not(#_a):not(#_b){padding:4px 8px!important;gap:4px!important;min-height:0!important}
+html[data-theme="bw"] #hud *:not(#_a):not(#_b){line-height:1.15!important}
+html[data-theme="bw"] #hud button:not(#_a):not(#_b),html[data-theme="bw"] #hud .iconbtn:not(#_a):not(#_b){width:30px!important;height:30px!important;min-width:0!important;min-height:0!important;padding:0!important}
+html[data-theme="bw"] #banner:not(#_a):not(#_b),html[data-theme="bw"] #hint:not(#_a):not(#_b){padding:5px 8px!important;min-height:0!important;font-size:14px!important}
+html[data-theme="bw"] #app:not(#_a):not(#_b){gap:4px!important}
+html[data-theme="bw"] #board .cell:has(>.pc):has(.ic-myegg,.ic-spot,>.cmark.cm-egg.is)>.pc:not(#_a):not(#_b){left:42%!important;top:18%!important;width:58%!important;height:64%!important}
+html[data-theme="bw"] #board .cell:has(>.pc)>.cmark.cm-egg.is:not(#_a):not(#_b){left:2%!important;top:16%!important;width:40%!important;height:66%!important}
+/* clean wrecked X: no dust, sparks or blots around it */
+/* YOU stays above the square, readable and above all pieces. */
+html[data-theme="bw"] #stage>.youflag:not(#_a):not(#_b),html[data-theme="bw"] .mini>.youflag:not(#_a):not(#_b){font-size:9px!important;line-height:1!important;padding:1px 3px!important;transform:translate(-50%,-100%)!important;z-index:200!important}
+/* How to play: real board pictures */
+html[data-theme="bw"] #howPics .realpic img{width:150px;height:auto;display:block;margin:0 auto;box-shadow:inset 0 0 0 1px #000;border:1px solid #000}
+html[data-theme="bw"] #smashfx .sm-drop{display:none!important}
+/* the found egg's filled mark fills its egg box (it sits inside .ic-spot) */
+html[data-theme="bw"] #board .cell .ic-spot>.cmark:not(#_a):not(#_b){position:absolute!important;inset:0!important;left:0!important;top:0!important;width:100%!important;height:100%!important;transform:none!important}
+/* Keep the board's raised YOU tag under modal screens (rules, role cards, menus). */
+html[data-theme="bw"] #stage{isolation:isolate}
+/* Put the countdown beneath its egg, not on the shell, when a bird shares the square. */
+html[data-theme="bw"] #board .cell:has(>.pc) .ic-myegg:not(#_a):not(#_b){top:8%!important;height:58%!important}
+html[data-theme="bw"] #board .cell:has(>.pc) .ic-myegg>.wnum:not(#_a):not(#_b){left:0!important;top:100%!important;bottom:auto!important;width:100%!important;transform:none!important}

@@ -6,7 +6,7 @@ process.env.PORT = 3965; process.env.BO_H3START = '8,3'; process.env.BO_H4START 
 const { webkit, devices } = require('playwright-core'); const assert = require('assert'), fs = require('fs');
 const server = require('./server.js'), T3 = require('./three.js'); const U = 'http://localhost:3965/', OUT = 'shots/you/'; fs.mkdirSync(OUT, { recursive: true });
 const shot = async (p, n) => { await p.evaluate(() => { const t = document.querySelector('.youtag'); if (t) t.scrollIntoView({ block: 'center' }); }); return p.screenshot({ path: OUT + n + '.jpg', type: 'jpeg', quality: 85 }); };
-const THEMES = ['classic', 'nature', 'notes', 'golden', 'paper', 'arcade', 'toybox', 'tactical', 'storm', 'volcano', 'comic', 'pharaoh', 'neon'];
+const THEMES = ['bw', 'classic', 'nature', 'notes', 'golden', 'paper', 'arcade', 'toybox', 'tactical', 'storm', 'volcano', 'comic', 'pharaoh', 'neon'];
 const PIECE = { ostrich: '.pc.po', vulture: '.pc.pv', hyena: '.pc.ph.mine', badger: '.pc.ph.mine' };
 (async () => {
   const b = await webkit.launch(), errs = [];
