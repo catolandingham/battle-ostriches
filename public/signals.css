@@ -1,0 +1,26 @@
+/* Signals: one look per meaning, in every theme (loaded after every theme file; themes restyle floors and animals, never a signal).
+   Every signal carries a thin dark edge and a thin light edge, so it reads on a pale tile and on a dark tile. */
+/* A square you can act on has no glow of its own: its signal is a mark in the middle (a dot to move, a crosshair to throw, a ring to kick). */
+html[data-theme] #board .cell.legal.legal.legal.legal.legal,#board .cell.legal.legal.legal.legal.legal{box-shadow:inset 0 0 0 1px rgba(255,255,255,.28),inset 0 0 0 2px rgba(0,0,0,.30)!important;outline:none!important;animation:none!important;filter:none!important;z-index:2}
+html[data-theme] #board .cell.legal.legal.legal.legal.legal.alt{background-image:linear-gradient(rgba(255,255,255,.13),rgba(255,255,255,.13))!important}
+html[data-theme] #board .cell.legal.legal.legal.legal.legal:not(.alt){background-image:linear-gradient(rgba(0,0,0,.13),rgba(0,0,0,.13))!important}
+#board .cell>.mvdot{position:absolute;left:50%;top:50%;width:26%;height:26%;transform:translate(-50%,-50%);border-radius:50%;background:#ffd21f;box-shadow:0 0 0 2px #111,0 0 0 4px #fff;z-index:5;pointer-events:none}
+#board .cell>.aim{position:absolute;inset:16%;border-radius:50%;border:3px solid #ff7a1a;box-shadow:0 0 0 2px #111,inset 0 0 0 2px #111,0 0 0 4px #fff;z-index:5;pointer-events:none;
+  background:linear-gradient(#ff7a1a,#ff7a1a) center/3px 70% no-repeat,linear-gradient(#ff7a1a,#ff7a1a) center/70% 3px no-repeat}
+#board .cell>.kring{position:absolute;inset:4%;border-radius:50%;border:4px solid #ffd21f;box-shadow:0 0 0 2px #111,inset 0 0 0 2px #111,0 0 0 4px #fff;z-index:7;pointer-events:none}
+/* The whole board stays on a phone screen (390 x 664): a compact header, no reserved banner slot, and the banner floats over the top edge of the board. */
+#stage{position:relative;flex:1 1 auto;min-height:0;display:flex;flex-direction:column}
+#app #stage #board{flex:1 1 auto}
+html[data-theme] #stage #banner,#stage #banner{position:absolute;top:6px;left:8px;right:8px;margin:0!important;z-index:30;pointer-events:none;min-height:0!important;max-width:none}
+body.red #stage #banner.hidden,body.blue #stage #banner.hidden,body.hunter #stage #banner.hidden,#stage #banner.hidden{display:none!important}
+@media (max-width:520px){
+  #app{gap:6px;padding-top:calc(env(safe-area-inset-top) + 4px)}
+  #hud{display:grid!important;grid-template-columns:1fr auto;align-items:center;gap:4px 6px;padding:4px 8px!important;border-width:3px!important;border-radius:12px!important}
+  #hud>div:first-child{flex:none;min-width:0}
+  #hud .logo{display:none!important}
+  #hud .ctr{font-size:12px!important;line-height:1.1}
+  #hud>div:last-child{flex:none;justify-content:flex-end}
+  #hint,#hint.guide,#hint.empty{min-height:36px;padding:5px 10px}
+}
+#board .cell>.youring{position:absolute;inset:3%;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 2px #111,inset 0 0 0 2px #111;z-index:3;pointer-events:none}
+#markkey{display:none!important}

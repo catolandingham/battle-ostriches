@@ -249,6 +249,7 @@ function youTag(board){
  const bs=S.h3&&S.h3.birds,mb=bs&&bs[S.h3.mySeat||S.role];if(mb&&mb.out)return;
  const mine=board.querySelector('.pc.ph.mine'),cell=mine?mine.closest('.cell'):board.querySelector('.cell[data-tags~="me"]');
  if(!cell)return;
+ const ring=document.createElement('i');ring.className='youring';cell.appendChild(ring); // one ring under your own animal, the same in every theme
  const t=document.createElement('span');t.className='youtag'+(cell.querySelector('.pouncetag')?' low':'');t.textContent='YOU';cell.appendChild(t);
  if(S.phase!=='play'||!S.myTurn)return;
  const k=S.role+':'+S.round+':'+S.turn;if(k!==youKey){youKey=k;youAt=Date.now();}
@@ -330,7 +331,7 @@ function render(prev){
   if(k===ok){if(blue&&e){d.classList.add('sat');}h+=`<div class="pc po">${OST}</div>`+(S.carried?'<span class="carry">'+MYEGG+'</span>':'');tip.push(blue?'You (ostrich)'+(S.carried?', carrying an egg':''):'The ostrich'+(S.carried?' (carrying something)':''));tags.push(blue?'me':'ost');
    if(blue&&S.carried&&S.eggs&&S.eggs[S.carrying])h+=warmRing(S.eggs[S.carrying].coldIn,C.warmth);}
   if(legal)tip.push(kicking?kickTip(x,y):throwing?'Throw a stone here':setup?(S.phase==='setupEggs'?'Hide an egg here':'Start here'):blue?'Move here':'Fly here');
-  d.innerHTML=h;d.dataset.tip=[...new Set(tip)].join(' · ');
+  d.innerHTML=h+(legal?(kicking?'<i class="kring"></i>':throwing?'<i class="aim"></i>':'<i class="mvdot"></i>'):'');d.dataset.tip=[...new Set(tip)].join(' · ');
   d.dataset.tags=tags.join(' ');if(tags.includes('me'))d.id='current';d.onclick=()=>{if(Date.now()<noClick)return;tap(x,y);};board.appendChild(d);}
  {const cs=getComputedStyle(board),gap=parseFloat(cs.columnGap)||0,pad=parseFloat(cs.paddingLeft)+parseFloat(cs.paddingRight),inner=board.clientWidth-pad,w=(inner-gap*(C.cols-1))/C.cols;if(w>1){board.style.gridAutoRows='0';board.style.gridTemplateRows=`repeat(${C.rows},${w}px)`;}}
  if(prev&&blue&&S.hungerLeft>prev.hungerLeft&&S.ostrich&&S.ostrich[0]>=0){const c=board.children[S.ostrich[1]*C.cols+S.ostrich[0]];if(c)c.classList.add('ate');}
