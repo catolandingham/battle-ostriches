@@ -37,6 +37,7 @@ const MEET = 'Badger shoved the hyena.';
   // 2. the first hunters meeting this page has seen: the badger walks onto the hyena. The board is redrawn three times under the line.
   const kb = await K.evaluate(() => UI._S().h3.hunters.find(h => h.kind === 'hyena').p); assert.deepEqual(kb, [4, 3]);
   await K.locator('.cell').nth(3 * 9 + 4).click({ force: true });
+  for (let i = 0; i < 60 && !room.g.hunt.rival; i++) await K.waitForTimeout(50); // the tap reaches the server a moment later
   assert.equal(room.g.hunt.rival && room.g.hunt.rival.by, 'badger', 'the meeting happened'); const to = room.g.hunt.hs.hyena.p.slice(); assert.deepEqual(to, [2, 3]);
   for (const p of ALL) await p.waitForFunction(() => window.__ann.length >= 2, null, { timeout: 8000 });
   for (const p of ALL) await p.waitForTimeout(0);
