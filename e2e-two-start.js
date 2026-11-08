@@ -21,7 +21,7 @@ const desk = { viewport: { width: 1280, height: 800 } };
   await host.evaluate(() => UI.open({ t: 'create', friends: 1 }));
   await host.waitForSelector('#lobbyCode', { timeout: 10000 });
   await host.evaluate(() => UI.send({ t: 'lobby', a: 'role', role: 'blue' }));
-  await host.waitForFunction(() => /YOU ARE Ostrich/.test(document.querySelector('.youare').textContent));
+  await host.waitForFunction(() => /YOU ARE Ostrich/.test(LobbyUI.get().youAre || ''));
   const code = (await host.textContent('#lobbyCode')).trim();
   const guest = await open();
   await guest.evaluate(c => UI.open({ t: 'join', code: c }), code);

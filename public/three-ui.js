@@ -191,7 +191,7 @@ function badgerLines(S,prev){if(S===bLastS)return;bLastS=S;if(!prev||(prev.round
 // The shapes: an egg for the vulture's sniff and for eggs you know, a bird for the hunters' sense, a badger for a burrow a bird saw being dug. Style (dashed or filled) lives in part1.css.
 // The bird is a plain (not dashed) side-view line: dashes break a small detailed shape apart, and a hunter only ever sees "may be here" birds, so there is no filled bird to mix it up with.
 // The badger's dig-in spot is a pile of dirt, filled white like every other "is here" mark.
-const EGGD='M6 21A14 17.5 0 1 1 34 21A14 17.5 0 1 1 6 21Z',BIRDD='M3 15L12 21C11 30 18 36 26 33C32 31 35 26 33 20L39 17L32 15C31 9 25 7 21 11C19 13 19 16 20 19C15 18 9 16 3 15Z',MOUNDD='M2 34C6 26 10 25 13 21C16 15 24 15 27 21C30 25 34 26 38 34Z';
+const EGGD='M20 3C14.5 3 8 16 8 25.5C8 32.5 13.4 37.5 20 37.5C26.6 37.5 32 32.5 32 25.5C32 16 25.5 3 20 3Z',BIRDD='M3 15L12 21C11 30 18 36 26 33C32 31 35 26 33 20L39 17L32 15C31 9 25 7 21 11C19 13 19 16 20 19C15 18 9 16 3 15Z',MOUNDD='M2 34C6 26 10 25 13 21C16 15 24 15 27 21C30 25 34 26 38 34Z';
 // each outline is drawn twice: a wider dark line underneath (mk-d) and the white line on top (mk), so it stays crisp on any tile
 const two=d=>'<path class="mk-d" pathLength="100" d="'+d+'"/><path class="mk" pathLength="100" d="'+d+'"/>';
 const CM={

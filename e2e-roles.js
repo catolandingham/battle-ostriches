@@ -75,7 +75,7 @@ const R = require('./public/roles.js'), THEMES = fs.readFileSync('./public/theme
   await P.click('#rolecard'); assert.equal(await shown(P).count(), 0);
 
   // Start chose the animal: friends room, host never picked, one computer -> the ostrich, and the card says so
-  const F = await mk(); await F.goto(U); await F.click('#playFriend'); await F.waitForSelector('#startGame');
+  const F = await mk(); await F.goto(U); await F.click('#playFriend'); await F.waitForSelector('#botPlus');
   await F.evaluate(() => UI.send({ t: 'lobby', a: 'bots', n: 1 })); await F.waitForFunction(() => LobbyUI.get().canStart);
   assert.equal(await F.textContent('#startGame'), "Start · you'll be the Ostrich"); await F.click('#startGame'); await F.waitForSelector('#board .cell');
   for (const [x, y] of [[2, 1], [6, 1], [2, 5], [7, 6]]) { await cell(F, x, y).click(); await F.waitForTimeout(150); }
@@ -108,7 +108,7 @@ const R = require('./public/roles.js'), THEMES = fs.readFileSync('./public/theme
   console.log('ok Hunters mode and 2 vs 2 cards');
 
   // the card reads in every theme: dark text on the white card, the button readable, the card still on a 390 x 664 screen
-  const themes = THEMES.match(/var T=\[([^\]]+)\]/)[1].split(',').map(x => x.replace(/'/g, '')); assert.equal(themes.length, 13);
+  const themes = THEMES.match(/var T=\[([^\]]+)\]/)[1].split(',').map(x => x.replace(/'/g, '')); assert.equal(themes.length, 14);
   for (const t of themes) {
     await F.evaluate(x => { THEME.set(x); UI.card(); }, t); await F.waitForSelector('#rolecard:not(.hidden)');
     const c = await F.evaluate(() => {

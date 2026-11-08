@@ -44,7 +44,7 @@ function contrast(a, b) {
       const cell = el.closest('.cell');
       const bg = getComputedStyle(cell).backgroundColor;
       const path = el.querySelector('svg path');
-      const fill = path ? getComputedStyle(path).fill : '';
+      const fill = path ? (document.documentElement.getAttribute('data-theme') === 'bw' ? getComputedStyle(path).stroke : getComputedStyle(path).fill) : ''; // the black-and-white theme draws the body as a line
       const hits = [];
       for (const [dx, dy] of [[0.5, 0.35], [0.3, 0.55], [0.7, 0.6], [0.5, 0.75]]) {
         const x = r.left + r.width * dx, y = r.top + r.height * dy;
@@ -97,7 +97,7 @@ function contrast(a, b) {
     assert.equal(covers.length, 0, label + ' graphic is covered by ' + covers.map(h => h.top).join(','));
     assert.ok(info.ink && !info.ink.error, label + ' graphic could not be painted ' + (info.ink && info.ink.error));
     assert.ok(info.ink.frac >= 0.18, label + ' graphic does not cover the cell (strong pixels ' + Math.round(info.ink.frac * 100) + '%, ink ' + info.ink.seen + ')');
-    const c = contrast(info.fill, 'rgb(107, 74, 31)');
+    const c = contrast(info.fill, info.theme === 'bw' ? 'rgb(255, 255, 255)' : 'rgb(107, 74, 31)');
     assert.ok(c >= 3, label + ' body does not stand off the hunter cell (' + c.toFixed(2) + ':1, fill ' + info.fill + ')');
   }
 

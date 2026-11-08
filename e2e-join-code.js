@@ -72,13 +72,14 @@ fs.mkdirSync(OUT, { recursive: true });
   assert.equal(geared.themeInMenu, true, 'Theme stays in the settings menu');
   assert.equal(geared.overlap, false, 'settings menu does not cover the code box');
   await page.screenshot({ path: OUT + '/lobby-after-gear.png' });
+  const before = await page.evaluate(() => document.documentElement.getAttribute('data-theme'));
   await page.evaluate(() => THEME.next());
   const themed = await page.evaluate(() => ({
     theme: document.documentElement.getAttribute('data-theme'),
     joinHidden: document.getElementById('joinRow').classList.contains('hidden'),
     inMenu: document.getElementById('homeMenu').contains(document.getElementById('codeIn'))
   }));
-  assert.notEqual(themed.theme, 'classic');
+  assert.notEqual(themed.theme, before, 'the theme button moves to the next theme');
   assert.equal(themed.joinHidden, false, 'Theme does not hide or reveal the code box');
   assert.equal(themed.inMenu, false);
   await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'classic'));
@@ -98,9 +99,8 @@ fs.mkdirSync(OUT, { recursive: true });
       codeTop: cr.top,
       shareTop: share.getBoundingClientRect().top,
       hit: hit && (hit.id || hit.textContent.slice(0, 12)),
-      startDisabled: start.disabled,
-      startText: start.textContent,
-      status: document.querySelector('.statusline').textContent,
+      noStart: !start,
+      open: (document.querySelector('.openseat') || {}).textContent || '',
       vh: innerHeight
     };
   });
@@ -108,12 +108,12 @@ fs.mkdirSync(OUT, { recursive: true });
   assert.equal(room.menuHidden, true);
   assert.ok(room.codeTop < 220 && room.shareTop < 220, 'code and Share are at the top');
   assert.ok(room.codeTop < room.vh && room.shareTop < room.vh);
-  assert.equal(room.startDisabled, true);
-  assert.match(room.status, /add a computer/);
-  assert.match(room.status, /Start needs 2/);
+  assert.equal(room.noStart, true, 'no Start until a second player is in');
+  assert.match(room.open, /Open seat/);
+  assert.match(room.open, /\+ Computer/);
   await page.screenshot({ path: OUT + '/lobby-after-room.png' });
   await page.evaluate(() => UI.send({ t: 'lobby', a: 'bots', n: 1 }));
-  await page.waitForFunction(() => !document.getElementById('startGame').disabled);
+  await page.waitForFunction(() => { const start = document.getElementById('startGame'); return start && !start.disabled; });
   const started = await page.evaluate(() => ({
     text: document.getElementById('startGame').textContent,
     setup: LobbyUI.get().setup,

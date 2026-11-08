@@ -15,9 +15,9 @@ const LEAF='<svg viewBox="0 0 40 40" aria-hidden="true"><path d="M8 32C8 14 20 6
 const ROCKS='<svg viewBox="0 0 40 40" aria-hidden="true"><path d="M5 33l4-10 9-3 6 5-2 8z" fill="#9aa1ab" stroke="#1d2128" stroke-width="2.5" stroke-linejoin="round"/><path d="M19 33l3-12 9-4 5 9-3 7z" fill="#7d858f" stroke="#1d2128" stroke-width="2.5" stroke-linejoin="round"/><path d="M12 21l4-10 8 1 2 8-8 3z" fill="#b8bec6" stroke="#1d2128" stroke-width="2.5" stroke-linejoin="round"/></svg>';
 const STONE='<svg viewBox="0 0 40 40" aria-hidden="true"><path d="M7 27l5-13 13-4 9 9-4 12-17 2z" fill="#9aa1ab" stroke="#1d2128" stroke-width="3" stroke-linejoin="round"/></svg>';
 const XMARK='<svg viewBox="0 0 40 40" aria-hidden="true"><path d="M9 9L31 31M31 9L9 31" stroke="#1a0000" stroke-width="11" stroke-linecap="round"/><path d="M9 9L31 31M31 9L9 31" stroke="#ff2a1f" stroke-width="7" stroke-linecap="round"/></svg>';
-const EGG='<svg viewBox="0 0 40 40" aria-hidden="true"><ellipse cx="20" cy="22" rx="12" ry="15" fill="#ffd21f" stroke="#3a2a00" stroke-width="3"/><ellipse cx="15" cy="15" rx="3" ry="5" fill="#fff6c0"/></svg>';
-const MYEGG='<svg viewBox="0 0 40 40" aria-hidden="true"><ellipse cx="20" cy="21" rx="11" ry="14" fill="#fffaf0" stroke="#2a2418" stroke-width="2.5"/></svg>';
-const MAYBE='<svg viewBox="0 0 40 40" aria-hidden="true"><ellipse cx="20" cy="21" rx="11" ry="14" fill="none" stroke="#111" stroke-width="6"/><ellipse cx="20" cy="21" rx="11" ry="14" fill="none" stroke="#fff" stroke-width="3" stroke-dasharray="5 3"/></svg>'; // a dashed egg outline: an egg may be here
+const EGG='<svg viewBox="0 0 40 40" aria-hidden="true"><path d="M20 3C14.5 3 8 16 8 25.5C8 32.5 13.4 37.5 20 37.5C26.6 37.5 32 32.5 32 25.5C32 16 25.5 3 20 3Z" fill="#ffd21f" stroke="#3a2a00" stroke-width="3"/><ellipse cx="15" cy="15" rx="3" ry="5" fill="#fff6c0"/></svg>';
+const MYEGG='<svg viewBox="0 0 40 40" aria-hidden="true"><path d="M20 3C14.5 3 8 16 8 25.5C8 32.5 13.4 37.5 20 37.5C26.6 37.5 32 32.5 32 25.5C32 16 25.5 3 20 3Z" fill="#fffaf0" stroke="#2a2418" stroke-width="2.5"/></svg>';
+const MAYBE='<svg viewBox="0 0 40 40" aria-hidden="true"><path d="M20 3C14.5 3 8 16 8 25.5C8 32.5 13.4 37.5 20 37.5C26.6 37.5 32 32.5 32 25.5C32 16 25.5 3 20 3Z" fill="none" stroke="#111" stroke-width="6"/><path d="M20 3C14.5 3 8 16 8 25.5C8 32.5 13.4 37.5 20 37.5C26.6 37.5 32 32.5 32 25.5C32 16 25.5 3 20 3Z" fill="none" stroke="#fff" stroke-width="3" stroke-dasharray="5 3"/></svg>'; // a dashed egg outline: an egg may be here
 let sniffSeen={},sniffUntil=0,overHold=0,kickPick=null,throwPick=null; // kickPick: the animal chosen to kick (tap it again to kick)
 const VOCAB={maybe:[MAYBE,'Egg may be here.'],legal:['','Move here.'],target:['','Throw here.'],stone:[STONE,'Wrecked. Can\'t land.'],food:[LEAF,'Food.'],
  rock:[ROCKS,'Rocks: get a stone.'],hit:[XMARK,'Smashed. Can\'t land.'],spot:[EGG,'Found egg.'],
@@ -39,6 +39,7 @@ const icon=(t,cls)=>`<span class="ic ic-${t}${cls?' '+cls:''}" data-t="${t}">${t
 const C0=window.BO.CONFIG;
 // an eye: standard symbol for "seen by others" (on the Sit button, since a sitting ostrich shows where it is)
 const EYE='<svg class="eye" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" style="vertical-align:-3px;margin-right:4px"><path d="M1 12 C5 5 19 5 23 12 C19 19 5 19 1 12Z" fill="#fff" stroke="#111" stroke-width="2"/><circle cx="12" cy="12" r="3.6" fill="#111"/></svg>';
+const CARRYIC='<svg class="eye carryic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" style="vertical-align:-3px;margin-right:4px"><path d="M12 1.5C9.6 1.5 7.6 6.2 7.6 9.4C7.6 12.2 9.5 14 12 14C14.5 14 16.4 12.2 16.4 9.4C16.4 6.2 14.4 1.5 12 1.5Z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M3 15.5Q12 24 21 15.5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>'; // Carry: an egg lifted on a curve
 const satNote=S=>!!(S&&S.sittingAt&&S.ostrich&&S.sittingAt.some(q=>q[0]===S.ostrich[0]&&q[1]===S.ostrich[1]));
 ['eggs','warm','sit','fly','rounds','smell','food','stones','walk','carry','kick','kickb','push'].forEach(k=>document.querySelectorAll('.c-'+k).forEach(e=>e.textContent={push:C0.pushHunters,eggs:C0.eggs,warm:C0.warmth,fly:C0.vultureFly,rounds:C0.rounds,smell:C0.smellRange,food:C0.food,stones:C0.stones,walk:C0.ostrichWalk,carry:C0.carryWalk,kick:C0.kickPush,kickb:C0.kickPushBadger}[k]));
 // --- robust connection layer ---
@@ -308,9 +309,16 @@ function howPics(){const box=$('howPics');if(!box)return;
   mini(4,2,{'1,1':`<div class="pc pv">${VUL}</div>`},(m,s)=>{if(window.T3UI)T3UI.marksAround(m,s,1,1,1,'egg');}),
   mini(4,2,{'1,1':`<div class="pc pv">${VUL}</div>`,'2,1':`<span class="ic ic-spot" data-t="spot">${eggIs()}</span><i class="aim"></i>`},m=>{flag(m,1,1);}),
   mini(4,2,{'1,1':`<span class="ic ic-hit" data-t="hit">${XMARK}</span>`,'2,1':`<div class="pc po">${OST}</div>`},m=>{m.children[5].classList.add('hit');})];
- const lines=['Tap a lit square to move.','Dashed egg: may be here.','Filled egg: found. Throw at it.','Wrecked: no one can land.'];
- box.innerHTML='';pics.forEach((p,i)=>{const f=document.createElement('figure');f.className='pic';f.appendChild(p.m);const c=document.createElement('figcaption');c.textContent=lines[i];f.appendChild(c);box.appendChild(f);});
- pics.forEach(p=>p.after());}
+ // Captions differ by role (blue, red, hunter); unapproved roles keep shared lines.
+ const CAPS={all:['Tap a lit square to move.','Dashed egg: may be here.','Filled egg: found. Throw at it.','Wrecked: no one can land.']};
+ // approved by Brian: the filled-egg line for the ostrich (blue) and the vulture (red); hunters keep the shared line until their wording is approved
+ CAPS.blue=CAPS.all.slice();CAPS.blue[2]='Filled egg: a vulture found your egg.';
+ CAPS.red=CAPS.all.slice();CAPS.red[2]='Filled egg: you found it. Throw a stone at it.';
+ const lines=(S&&CAPS[S.role])||CAPS.all;
+ // the black-and-white theme shows real board pictures (4 x 2 squares cut from real play, tools/shots-real-play.js howcrops); other themes draw them
+ const real=document.documentElement.getAttribute('data-theme')==='bw';
+ box.innerHTML='';pics.forEach((p,i)=>{const f=document.createElement('figure');f.className='pic'+(real?' realpic'+(i===2?' found':''):'');if(real){const im=document.createElement('img');im.src='tut/how/'+(i===2&&S&&S.role==='blue'?'2-blue':i)+'.png';im.alt='';f.appendChild(im);}else f.appendChild(p.m);const c=document.createElement('figcaption');c.textContent=lines[i];f.appendChild(c);box.appendChild(f);});
+ if(!real)pics.forEach(p=>p.after());}
 function render(prev){
  maybeCard();$('lobby').classList.add('hidden');const C=S.cfg,blue=S.role==='blue',body=document.body;body.className=(S.role==='hunter'?'hunter':blue?'blue':'red')+(S.three?' three':'')+(S.god?' godview':'');
  $('turnTag').innerHTML=S.role==='hunter'||(S.h3&&S.h3.team)?window.T3UI.tag(S):`<span style="display:inline-block;width:26px;height:26px;vertical-align:middle">${blue?OST:VUL}</span> ${blue?'OSTRICH':'VULTURE'}`;
@@ -412,7 +420,7 @@ function render(prev){
  else if(S.phase==='play'&&S.three&&(!S.myTurn||S.role==='hunter'))h=window.T3UI.hint(S,a);
  else if(S.phase==='play'&&!S.myTurn)h=blue?(satNote(S)?'The vulture sees you sit.':'Vulture\'s turn…'):'Ostrich\'s turn…';
  else if(S.phase==='play'&&blue){
-  a.innerHTML=btn('s','Walk',M==='step',"UI.setMode('step')")+(S.onEgg?btn('c','Carry',M==='carry',"UI.setMode('carry')",M==='carry'||!S.can.carry)+btn('t',EYE+'Sit',false,"UI.act('sit')",!S.can.sit):'')+(S.kickNear?btn('k','Kick',M==='kick',"UI.kick()",M==='carry'||!(S.can&&S.can.kick)):'');
+  a.innerHTML=btn('s','Walk',M==='step',"UI.setMode('step')")+(S.onEgg?btn('c',CARRYIC+'Carry',M==='carry',"UI.setMode('carry')",M==='carry'||!S.can.carry)+btn('t',EYE+'Sit',false,"UI.act('sit')",!S.can.sit):'')+(S.kickNear?btn('k','Kick',M==='kick',"UI.kick()",M==='carry'||!(S.can&&S.can.kick)):'');
   h=M==='kick'?'Kick it away.':M==='carry'?'Pick where the egg goes.':S.moves.length?'Your turn. Tap to move.':'';
  } else if(S.phase==='play'){
   a.innerHTML=btn('fl','Fly',M==='fly',"UI.setMode('fly')")+btn('th','Throw',M==='throw',"UI.setMode('throw')",S.stones<1);

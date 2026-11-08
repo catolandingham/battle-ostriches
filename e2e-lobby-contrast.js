@@ -47,7 +47,7 @@ const parse = c => { const m = /rgba?\((\d+),\s*(\d+),\s*(\d+)/.exec(c); if (!m)
   await A.click('#soloBack');
   await A.click('#playFriend');
   await A.waitForSelector('#lobbyCode:not(:empty)');
-  await A.waitForSelector('[data-role="blue"] b');
+  await A.waitForSelector('.openseat');
   const V = await mk();
   const link = (await A.inputValue('#lobbyLink')).replace(/^http:\/\/[^/]+/, 'http://127.0.0.1:3988');
   await V.goto(link);
