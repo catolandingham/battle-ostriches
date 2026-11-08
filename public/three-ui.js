@@ -186,13 +186,17 @@ function bPump(tries){if(bBusy||!bQ.length)return;
  setTimeout(()=>{o.remove();bBusy=false;bPump(0);},3000);}
 function badgerLines(S,prev){if(S===bLastS)return;bLastS=S;if(!prev||(prev.round!=null&&S.round<prev.round))bPicker=BL.createPicker();
  for(const e of BL.detect(prev,S,bPicker))badgerSay(e.text);}
-// "May be here" is a small outline of the animal in one corner of a square, never over the square's middle. "Is here" is the real animal, drawn solid and full size.
-// One outline per square: an egg for the vulture's sniff, a bird for the hunters' sense, a badger for a burrow a bird saw being dug.
+// One look per meaning, in one corner of the square (never over its middle). "May be here" is the animal's small outline, dashed and unfilled. "Is here" (known to be there) is the same small shape filled white with a dark edge. Animals themselves stay full size.
+// The shapes: an egg for the vulture's sniff and for eggs you know, a bird for the hunters' sense, a badger for a burrow a bird saw being dug. Style (dashed or filled) lives in part1.css.
 const CM={
- egg:'<svg viewBox="0 0 40 40" aria-hidden="true"><ellipse cx="20" cy="21" rx="13" ry="16.5" fill="none" stroke="#111" stroke-width="9"/><ellipse cx="20" cy="21" rx="13" ry="16.5" fill="none" stroke="#fff" stroke-width="5"/></svg>',
- bird:'<svg viewBox="0 0 40 40" aria-hidden="true"><g fill="none" stroke-linejoin="round" stroke-linecap="round"><path d="M5 27C5 18 12 14 18 17L21 10A5 5 0 1 1 28 14L36 16L28 19L28 24C28 32 20 36 13 34L9 37L10 32C7 31 5 29 5 27Z" stroke="#111" stroke-width="9"/><path d="M5 27C5 18 12 14 18 17L21 10A5 5 0 1 1 28 14L36 16L28 19L28 24C28 32 20 36 13 34L9 37L10 32C7 31 5 29 5 27Z" stroke="#fff" stroke-width="5"/></g></svg>',
- badger:'<svg viewBox="0 0 40 40" aria-hidden="true"><g fill="none" stroke-linejoin="round" stroke-linecap="round"><path d="M6 33L8 15L15 21L20 19L25 21L32 15L34 33Z" stroke="#111" stroke-width="9"/><path d="M6 33L8 15L15 21L20 19L25 21L32 15L34 33Z" stroke="#fff" stroke-width="5"/><path d="M20 19L20 31" stroke="#111" stroke-width="8"/><path d="M20 19L20 31" stroke="#fff" stroke-width="4"/></g></svg>'};
-function mark(cell,kind,cls){if(!cell||!CM[kind])return null;const i=document.createElement('i');i.className='cmark cm-'+kind+(cls?' '+cls:'');i.setAttribute('aria-hidden','true');i.innerHTML=CM[kind];cell.appendChild(i);return i;}
+ egg:'<svg viewBox="0 0 40 40" aria-hidden="true"><path class="mk" pathLength="100" d="M6 21A14 17.5 0 1 1 34 21A14 17.5 0 1 1 6 21Z"/></svg>',
+ bird:'<svg viewBox="0 0 40 40" aria-hidden="true"><path class="mk" pathLength="100" d="M2 34L10 24L12 15L18 9L26 8L30 12L38 14L31 18L30 26L24 33L16 35L8 36Z"/></svg>',
+ badger:'<svg viewBox="0 0 40 40" aria-hidden="true"><path class="mk" pathLength="100" d="M3 35C3 19 11 8 20 8C29 8 37 19 37 35Z"/><path class="mk mk-line" d="M13 35C13 26 27 26 27 35"/></svg>'};
+function markHTML(kind,cls){return CM[kind]?'<i class="cmark cm-'+kind+(cls?' '+cls:'')+'" aria-hidden="true">'+CM[kind]+'</i>':'';}
+function mark(cell,kind,cls){if(!cell||!CM[kind])return null;
+ // one mark per square: what is known ("is here", solid) replaces a "may be here" outline on the same square, and never the other way round
+ const ex=cell.querySelector('.cmark');if(ex){if(/(^| )is( |$)/.test(cls||'')&&!ex.classList.contains('is'))ex.remove();else return null;}
+ const i=document.createElement('i');i.className='cmark cm-'+kind+(cls?' '+cls:'');i.setAttribute('aria-hidden','true');i.innerHTML=CM[kind];cell.appendChild(i);return i;}
 // the same mark in every square of the box around (cx,cy), clipped to the board; the centre square is left out
 function marksAround(board,S,cx,cy,range,kind,cls){const C=S.cfg;let n=0;
  for(let y=Math.max(0,cy-range);y<=Math.min(C.rows-1,cy+range);y++)for(let x=Math.max(0,cx-range);x<=Math.min(C.cols-1,cx+range);x++){if(x===cx&&y===cy)continue;const c=board.children[y*C.cols+x];if(c&&c.classList&&c.classList.contains('cell')&&mark(c,kind,cls))n++;}
@@ -230,7 +234,7 @@ function after(S,prev,board){badgerLines(S,prev);chips(S);clock(S);kindPick(S);i
  // hunter piece: the hunter always sees itself; a bird only sees it within 2 squares (never a burrowed badger)
  const hp=h.hunter,hc=cellAt(board,S,hp);
  // a mound where the badger dug in, only for a bird that saw it dig and only while it stays buried (the server sends h.mound to nobody else)
- if(h.mound){const mc=cellAt(board,S,h.mound);if(mc&&!mc.querySelector('.cmark.cm-badger')){mark(mc,'badger');mc.dataset.tip=(mc.dataset.tip?mc.dataset.tip+' · ':'')+'The honey badger dug in here';mc.setAttribute('aria-label',(mc.getAttribute('aria-label')?mc.getAttribute('aria-label')+'. ':'')+'Honey badger dug in here');}}
+ if(h.mound){const mc=cellAt(board,S,h.mound);if(mc&&!mc.querySelector('.cmark.cm-badger')){mark(mc,'badger','is');mc.dataset.tip=(mc.dataset.tip?mc.dataset.tip+' · ':'')+'The honey badger dug in here';mc.setAttribute('aria-label',(mc.getAttribute('aria-label')?mc.getAttribute('aria-label')+'. ':'')+'Honey badger dug in here');}}
  if(hc){const bur=me==='hunter'&&S.burrowed;const pc=document.createElement('div');pc.className='pc ph h'+k+(bur?' bur':'')+(me==='hunter'?' mine':'');pc.innerHTML=bur?MOUND:KIND[k].art;hc.appendChild(pc);hc.classList.add('hcell');if(me==='hunter'){const old=document.getElementById('current');if(old&&old!==hc)old.removeAttribute('id');hc.id='current';}
   hc.dataset.tip=(hc.dataset.tip?hc.dataset.tip+' · ':'')+(me==='hunter'?(bur?'You, hidden.':'You.'):KIND[k].n+'. Don\'t let it land on you.');
 }
@@ -244,7 +248,8 @@ function after(S,prev,board){badgerLines(S,prev);chips(S);clock(S);kindPick(S);i
   const hx=S.hunter[0],hy=S.hunter[1],range=h.senseRange,area=!!(window.NextStep&&NextStep.compute(S).kind==='area');
   if(S.sense){for(let y=0;y<S.cfg.rows;y++)for(let x=0;x<S.cfg.cols;x++){const dx=x-hx,dy=y-hy;if(!dx&&!dy)continue;if(Math.max(Math.abs(dx),Math.abs(dy))>range)continue;
    const c=board.children[y*S.cfg.cols+x];if(!c||!c.classList||!c.classList.contains('cell'))continue;if(c.querySelector('.pc.po,.pc.pv'))continue;
-   c.classList.add('maybird');const both=S.pounce&&S.firstAt&&Math.max(Math.abs(x-S.firstAt[0]),Math.abs(y-S.firstAt[1]))<=range;if(both)c.classList.add('bright');mark(c,'bird',(both?'strong ':'')+(area&&(both||!S.pounce)?'cue':''));const had=c.getAttribute('aria-label')||'';if(!/Bird may be here/.test(had))c.setAttribute('aria-label',had?had+'. Bird may be here':'Bird may be here');}}
+   const both=S.pounce&&S.firstAt&&Math.max(Math.abs(x-S.firstAt[0]),Math.abs(y-S.firstAt[1]))<=range;if(S.pounce&&!both)continue; // the Pounce marks only the squares inside both readings
+   c.classList.add('maybird');mark(c,'bird',area?'cue':'');const had=c.getAttribute('aria-label')||'';if(!/Bird may be here/.test(had))c.setAttribute('aria-label',had?had+'. Bird may be here':'Bird may be here');}}
   const sk=S.round+':'+S.senseSeq;if(sk!==lastSense){lastSense=sk;UI.pause(1100);
    pop(board,S.sense?(S.pounce?'Still near.':'Bird near.'):'Nothing near.',S.sense?'yes':'no');
    window.SFX&&SFX.play(S.sense?'sniffYes':'sniffNo');}
@@ -277,6 +282,6 @@ function over(S){if(S.h3.hunt)return hOver(S);if(S.h3.team)return tOver(S);const
   :w==='red'?(S.winBy==='cold'?`The last egg went cold in round ${S.round}.`:S.winBy==='starved'?'The ostrich was out and no eggs were left.':`The vulture smashed every egg by round ${S.round}.`)
   :S.winBy==='time'?'Time ran out: the ostrich was out and the vulture never got every egg.':'The eggs were lost, but the vulture was already out.';
  return `<div class="lobbybox"><div class="bigost">${art}</div><h1>${title}</h1><p>${S.endWhy||why}</p>${winNote(S)}${endBits(S)}</div>`;}
-window.T3UI={mark,marksAround,after,events,startLine,announce,hint,tag,waitMsg,nopeMsg,over,endBits,KIND};
+window.T3UI={mark,markHTML,marksAround,after,events,startLine,announce,hint,tag,waitMsg,nopeMsg,over,endBits,KIND};
 document.readyState==='loading'?document.addEventListener('DOMContentLoaded',lobby):lobby();
 })();

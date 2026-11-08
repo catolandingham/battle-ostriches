@@ -28,10 +28,14 @@ const WSTOPS=[[0,[111,200,255]],[.34,[236,240,236]],[.67,[255,154,46]],[1,[232,5
 function warmCol(f){f=Math.max(0,Math.min(1,f));for(let i=1;i<WSTOPS.length;i++)if(f<=WSTOPS[i][0]){const[a,ca]=WSTOPS[i-1],[b,cb]=WSTOPS[i],t=(f-a)/(b-a);return'rgb('+ca.map((c,j)=>Math.round(c+(cb[j]-c)*t)).join(',')+')';}return'rgb(232,56,47)';}
 function warmRing(n,W){const f=Math.max(0,n)/W,C=2*Math.PI*17,col=warmCol(f);
  return `<svg class="wring" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="17" fill="none" stroke="rgba(0,0,0,.45)" stroke-width="5"/><circle cx="20" cy="20" r="17" fill="none" stroke="${col}" stroke-width="4.5" stroke-linecap="round" stroke-dasharray="${(C*f).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 20 20)"/></svg><span class="wnum${n<=2?' low':''}" style="--wc:${col}">${n}</span>`;}
+// just the countdown number (a small pill beside the egg in the square's corner; its edge takes the warmth colour)
+function warmNum(n,W){const col=warmCol(Math.max(0,n)/W);return `<span class="wnum${n<=2?' low':''}" style="--wc:${col}">${n}</span>`;}
+// "is here": the small egg in the corner, filled white (the same shape as the dashed "may be here" egg)
+const eggIs=()=>window.T3UI?T3UI.markHTML('egg','is'):'';
 // the same ring for the egg you stand on, drawn round the whole square; when the egg was warmed since the last view it visibly refills from where it was
 function sqRing(n,W,was){const f=Math.max(0,Math.min(1,n/W)),col=warmCol(f),refill=was!=null&&n>was,f0=refill?Math.max(0,Math.min(1,was/W)):f;
  return `<svg class="wring sq${refill?' refill':''}" viewBox="0 0 40 40" preserveAspectRatio="none" aria-hidden="true" style="--f0:${(f0*100).toFixed(1)};--c0:${warmCol(f0)}"><rect x="2" y="2" width="36" height="36" rx="5" fill="none" stroke="rgba(0,0,0,.45)" stroke-width="5"/><rect x="2" y="2" width="36" height="36" rx="5" fill="none" stroke="${col}" stroke-width="4.5" stroke-linecap="round" pathLength="100" stroke-dasharray="${(f*100).toFixed(1)} 100"/></svg><span class="wnum${n<=2?' low':''}" style="--wc:${col}">${n}</span>`;}
-const icon=(t,cls)=>`<span class="ic ic-${t}${cls?' '+cls:''}" data-t="${t}">${VOCAB[t][0]}</span>`;
+const icon=(t,cls)=>`<span class="ic ic-${t}${cls?' '+cls:''}" data-t="${t}">${t==='spot'?eggIs():VOCAB[t][0]}</span>`;
 const C0=window.BO.CONFIG;
 // an eye: standard symbol for "seen by others" (on the Sit button, since a sitting ostrich shows where it is)
 const EYE='<svg class="eye" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" style="vertical-align:-3px;margin-right:4px"><path d="M1 12 C5 5 19 5 23 12 C19 19 5 19 1 12Z" fill="#fff" stroke="#111" stroke-width="2"/><circle cx="12" cy="12" r="3.6" fill="#111"/></svg>';
@@ -135,7 +139,7 @@ function drawWalk(){const st=WALK[wr],cur=st[wi],W=$('walk');
 let cardOpen=null;
 const cardSeen=id=>{try{return localStorage.getItem('bo_card_'+id)||localStorage.getItem('bo_card_off')}catch(e){return 1}};
 // How to play: the first line of each mode's rules says who hunts what (roles.js huntLine), naming the hunter once the game knows it
-function fillHuntLines(){document.querySelectorAll('[data-ic]').forEach(e=>{e.innerHTML={ROCKS,LEAF,EGG}[e.dataset.ic]||'';});document.querySelectorAll('[data-cm]').forEach(e=>{e.innerHTML='';if(window.T3UI)T3UI.mark(e,e.dataset.cm);});const R=S&&S.rules;if(R){document.querySelectorAll('[data-r]').forEach(e=>{const v=e.dataset.r.split('.').reduce((o,k)=>o&&o[k],R);if(v!=null&&typeof v!=='object')e.textContent=v;});
+function fillHuntLines(){document.querySelectorAll('[data-ic]').forEach(e=>{e.innerHTML={ROCKS,LEAF,EGG}[e.dataset.ic]||'';});document.querySelectorAll('[data-cm]').forEach(e=>{e.innerHTML='';if(window.T3UI)T3UI.mark(e,e.dataset.cm,e.dataset.cmcls||'');});const R=S&&S.rules;if(R){document.querySelectorAll('[data-r]').forEach(e=>{const v=e.dataset.r.split('.').reduce((o,k)=>o&&o[k],R);if(v!=null&&typeof v!=='object')e.textContent=v;});
  const m=R.modes||{},goal=(g,mode,hy)=>{g=g||{kind:'all',n:0};if(mode==='5')return g.kind==='first'?'knock out an ostrich and a vulture.':'knock out every bird.';return g.kind==='catches'?'make '+g.n+' catches. A bird is out after 2 catches.':g.kind==='first'?'knock out one bird.':'knock out both birds.';};
  const a=document.querySelector('.hgoal3'),b=document.querySelector('.hgoal5');if(a&&m['3'])a.textContent=goal(m['3'].goal,'3');if(b&&m['5'])b.textContent=goal(m['5'].goal,'5');}const k=S&&(S.role==='hunter'?(S.kind||(S.h3&&S.h3.kind)):(S.h3&&S.h3.kind));document.querySelectorAll('.mrules').forEach(e=>{const l=e.querySelector('.huntline');if(l&&window.Roles)l.textContent=Roles.huntLine(e.dataset.m,k);});}
 function cardMode(s){return !s.three?'2':s.h3&&s.h3.team?String(s.h3.n):s.h3&&s.h3.hunt?'4h':'3';}
@@ -297,14 +301,14 @@ function howPics(){const box=$('howPics');if(!box)return;
  const mini=(cols,rows,cells,after)=>{const m=document.createElement('div');m.className='mini';m.style.gridTemplateColumns=`repeat(${cols},44px)`;m.style.gridTemplateRows=`repeat(${rows},44px)`;
   for(let y=0;y<rows;y++)for(let x=0;x<cols;x++){const d=document.createElement('div');d.className='cell'+((x+y)%2?' alt':'');d.innerHTML=(cells[x+','+y]||'');m.appendChild(d);}
   return {m,after:()=>after&&after(m,{cfg:{cols,rows}})};};
- const lit=(m,...ix)=>ix.forEach(i=>m.children[i].classList.add('legal')),myegg=`<span class="ic ic-myegg" data-t="myegg">${MYEGG}</span>`;
+ const lit=(m,...ix)=>ix.forEach(i=>m.children[i].classList.add('legal')),myegg=`<span class="ic ic-myegg" data-t="myegg">${eggIs()}</span>`;
  const flag=(m,x,y)=>{const c=m.children[y*(+m.style.gridTemplateColumns.match(/\d+(?=,)/)||4)+x]||m.children[0];const t=document.createElement('span');t.className='youtag youflag';t.textContent='YOU';t.style.left=(c.offsetLeft+c.offsetWidth/2)+'px';t.style.top=(c.offsetTop+1)+'px';m.appendChild(t);};
  const pics=[
   mini(4,2,{'1,1':`${myegg}<div class="pc po">${OST}</div>${sqRing(11,C0.warmth,null)}`},m=>{m.children[5].classList.add('sat');lit(m,0,1,2,4,6);flag(m,1,1);}),
   mini(4,2,{'1,1':`<div class="pc pv">${VUL}</div>`},(m,s)=>{if(window.T3UI)T3UI.marksAround(m,s,1,1,1,'egg');}),
-  mini(4,2,{'1,1':`<div class="pc pv">${VUL}</div>`,'2,1':`<span class="ic ic-spot" data-t="spot">${EGG}</span><i class="aim"></i>`},m=>{flag(m,1,1);}),
+  mini(4,2,{'1,1':`<div class="pc pv">${VUL}</div>`,'2,1':`<span class="ic ic-spot" data-t="spot">${eggIs()}</span><i class="aim"></i>`},m=>{flag(m,1,1);}),
   mini(4,2,{'1,1':`<span class="ic ic-hit" data-t="hit">${XMARK}</span>`,'2,1':`<div class="pc po">${OST}</div>`},m=>{m.children[5].classList.add('hit');})];
- const lines=['Tap a lit square to move.','Small eggs: one may be near.','Throw at a found egg.','Wrecked: no one can land.'];
+ const lines=['Tap a lit square to move.','Dashed egg: may be here.','Filled egg: found. Throw at it.','Wrecked: no one can land.'];
  box.innerHTML='';pics.forEach((p,i)=>{const f=document.createElement('figure');f.className='pic';f.appendChild(p.m);const c=document.createElement('figcaption');c.textContent=lines[i];f.appendChild(c);box.appendChild(f);});
  pics.forEach(p=>p.after());}
 function render(prev){
@@ -365,7 +369,7 @@ function render(prev){
   if(m==='hit'){h=icon('hit');tip.push(SHORT.hit);}
   else if(m==='stone'){h=icon('hit');tip.push(SHORT.stone);} // every wrecked square looks the same: one X
   else if(!blue&&m==='spotted'){h=icon('spot');tip.push(SHORT.spot);}
-  else if((blue||S.god)&&e){h=`<span class="ic ic-myegg${m==='spotted'?' found':''}${S.god&&!blue?' godegg':''}" data-t="myegg">${MYEGG}${S.phase==='play'&&!under?warmRing(e.coldIn,C.warmth):''}</span>${under?sqRing(e.coldIn,C.warmth,prev&&prev.eggs&&prev.eggs[e._i]&&prev.eggs[e._i].alive?prev.eggs[e._i].coldIn:null):''}`;
+  else if((blue||S.god)&&e){h=`<span class="ic ic-myegg${S.god&&!blue?' godegg':''}" data-t="myegg">${eggIs()}${S.phase==='play'&&!under?warmNum(e.coldIn,C.warmth):''}</span>${under?sqRing(e.coldIn,C.warmth,prev&&prev.eggs&&prev.eggs[e._i]&&prev.eggs[e._i].alive?prev.eggs[e._i].coldIn:null):''}`;
    tip.push((blue?'Your egg. ':'Egg. ')+'Cold in '+e.coldIn+'.'+(m==='spotted'?' Found.':''));}
   else if(isF(C,k)){h=icon('food');tip.push(SHORT.food);}
   else if(isR(C,k)){h=icon('rock');tip.push(SHORT.rock);}

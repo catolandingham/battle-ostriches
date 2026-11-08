@@ -38,6 +38,14 @@ const ratio = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) +
       const last = cells[cells.length - 1].getBoundingClientRect(), first = cells[0].getBoundingClientRect(); return { n: cells.length, top: first.top, bottom: last.bottom, actionsTop: a.top, vh, rings: document.querySelectorAll('#board .youring').length }; });
     assert.equal(fit.n, 63, t + ': 63 squares'); assert.ok(fit.top >= 0 && fit.bottom <= fit.actionsTop + 1 && fit.bottom <= fit.vh, t + ': the whole board fits above the buttons ' + JSON.stringify(fit));
     assert.equal(fit.rings, 1, t + ': exactly one ring under my own animal');
+    // "may be here" is a dashed white outline and "is here" is the same shape filled white: the dashes must be clearly visible in every theme (about 6 separate bright dashes round the egg, with dark between the dark edge and the tile)
+    const mk = await p.evaluate(() => { const cells = [...document.querySelectorAll('#board .cell')], c = cells.filter(c => !c.classList.contains('legal') && !c.querySelector('.pc,.ic,.carry,.cmark'))[3]; const m = T3UI.mark(c, 'egg'); const q = m.getBoundingClientRect(); return { x: q.left, y: q.top, w: q.width, h: q.height }; });
+    const ring = await p.evaluate(async png => { const img = await createImageBitmap(await (await fetch('data:image/png;base64,' + png)).blob()), cv = document.createElement('canvas'); cv.width = img.width; cv.height = img.height; const g = cv.getContext('2d'); g.drawImage(img, 0, 0);
+      const W = img.width, H = img.height, d = g.getImageData(0, 0, W, H).data, on = new Uint8Array(W * H); let n = 0; for (let i = 0; i < W * H; i++) if (Math.min(d[i * 4], d[i * 4 + 1], d[i * 4 + 2]) >= 250) { on[i] = 1; n++; }
+      let comps = 0; const seen = new Uint8Array(W * H); for (let i = 0; i < W * H; i++) { if (!on[i] || seen[i]) continue; let size = 0; const st = [i]; seen[i] = 1; while (st.length) { const j = st.pop(); size++; const x = j % W, y = (j - x) / W; for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const xx = x + dx, yy = y + dy; if (xx < 0 || yy < 0 || xx >= W || yy >= H) continue; const k = yy * W + xx; if (on[k] && !seen[k]) { seen[k] = 1; st.push(k); } } } if (size >= 4) comps++; }
+      return { dashes: comps, brightPx: n }; }, (await p.screenshot({ clip: { x: mk.x - 3, y: mk.y - 3, width: mk.w + 6, height: mk.h + 6 } })).toString('base64'));
+    assert.ok(ring.dashes >= 5 && ring.dashes <= 7 && ring.brightPx >= 30, t + ': the dashed "may be here" outline shows about 6 clear separate dashes, ' + JSON.stringify(ring));
+    await p.evaluate(() => document.querySelectorAll('#board .cmark').forEach(m => m.remove()));
     const hint = await p.textContent('#hint'); assert.ok(hint.trim().split(/\s+/).length <= 7, t + ': hint is short: "' + hint + '"');
   }
   console.log(rows.join('\n'));
