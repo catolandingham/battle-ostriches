@@ -214,6 +214,17 @@ const hint = p => p.evaluate(() => document.getElementById('hint').textContent.t
   ok('hunters game: no text over the board with any message showing');
   await Promise.all([A4.context().close(), Y.context().close()]);
 
+  // ================= 4 players: 2 vs 2 (a friend is Vulture 1, computers fill the rest) =================
+  { const A2 = await phone(b); await A2.goto(U); await A2.click('#playFriend'); await A2.waitForSelector('#lobbyCode:not(:empty)');
+    const link2 = (await A2.inputValue('#lobbyLink')).replace(/^http:\/\/[^/]+/, 'http://localhost:3981'); const V2 = await phone(b); await V2.goto(link2); await V2.waitForSelector('#roomLobby');
+    await A2.click('#botPlus'); await A2.click('#botPlus'); await A2.waitForSelector('[data-role="ostrich"]'); await A2.click('[data-role="ostrich"]'); await V2.click('[data-role="vulture"]');
+    await V2.waitForFunction(() => { const s = LobbyUI.get(); return s && s.roles.some(r => r.id === 'vulture' && r.mine); });
+    await A2.click('#startGame'); await A2.waitForSelector('#board .cell'); await V2.waitForSelector('#board .cell');
+    for (const [x, y] of [[2, 1], [2, 4], [1, 2]]) { await cell(A2, x, y).click(); await sleep(150); }
+    await V2.waitForSelector('#actions.mine', { state: 'attached', timeout: 20000 }); await sleep(1500); await quiet(V2);
+    await withMessages(V2, 'vulture 1 (2 vs 2)', sayAll); await withMessages(A2, 'ostrich 1 (2 vs 2)', sayAll);
+    await Promise.all([A2.context().close(), V2.context().close()]); ok('2 vs 2: no text over the board with any message showing'); }
+
   // ================= the start line never sits on the role card =================
   { const c = await b.newContext({ viewport: { width: 390, height: 664 }, deviceScaleFactor: 2, hasTouch: true, isMobile: true }); const R = await c.newPage();
     await R.addInitScript(() => { for (const k of ['bo_hs_off', 'bo_tut_seen', 'bo_walk_blue', 'bo_walk_red', 'bo_tips_off']) localStorage.setItem(k, '1'); }); R.on('pageerror', e => errs.push(e.message));
