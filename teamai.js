@@ -20,11 +20,11 @@ function oView(g, s) {
 }
 function ostrich(g, s, level, hv, reach) {
   const legal = T.ostrichMoves(g, s).map(p => ({ a: 'step', p })).concat(T.canCarry(g, s) ? T.ostrichMoves(g, s, true).map(p => ({ a: 'carry', p })) : []);
-  const ok = m => m && (m.a === 'sit' ? T.canSit(g, s) : legal.some(x => x.a === m.a && K(x.p) === K(m.p)));
+  const kicks = T.kickTargets(g, s);
+  const ok = m => m && (m.a === 'sit' ? T.canSit(g, s) : m.a === 'kick' ? kicks.some(q => K(q) === K(m.p)) : legal.some(x => x.a === m.a && K(x.p) === K(m.p)));
   let m; try { m = AI.ostrich(oView(g, s), level); } catch { m = null; }
   if (!ok(m)) m = T.canSit(g, s) && !T.mustLeave(g, s) && Math.random() < .3 ? { a: 'sit' } : R(legal.filter(x => x.a === 'step')) || R(legal) || { a: 'sit' };
-  const fd = Math.min(...g.cfg.foods.map(f => D(f, g.b[s].pos)));
-  return g.b[s].hunger - fd <= 1 ? m : AI.dodge(m, g.b[s].pos, legal, hv, reach);
+  return AI.ostrichReact(m, { at: g.b[s].pos, hunger: g.b[s].hunger, cfg: g.cfg, legal, hv, reach, kicks, guard: T.onEgg(g, s) });
 }
 function vView(g, s) {
   const b = g.b[s], tgt = [s === 'v1' ? 'o1' : 'o2', s === 'v1' ? 'o2' : 'o1'].find(o => T.live(g, o));

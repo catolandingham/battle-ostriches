@@ -39,7 +39,7 @@ const R = require('./public/roles.js'), THEMES = fs.readFileSync('./public/theme
   const lines = (c) => [c.title, c.goal, ...c.moves, c.lose];
   const has = (t, c) => lines(c).forEach(l => assert.ok(t.includes(l), `card is missing: ${l}\n--- got ---\n${t}`));
   has(ta, want('blue', 'hyena', '3')); has(tv, want('red', 'hyena', '3')); has(th, want('hunter', 'hyena', '3'));
-  assert.ok(th.includes('Pounce: When rose dots show a bird is near, you get one extra square after your move. Land on the bird to catch it.'), 'the hyena card says Pounce');
+  assert.ok(th.includes('Pounce: If you smell a bird and do not catch it, you smell again and may move 1 square more.'), 'the hyena card says Pounce');
   assert.ok(th.includes('A bird is out after 2 catches.'));
   // only its own: no other animal's title, and nobody was told "We picked" (all three chose)
   assert.ok(/You are the Ostrich/.test(ta) && !/You are the (Vulture|Hyena|Honey)/.test(ta), 'ostrich card is the ostrich card');
@@ -72,7 +72,7 @@ const R = require('./public/roles.js'), THEMES = fs.readFileSync('./public/theme
   const P = await mk(); await P.goto(U); await P.click('#playSolo'); await P.click('[data-bots="2"]'); await P.click('#soloGo'); await P.click('[data-role="badger"]'); await P.click('#startGame');
   await P.waitForSelector('#rolecard:not(.hidden)', { timeout: 15000 });
   const tp = await cardText(P); has(tp, want('hunter', 'badger', '3')); assert.ok(/You are the Honey Badger/.test(tp)); assert.ok(!/We picked/.test(tp), 'the player picked: no "We picked" line');
-  assert.ok(!/Pounce/.test(tp), 'no hyena words on the badger card'); await fits(P, 'badger'); await P.screenshot({ path: OUT + '4-honey-badger.png' });
+  assert.ok(!/Pounce/.test(tp), 'no hyena words on the badger card'); assert.ok(tp.includes('A bird is out after 2 catches.'), 'badger card: 2 catches'); assert.ok(tp.includes('you see any bird next to you'), 'badger card: what a burrowed badger sees'); assert.ok(!/tough ground|usually|one more still turn/i.test(tp), 'no tough-ground wording'); await fits(P, 'badger'); await P.screenshot({ path: OUT + '4-honey-badger.png' });
   await P.click('#rolecard'); assert.equal(await shown(P).count(), 0);
 
   // Start chose the animal: friends room, host never picked, one computer -> the ostrich, and the card says so

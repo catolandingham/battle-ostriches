@@ -41,7 +41,7 @@ const OUT = 'shots/balanced/'; fs.mkdirSync(OUT + 'frames', { recursive: true })
   for (let k = 0; k < 3; k++) { await A.click('#actions button:has-text("Sit")', { force: true }); await V.waitForSelector('#actions.mine', { state: 'attached' });
     assert.ok(await V.locator('#actions button:has-text("Throw")').isDisabled(), 'no stone = no throw');
     await cell(V, k % 2 ? 4 : 4, k % 2 ? 4 : 3).click(); await A.waitForSelector('#actions.mine', { state: 'attached' }); }
-  assert.ok(await A.locator('#actions button:has-text("Sit")').isDisabled(), 'sit cap'); await A.screenshot({ path: OUT + '3-ostrich-sit-cap.png' });
+  await A.screenshot({ path: OUT + '3-ostrich-sit.png' }); // no sit limit any more
   await A.click('#actions button:has-text("Carry")', { force: true }); await cell(A, 7, 3).click();
   await V.waitForSelector('#actions.mine', { state: 'attached' }); await cell(V, 4, 5).click(); await A.waitForSelector('#actions.mine', { state: 'attached' });
   assert.ok(await A.locator('.ic-myegg').count() === 2, 'carried egg set down');

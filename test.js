@@ -3,28 +3,27 @@ const C=B.CONFIG;
 // eggs at (2,2) (6,2) (2,5); ostrich on (2,2); vulture flies (4,3)->(4,2)
 function setup(cfg){const g=B.newGame(cfg);assert(B.placeEgg(g,[2,2]));assert(B.placeEgg(g,[6,2]));assert(B.placeEgg(g,[2,5]));B.placeOstrich(g,[2,2]);assert(B.vultureFly(g,[4,2]));return g;}
 const fl=g=>B.vultureFly(g,g.vulture[1]===2?[4,3]:[4,2]);
-t('config: open-skies ruleset',()=>{assert.equal(C.rounds,30);assert.equal(C.eggs,3);assert.equal(C.maxSit,3);assert.equal(C.vultureFly,2);assert.equal(C.throwRange,1);assert.equal(C.smellRange,1);
- assert.equal(C.stones,1);assert(C.food>=8&&C.food<=14);assert(C.warmth>=12&&C.warmth<=28);assert.equal(C.foods.length,2);assert.equal(C.rocks.length,2);});
+t('config: open-skies ruleset',()=>{assert.equal(C.rounds,30);assert.equal(C.eggs,3);assert.equal(C.vultureFly,2);assert.equal(C.throwRange,1);assert.equal(C.smellRange,1);
+ assert.equal(C.stones,1);assert.equal(C.food,15);assert.equal(C.warmth,15);assert.equal(C.foods.length,2);assert.equal(C.rocks.length,2);});
 t('setup: vulture opens; no egg under vulture, on/next to food, or on rocks',()=>{const g=setup();assert.equal(g.turn,'blue');const h=B.newGame();
  assert(!B.placeEgg(h,[4,3]));assert(!B.placeEgg(h,[0,0]));assert(!B.placeEgg(h,[1,1]));assert(!B.placeEgg(h,[7,5]));assert(!B.placeEgg(h,[4,0]));assert(B.placeEgg(h,[2,0]));});
-t('ostrich steps 1 square',()=>{const g=setup();assert(!B.ostrichStep(g,[4,4]));assert(B.ostrichStep(g,[3,3]));assert.equal(g.turn,'red')});
-t('sit only on an egg, 3 in a row max',()=>{const g=setup();for(let i=0;i<3;i++){assert(B.ostrichSit(g));fl(g);}
- assert(!B.canSit(g));assert(B.mustLeave(g));assert(B.ostrichStep(g,[2,1]));fl(g);assert(!B.canSit(g));assert(B.ostrichStep(g,[2,2]));fl(g);assert(B.canSit(g));});
+t('ostrich walks up to 2 squares, and only 1 when it carries an egg',()=>{const g=setup();assert.equal(C.ostrichWalk,2);assert.equal(C.carryWalk,1);
+ assert(!B.ostrichStep(g,[5,5]),'3 squares is too far');assert(!B.ostrichStep(g,[2,2]),'not its own square');
+ const mv=B.ostrichMoves(g).map(String);assert(mv.includes('4,4')&&mv.includes('3,3')&&mv.includes('0,0')&&!mv.includes('4,2'),'the vulture stands on (4,2): not a landing square');assert(!mv.includes('5,2')&&!mv.includes('2,2'));
+ const cm=B.ostrichMoves(g,true).map(String);assert(cm.includes('3,3')&&!cm.includes('4,4')&&!cm.includes('0,0'),'carrying: 1 square only');
+ assert(B.ostrichStep(g,[4,4]));assert.equal(g.turn,'red');assert.deepEqual(g.ostrich,[4,4]);
+ const h=setup();assert(B.ostrichStep(h,[3,3],true));assert.equal(h.carrying,0);assert.deepEqual(h.ostrich,[3,3]);
+ const k=setup();assert(!B.ostrichStep(k,[4,4],true),'a carried egg moves 1 square, not 2');});
 t('carry 1 square, set down next turn; not onto egg/food/rocks',()=>{const g=setup();assert(B.ostrichStep(g,[3,3],true));assert.equal(g.carrying,0);fl(g);assert.deepEqual(g.eggs[0].pos,[3,3]);
  const h=B.newGame();B.placeEgg(h,[3,1]);B.placeEgg(h,[2,4]);B.placeEgg(h,[6,4]);B.placeOstrich(h,[3,1]);B.vultureFly(h,[5,3]);assert(!B.ostrichMoves(h,true).some(p=>p+''==='4,0'));});
 t('one stone: throw uses it, refill by landing on rocks',()=>{const g=setup();B.ostrichStep(g,[2,1]);assert.equal(g.stones,1);assert.equal(B.vultureThrow(g,[5,2]),'miss');assert.equal(g.stones,0);
  B.ostrichStep(g,[2,2]);assert.equal(B.throwTargets(g).length,0);assert(!B.vultureThrow(g,[5,2]));assert(B.vultureFly(g,[4,0]));assert.equal(g.stones,1);assert(g.lastAction.refill);});
-t('throw at the ostrich bounces (egg under/in beak safe); adjacent is fine',()=>{const g=setup();assert(B.ostrichSit(g));const T=B.throwTargets(g).map(String);assert(T.includes('3,2'));
- const h=setup();assert(B.ostrichStep(h,[3,2],true));assert(B.throwTargets(h).map(String).includes('3,2'));assert.equal(B.vultureThrow(h,[3,2]),'bounce');assert.equal(h.eggs[0].alive,true);assert.equal(h.marks['3,2'],undefined);assert.equal(h.stones,0);});
-t('missed stone leaves a mark; ostrich can step there but not carry an egg onto it',()=>{const g=setup();assert(B.ostrichSit(g));assert(B.vultureFly(g,[3,3]));assert(B.ostrichSit(g));
- assert.equal(B.vultureThrow(g,[3,2]),'miss');assert.equal(g.marks['3,2'],'stone');assert.equal(B.visible(g).marks['3,2'],'stone');
- assert(!B.ostrichMoves(g,true).some(p=>p+''==='3,2'));assert(B.ostrichMoves(g).some(p=>p+''==='3,2'));assert(B.ostrichMoves(g,true).length>0);});
 t('unguarded egg smashed; square becomes blocked',()=>{const g=setup();B.ostrichStep(g,[1,1]);B.vultureFly(g,[5,2]);B.ostrichStep(g,[1,2]);assert.equal(B.vultureThrow(g,[6,2]),'hit');assert.equal(g.marks['6,2'],'hit');
  const h=setup();h.marks['3,3']='hit';assert(!B.ostrichMoves(h).some(p=>p+''==='3,3'));});
 t('fly range 2; sniff = egg within 1, this turn only',()=>{const g=setup();B.ostrichStep(g,[1,1]);assert(!B.vultureFly(g,[7,2]));assert(B.vultureFly(g,[6,3]));assert.equal(g.lastAction.smell,true);
  B.ostrichStep(g,[1,2]);assert(B.vultureFly(g,[6,5]));assert.equal(g.lastAction.smell,false);});
 t('landing on unguarded egg finds it; mark clears when carried away',()=>{const g=setup();B.ostrichStep(g,[1,1]);B.vultureFly(g,[6,2]);assert.equal(g.marks['6,2'],'spotted');assert.deepEqual(Object.keys(B.visible(g).marks),['6,2']);});
-t('hunger: eat at food every N turns or starve',()=>{const g=setup();B.ostrichStep(g,[1,1]);fl(g);B.ostrichStep(g,[0,0]);assert.equal(g.hungerLeft,C.food);fl(g);
+t('hunger: eat at food every N turns or starve',()=>{const g=setup({...C,warmth:99});B.ostrichStep(g,[1,1]);fl(g);B.ostrichStep(g,[0,0]);assert.equal(g.hungerLeft,C.food);fl(g);
  for(let i=0;i<C.food&&!g.winner;i++){B.ostrichStep(g,g.ostrich[0]===1?[2,0]:[1,0]);if(!g.winner)fl(g);}assert.equal(g.winner,'red');assert.equal(g.winBy,'starved');});
 t('warmth: unvisited eggs go cold; vulture wins',()=>{const g=setup();let x=0;for(let r=1;r<=C.warmth+2&&!g.winner;r++){B.ostrichStep(g,r%2?[1,1]:[0,0]);if(!g.winner)fl(g);}assert.equal(g.winBy,'cold')});
 t('ostrich wins after C.rounds rounds (eating + sitting)',()=>{const cfg={...C,warmth:99};const g=B.newGame(cfg);B.placeEgg(g,[2,0]);B.placeEgg(g,[6,2]);B.placeEgg(g,[2,5]);B.placeOstrich(g,[1,0]);B.vultureFly(g,[4,2]);
@@ -38,21 +37,21 @@ t('regression (Brian r28): vulture on the ostrich square throws -> bounce, egg s
  assert.equal(w.SMASH.kind('bounce'),'feather');assert.equal(w.SMASH.kind('hit'),'hit');assert.equal(w.SMASH.kind('miss'),'miss');});
 t('regression (Brian): landing ON an unguarded egg = found (spotted), not just a sniff',()=>{const AI=require('./ai.js');const g=setup();B.ostrichStep(g,[1,1]);assert(B.vultureFly(g,[6,2]));
  assert.deepEqual(g.lastAction.spotted,[6,2]);const v=AI.redView(g);assert.equal(v.marks['6,2'],'spotted');assert.deepEqual(v.lastAction.spotted,[6,2]);assert.deepEqual(v.sniff.p,[6,2]);});
-t('food path counts steps around smashed squares, and the warning is path + 1 spare turn',()=>{
+t('food path counts moves (2 squares each) around smashed squares, and the warning is path + 1 spare turn',()=>{
  const open=B.foodRoute(C,[4,3],{});
- assert.equal(open.len,4); assert.deepEqual(open.food,[0,0]);
+ assert.equal(open.len,2); assert.deepEqual(open.food,[0,0]); // 4 squares, 2 per move
  const warn=(h,r,legal)=>!!(r&&r.len>0&&h<=r.len+1&&r.next&&legal.has(r.next.join(',')));
- assert.equal(warn(6,open,new Set([open.next.join(',')])),false);
- assert.equal(warn(5,open,new Set([open.next.join(',')])),true);
- assert.equal(warn(4,open,new Set(['9,9'])),false);
- const marks={'1,0':'hit','1,1':'hit'};
+ assert.equal(warn(4,open,new Set([open.next.join(',')])),false);
+ assert.equal(warn(3,open,new Set([open.next.join(',')])),true);
+ assert.equal(warn(2,open,new Set(['9,9'])),false);
+ const marks={'1,0':'hit','1,1':'hit','1,2':'hit','1,3':'hit'};
  const around=B.foodRoute(C,[2,0],marks);
- assert.ok(around.len>B.dist([2,0],[0,0]));
+ assert.equal(around.len,1,"a wrecked square no longer blocks the way: walkers pass over it");
  assert.equal(warn(around.len+2,around,new Set([around.next.join(',')])),false);
  assert.equal(warn(around.len+1,around,new Set([around.next.join(',')])),true);
  assert.equal(B.foodRoute(C,[0,0],{}).len,0);
  const box={}; for(let dx=-1;dx<=1;dx++)for(let dy=-1;dy<=1;dy++) if(dx||dy) box[(4+dx)+','+(3+dy)]='hit';
- assert.equal(B.foodRoute(C,[4,3],box),null);
+ assert.equal(B.foodRoute(C,[4,3],box).len,2,"a ring of wrecked squares is passed over");
 });
 // Brian's pass-and-play playtest: the vulture was told "Egg nearby!" on a later turn about a square
 // that had held an egg. The landing snapshot stays (so the green "might" squares and the bot do not

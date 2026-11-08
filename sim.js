@@ -9,7 +9,7 @@ function play() {
   while (g.phase !== 'over' && k++ < 600) {
     const r = g.phase === 'play' ? g.turn : 'blue';
     const m = r === 'blue' ? AI.ostrich(g, olvl) : AI.vulture(AI.redView(g), lvl, mem);
-    const ok = r === 'blue' ? (g.phase === 'setupEggs' ? B.placeEgg(g, m.p) : g.phase === 'setupOstrich' ? B.placeOstrich(g, m.p) : m.a === 'sit' ? B.ostrichSit(g) : B.ostrichStep(g, m.p, m.a === 'carry'))
+    const ok = r === 'blue' ? (g.phase === 'setupEggs' ? B.placeEgg(g, m.p) : g.phase === 'setupOstrich' ? B.placeOstrich(g, m.p) : m.a === 'sit' ? B.ostrichSit(g) : m.a === 'kick' ? B.ostrichKick(g, m.p) : B.ostrichStep(g, m.p, m.a === 'carry'))
       : m.a === 'fly' ? B.vultureFly(g, m.p) : !!B.vultureThrow(g, m.p);
     if (!ok) throw new Error('illegal ' + r + ' ' + JSON.stringify(m));
   }

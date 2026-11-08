@@ -15,7 +15,14 @@
   }
   // viewer: your seat ('blue', 'red', 'o1'..'v2', 'hunter', 'hyena', 'badger'). kind: 'hyena' or 'badger', the animal that made the catch.
   // catchesLeft: catches the caught bird can still take after this one (ignored when lastCatch.ko).
+  // A catch by the honey badger ends with one of its quotes, said to every player who sees the catch (the words live in badgerlines.js):
+  // out of the burrow (lc.ambush), a bird that walked onto it (lc.walked), or a catch in the open.
+  const BL = typeof module !== 'undefined' ? require('./badgerlines.js') : window.BadgerLines;
   function catchLine(lc, viewer, kind, left) {
+    const line = baseLine(lc, viewer, kind, left);
+    return hunterWord(kind || lc.by) === 'honey badger' ? line + ' ' + BL.catchTail(lc) : line;
+  }
+  function baseLine(lc, viewer, kind, left) {
     const hunter = hunterWord(kind || lc.by), bird = birdWord(lc.bird);
     if (viewer === lc.bird) {
       const line = lc.ko ? `The ${hunter} knocked you out.` : `The ${hunter} caught you! Hurt: ${more(left)} and you're out.`;
@@ -27,7 +34,13 @@
   }
   // banner for a bird that is out ("The ostrich is out."; in 2 vs 2 the seat name: "Ostrich 1 is out.")
   const outLine = b => SEAT[b] ? `${SEAT[b]} is out.` : `The ${birdWord(b)} is out.`;
-  // Big events other than catches, said to every player. Where they happened is shown only to a player who can see that square.
+  // Big events other than catches, said to every player (where they happened is shown only to a player who can see that square).
+  const kickWho = w => w === 'vulture' ? 'vulture' : hunterWord(w);
+  function kickLine(who, moved, push) {
+    const n = moved == null ? push : moved;
+    if (n === 0) return `The ostrich kicked the ${kickWho(who)}, but it had nowhere to go.`;
+    return `The ostrich kicked the ${kickWho(who)} back ${n} square${n === 1 ? '' : 's'}.`;
+  }
   const popOutLine = () => 'The honey badger came out of its burrow!';
   function rivalLine(rv) {
     const n = rv.n || 2;
@@ -40,12 +53,14 @@
   function newEvents(seen, S, prev) {
     const out = [], h = (S && S.h3) || {};
     if (!S) return out;
-    if (S.phase && S.phase.startsWith('setup')) { seen.pop = seen.rival = 0; return out; }
-    const po = h.popout, rv = h.rival;
+    if (S.phase && S.phase.startsWith('setup')) { seen.pop = seen.rival = seen.kick = seen.stone = 0; return out; }
+    const po = h.popout, rv = h.rival, k = S.kick;
+    if (k && k.seq !== seen.kick) { seen.kick = k.seq; if (prev) out.push({ kind: 'kick', text: kickLine(k.who, k.moved, S.cfg && S.cfg.kickPush), square: k.to || null }); }
+    if (S.stoneNote && S.stoneNote.seq !== seen.stone) { seen.stone = S.stoneNote.seq; if (prev) out.push({ kind: 'stone', text: S.stoneNote.text }); }
     if (po && po.seq !== seen.pop) { seen.pop = po.seq; if (prev) out.push({ kind: 'popout', text: popOutLine(), seen: !!po.seen }); }
     if (rv && rv.seq !== seen.rival) { seen.rival = rv.seq; if (prev) out.push({ kind: 'rival', text: rivalLine(rv), square: rv.to || null }); }
     return out;
   }
-  const API = { catchLine, catchesLeft, outLine, popOutLine, rivalLine, newEvents };
+  const API = { catchLine, catchesLeft, outLine, kickLine, popOutLine, rivalLine, newEvents };
   if (typeof module !== 'undefined') module.exports = API; else window.CatchText = API;
 })();

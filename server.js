@@ -29,8 +29,10 @@ const tok = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
 // Display preference only. Missing or any value other than false means the round counter and shot clock are shown.
 // The 10s clock still expires the turn when it is hidden. Lobby code can set this at create time via settings.showTimers.
 function timersOn(room) { if (room && room.clock === false) return false; return !(room && room.settings && room.settings.showTimers === false); }
-// A big event is announced to every seat (a plain line on every phone); where it happened goes only to a seat that can see that square.
+// A big event is announced to every seat; where it happened goes only to a seat that can see that square.
 // popout: the badger came out of its burrow without a catch. Every seat gets the event (seq, round); `seen` says whether this seat can see the badger.
+// how many squares a kick actually moved the animal (0 to 2); the words say "back 2 squares" only when it went that far
+const kickMoved = k => k.moved != null ? k.moved : Math.max(Math.abs(k.to[0] - k.from[0]), Math.abs(k.to[1] - k.from[1]));
 const popView = (po, seen) => po ? { seq: po.seq, round: po.round, seen: !!seen } : null;
 function eggView(g) { return g.eggs.map(e => ({ pos: e.pos, alive: e.alive, coldIn: B.coldIn(g, e), carried: g.carrying === e.id })); }
 function view(room, role) {
@@ -41,6 +43,7 @@ function view(room, role) {
   const v = { role, code: room.code, phase: g.phase, turn: g.turn, round: g.round, cfg: g.cfg, winner: g.winner, winBy: g.winBy,
     eggsLeft: B.aliveEggs(g).length, marks: pub.marks, vulture: g.vulture, ostrich: g.ostrich, stones: g.stones, hungerLeft: g.hungerLeft, sniff: g.sniff,
     sitRun: g.sitRun, carried: g.carrying !== null, lastAction: role === 'blue' || g.phase === 'over' ? g.lastAction : pub.lastAction,
+    kick: g.lastKick ? { who: g.lastKick.who, seq: g.lastKick.seq, round: g.lastKick.round, moved: kickMoved(g.lastKick), to: g.lastKick.to } : null, // classic: both birds always see each other
     lastCold: (g.lastCold || []).length, opponent: !!room.ai || !!room.pass || !!(room.players[role === 'blue' ? 'red' : 'blue'] || {}).ws, myTurn: mine,
     // 'joined' = the other seat has ever been taken; the invite panel is only for a seat nobody has claimed yet
     joined: !!room.ai || !!room.pass || !!room.players[role === 'blue' ? 'red' : 'blue'], ai: room.ai ? room.level : null, pass: !!room.pass, showTimers: timersOn(room) };
@@ -49,7 +52,7 @@ function view(room, role) {
     Object.assign(v, { eggs: g.eggs.map(e => ({ pos: e.pos, alive: e.alive, coldIn: B.coldIn(g, e), carried: g.carrying === e.id })),
       carrying: g.carrying, onEgg: B.onEgg(g), mustLeave: B.mustLeave(g) });
     if (role === 'blue') Object.assign(v, { moves: mine ? B.ostrichMoves(g) : [], carryMoves: mine ? B.ostrichMoves(g, true) : [],
-      can: { sit: B.canSit(g), carry: B.canCarry(g) } });
+      can: { sit: B.canSit(g), carry: B.canCarry(g), kick: mine && B.kickTargets(g).length > 0 }, kickTargets: mine ? B.kickTargets(g) : [], kickNear: mine && B.kickable(g).length > 0 });
   }
   if (role === 'red') Object.assign(v, { fly: pub.fly, throw: pub.throw });
   return stamp(room, v, role);
@@ -71,6 +74,7 @@ function act(room, role, m) {
     if (m.a === 'step') return B.ostrichStep(g, p, false);
     if (m.a === 'carry') return B.ostrichStep(g, p, true);
     if (m.a === 'sit') return B.ostrichSit(g);
+    if (m.a === 'kick') return B.ostrichKick(g, p);
   } else {
     if (m.a === 'fly') return B.vultureFly(g, p);
     if (m.a === 'throw') return !!B.vultureThrow(g, p);
@@ -104,19 +108,19 @@ const ready3 = room => SEATS3.every(s => room.players[s]) && !!room.g.three.kind
 function view3(room, role) {
   const g = room.g, t = g.three, over = g.phase === 'over', pub = AI.redView(g), mine = g.phase === 'play' && g.turn === role && ready3(room);
   const seats = Object.fromEntries(SEATS3.map(s => [s, room.bots.includes(s) ? 'bot' : room.players[s] ? (room.players[s].ws ? 'on' : 'off') : 'open']));
-  const lc = t.lastCatch && { bird: t.lastCatch.bird, ko: t.lastCatch.ko, walked: !!t.lastCatch.walked, seq: t.lastCatch.seq, round: t.lastCatch.round,
+  const lc = t.lastCatch && { bird: t.lastCatch.bird, ko: t.lastCatch.ko, walked: !!t.lastCatch.walked, ambush: !!t.lastCatch.ambush, seq: t.lastCatch.seq, round: t.lastCatch.round,
     at: role === t.lastCatch.bird || role === 'hunter' || over || T.hunterSeenBy(g, role) ? t.lastCatch.at : null, to: role !== 'hunter' || over ? t.lastCatch.to : null }; // a bird sees where the catch was only if it can see the hunter now (birds see birds, so `to` is public to them)
   const h3 = Object.assign(T.status3(g), { seats, ready: ready3(room), needKind: role === 'hunter' && !t.kind, lastCatch: lc, lost: t.lost || null,
     clockLeft: room.deadline && g.phase === 'play' ? Math.max(0, room.deadline - Date.now()) : null, clockMs: T.T3.clockMs, senseRange: T.T3.sense,
-    hunter: over || role === 'hunter' || T.hunterSeenBy(g, role) ? t.h : null, burrowed: role === 'hunter' || over ? t.burrowed : false, range: T.hunterRange(g),
+    hunter: over || role === 'hunter' || T.hunterSeenBy(g, role) ? t.h : null, burrowed: role === 'hunter' || over ? t.burrowed : false, range: role === 'hunter' ? T.hunterRange(g) : 1,
     popout: popView(t.popout, role === 'hunter' || over || T.hunterSeenBy(g, role)) });
   let v;
   if (role === 'hunter') {
     v = { role, code: room.code, phase: g.phase, turn: g.turn, round: g.round, cfg: g.cfg, winner: g.winner, winBy: g.winBy, eggsLeft: B.aliveEggs(g).length,
       marks: pub.marks, vulture: over ? g.vulture : T.OFF, ostrich: over ? g.ostrich : T.OFF, stones: g.stones, hungerLeft: g.hungerLeft, sniff: null, sitRun: 0, carried: false,
       lastAction: null, lastCold: 0, myTurn: mine, opponent: true, joined: SEATS3.every(s => room.players[s]), ai: null, pass: false,
-      hunter: t.h, kind: t.kind, sense: g.turn === 'hunter' || t.pounce ? t.sense : null, senseSeq: t.senseSeq, senseRange: T.T3.sense, pounce: t.pounce, burrowed: t.burrowed, dig: t.dig || 0,
-      hmoves: mine ? T.hunterMoves(g) : [], lastHunter: t.lastHunter };
+      hunter: t.h, kind: t.kind, sense: g.turn === 'hunter' || t.pounce ? t.sense : null, senseSeq: t.senseSeq, senseRange: T.T3.sense, pounce: t.pounce, firstAt: t.pounce ? t.firstAt : null, burrowed: t.burrowed, dig: t.dig || 0,
+      hmoves: mine ? T.hunterMoves(g) : [], lastHunter: t.lastHunter, seenBirds: g.phase === 'play' ? T.ambushSight(g) : [] };
     if (over) v.eggs = g.eggs.map(e => ({ pos: e.pos, alive: e.alive, coldIn: B.coldIn(g, e), carried: false }));
   } else {
     const sub = { ...room, three: false, ai: room.bots.length ? 'bot' : null, players: room.players };
@@ -130,6 +134,10 @@ function view3(room, role) {
       h3.hunter = t.h.slice(); h3.burrowed = !!t.burrowed; if (h3.popout) h3.popout.seen = true; if (lc) lc.at = t.lastCatch.at;
     }
   }
+  // Kick: the ostrich's options; the kick itself is announced to every seat, the square it ended on only to a seat that can see that square
+  if (role === 'blue') { v.kickTargets = mine && !v.god ? T.kickTargets3(g) : []; v.kickNear = !!mine && !v.god && T.kickable3(g).length > 0; v.can = Object.assign(v.can || {}, { kick: v.kickTargets.length > 0 }); }
+  const lk = g.lastKick;
+  v.kick = lk ? { who: lk.who, seq: lk.seq, round: lk.round, moved: kickMoved(lk), to: over || v.god || (role === 'hunter' ? lk.who !== 'vulture' : lk.who === 'vulture' || T.hunterSeenBy(g, role)) ? lk.to : null } : null;
   v.h3 = h3; v.three = true; v.showTimers = timersOn(room); return stamp(room, v, role);
 }
 function broadcast3(room) {
@@ -144,7 +152,7 @@ function act3(room, role, m) {
   if (role === 'blue' && g.phase === 'setupEggs') return B.placeEgg(g, p);
   if (role === 'blue' && g.phase === 'setupOstrich') return T.placeOstrich3(g, p);
   if (!ready3(room) || g.phase !== 'play' || g.turn !== role) return false;
-  if (role === 'blue') return m.a === 'sit' || m.a === 'step' || m.a === 'carry' ? T.ostrichAct3(g, m.a, p) : false;
+  if (role === 'blue') return m.a === 'sit' || m.a === 'step' || m.a === 'carry' || m.a === 'kick' ? T.ostrichAct3(g, m.a, p) : false;
   if (role === 'red') return m.a === 'fly' ? T.vultureFly3(g, p) : m.a === 'throw' ? !!T.vultureThrow3(g, p) : false;
   if (role === 'hunter') return m.a === 'hmove' ? T.hunterMove(g, p) : m.a === 'hstay' ? T.hunterStay(g) : false;
   return false;
@@ -152,12 +160,11 @@ function act3(room, role, m) {
 function botMove3(room, r) {
   const g = room.g, mem = room.mem[r] || (room.mem[r] = {});
   if (r === 'hunter') { const v = view3(room, 'hunter'); if (g.three.lastCatch && mem.seenCatch !== g.three.lastCatch.seq) { mem.seenCatch = g.three.lastCatch.seq; mem.reset = true; mem.lastCatch = g.three.h.slice(); } return AI.hunter(v, mem); }
-  const hv = T.hunterSeenBy(g, r) ? g.three.h : null, reach = T.hunterRange(g) + (g.three.kind === 'hyena' ? 1 : 0);
+  const hv = T.hunterSeenBy(g, r) ? g.three.h : null, reach = T.hunterReach(g);
   if (r === 'blue') { if (g.phase !== 'play') { let m = AI.ostrich(g, room.level); if (g.phase === 'setupOstrich' && B.key(m.p) === B.key(g.three.h)) m = { a: 'place', p: g.eggs[1].pos.slice() }; return m; }
-    const m = AI.ostrich(g, room.level), fd = Math.min(...g.cfg.foods.map(f => B.dist(f, g.ostrich)));
-    if (g.hungerLeft - fd <= 1) return m;
+    const m = AI.ostrich(g, room.level);
     const alts = (B.canCarry(g) ? B.ostrichMoves(g, true).map(p => ({ a: 'carry', p })) : []).concat(B.ostrichMoves(g).map(p => ({ a: 'step', p })));
-    return AI.dodge(m, g.ostrich, alts, hv, reach); }
+    return AI.ostrichReact(m, { at: g.ostrich, hunger: g.hungerLeft, cfg: g.cfg, legal: alts, hv, reach, kicks: T.kickTargets3(g), guard: B.onEgg(g) }); }
   const v = AI.redView(g), m = AI.vulture(v, room.level, mem);
   return AI.dodge(m, g.vulture, v.fly.map(p => ({ a: 'fly', p })), hv, reach);
 }
@@ -203,7 +210,7 @@ function viewT(room, seat) {
   const g = room.g, over = g.phase === 'over', setup = g.phase === 'setup', ready = readyT(room), mine = g.phase === 'play' && g.turn === seat && ready;
   const isO = TT.isO(seat), isV = TT.isV(seat), myB = g.b[seat], step = TT.setupStep(g, seat);
   const seats = Object.fromEntries(tseats(g).map(s => [s, room.bots.includes(s) ? 'bot' : room.players[s] ? (room.players[s].ws ? 'on' : 'off') : 'open']));
-  const lc = g.lastCatch && { bird: g.lastCatch.bird, ko: g.lastCatch.ko, walked: !!g.lastCatch.walked, seq: g.lastCatch.seq, round: g.lastCatch.round,
+  const lc = g.lastCatch && { bird: g.lastCatch.bird, ko: g.lastCatch.ko, walked: !!g.lastCatch.walked, ambush: !!g.lastCatch.ambush, seq: g.lastCatch.seq, round: g.lastCatch.round,
     at: seat === g.lastCatch.bird || seat === 'hunter' || over || TT.hunterSeenBy(g, seat) ? g.lastCatch.at : null, to: seat !== 'hunter' || over ? g.lastCatch.to : null }; // a bird sees where the catch was only if it can see the hunter now
   const pub = Object.fromEntries(Object.entries(g.marks).filter(([, m]) => m === 'spotted' || m === 'hit' || m === 'stone'));
   // other birds on the board: birds always see each other (vultures don't see where the ostriches start until play begins); the hunter sees none
@@ -212,17 +219,19 @@ function viewT(room, seat) {
   const teamSetup = !setup ? null : TT.OS.some(o => TT.setupStep(g, o) === 'eggs') ? 'eggs' : TT.OS.some(o => TT.setupStep(g, o) === 'ostrich') ? 'ostrich' : 'done';
   const h3 = Object.assign(TT.status(g), { team: true, seats, ready, needKind: seat === 'hunter' && g.h && !g.h.kind, lastCatch: lc, lost: g.lost, mySeat: seat, pieces, setupStep: step, teamSetup, eggsToPlace: isO && setup ? Math.max(0, TT.TM.eggs - TT.nestOf(g, seat).length) : null,
     clockLeft: room.deadline && g.phase === 'play' ? Math.max(0, room.deadline - Date.now()) : null, clockMs: TT.TM.clockMs, senseRange: TT.TM.sense,
-    hunter: g.h && (over || seat === 'hunter' || TT.hunterSeenBy(g, seat)) ? g.h.p : null, burrowed: g.h && (seat === 'hunter' || over) ? g.h.burrowed : false, range: TT.hunterRange(g),
+    hunter: g.h && (over || seat === 'hunter' || TT.hunterSeenBy(g, seat)) ? g.h.p : null, burrowed: g.h && (seat === 'hunter' || over) ? g.h.burrowed : false, range: seat === 'hunter' ? TT.hunterRange(g) : 1,
     popout: g.h ? popView(g.popout, seat === 'hunter' || over || TT.hunterSeenBy(g, seat)) : null,
     block: setup ? TT.TM.vStarts.concat(g.h ? [g.h.p] : []) : [], mateSniff: isV && g.phase === 'play' ? g.sniffs[TT.mate(seat)] || null : null, eggsTotal: g.eggs.length });
   const eggs = () => g.eggs.map(e => { const c = TT.OS.find(o => g.b[o].carrying === e.id);
     return { pos: e.pos || (c && c !== seat ? g.b[c].pos : null), alive: e.alive, coldIn: B.coldIn(g, e), carried: c === seat, nest: e.nest, mine: isO && e.nest === myB.nest }; });
-  // block (setup taps skip these squares) is empty once play starts, so the hunter's square never goes to a bird that cannot see it
-  const base = { code: room.code, turn: g.turn, round: g.round, winner: g.winner, winBy: g.winBy, eggsLeft: TT.alive(g).length, marks: over ? g.marks : pub,
+  // Kick: announced to every seat; the square it ended on only to a seat that can see it (birds see every bird, a bird sees the hunter within 2, the hunter sees no bird)
+  const kickOf = god => { const k = g.lastKick; if (!k) return null; const hk = k.seat === 'hunter';
+    return { who: k.who, seq: k.seq, round: k.round, moved: kickMoved(k), to: over || god || (seat === 'hunter' ? hk : !hk || TT.hunterSeenBy(g, seat)) ? k.to : null }; };
+  const base = { code: room.code, turn: g.turn, round: g.round, winner: g.winner, winBy: g.winBy, eggsLeft: TT.alive(g).length, marks: over ? g.marks : pub, kick: kickOf(false),
     lastCold: (g.lastCold || []).length, myTurn: mine, opponent: true, joined: tseats(g).every(s => room.players[s]), ai: null, pass: false, three: true, h3, showTimers: timersOn(room) };
   if (seat === 'hunter') return stamp(room, Object.assign(base, { role: 'hunter', phase: setup ? 'setupEggs' : g.phase, cfg: g.cfg, vulture: TT.OFF, ostrich: TT.OFF, stones: Math.max(0, ...TT.VS.filter(x => !g.b[x].out).map(x => g.b[x].stones)), hungerLeft: Math.min(g.cfg.food, ...TT.OS.filter(x => !g.b[x].out).map(x => g.b[x].hunger)), sniff: null,
     sitRun: 0, carried: false, lastAction: null, hunter: g.h.p, kind: g.h.kind, sense: g.turn === 'hunter' || g.h.pounce ? g.h.sense : null, senseSeq: g.h.senseSeq,
-    senseRange: TT.TM.sense, pounce: g.h.pounce, burrowed: g.h.burrowed, dig: g.h.dig || 0, hmoves: mine ? TT.hunterMoves(g) : [], lastHunter: g.h.last, eggs: over ? eggs() : undefined }), seat);
+    senseRange: TT.TM.sense, pounce: g.h.pounce, firstAt: g.h.pounce ? g.h.firstAt : null, burrowed: g.h.burrowed, dig: g.h.dig || 0, hmoves: mine ? TT.hunterMoves(g) : [], lastHunter: g.h.last, seenBirds: g.phase === 'play' ? TT.ambushSight(g) : [], eggs: over ? eggs() : undefined }), seat);
   const la = g.lastAction && (isO || over || g.lastAction.type !== 'throw' ? g.lastAction : { type: 'throw', from: g.lastAction.from, p: g.lastAction.p, result: g.lastAction.result, egg: !!g.lastAction.egg });
   const v = Object.assign(base, { role: isO ? 'blue' : 'red', phase: setup ? (isO ? (step === 'eggs' ? 'setupEggs' : step === 'ostrich' ? 'setupOstrich' : 'play') : 'setupEggs') : g.phase,
     cfg: { ...g.cfg, eggs: isO && setup ? g.eggs.length + (TT.TM.eggs - TT.nestOf(g, seat).length) : g.cfg.eggs * 2 },
@@ -230,11 +239,12 @@ function viewT(room, seat) {
     sniff: isV && g.phase === 'play' ? g.sniffs[seat] || null : null, sitRun: isO ? myB.sitRun : 0, carried: isO && myB.carrying != null, lastAction: la });
   if (setup && step === 'done') v.myTurn = false;
   if (isO || over) Object.assign(v, { eggs: isO || over ? eggs() : undefined, carrying: isO ? myB.carrying : null, onEgg: isO && TT.onEgg(g, seat), mustLeave: isO && TT.mustLeave(g, seat) });
-  if (isO) Object.assign(v, { moves: mine ? TT.ostrichMoves(g, seat) : [], carryMoves: mine ? TT.ostrichMoves(g, seat, true) : [], can: { sit: mine && TT.canSit(g, seat), carry: mine && TT.canCarry(g, seat) } });
+  if (isO) Object.assign(v, { moves: mine ? TT.ostrichMoves(g, seat) : [], carryMoves: mine ? TT.ostrichMoves(g, seat, true) : [], can: { sit: mine && TT.canSit(g, seat), carry: mine && TT.canCarry(g, seat), kick: mine && TT.kickTargets(g, seat).length > 0 },
+    kickTargets: mine ? TT.kickTargets(g, seat) : [], kickNear: mine && TT.kickable(g, seat).length > 0 });
   if (isV) Object.assign(v, { fly: mine ? TT.flyTargets(g, seat) : [], throw: mine ? TT.throwTargets(g, seat) : [] });
   if (myB.out && g.phase === 'play') {
     v.god = true; v.myTurn = false; v.moves = []; v.carryMoves = []; v.fly = []; v.throw = []; v.hmoves = [];
-    v.can = { sit: false, carry: false }; v.eggs = eggs();
+    v.can = { sit: false, carry: false, kick: false }; v.kickTargets = []; v.kickNear = false; v.kick = kickOf(true); v.eggs = eggs();
     v.h3.pieces = TT.OS.concat(TT.VS).filter(s => s !== seat && TT.live(g, s))
       .map(s => ({ seat: s, type: TT.isO(s) ? 'o' : 'v', p: g.b[s].pos, mate: (TT.isO(s) && isO) || (TT.isV(s) && isV), carrying: isO && TT.isO(s) && g.b[s].carrying != null }));
     if (g.h) { v.h3.hunter = g.h.p.slice(); v.h3.burrowed = !!g.h.burrowed; if (v.h3.popout) v.h3.popout.seen = true; if (lc) lc.at = g.lastCatch.at; }
@@ -252,7 +262,7 @@ function actT(room, seat, m) {
   if (g.phase === 'play' && g.b[seat] && g.b[seat].out) return false;
   if (g.phase === 'setup') return TT.isO(seat) && Array.isArray(p) ? TT.place(g, seat, p) : false;
   if (!readyT(room) || g.phase !== 'play' || g.turn !== seat || !Array.isArray(p) && m.a !== 'sit' && m.a !== 'hstay') return false;
-  if (TT.isO(seat)) return m.a === 'sit' || m.a === 'step' || m.a === 'carry' ? TT.ostrichAct(g, seat, m.a, p) : false;
+  if (TT.isO(seat)) return m.a === 'sit' || m.a === 'step' || m.a === 'carry' || m.a === 'kick' ? TT.ostrichAct(g, seat, m.a, p) : false;
   if (TT.isV(seat)) return m.a === 'fly' ? TT.vultureFly(g, seat, p) : m.a === 'throw' ? !!TT.vultureThrow(g, seat, p) : false;
   if (seat === 'hunter') return m.a === 'hmove' ? TT.hunterMove(g, p) : m.a === 'hstay' ? TT.hunterStay(g) : false;
   return false;
@@ -261,7 +271,7 @@ function botMoveT(room, s) {
   const g = room.g, mem = room.mem[s] || (room.mem[s] = {});
   if (g.phase === 'setup') return TA.setup(g, s);
   if (s === 'hunter') { const v = viewT(room, 'hunter'); if (g.lastCatch && mem.seenCatch !== g.lastCatch.seq) { mem.seenCatch = g.lastCatch.seq; mem.reset = true; mem.lastCatch = g.h.p.slice(); } return AI.hunter(v, mem); }
-  const hv = g.h && TT.hunterSeenBy(g, s) ? g.h.p : null, reach = TT.hunterRange(g) + (g.h && g.h.kind === 'hyena' ? 1 : 0);
+  const hv = g.h && TT.hunterSeenBy(g, s) ? g.h.p : null, reach = TT.hunterReach(g);
   return TT.isO(s) ? TA.ostrich(g, s, room.level, hv, reach) : TA.vulture(g, s, room.level, mem, hv, reach);
 }
 function schedT(room) {
@@ -299,20 +309,20 @@ const readyH = room => SEATSH.every(s => room.players[s]);
 function viewH(room, seat) {
   const g = room.g, t = g.hunt, over = g.phase === 'over', pub = AI.redView(g), mine = g.phase === 'play' && g.turn === seat && readyH(room), isH = HU.isH(seat);
   const seats = Object.fromEntries(SEATSH.map(s => [s, room.bots.includes(s) ? 'bot' : room.players[s] ? (room.players[s].ws ? 'on' : 'off') : 'open']));
-  const lc = t.lastCatch && { bird: t.lastCatch.bird, by: t.lastCatch.by, ko: t.lastCatch.ko, walked: !!t.lastCatch.walked, seq: t.lastCatch.seq, round: t.lastCatch.round,
+  const lc = t.lastCatch && { bird: t.lastCatch.bird, by: t.lastCatch.by, ko: t.lastCatch.ko, walked: !!t.lastCatch.walked, ambush: !!t.lastCatch.ambush, seq: t.lastCatch.seq, round: t.lastCatch.round,
     at: seat === t.lastCatch.bird || seat === t.lastCatch.by || over || (!isH && HU.seen(g, seat, t.lastCatch.by)) ? t.lastCatch.at : null, to: !isH || over ? t.lastCatch.to : null }; // birds see birds; a bird sees where the catch was only if it can see that hunter now; the hunter that made it knows the square, the other hunter sees no bird
   const hunters = HU.HUNTERS.filter(h => over || HU.seen(g, seat, h)).map(h => ({ kind: h, p: t.hs[h].p, burrowed: (h === seat || over) && t.hs[h].burrowed, me: h === seat }));
   const rv = t.rival && { by: t.rival.by, seq: t.rival.seq, round: t.rival.round, n: HU.TH.rivalKnock, to: isH || over || HU.seen(g, seat, 'hyena') ? t.rival.to : null }; // the meeting is announced to every seat; the square only to a seat that can see the hyena
   const h3 = Object.assign(HU.statusH(g), { seats, ready: readyH(room), needKind: false, kind: isH ? seat : null, mySeat: seat, hunters, hunter: null, burrowed: false,
     lastCatch: lc, rival: rv, lost: t.lost || null, clockLeft: room.deadline && g.phase === 'play' ? Math.max(0, room.deadline - Date.now()) : null, clockMs: HU.TH.clockMs,
-    senseRange: HU.TH.sense, range: 1, popout: popView(t.popout, over || HU.seen(g, seat, 'badger')) });
+    senseRange: HU.TH.sense, range: isH && g.turn === seat ? HU.hunterRange(g, seat) : 1, popout: popView(t.popout, over || HU.seen(g, seat, 'badger')) });
   let v;
   if (isH) { const x = t.hs[seat];
     v = { role: 'hunter', code: room.code, phase: g.phase, turn: HU.isH(g.turn) ? (g.turn === seat ? 'hunter' : g.turn) : g.turn, round: g.round, cfg: g.cfg, winner: g.winner, winBy: g.winBy,
       eggsLeft: B.aliveEggs(g).length, marks: pub.marks, vulture: over ? g.vulture : HU.OFF, ostrich: over ? g.ostrich : HU.OFF, stones: g.stones, hungerLeft: g.hungerLeft,
       sniff: null, sitRun: 0, carried: false, lastAction: null, lastCold: 0, myTurn: mine, opponent: true, joined: readyH(room), ai: null, pass: false,
-      hunter: x.p, kind: seat, sense: g.turn === seat ? x.sense : null, senseSeq: x.senseSeq, senseRange: HU.TH.sense, pounce: x.pounce, burrowed: x.burrowed, dig: x.dig,
-      hmoves: mine ? HU.hunterMoves(g, seat) : [], lastHunter: x.last };
+      hunter: x.p, kind: seat, sense: g.turn === seat ? x.sense : null, senseSeq: x.senseSeq, senseRange: HU.TH.sense, pounce: x.pounce, firstAt: x.pounce ? x.firstAt : null, burrowed: x.burrowed, dig: x.dig,
+      hmoves: mine ? HU.hunterMoves(g, seat) : [], lastHunter: x.last, seenBirds: seat === 'badger' && g.phase === 'play' ? HU.ambushSight(g) : [] };
     if (over) v.eggs = g.eggs.map(e => ({ pos: e.pos, alive: e.alive, coldIn: B.coldIn(g, e), carried: false }));
   } else {
     const sub = { ...room, hunt: false, three: false, ai: room.bots.length ? 'bot' : null, players: room.players };
@@ -326,6 +336,9 @@ function viewH(room, seat) {
       if (h3.rival) h3.rival.to = t.rival.to; if (h3.popout) h3.popout.seen = true; if (lc) lc.at = t.lastCatch.at;
     }
   }
+  if (seat === 'blue') { v.kickTargets = mine && !v.god ? HU.kickTargetsH(g) : []; v.kickNear = !!mine && !v.god && HU.kickableH(g).length > 0; v.can = Object.assign(v.can || {}, { kick: v.kickTargets.length > 0 }); }
+  const lk = g.lastKick; // announced to every seat; the square only to a seat that can see it (birds see birds, a bird sees a hunter within 2, hunters see no bird)
+  v.kick = lk ? { who: lk.who, seq: lk.seq, round: lk.round, moved: kickMoved(lk), to: over || v.god || (lk.who === 'vulture' ? !isH : HU.seen(g, seat, lk.who)) ? lk.to : null } : null;
   v.h3 = h3; v.three = true; v.showTimers = timersOn(room); return stamp(room, v, seat);
 }
 function broadcastH(room) {
@@ -366,6 +379,9 @@ function viewerIsHost(room, v) {
 }
 // picked: true means Start gave this seat to the player; they did not choose it (lobby.js plan). Roster seat = view seat.
 function stamp(room, v, seat) {
+  if (v && room && room.g) { const g = room.g; v.endWhy = g.phase === 'over' ? g.endWhy || null : null; v.stoneNote = g.lastStone ? { seq: g.lastStone.seq, text: g.lastStone.text } : null;
+    const hid = ['hunter', 'hyena', 'badger'].includes(seat) && g.phase !== 'over'; // hunters see no bird; a bird (or anyone watching) sees an ostrich that is sitting on an egg
+    v.sittingAt = hid ? [] : g.team ? ['o1', 'o2'].filter(o => g.b[o].sitting && g.b[o].pos && g.b[o].pos[0] >= 0).map(o => g.b[o].pos.slice()) : g.sitting && g.ostrich && g.ostrich[0] >= 0 ? [g.ostrich.slice()] : []; }
   if (v) v.picked = !!((room && room.roster || []).find(r => !r.bot && r.role === seat) || {}).picked;
   if (v) v.rules = RULES;
   if (v) { v.showTimers = timersOn(room); v.clockStopped = !!(room && room.clock === false); v.host = viewerIsHost(room, v); }
@@ -470,7 +486,7 @@ function openLobby(ws, m) {
   lobbyBroadcast(room);
 }
 // A square from a client must be exactly [x, y] with whole numbers on the board. Actions that move something need one; the others must not carry a bad one.
-const SQUARE_ACTS = new Set(['place', 'step', 'carry', 'fly', 'throw', 'hmove']);
+const SQUARE_ACTS = new Set(['place', 'step', 'carry', 'fly', 'throw', 'kick', 'hmove']);
 const validSquare = p => Array.isArray(p) && p.length === 2 && Number.isInteger(p[0]) && Number.isInteger(p[1]) && p[0] >= 0 && p[1] >= 0 && p[0] < B.CONFIG.cols && p[1] < B.CONFIG.rows;
 function validMove(m) {
   if (m.t === 'seat') return typeof m.role === 'string' && (m.p === undefined || validSquare(m.p));

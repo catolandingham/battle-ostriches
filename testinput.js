@@ -21,10 +21,10 @@ function team() { const g = TT.newTeam(5, 'hyena', undefined, [8, 3]);
 
 // each mode: [name, create message, the seat's role id, fixture, the actions that team could send]
 const MODES = [
-  ['2 players', { t: 'create', role: 'blue' }, classic, ['step', 'carry', 'sit', 'place', 'fly', 'throw']],
-  ['3 players', { t: 'create', three: 1, role: 'blue', bots: ['red', 'hunter'], kind: 'hyena' }, three, ['step', 'carry', 'sit', 'place', 'fly', 'throw', 'hmove']],
-  ['Hunters', { t: 'create', hunt: 1, role: 'blue', bots: ['red', 'hyena', 'badger'] }, hunters, ['step', 'carry', 'sit', 'place', 'fly', 'throw', 'hmove']],
-  ['2 vs 2 + hunter', { t: 'create', team: 5, role: 'o1', bots: ['v1', 'v2', 'o2', 'hunter'], kind: 'hyena' }, team, ['step', 'carry', 'sit', 'place', 'fly', 'throw', 'hmove']],
+  ['2 players', { t: 'create', role: 'blue' }, classic, ['step', 'carry', 'kick', 'sit', 'place', 'fly', 'throw']],
+  ['3 players', { t: 'create', three: 1, role: 'blue', bots: ['red', 'hunter'], kind: 'hyena' }, three, ['step', 'carry', 'kick', 'sit', 'place', 'fly', 'throw', 'hmove']],
+  ['Hunters', { t: 'create', hunt: 1, role: 'blue', bots: ['red', 'hyena', 'badger'] }, hunters, ['step', 'carry', 'kick', 'sit', 'place', 'fly', 'throw', 'hmove']],
+  ['2 vs 2 + hunter', { t: 'create', team: 5, role: 'o1', bots: ['v1', 'v2', 'o2', 'hunter'], kind: 'hyena' }, team, ['step', 'carry', 'kick', 'sit', 'place', 'fly', 'throw', 'hmove']],
 ];
 
 (async () => {
@@ -32,7 +32,7 @@ const MODES = [
     const ws = await create(msg), code = ws.msgs.find(x => x.t === 'joined').code, room = roomOf(code);
     room.g = fixture(); room.clock = false;
     const before = JSON.stringify(room.g); let sent = 0, soft = 0;
-    for (const a of acts) for (const p of BAD_P) { if (p === undefined && !['place', 'step', 'carry', 'fly', 'throw', 'hmove'].includes(a)) continue; const m = { t: 'act', a }; if (p !== undefined) m.p = p; ws.send(JSON.stringify(m)); sent++; soft++; }
+    for (const a of acts) for (const p of BAD_P) { if (p === undefined && !['place', 'step', 'carry', 'kick', 'fly', 'throw', 'hmove'].includes(a)) continue; const m = { t: 'act', a }; if (p !== undefined) m.p = p; ws.send(JSON.stringify(m)); sent++; soft++; }
     for (const a of [5, null, {}, ['step'], undefined]) { const m = { t: 'act', p: [1, 1] }; if (a !== undefined) m.a = a; ws.send(JSON.stringify(m)); sent++; soft++; }
     for (const r of [undefined, 5, {}, null, ['hyena']]) { const m = { t: 'seat', p: [99, 99] }; if (r !== undefined) m.role = r; ws.send(JSON.stringify(m)); sent++; soft++; }
     ws.send(JSON.stringify({ t: 'seat', role: 'red', p: 'x' })); sent++; soft++;
@@ -45,12 +45,12 @@ const MODES = [
     const ws2 = await open(); ws2.send(JSON.stringify({ t: 'ping' })); await until(() => ws2.msgs.find(x => x.t === 'pong'), 'second socket');
     ws.close(); ws2.close(); });
 
-  await ok('a legal-looking square that is not a legal move is refused softly, and a real move still works after the garbage', async () => {
+  await ok('a legal-looking square that is not a legal move is refused softly, and a real kick still works after the garbage', async () => {
     const ws = await create({ t: 'create', three: 1, role: 'blue', bots: ['red', 'hunter'], kind: 'hyena' }), room = roomOf(ws.msgs.find(x => x.t === 'joined').code);
     room.g = three(); const before = JSON.stringify(room.g);
-    ws.send(JSON.stringify({ t: 'act', a: 'step', p: [8, 6] })); ws.send(JSON.stringify({ t: 'act', a: 'step', p: 'x' }));
+    ws.send(JSON.stringify({ t: 'act', a: 'kick', p: [8, 6] })); ws.send(JSON.stringify({ t: 'act', a: 'kick', p: 'x' }));
     await until(() => ws.msgs.filter(x => x.t === 'error' && x.soft).length >= 2, 'two refusals'); assert.equal(JSON.stringify(room.g), before);
-    ws.send(JSON.stringify({ t: 'act', a: 'step', p: [4, 3] })); await until(() => room.g.ostrich[1] === 3, 'the step'); assert.deepEqual(room.g.ostrich, [4, 3]); ws.close(); });
+    ws.send(JSON.stringify({ t: 'act', a: 'kick', p: [5, 2] })); await until(() => room.g.lastKick, 'the kick'); assert.equal(room.g.lastKick.who, 'hyena'); ws.close(); });
 
   console.log(`PASS testinput (${n} groups)`); process.exit(0);
 })().catch(e => { console.error(e); process.exit(1); });

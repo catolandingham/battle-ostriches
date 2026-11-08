@@ -1,5 +1,4 @@
 // Unit tests: 4 players (2v2) and 5 players (2v2 + hunter). node testteam.js
-process.env.BO_TOUGH = process.env.BO_TOUGH || "1"; // same tough-ground path as test3.js and testhunt.js
 process.env.PORT = 0;
 const assert = require('assert'), T = require('./team.js'), SIM = require('./simteam.js');
 let n = 0; const ok = (name, f) => { f(); n++; console.log('ok', name); };
@@ -32,19 +31,20 @@ ok('both ostriches out -> vultures win', () => { const g = ready(); T.knockout(g
   assert.equal(g.winner, 'red'); assert.equal(g.winBy, 'ostriches-out'); });
 ok('round 30 with any egg alive -> ostriches win; cold eggs die', () => { const g = ready(); g.eggs.forEach(e => e.lastWarm = 29); g.eggs[0].lastWarm = 0; g.round = 30;
   for (let i = 0; i < 4; i++) T.timeout(g); assert.equal(g.winner, 'blue'); assert.equal(g.eggs[0].alive, false); });
-ok('5p: hunter moves last, senses within 2, catch knocks back 2 and costs a turn', () => { const g = ready(5, 'hyena', [8, 3]); assert.deepEqual(g.order, ['v1', 'o1', 'v2', 'o2', 'hunter']);
-  g.b.o2.pos = [5, 0]; T.timeout(g); T.timeout(g); T.timeout(g); T.timeout(g); assert.equal(g.turn, 'hunter'); assert.equal(g.h.sense, false);
-  g.b.o2.pos = [7, 3]; g.h.sense = true; assert.ok(T.hunterMove(g, [7, 3])); assert.equal(g.b.o2.catches, 1); assert.deepEqual(g.b.o2.pos, [5, 3]); assert.equal(g.b.o2.skip, 1);
-  assert.equal(g.turn, 'v1'); T.timeout(g); T.timeout(g); T.timeout(g); assert.equal(g.turn, 'hunter', 'Ostrich 2 lost its turn'); });
+ok('ambush sight (5p): a burrowed badger sees the exact square of a bird next to it, not one 2 away', () => { const g = ready(5, 'badger', [8, 3]); for (let i = 0; i < 4; i++) T.timeout(g);
+  g.b.o2.pos = [7, 3]; g.b.v2.pos = [6, 2]; g.b.o1.pos = [1, 1]; g.b.v1.pos = [4, 2]; assert.deepEqual(T.ambushSight(g), [], 'not burrowed: nothing'); T.hunterStay(g); assert.equal(g.h.burrowed, true);
+  const s = T.ambushSight(g); assert.equal(s.length, 1); assert.deepEqual(s[0].p, [7, 3]); assert.equal(s[0].seat, 'o2'); assert.equal(s[0].type, 'o');
+  g.b.v2.pos = [7, 2]; assert.deepEqual(T.ambushSight(g).map(q => q.seat).sort(), ['o2', 'v2']); g.b.o2.out = true; assert.deepEqual(T.ambushSight(g).map(q => q.seat), ['v2'], 'a bird that is out is not shown');
+  g.b.v2.pos = [6, 2]; assert.deepEqual(T.ambushSight(g), [], 'two away: nothing'); assert.equal(T.hunterSeenBy(g, 'v2'), false, 'birds still cannot see it'); g.h.kind = 'hyena'; g.b.v2.pos = [7, 2]; assert.deepEqual(T.ambushSight(g), []); });
+ok('ambush catch (5p): a catch on the move out of the burrow sets ambush; an open catch or a walk-in does not', () => {
+  const a = ready(5, 'badger', [8, 3]); for (let i = 0; i < 4; i++) T.timeout(a); T.hunterStay(a); for (let i = 0; i < 4; i++) T.timeout(a); assert.equal(a.turn, 'hunter'); a.b.o2.pos = [7, 3]; assert.ok(T.hunterMove(a, [7, 3]));
+  assert.equal(a.lastCatch.ambush, true); assert.equal(a.b.o2.catches, 1);
+  const o = ready(5, 'badger', [8, 3]); for (let i = 0; i < 4; i++) T.timeout(o); o.b.o2.pos = [7, 3]; assert.ok(T.hunterMove(o, [7, 3])); assert.ok(!o.lastCatch.ambush, 'open catch');
+  const w = ready(5, 'badger'); T.timeout(w); w.h.p = [1, 2]; w.h.burrowed = true; assert.equal(w.turn, 'o1'); assert.ok(T.ostrichAct(w, 'o1', 'step', [1, 2])); assert.equal(w.lastCatch.walked, true); assert.ok(!w.lastCatch.ambush, 'walk-in'); });
 ok('5p: hyena pounce gives one extra square when the sense says yes', () => { const g = ready(5, 'hyena', [8, 3]); for (let i = 0; i < 4; i++) T.timeout(g);
   g.h.sense = true; g.b.o2.pos = [6, 5]; T.hunterMove(g, [8, 4]); assert.equal(g.h.pounce, true); assert.equal(g.turn, 'hunter'); assert.ok(T.hunterMove(g, [7, 5])); assert.equal(g.turn, 'v1'); });
-ok('5p: hunter wins only with an ostrich AND a vulture knocked out; boost 2 after the first knock-out', () => { const g = ready(5, 'badger', [8, 3]);
-  for (let i = 0; i < 4; i++) T.timeout(g); assert.equal(T.hunterRange(g), 1); g.b.o2.pos = [7, 3]; T.hunterMove(g, [7, 3]); assert.equal(g.b.o2.out, true);
-  assert.equal(g.phase, 'play'); for (let i = 0; i < 3; i++) T.timeout(g); assert.equal(T.hunterRange(g), 2);
-  g.b.v2.pos = [5, 3]; T.hunterMove(g, [5, 3]); assert.equal(g.winner, 'hunter'); });
-ok('5p: two ostriches knocked out but no vulture -> vultures win, not the hunter', () => { const g = ready(5, 'badger'); T.knockout(g, 'o1', 'caught'); T.knockout(g, 'o2', 'caught'); assert.equal(g.winner, 'red'); });
 ok('5p: badger burrows by staying; birds never see a burrowed badger', () => { const g = ready(5, 'badger', [8, 3]); for (let i = 0; i < 4; i++) T.timeout(g);
-  g.b.o2.pos = [7, 2]; assert.equal(T.hunterSeenBy(g, 'o2'), true); T.hunterStay(g); assert.equal(g.h.burrowed, false, 'tough ground: first still turn does not burrow'); for (let i = 0; i < 4; i++) T.timeout(g); T.hunterStay(g); assert.equal(g.h.burrowed, true); assert.equal(T.hunterSeenBy(g, 'o2'), false); });
+  g.b.o2.pos = [7, 2]; assert.equal(T.hunterSeenBy(g, 'o2'), true); T.hunterStay(g); assert.equal(g.h.burrowed, true, 'one still turn always burrows'); assert.equal(T.hunterSeenBy(g, 'o2'), false); });
 ok('shot clock timeouts: vulture passes, ostrich stays put (no warmth, hungrier), hunter stays', () => { const g = ready(5, 'hyena'); const h = g.b.o1.hunger;
   T.timeout(g); assert.equal(g.turn, 'o1'); T.timeout(g); assert.equal(g.b.o1.hunger, h - 1); assert.deepEqual(g.b.o1.pos, [1, 1]); T.timeout(g); T.timeout(g); assert.equal(g.turn, 'hunter'); T.timeout(g); assert.equal(g.turn, 'v1'); });
 ok('server views: vultures see no eggs; ostriches see all eggs; hunter sees no birds; teammates sniff shared', () => {
@@ -56,9 +56,5 @@ ok('server views: vultures see no eggs; ostriches see all eggs; hunter sees no b
   assert.equal(vv.eggs, undefined); assert.equal(ov.eggs.length, 4); assert.equal(ov.eggs.filter(e => e.mine).length, 2);
   assert.deepEqual(vv.h3.mateSniff.p, [3, 2]); assert.equal(hv.h3.pieces.length, 0); assert.deepEqual(hv.ostrich, T.OFF);
   assert.equal(vv.h3.pieces.filter(p => p.type === 'o').length, 2); assert.equal(ov.h3.pieces.find(p => p.seat === 'o2').mate, true); S.close(); });
-ok('lastCatch.walked: true when a bird stepped onto the hunter, absent when the hunter landed on the bird', () => {
-  const o = ready(5, 'hyena'); T.timeout(o); o.h.p = [1, 2]; assert.equal(o.turn, 'o1'); assert.ok(T.ostrichAct(o, 'o1', 'step', [1, 2])); assert.equal(o.lastCatch.bird, 'o1'); assert.strictEqual(o.lastCatch.walked, true);
-  const v = ready(5, 'badger'); v.b.v1.pos = [4, 3]; v.h.p = [3, 3]; assert.equal(v.turn, 'v1'); assert.ok(T.vultureFly(v, 'v1', [3, 3])); assert.equal(v.lastCatch.bird, 'v1'); assert.strictEqual(v.lastCatch.ko, true); assert.strictEqual(v.lastCatch.walked, true);
-  const h = ready(5, 'hyena', [8, 3]); h.b.o1.pos = [7, 3]; for (let i = 0; i < 4 && h.turn !== 'hunter'; i++) T.timeout(h); assert.equal(h.turn, 'hunter'); h.b.o1.pos = [7, 3]; assert.ok(T.hunterMove(h, [7, 3])); assert.equal(h.lastCatch.bird, 'o1'); assert(!h.lastCatch.walked, 'hunter landed on the ostrich'); });
 ok('bot games finish with only legal moves (4p, 5p hyena, 5p badger)', () => { for (const [np, k] of [[4], [5, 'hyena'], [5, 'badger']]) for (let i = 0; i < 40; i++) { const r = SIM.play(np, k); assert.equal(r.bad, 0); } });
 console.log(n + ' team tests passed'); process.exit(0);

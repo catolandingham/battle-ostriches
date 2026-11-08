@@ -8,14 +8,14 @@ const LVL = { easy: { noise: 1.2, throwBar: 3.5, stay: 1, ret: 0, smellW: .25, r
 const near = (p, arr) => arr.slice().sort((a, b) => D(a, p) - D(b, p))[0];
 const sortBy = (arr, f) => arr.map(x => [x, f(x)]).sort((a, b) => a[1] - b[1]).map(x => x[0]);
 // --- ostrich: its own eggs, the food, and the (public) vulture position ---
-function ostrich(g, lvl = 'normal') {
+function ostrichPlan(g, lvl = 'normal') {
   const L = LVL[lvl] || LVL.normal, C = g.cfg;
   if (g.phase === 'setupEggs') { for (let i = 0; i < 400; i++) { const p = [Math.random() * C.cols | 0, Math.random() * C.rows | 0];
       if (D(p, C.vultureStart) < 2 || !B.canPlaceEgg(g, p) || g.eggs.some(e => D(e.pos, p) < 2 || D(e.pos, p) > 3)) continue; return { a: 'place', p }; }
     for (;;) { const p = [Math.random() * C.cols | 0, Math.random() * C.rows | 0]; if (B.canPlaceEgg(g, p)) return { a: 'place', p }; } }
   if (g.phase === 'setupOstrich') return { a: 'place', p: g.eggs[0].pos.slice() };
   const o = g.ostrich, v = g.vulture, vd = D(v, o), alive = B.aliveEggs(g);
-  const fd = near(o, C.foods), slack = g.hungerLeft - D(fd, o);
+  const fd = near(o, C.foods), W = C.ostrichWalk || 1, tt = d => Math.ceil(d / W), slack = g.hungerLeft - tt(D(fd, o)); // turns, not squares: the ostrich walks up to W squares a turn
   const toward = (t, carry) => { const mv = B.ostrichMoves(g, carry); if (!mv.length) return null;
     return { a: carry ? 'carry' : 'step', p: sortBy(mv, q => D(q, t) + (Math.random() - .5) * .4 - D(q, v) * .05)[0] }; };
   // Plan: food and each egg are deadlines (food: hungerLeft moves; egg: coldIn rounds). Try every visiting order and
@@ -23,7 +23,7 @@ function ostrich(g, lvl = 'normal') {
   const goals = [{ p: fd, d: g.hungerLeft, food: 1 }].concat(alive.filter(e => e.pos && K(e.pos) !== K(o)).map(e => ({ p: e.pos, d: B.coldIn(g, e) })));
   let plan = null;
   const perm = (left, at, t, minS, first) => { if (!left.length || t > 14) { if (!plan || minS > plan.s) plan = { s: minS, first }; return; }
-    left.forEach((q, i) => { const tt = t + Math.max(1, D(at, q.p)); const extra = q.food ? 0 : 0; perm(left.filter((_, j) => j !== i), q.p, tt, Math.min(minS, q.d - tt + extra), first || q); }); };
+    left.forEach((q, i) => { const t2 = t + Math.max(1, tt(D(at, q.p))); perm(left.filter((_, j) => j !== i), q.p, t2, Math.min(minS, q.d - t2), first || q); }); };
   perm(goals, o, 0, 99, null);
   if (slack <= 1) return toward(fd) || { a: 'step', p: R(B.ostrichMoves(g)) };           // starving: eat now
   // relocate: on an egg the vulture found or is sniffing around -> carry it away from the vulture (or sit if it's right on top)
@@ -37,6 +37,13 @@ function ostrich(g, lvl = 'normal') {
   // decoy: wander away from the vulture, sometimes near (but not on) its eggs
   const mv = B.ostrichMoves(g); if (!mv.length) return B.canSit(g) ? { a: 'sit' } : { a: 'carry', p: B.ostrichMoves(g, true)[0] };
   return { a: 'step', p: sortBy(mv, q => -(D(q, v) * .6 + Math.random() * L.wander - (alive.some(e => e.pos && D(e.pos, q) <= 1) ? .6 : 0)))[0] };
+}
+// A sitting ostrich with the vulture right next to it kicks it away instead when the vulture already knows the egg (it was found): same turn, same warmth,
+// and the vulture lands 2 squares off. Otherwise it sits as before, because staying put turn after turn shows the vulture where the egg is.
+function ostrich(g, lvl = 'normal') {
+  const m = ostrichPlan(g, lvl);
+  if (m && m.a === 'sit' && g.phase === 'play' && g.marks[K(g.ostrich)] === 'spotted') { const k = B.kickTargets(g); if (k.length) return { a: 'kick', p: k[0] }; }
+  return m;
 }
 // --- vulture: takes the red client view (ostrich, vulture, marks, last sniff, stones, rocks, fly, throw) - no egg data ---
 function observe(v, mem) {
@@ -104,9 +111,10 @@ function hunter(v, mem = {}) {
     sq.forEach(p => { const inR = D(p, h) <= v.senseRange; mem.bel[K(p)] *= v.sense ? (inR ? 4 : .3) : (inR ? 0 : 1); });
     mem.bel[K(h)] = v.sense ? mem.bel[K(h)] : 0; }
   if (v.kind === 'badger' && !v.pounce) { // burrow when something is near and we're not already hidden; ambush, then pop up
-    if (v.dig === 1 && Math.random() < .75) return { a: 'hstay' }; // finish digging in (2 still turns)
+    // burrowed with a bird next to us (ambush sight shows its exact square): jump out onto it
+    if (v.burrowed && v.seenBirds && v.seenBirds.length) { const t = v.seenBirds[0].p, m = v.hmoves.find(q => K(q) === K(t)); if (m) return { a: 'hmove', p: m }; }
     if (v.sense && !v.burrowed && Math.random() < .6) return { a: 'hstay' };
-    if (v.burrowed && v.sense && Math.random() < .35) return { a: 'hstay' }; }
+    if (v.burrowed && v.sense && Math.random() < .75) return { a: 'hstay' }; } // a bird may be near: stay hidden and wait for it to step next to us
   if (!v.hmoves.length) return { a: 'hstay' };
   const val = p => { let s = 0; sq.forEach(q => { if (D(p, q) <= 1) s += mem.bel[K(q)] * (K(p) === K(q) ? 3 : 1); }); return s + Math.random() * .3; };
   const p = sortBy(v.hmoves, q => -val(q))[0]; mem.bel[K(p)] = 0;
@@ -120,4 +128,15 @@ function dodge(m, at, moves, hv, reach, notice = .85) {
   if (!bad(tgt)) return m;
   const alt = moves.filter(x => !bad(x.p)); return alt.length ? R(alt) : m;
 }
-module.exports = { ostrich, vulture, redView, hunter, dodge };
+// Turns the ostrich needs to walk d squares (it walks up to cfg.ostrichWalk a turn).
+const foodTurns = (cfg, at) => Math.ceil(Math.min(...cfg.foods.map(f => D(f, at))) / (cfg.ostrichWalk || 1));
+// Bird bot with a hunter in sight. Kick it when it is next to the bird and that beats running: the bird guards an egg, has nowhere safe to go, or just feels like it.
+// o: at, hunger (turns left), cfg, legal (alternative moves {a,p}), hv (hunter square or null), reach, kicks (squares the rules let it kick now), guard (standing on an egg)
+function ostrichReact(m, o) {
+  if (!o.hv || Math.random() > .85) return m;
+  if (o.hunger - foodTurns(o.cfg, o.at) <= 1) return m; // starving: eat first
+  const k = (o.kicks || []).find(q => K(q) === K(o.hv));
+  if (k && (o.guard || !o.legal.some(x => D(x.p, o.hv) > o.reach) || Math.random() < .5)) return { a: 'kick', p: k.slice() };
+  return dodge(m, o.at, o.legal, o.hv, o.reach, 1);
+}
+module.exports = { ostrichReact, foodTurns, ostrich, vulture, redView, hunter, dodge };

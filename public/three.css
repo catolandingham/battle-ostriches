@@ -43,7 +43,10 @@
 .h3wave.no{border-color:#c9ced6}@keyframes h3wave{from{opacity:1}to{opacity:0}}
 .h3pop{position:absolute;left:50%;top:42%;transform:translate(-50%,-50%);z-index:20;font-weight:900;font-size:24px;padding:10px 16px;border:4px solid #111;border-radius:16px;white-space:nowrap;pointer-events:none;animation:h3pop 1.8s ease-out forwards}
 .h3pop.yes{background:#ffb000;color:#111}.h3pop.no{background:#e6e9ee;color:#111}.h3pop.catch{background:#ff2a6d;color:#fff;font-size:20px;line-height:1.25;white-space:normal;text-align:center;width:max-content;max-width:88%;animation-name:h3popLong;animation-duration:3.4s} /* a whole sentence now: wrap it and keep it up long enough to read */
+.h3pop.event{background:#25324d;color:#fff;font-size:18px;line-height:1.25;white-space:normal;text-align:center;width:max-content;max-width:88%;animation-name:h3popLong;animation-duration:3.4s} /* a big event, said to everyone in one line */
 .h3pop.near{background:#ff2a6d;color:#fff;font-size:22px}
+#badgerline.h3pop.badger{position:fixed;background:#2a1606;color:#ffd21f;font-size:18px;line-height:1.25;white-space:normal;text-align:center;width:max-content;max-width:86vw;z-index:60;animation:h3popLong 3s ease-out forwards}
+.badgerwin{font-weight:900;color:#ffd21f;background:#2a1606;border-radius:12px;padding:8px 12px;display:inline-block}
 /* the one-line announcement for a big event: outside #board so a redraw never erases it; the script keeps each line up about 3 seconds */
 #announce{display:none;position:fixed;left:50%;top:42%;transform:translateX(-50%);z-index:9200;width:max-content;max-width:88vw;box-sizing:border-box;text-align:center;font-weight:900;font-size:20px;line-height:1.25;padding:10px 16px;border:4px solid #111;border-radius:16px;background:#ff2a6d;color:#fff;pointer-events:none}
 #announce.show{display:block;animation:annIn .2s ease-out}
@@ -52,6 +55,7 @@
 @keyframes h3pop{0%{transform:translate(-50%,-50%) scale(.4)}15%{transform:translate(-50%,-50%) scale(1.1)}25%{transform:translate(-50%,-50%) scale(1)}80%{opacity:1}100%{opacity:0}}
 .h3claw{position:absolute;inset:0;z-index:7;pointer-events:none;animation:h3claw 1.6s ease-out forwards}.h3claw svg{width:100%;height:100%}
 .pc.foundnow{z-index:5;animation:moundin .4s ease}
+.pc.ambushsee{z-index:5;animation:moundin .4s ease}
 @keyframes h3claw{0%{transform:scale(1.6);opacity:0}20%{transform:scale(1);opacity:1}85%{opacity:1}100%{opacity:0}}
 .cell.h3kb{animation:h3kb .7s ease-out 2}@keyframes h3kb{30%{box-shadow:inset 0 0 0 6px #ff2a6d;transform:scale(1.08)}}
 body.hunter #turnTag{background:#c46a12}body.hunter .cell{background:#6b4a1f}body.hunter .cell.legal{outline-color:#ffd21f}
@@ -83,4 +87,7 @@ b.snum.o{background:#38d6f0}b.snum.v{background:#ffb000}b.snum.me{background:#ff
 .pcount{flex-wrap:wrap;gap:5px;margin:2px 0 8px}
 .pcount button{width:auto;min-width:56px;height:auto;padding:4px 6px;display:flex;flex-direction:column;align-items:center;line-height:1.1;font-size:16px;border-width:3px}
 .pcount button small{font-size:10px;font-weight:800;opacity:.8}
-.burtag.dig{background:#ffd21f;color:#111}
+/* the second Pounce reading: dots inside both readings are the brightest */
+#board .cell.maybird.bright::after{width:14px;height:14px;margin:-7px 0 0 -7px;background:#ffd21f;box-shadow:0 0 0 3px #5a1033,0 0 12px 4px #ffd21f}
+/* a sitting ostrich is shown to anyone who can see it */
+.sittag{position:absolute;left:50%;bottom:1px;transform:translateX(-50%);font-size:9px;font-weight:900;letter-spacing:.03em;background:#fff8c9;color:#5a4300;border:1px solid #5a4300;border-radius:6px;padding:0 3px;z-index:6;pointer-events:none}

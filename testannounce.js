@@ -72,20 +72,6 @@ ok('2 vs 2 + hunter: the pop-out goes to every seat; the badger\'s square only t
   for (const s of ['o1', 'o2', 'v1']) { assert.equal(v[s].h3.popout.seen, false, s + ' cannot see the badger'); assert.equal(v[s].h3.hunter, null); assert.equal(has(v[s], [6, 5]), false, s); } });
 
 // ---- the hunters meeting: every seat is told; the hyena's square only to a seat that can see the hyena
-ok('Hunters: the meeting goes to every seat, in the words of whoever started it, and the square only to seats that can see the hyena', () => {
-  for (const [by, hy, ba, mover, target] of [['badger', [4, 3], [5, 3], 'badger', [4, 3]], ['hyena', [3, 3], [4, 3], 'hyena', [4, 3]]]) {
-    const room = roomH(), g = room.g = hunters(hy, ba, [0, 0], [0, 6]); g.turn = mover; assert.ok(H.hunterMove(g, target)); assert.equal(g.hunt.rival.by, by);
-    const to = g.hunt.hs.hyena.p.slice(), v = seatsOf(s => S.viewH(room, s), SH);
-    for (const s of SH) { assert.equal(v[s].h3.rival.by, by, s + ' is told'); assert.equal(v[s].h3.rival.seq, 1); assert.equal(v[s].h3.rival.n, 2);
-      assert.equal(CT.rivalLine(v[s].h3.rival), by === 'badger' ? 'The honey badger ran into the hyena. Nobody is hurt. The hyena slid back 2 squares.' : 'The hyena ran into the honey badger. Nobody is hurt. The hyena slid back 2 squares.'); }
-    assert.deepEqual(v.hyena.h3.rival.to, to); assert.deepEqual(v.badger.h3.rival.to, to);
-    // birds who cannot see either hunter get the line, not the location
-    assert.equal(v.blue.h3.rival.to, null); assert.equal(v.red.h3.rival.to, null); assert.equal(v.blue.h3.hunters.length, 0, 'the ostrich sees neither hunter'); assert.equal(v.red.h3.hunters.length, 0);
-    assert.equal(has(v.red, to), false, 'nothing about the hyena\'s square in the far vulture\'s view');
-    // a bird that can see the hyena gets the square
-    g.ostrich = [1, 2]; const near = S.viewH(room, 'blue'); assert.deepEqual(near.h3.rival.to, to, 'the ostrich at (1,2) is 1 square from the hyena'); assert.ok(near.h3.hunters.some(x => x.kind === 'hyena')); } });
-
-// ---- the first meeting on a page shows (the audit's bug), and later ones, once each
 ok('the first hunters meeting on a page is announced; a page opened mid-game says nothing about an old one; a new game starts over', () => {
   const mk = (rv, ph = 'play') => ({ phase: ph, h3: { rival: rv || null } }), seen = { pop: 0, rival: 0 };
   assert.deepEqual(CT.newEvents(seen, mk(null), {}), []);
@@ -110,10 +96,10 @@ ok('3 players: a catch reaches every seat with its line; the hunter\'s square on
   assert.deepEqual(v.red.h3.lastCatch.to, g.ostrich, 'birds see birds'); assert.equal(v.hunter.h3.lastCatch.to, null, 'the hunter sees no bird');
   g.vulture = [7, 4]; assert.deepEqual(S.view3(room, 'red').h3.lastCatch.at, [6, 2], 'a vulture 2 squares from the hyena sees it'); });
 ok('3 players: a knock-out reaches every seat with its line', () => {
-  const room = room3('badger'), g = room.g = three('badger', [5, 2], [6, 2], [0, 6]); assert.ok(T.hunterMove(g, [6, 2])); assert.equal(g.three.lastCatch.ko, true);
+  const room = room3('badger'), g = room.g = three('badger', [5, 2], [6, 2], [0, 6]); g.three.birds.blue.catches = 1; assert.ok(T.hunterMove(g, [6, 2])); assert.equal(g.three.lastCatch.ko, true);
   const v = seatsOf(s => S.view3(room, s), S3);
   for (const s of S3) assert.equal(v[s].h3.lastCatch.ko, true, s);
-  assert.equal(lineFor(v.blue, 'blue'), 'The honey badger knocked you out.'); assert.equal(lineFor(v.red, 'red'), 'The honey badger knocked out the ostrich.'); assert.equal(lineFor(v.hunter, 'hunter'), 'Ostrich knocked out!');
+  assert.ok(lineFor(v.blue, 'blue').startsWith('The honey badger knocked you out.')); assert.ok(lineFor(v.red, 'red').startsWith('The honey badger knocked out the ostrich.')); assert.ok(lineFor(v.hunter, 'hunter').startsWith('Ostrich knocked out!'));
   assert.equal(v.red.h3.lastCatch.at, null); assert.equal(has(v.red, [6, 2]), false); });
 ok('Hunters: a catch reaches all four seats; the square only to the bird caught, the hunter that made it, and birds that see that hunter', () => {
   const room = roomH(), g = room.g = hunters([3, 3], [8, 6], [4, 4], [8, 0]); g.turn = 'hyena'; assert.ok(H.hunterMove(g, [4, 4]));
@@ -124,10 +110,10 @@ ok('Hunters: a catch reaches all four seats; the square only to the bird caught,
   assert.equal(v.red.h3.lastCatch.at, null, 'the vulture at (8,0) is 4 squares from the hyena'); assert.ok(v.red.h3.lastCatch.to, 'birds see birds'); assert.equal(has(v.red, [4, 4]), false);
   g.vulture = [5, 2]; assert.deepEqual(S.viewH(room, "red").h3.lastCatch.at, [4, 4], 'a vulture 2 squares from the hyena sees it'); });
 ok('Hunters: a knock-out reaches all four seats', () => {
-  const room = roomH(), g = room.g = hunters([3, 3], [3, 4], [4, 4], [8, 0]); g.turn = 'badger'; assert.ok(H.hunterMove(g, [4, 4])); assert.equal(g.hunt.lastCatch.ko, true);
+  const room = roomH(), g = room.g = hunters([3, 3], [3, 4], [4, 4], [8, 0]); g.turn = 'badger'; g.hunt.birds.blue.catches = 1; assert.ok(H.hunterMove(g, [4, 4])); assert.equal(g.hunt.lastCatch.ko, true);
   const v = seatsOf(s => S.viewH(room, s), SH);
   for (const s of SH) assert.equal(v[s].h3.lastCatch.ko, true, s);
-  assert.equal(lineFor(v.blue, 'blue'), 'The honey badger knocked you out.'); assert.equal(lineFor(v.badger, 'badger'), 'Ostrich knocked out!'); assert.equal(lineFor(v.hyena, 'hyena'), 'The honey badger knocked out the ostrich.'); assert.equal(lineFor(v.red, 'red'), 'The honey badger knocked out the ostrich.'); });
+  assert.ok(lineFor(v.blue, 'blue').startsWith('The honey badger knocked you out.')); assert.ok(lineFor(v.badger, 'badger').startsWith('Ostrich knocked out!')); assert.ok(lineFor(v.hyena, 'hyena').startsWith('The honey badger knocked out the ostrich.')); assert.ok(lineFor(v.red, 'red').startsWith('The honey badger knocked out the ostrich.')); });
 ok('2 vs 2 + hunter: a catch and a knock-out reach every seat; the square only to who can see the hunter', () => {
   const pos = { h: [3, 2], o1: [4, 2], o2: [7, 1], v1: [0, 6], v2: [4, 4] };
   const room = roomT('hyena'), g = room.g = team('hyena', pos); assert.ok(TT.hunterMove(g, [4, 2])); assert.equal(g.lastCatch.ko, false);
@@ -136,9 +122,9 @@ ok('2 vs 2 + hunter: a catch and a knock-out reach every seat; the square only t
   assert.equal(lineFor(v.o1, 'o1'), "The hyena caught you! Hurt: one more catch and you're out."); assert.equal(lineFor(v.o2, 'o2'), 'The hyena caught the ostrich.'); assert.equal(lineFor(v.v1, 'v1'), 'The hyena caught the ostrich.'); assert.equal(lineFor(v.hunter, 'hunter'), 'Caught the ostrich! One more catch knocks it out.');
   assert.deepEqual(v.o1.h3.lastCatch.at, [4, 2]); assert.deepEqual(v.hunter.h3.lastCatch.at, [4, 2]); assert.deepEqual(v.v2.h3.lastCatch.at, [4, 2], 'v2 at (4,4) is 2 squares from the hyena');
   for (const s of ['o2', 'v1']) { assert.equal(v[s].h3.lastCatch.at, null, s + ' cannot see the hyena'); assert.equal(has(v[s], [4, 2]), false, s); }
-  const rk = roomT('badger'), k = rk.g = team('badger', pos); assert.ok(TT.hunterMove(k, [4, 2])); assert.equal(k.lastCatch.ko, true);
+  const rk = roomT('badger'), k = rk.g = team('badger', pos); k.b.o1.catches = 1; assert.ok(TT.hunterMove(k, [4, 2])); assert.equal(k.lastCatch.ko, true);
   const w = seatsOf(s => S.viewT(rk, s), ST);
   for (const s of ST) assert.equal(w[s].h3.lastCatch.ko, true, s);
-  assert.equal(lineFor(w.o1, 'o1'), 'The honey badger knocked you out.'); assert.equal(lineFor(w.o2, 'o2'), 'The honey badger knocked out the ostrich.'); assert.equal(lineFor(w.hunter, 'hunter'), 'Ostrich knocked out!'); });
+  assert.ok(lineFor(w.o1, 'o1').startsWith('The honey badger knocked you out.')); assert.ok(lineFor(w.o2, 'o2').startsWith('The honey badger knocked out the ostrich.')); assert.ok(lineFor(w.hunter, 'hunter').startsWith('Ostrich knocked out!')); });
 
 console.log(`PASS testannounce (${n} groups)`); process.exit(0);

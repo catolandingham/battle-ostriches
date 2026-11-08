@@ -2,7 +2,7 @@
 // Usage: node sim3.js [games] [hyena|badger]
 const B = require('./game.js'), AI = require('./ai.js'), T = require('./three.js');
 function hview(g) { const t = g.three; return { cfg: g.cfg, round: g.round, marks: B.visible(g).marks, hunter: t.h, kind: t.kind, sense: t.sense, senseSeq: t.senseSeq,
-  senseRange: T.T3.sense, pounce: t.pounce, burrowed: t.burrowed, dig: t.dig || 0, hmoves: T.hunterMoves(g) }; }
+  senseRange: T.T3.sense, pounce: t.pounce, burrowed: t.burrowed, dig: t.dig || 0, hmoves: T.hunterMoves(g), seenBirds: T.ambushSight(g) }; }
 function play(kind, opt = {}) {
   const g = T.newGame3(kind), mem = { red: {}, hunter: {} }; let k = 0, seen = 0;
   while (g.phase !== 'play') { const m = AI.ostrich(g); g.phase === 'setupEggs' ? B.placeEgg(g, m.p) : (T.placeOstrich3(g, m.p) || T.placeOstrich3(g, g.eggs[1].pos)); }
@@ -14,8 +14,8 @@ function play(kind, opt = {}) {
       const m = AI.hunter(hview(g), mem.hunter); ok = m.a === 'hmove' ? T.hunterMove(g, m.p) : T.hunterStay(g); }
     else if (r === 'red') { const v = AI.redView(g), m = AI.dodge(AI.vulture(v, 'normal', mem.red), g.vulture, v.fly.map(p => ({ a: 'fly', p })), hv, reach);
       ok = m.a === 'fly' ? T.vultureFly3(g, m.p) : T.vultureThrow3(g, m.p); }
-    else { let m = AI.ostrich(g); const fd = Math.min(...g.cfg.foods.map(f => B.dist(f, g.ostrich)));
-      if (g.hungerLeft - fd > 1) m = AI.dodge(m, g.ostrich, (B.canCarry(g) ? B.ostrichMoves(g, true).map(p => ({ a: 'carry', p })) : []).concat(B.ostrichMoves(g).map(p => ({ a: 'step', p }))), hv, reach);
+    else { const m = AI.ostrichReact(AI.ostrich(g), { at: g.ostrich, hunger: g.hungerLeft, cfg: g.cfg, hv, reach, kicks: T.kickTargets3(g), guard: B.onEgg(g),
+        legal: (B.canCarry(g) ? B.ostrichMoves(g, true).map(p => ({ a: 'carry', p })) : []).concat(B.ostrichMoves(g).map(p => ({ a: 'step', p }))) });
       ok = T.ostrichAct3(g, m.a, m.p); }
     if (!ok) throw new Error('illegal ' + r);
   }
