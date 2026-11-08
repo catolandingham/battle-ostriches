@@ -201,8 +201,10 @@ function mark(cell,kind,cls){if(!cell||!CM[kind])return null;
  const ex=cell.querySelector('.cmark');if(ex){if(/(^| )is( |$)/.test(cls||'')&&!ex.classList.contains('is'))ex.remove();else return null;}
  const i=document.createElement('i');i.className='cmark cm-'+kind+(cls?' '+cls:'');i.setAttribute('aria-hidden','true');i.innerHTML=CM[kind];cell.appendChild(i);return i;}
 // the same mark in every square of the box around (cx,cy), clipped to the board; the centre square is left out
+// An egg can never be on a rock pile, on or next to a leaf, or on a wrecked square, so those squares never get an egg mark.
+const noEgg=(S,x,y)=>{const C=S.cfg,m=(S.marks||{})[x+','+y];return (C.rocks||[]).some(q=>q[0]===x&&q[1]===y)||(C.foods||[]).some(f=>Math.max(Math.abs(f[0]-x),Math.abs(f[1]-y))<=1)||m==='hit'||m==='stone';};
 function marksAround(board,S,cx,cy,range,kind,cls){const C=S.cfg;let n=0;
- for(let y=Math.max(0,cy-range);y<=Math.min(C.rows-1,cy+range);y++)for(let x=Math.max(0,cx-range);x<=Math.min(C.cols-1,cx+range);x++){if(x===cx&&y===cy)continue;const c=board.children[y*C.cols+x];if(c&&c.classList&&c.classList.contains('cell')&&mark(c,kind,cls))n++;}
+ for(let y=Math.max(0,cy-range);y<=Math.min(C.rows-1,cy+range);y++)for(let x=Math.max(0,cx-range);x<=Math.min(C.cols-1,cx+range);x++){if(x===cx&&y===cy)continue;if(kind==='egg'&&S.cfg&&noEgg(S,x,y))continue;const c=board.children[y*C.cols+x];if(c&&c.classList&&c.classList.contains('cell')&&mark(c,kind,cls))n++;}
  return n;}
 function pop(board,txt,cls){const o=document.createElement('div');o.className='h3pop '+cls;o.textContent=txt;const slot=document.getElementById('msgslot');slot.querySelectorAll('.h3pop:not(#badgerline)').forEach(x=>x.remove());slot.appendChild(o);setTimeout(()=>o.remove(),cls==='catch'?3400:1800);} // in the message slot above the board, never over it
 // --- Announcements: one plain line for a big event (catch, knock-out, the hunters meeting, the badger coming out, the start-of-game line) on every phone.
