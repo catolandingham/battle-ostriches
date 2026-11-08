@@ -75,7 +75,7 @@ html #board .cell.sat>.wnum,html[data-theme] #board .cell.sat>.wnum{font:900 10p
 
 /* ===== 6. Confirm before the only stone is spent: the aimed square shows a solid mark with a tick ===== */
 #board .cell>.aim.ask{background:#ff7a1a;color:#fff;display:flex;align-items:center;justify-content:center;animation:aimpulse .8s ease-in-out infinite}
-#board .cell>.aim.ask b{font:900 15px/1 system-ui,-apple-system,sans-serif;color:#fff;text-shadow:0 0 2px #111,0 0 2px #111;pointer-events:none}
+#board .cell>.aim.ask::after{content:'';position:absolute;left:30%;top:20%;width:26%;height:44%;border:solid #fff;border-width:0 4px 4px 0;transform:rotate(45deg);filter:drop-shadow(0 0 1px #111) drop-shadow(0 0 1px #111)}
 /* ===== 7. After a wrong tap or a miss the right option pulses ===== */
 @keyframes fixout{0%,100%{outline-color:rgba(255,255,255,0)}50%{outline-color:#fff}}
 html #board .cell.fix{outline:4px solid #fff;outline-offset:-4px;animation:fixout .55s ease-in-out 3!important;z-index:10}
@@ -107,3 +107,4 @@ html #board .cell.fix{outline:4px solid #fff;outline-offset:-4px;animation:fixou
 .lgs.dashed::before{border-radius:3px!important}
 .mini .pc,html[data-theme] .mini .pc{background:none!important;border:0!important;box-shadow:none!important;border-radius:0!important;filter:drop-shadow(0 0 2px #fff) drop-shadow(0 0 1px #fff)}
 .mini .ic-hit svg path:first-child{stroke:#111!important}.mini .ic-hit svg path:last-child{stroke:#d9dde4!important}
+html[data-theme] #board .cell.sat>.wring.sq,html #board .cell.sat>.wring.sq{left:0!important;top:0!important;width:100%!important;height:100%!important;inset:auto!important;z-index:41!important}
