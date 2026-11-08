@@ -16,7 +16,7 @@ try { fs.mkdirSync(OUT, { recursive: true }); } catch (e) {}
   await P.addInitScript(() => { localStorage.setItem('bo_card_off','1'); localStorage.setItem('bo_hs_off', '1'); localStorage.setItem('bo_tut_seen', '1'); localStorage.setItem('bo_walk_blue', '1'); localStorage.setItem('bo_walk_red', '1'); localStorage.setItem('bo_tips_off', '1'); ['blue', 'red'].forEach(r => localStorage.setItem('bo_cs_' + r, '9')); });
   P.on('pageerror', e => errs.push(e.message));
   const cell = async (x, y) => { await P.evaluate(([x, y]) => { const S = UI._S(), i = y * S.cfg.cols + x; document.querySelectorAll('#board .cell')[i].click(); }, [x, y]); };
-  const said = async () => ({ banner: (await P.textContent('#banner')) || '', pop: (await P.locator('#snpop').count()) ? await P.textContent('#snpop') : '', hint: (await P.textContent('#hint')) || '', maybe: await P.locator('.cell.maybe').count() });
+  const said = async () => ({ banner: (await P.textContent('#banner')) || '', pop: (await P.locator('#snpop').count()) ? await P.textContent('#snpop') : '', hint: (await P.textContent('#hint')) || '', maybe: await P.locator('#board>.senseArea.may').count() }); // the last clue is one dashed outline around the sniffed squares
   const go = async role => { await P.waitForSelector('#handoff.' + role); await P.click('#hGo'); await P.waitForSelector('#board .cell'); };
   await P.goto('http://localhost:' + process.env.PORT + '/');
   await P.click('#playPass'); await P.click('#passGo');
@@ -46,7 +46,7 @@ try { fs.mkdirSync(OUT, { recursive: true }); } catch (e) {}
   await P.waitForTimeout(300);
   m = await said();
   assert.ok(!/Egg nearby/.test(m.banner + m.pop + m.hint), 'stored yes is not spoken live: ' + JSON.stringify(m));
-  assert.ok(m.maybe > 0, 'last clue squares stay');
+  assert.ok(m.maybe > 0, 'the last clue outline stays');
   assert.equal(await P.evaluate(() => document.body.className), 'red');
   await P.screenshot({ path: OUT + '/stale-clue-later-arrival.png', type: 'png' });
   await cell(5, 4); // later arrival on an empty square

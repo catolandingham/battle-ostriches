@@ -33,7 +33,7 @@ const at = { state: 'attached' };
   await A.locator('#actions button').first().click({ force: true }); // stay: one still turn always burrows
   const room = [...server.rooms.values()].find(r => r.hunt); for (let i = 0; i < 50 && !room.g.hunt.hs.badger.burrowed; i++) await A.waitForTimeout(40); // the click reaches the server a moment later
   assert.equal(room.g.hunt.hs.badger.burrowed, true, 'burrowed after 1 still turn'); assert.equal(room.g.hunt.hs.badger.dig, 2);
-  await A.waitForFunction(() => /burrowed/i.test(document.body.innerText), null, { timeout: 4000 }); assert.equal(await A.locator('.burtag.dig').count(), 0, 'no tough-ground tag');
+  await A.waitForSelector('.pc.ph.bur', { timeout: 4000 }); assert.equal(await A.locator('.burtag').count(), 0, 'no word tag on the buried badger: the mound says it');
   await A.waitForTimeout(1000); await shot(A, '5-badger-burrowed');
   // ambush sight: a bird placed next to the burrowed badger shows at its exact square on the badger's board, and nowhere else
   { const bd0 = room.g.hunt.hs.badger.p, saved = room.g.ostrich.slice(); const nb = [[bd0[0] - 1, bd0[1]], [bd0[0], bd0[1] - 1], [bd0[0], bd0[1] + 1]].find(q => q[0] >= 0 && q[1] >= 0 && q[1] < 7 && !H.HUNTERS.some(h => room.g.hunt.hs[h].p + '' === q + '') && room.g.vulture + '' !== q + '');

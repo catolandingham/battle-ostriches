@@ -43,12 +43,12 @@ const OUT = 'shots/hardstop/'; fs.mkdirSync(OUT, { recursive: true });
   // 3) cold egg: NOT forced. First time <=8 rounds: loud pulse + warning, escalating; afterward subtle pulse only.
   const setCold = n => A.evaluate(n => { const S = UI._S(); S.eggs.find(e => e.pos[0] === 3).coldIn = n; UI._rr(); }, n);
   await setCold(8); assert.match(await A.textContent('#hint'), /Egg cooling\. Go back\./);
-  assert.ok(await A.locator('.cell.gloud .ic-myegg').count() === 1, 'cold egg pulses loudly');
+  assert.equal(await A.locator('.cell.cue').count(), 0, 'at 8 rounds left the hint speaks and nothing pulses yet (the cue starts at 5)');
   assert.ok((await legal()).length >= 3, 'cold egg does not restrict moves'); await shot('4-egg-cooling-early.jpg');
-  await setCold(3); assert.match(await A.textContent('#hint'), /Egg cooling\. Go back\./); assert.ok(await A.locator('.cell.gloud.urgent').count() === 1); await shot('5-egg-cooling-urgent.jpg');
+  await setCold(3); assert.match(await A.textContent('#hint'), /Egg cooling\. Go back\./); assert.equal(await A.locator('.cell.cue-egg .ic-myegg').count(), 1, 'at 3 rounds left the egg pulses'); await shot('5-egg-cooling-urgent.jpg');
   await A.evaluate(() => localStorage.setItem('bo_g_cold', '1')); await setCold(6);
   assert.ok(!(await A.locator('#hint.guide').count()), 'no banner after first time');
-  assert.ok(await A.locator('.cell.gcool').count() === 1 && !(await A.locator('.cell.gloud').count()), 'subtle pulse afterward'); await shot('6-egg-cooling-later-subtle.jpg');
+  assert.equal(await A.locator('.cell.cue').count(), 0, 'at 6 rounds left nothing pulses (the cue starts at 5)'); await shot('6-egg-cooling-later-subtle.jpg');
   // 4) Skip guide opt-out: button shows with the guide prompt; tapping it ends guides + warnings for good; ? menu turns them back on
   await A.evaluate(() => { localStorage.removeItem('bo_g_hungry'); UI._S().hungerLeft = 4; UI._rr(); });
   assert.ok(await A.locator('#hint #skipGuide').isVisible(), 'Skip guide button visible'); await shot('7-skip-guide-button.jpg');

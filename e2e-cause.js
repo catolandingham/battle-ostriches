@@ -132,7 +132,7 @@ const COLS = 9;
   await V.waitForFunction(() => UI._S().vulture[0] === 3 && UI._S().vulture[1] === 2);
   await V.evaluate(() => UI.setMode('throw'));
   await reset(A, V);
-  await cell(V, 2, 1).click();
+  await cell(V, 2, 1).click(); if (await V.evaluate(() => !!document.querySelector('#board .cell.confirm'))) await cell(V, 2, 1).click(); // the only stone at an unfound egg asks once more
   await A.waitForFunction(() => document.querySelectorAll('.cell.hit').length === 1, null, { timeout: 5000 });
   await A.waitForTimeout(1300);
   await none(A, 'A when V smashed an egg (a smash is not a cold egg)');

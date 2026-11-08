@@ -33,7 +33,7 @@ const OUT = 'shots/balanced/'; fs.mkdirSync(OUT + 'frames', { recursive: true })
   await V.waitForSelector('#actions.mine', { state: 'attached' }); await V.click('#actions button:has-text("Throw")', { force: true });
   assert.ok(await V.locator('.cell.target').count() >= 1, 'red targets');
   await V.screenshot({ path: OUT + '2-vulture-throw-mode.png' });
-  await cell(V, 3, 4).click();
+  await cell(V, 3, 4).click(); if (await V.evaluate(() => !!document.querySelector('#board .cell.confirm'))) await cell(V, 3, 4).click(); // the only stone at an unfound egg asks once more
   await A.waitForSelector('#actions.mine', { state: 'attached' }); await A.waitForTimeout(900);
   assert.ok(await A.locator('.cell.hit').count() === 1 && await V.locator('.cell.hit').count() === 1, 'hit mark on both');
   assert.equal(await A.textContent('#eggsLeft'), '2'); assert.equal(await V.textContent('#stonesLeft'), '0/1');

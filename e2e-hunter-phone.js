@@ -127,7 +127,7 @@ const phone = { viewport: { width: 390, height: 844 } };
   const badger = await B.evaluate(() => ({
     mine: !!document.querySelector('.pc.ph.hbadger.mine'),
     burrow: document.querySelectorAll('.pc.ph.bur').length,
-    mound: document.body.innerText.includes('BURROWED')
+    mound: document.querySelectorAll('.pc.ph.bur').length > 0
   }));
   assert.equal(badger.mine, true, 'own badger is drawn before burrow');
   assert.equal(badger.burrow, 0);
