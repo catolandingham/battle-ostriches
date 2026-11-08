@@ -135,7 +135,7 @@ function drawWalk(){const st=WALK[wr],cur=st[wi],W=$('walk');
 let cardOpen=null;
 const cardSeen=id=>{try{return localStorage.getItem('bo_card_'+id)||localStorage.getItem('bo_card_off')}catch(e){return 1}};
 // How to play: the first line of each mode's rules says who hunts what (roles.js huntLine), naming the hunter once the game knows it
-function fillHuntLines(){document.querySelectorAll('[data-ic]').forEach(e=>{e.innerHTML={ROCKS,LEAF,EGG}[e.dataset.ic]||'';});const R=S&&S.rules;if(R){document.querySelectorAll('[data-r]').forEach(e=>{const v=e.dataset.r.split('.').reduce((o,k)=>o&&o[k],R);if(v!=null&&typeof v!=='object')e.textContent=v;});
+function fillHuntLines(){document.querySelectorAll('[data-ic]').forEach(e=>{e.innerHTML={ROCKS,LEAF,EGG}[e.dataset.ic]||'';});document.querySelectorAll('[data-cm]').forEach(e=>{e.innerHTML='';if(window.T3UI)T3UI.mark(e,e.dataset.cm);});const R=S&&S.rules;if(R){document.querySelectorAll('[data-r]').forEach(e=>{const v=e.dataset.r.split('.').reduce((o,k)=>o&&o[k],R);if(v!=null&&typeof v!=='object')e.textContent=v;});
  const m=R.modes||{},goal=(g,mode,hy)=>{g=g||{kind:'all',n:0};if(mode==='5')return g.kind==='first'?'knock out an ostrich and a vulture.':'knock out every bird.';return g.kind==='catches'?'make '+g.n+' catches. A bird is out after 2 catches.':g.kind==='first'?'knock out one bird.':'knock out both birds.';};
  const a=document.querySelector('.hgoal3'),b=document.querySelector('.hgoal5');if(a&&m['3'])a.textContent=goal(m['3'].goal,'3');if(b&&m['5'])b.textContent=goal(m['5'].goal,'5');}const k=S&&(S.role==='hunter'?(S.kind||(S.h3&&S.h3.kind)):(S.h3&&S.h3.kind));document.querySelectorAll('.mrules').forEach(e=>{const l=e.querySelector('.huntline');if(l&&window.Roles)l.textContent=Roles.huntLine(e.dataset.m,k);});}
 function cardMode(s){return !s.three?'2':s.h3&&s.h3.team?String(s.h3.n):s.h3&&s.h3.hunt?'4h':'3';}
@@ -297,19 +297,16 @@ function howPics(){const box=$('howPics');if(!box)return;
  const mini=(cols,rows,cells,after)=>{const m=document.createElement('div');m.className='mini';m.style.gridTemplateColumns=`repeat(${cols},44px)`;m.style.gridTemplateRows=`repeat(${rows},44px)`;
   for(let y=0;y<rows;y++)for(let x=0;x<cols;x++){const d=document.createElement('div');d.className='cell'+((x+y)%2?' alt':'');d.innerHTML=(cells[x+','+y]||'');m.appendChild(d);}
   return {m,after:()=>after&&after(m,{cfg:{cols,rows}})};};
- const dot='<i class="mvdot"></i>',ring='<i class="mvring"></i>',myegg=`<span class="ic ic-myegg" data-t="myegg">${MYEGG}</span>`;
+ const lit=(m,...ix)=>ix.forEach(i=>m.children[i].classList.add('legal')),myegg=`<span class="ic ic-myegg" data-t="myegg">${MYEGG}</span>`;
  const flag=(m,x,y)=>{const c=m.children[y*(+m.style.gridTemplateColumns.match(/\d+(?=,)/)||4)+x]||m.children[0];const t=document.createElement('span');t.className='youtag youflag';t.textContent='YOU';t.style.left=(c.offsetLeft+c.offsetWidth/2)+'px';t.style.top=(c.offsetTop+1)+'px';m.appendChild(t);};
  const pics=[
-  mini(4,2,{'1,1':`${myegg}<div class="pc po">${OST}</div>${sqRing(11,C0.warmth,null)}`,'0,0':dot,'1,0':dot,'2,0':dot,'0,1':dot,'2,1':dot},m=>{m.children[5].classList.add('sat');flag(m,1,1);}),
-  mini(4,2,{'1,1':`<div class="pc pv">${VUL}</div>`},(m,s)=>{if(window.T3UI)T3UI.area(m,s,[1,1],1,'may');}),
+  mini(4,2,{'1,1':`${myegg}<div class="pc po">${OST}</div>${sqRing(11,C0.warmth,null)}`},m=>{m.children[5].classList.add('sat');lit(m,0,1,2,4,6);flag(m,1,1);}),
+  mini(4,2,{'1,1':`<div class="pc pv">${VUL}</div>`},(m,s)=>{if(window.T3UI)T3UI.marksAround(m,s,1,1,1,'egg');}),
   mini(4,2,{'1,1':`<div class="pc pv">${VUL}</div>`,'2,1':`<span class="ic ic-spot" data-t="spot">${EGG}</span><i class="aim"></i>`},m=>{flag(m,1,1);}),
   mini(4,2,{'1,1':`<span class="ic ic-hit" data-t="hit">${XMARK}</span>`,'2,1':`<div class="pc po">${OST}</div>`},m=>{m.children[5].classList.add('hit');})];
- const lines=['Tap a dot to move.','An egg may be in here.','Throw at a found egg.','Wrecked: no one can land.'];
+ const lines=['Tap a lit square to move.','Small eggs: one may be near.','Throw at a found egg.','Wrecked: no one can land.'];
  box.innerHTML='';pics.forEach((p,i)=>{const f=document.createElement('figure');f.className='pic';f.appendChild(p.m);const c=document.createElement('figcaption');c.textContent=lines[i];f.appendChild(c);box.appendChild(f);});
  pics.forEach(p=>p.after());}
-// a move dot sits only on an empty square; on a square that holds something (an egg, a bird, rocks, a leaf) the cue is a thin ring on the square's edge so the thing stays readable
-function fixMoveMarks(board){board.querySelectorAll('.cell.legal').forEach(c=>{const dot=c.querySelector(':scope>.mvdot');if(!dot)return;
- if(c.querySelector('.pc:not(.kghost),.ic:not(.ic-hit),.carry')){dot.className='mvring';c.classList.add('holds');}});}
 function render(prev){
  maybeCard();$('lobby').classList.add('hidden');const C=S.cfg,blue=S.role==='blue',body=document.body;body.className=(S.role==='hunter'?'hunter':blue?'blue':'red')+(S.three?' three':'')+(S.god?' godview':'');
  $('turnTag').innerHTML=S.role==='hunter'||(S.h3&&S.h3.team)?window.T3UI.tag(S):`<span style="display:inline-block;width:26px;height:26px;vertical-align:middle">${blue?OST:VUL}</span> ${blue?'OSTRICH':'VULTURE'}`;
@@ -360,8 +357,8 @@ function render(prev){
   if(fogOf&&Math.max(Math.abs(x-fogOf[0]),Math.abs(y-fogOf[1]))>2)d.classList.add('fog'); // fog of war: a bird sees hunters only within 2 (hunters get none)
   const legal=lk.has(k)||(setup&&legalNow().some(q=>key(q)===k));
   if(nsT.has(k)&&NS.kind!=='rocks')d.classList.add('cue','cue-'+NS.kind);
-  if(legal){d.classList.add('legal');if(throwing||kicking)d.classList.add('target');tags.push(throwing||kicking?'target':'legal');d.setAttribute('aria-label',throwing?'Throw here':kicking?'Kick here':'Legal step');if(nsW.has(k))d.classList.add('toward');}
-  if(!blue&&sn&&sn.yes&&!found&&inSn(k)&&!m&&k!==ok)tip.push('Egg may be here.'); // the area is drawn once, as one dashed outline (below)
+  if(legal){d.classList.add('legal');if(setup)d.classList.add('setupsq');if(throwing||kicking)d.classList.add('target');tags.push(throwing||kicking?'target':'legal');d.setAttribute('aria-label',throwing?'Throw here':kicking?'Kick here':'Legal step');if(nsW.has(k))d.classList.add('toward');}
+  if(!blue&&sn&&sn.yes&&!found&&inSn(k)&&!m&&k!==ok)tip.push('Egg may be here.'); // the 8 squares get a small egg outline in the corner (below)
   if(sn&&snNew&&inSn(k)&&!found){d.classList.add(sn.yes?'snyes':'snno');d.style.animationDelay=(Math.max(Math.abs(x-sn.p[0]),Math.abs(y-sn.p[1]))*.18)+'s';}
   // exactly one tile icon: smashed > found egg > own egg > food > rocks
   const e=eggAt[k];let h='';const under=!!(blue&&e&&k===ok&&S.phase==='play'); // the egg you stand on: ring around the whole square
@@ -384,12 +381,12 @@ function render(prev){
   const aimCue=NS.kind==='throw'&&nsT.has(k); // a found egg in throw range: the crosshair already sits on it
   if(aimCue&&!throwing)d.classList.add('aimcue');
   if(throwing&&k===throwPick)d.classList.add('confirm');
-  d.innerHTML=h+(aimCue&&!throwing?'<i class="aim cue"></i>':legal?(kicking?'<i class="kring"></i>':throwing?'<i class="aim'+(aimCue?' cue':'')+(k===throwPick?' ask':'')+'"></i>':'<i class="mvdot"></i>'):'');d.dataset.tip=[...new Set(tip)].join(' · ');
+  d.innerHTML=h+(aimCue&&!throwing?'<i class="aim cue"></i>':legal?(kicking?'<i class="kring"></i>':throwing?'<i class="aim'+(aimCue?' cue':'')+(k===throwPick?' ask':'')+'"></i>':''):'');d.dataset.tip=[...new Set(tip)].join(' · ');
   d.dataset.tags=tags.join(' ');if(tags.includes('me'))d.id='current';d.onclick=()=>{if(Date.now()<noClick)return;tap(x,y);};board.appendChild(d);}
  {const cs=getComputedStyle(board),gap=parseFloat(cs.columnGap)||0,pad=parseFloat(cs.paddingLeft)+parseFloat(cs.paddingRight),inner=board.clientWidth-pad,w=(inner-gap*(C.cols-1))/C.cols;if(w>1){board.style.gridAutoRows='0';board.style.gridTemplateRows=`repeat(${C.rows},${w}px)`;}}
  if(prev&&blue&&S.hungerLeft>prev.hungerLeft&&S.ostrich&&S.ostrich[0]>=0){const c=board.children[S.ostrich[1]*C.cols+S.ostrich[0]];if(c)c.classList.add('ate');}
- // "may be here" is always one dashed outline around an area: the vulture's sniff (its own phone, and the ostrich's when the sniff was near an egg)
- if(sn&&sn.yes&&!found&&S.phase==='play'&&window.T3UI)T3UI.area(board,S,sn.p,1,'may sniffarea');
+ // "may be here" is a small outline of the animal in the corner of each square it may be on: here, an egg in each of the 8 squares around where the vulture last landed (only the latest sniff; nothing is kept across landings)
+ if(sn&&sn.yes&&!found&&S.phase==='play'&&window.T3UI)T3UI.marksAround(board,S,sn.p[0],sn.p[1],1,'egg');
  if(snNew){const vc=board.children[sn.p[1]*C.cols+sn.p[0]];if(vc&&!found){const w=document.createElement('div');w.className='snwave '+(sn.yes?'yes':'no');vc.appendChild(w);}
   if(!window.BORing||BORing.showSniffPop(blue,!!sn.yes,found)){const o=document.createElement('div');o.id='snpop';o.className=(found?'yes found':sn.yes?'yes':'no')+(blue?' small':'');o.textContent=found?(blue?'Vulture found your egg!':'Found egg!'):sn.yes?(blue?'Vulture sniffed an egg.':'Egg nearby!'):'No egg nearby';$('msgslot').appendChild(o);setTimeout(()=>o.remove(),1400);}}
  // sniff banner: the vulture's yes/no for this sense only (a later round must not repeat it), plus hunger
@@ -460,7 +457,6 @@ function render(prev){
  if(S.three)window.T3UI.after(S,prev,board);
  drawKickPreview(board,S,C,blue&&M==='kick'); // after the hunters are drawn, so a kicked hunter can be copied as the faded landing piece
  window.T3UI.events(S,prev,board);window.T3UI.startLine(S,prev,cardMode(S));
- fixMoveMarks(board);
  if(/^(Missed\.|Miss\.)/.test(ev))setTimeout(()=>flashRight(),50); // a miss: the right option pulses
  youTag(board);
  if(window.BORing)BORing.sync(S);

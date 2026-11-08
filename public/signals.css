@@ -1,10 +1,13 @@
 /* Signals: one look per meaning, in every theme (loaded after every theme file; themes restyle floors and animals, never a signal).
    Every signal carries a thin dark edge and a thin light edge, so it reads on a pale tile and on a dark tile. */
-/* A square you can act on has no glow of its own: its signal is a mark in the middle (a dot to move, a crosshair to throw, a ring to kick). */
-html[data-theme] #board .cell.legal.legal.legal.legal.legal,#board .cell.legal.legal.legal.legal.legal{box-shadow:inset 0 0 0 1px rgba(255,255,255,.28),inset 0 0 0 2px rgba(0,0,0,.30)!important;outline:none!important;animation:none!important;filter:none!important;z-index:2}
-html[data-theme] #board .cell.legal.legal.legal.legal.legal.alt{background-image:linear-gradient(rgba(255,255,255,.13),rgba(255,255,255,.13))!important}
-html[data-theme] #board .cell.legal.legal.legal.legal.legal:not(.alt){background-image:linear-gradient(rgba(0,0,0,.13),rgba(0,0,0,.13))!important}
-#board .cell>.mvdot{position:absolute;left:50%;top:50%;width:26%;height:26%;transform:translate(-50%,-50%);border-radius:50%;background:#ffd21f;box-shadow:0 0 0 2px #111,0 0 0 4px #fff;z-index:5;pointer-events:none}
+/* A square you can move to is LIT: the whole square is filled bright yellow with a dark edge inside a pale one, so it reads on a pale tile and on a dark tile in every theme.
+   Throw and kick targets keep their own red-orange glow and crosshair or ring (vocab.css). Nothing is drawn in the middle of a lit square, so an egg, an animal or a leaf on it stays readable. */
+html[data-theme] #board .cell.legal.legal.legal.legal.legal:not(.target),#board .cell.legal.legal.legal.legal.legal:not(.target){background-image:linear-gradient(rgba(255,225,77,.84),rgba(255,225,77,.84))!important;box-shadow:inset 0 0 0 2px #111,inset 0 0 0 4px #fff7c2!important;outline:none!important;animation:none!important;filter:none!important;z-index:2}
+/* setting up (hiding eggs, picking a start): almost every square is allowed, so none of them is lit */
+html[data-theme] #board .cell.legal.legal.legal.legal.legal.setupsq.setupsq:not(.target),#board .cell.legal.legal.legal.legal.legal.setupsq.setupsq:not(.target){background-image:linear-gradient(rgba(0,0,0,.13),rgba(0,0,0,.13))!important;box-shadow:inset 0 0 0 1px rgba(255,255,255,.28),inset 0 0 0 2px rgba(0,0,0,.30)!important;cursor:pointer}
+html[data-theme] #board .cell.legal.legal.legal.legal.legal.setupsq.setupsq.alt:not(.target),#board .cell.legal.legal.legal.legal.legal.setupsq.setupsq.alt:not(.target){background-image:linear-gradient(rgba(255,255,255,.13),rgba(255,255,255,.13))!important}
+/* the moves that get you closest to the thing to reach are brighter and have a wider edge */
+html[data-theme] #board .cell.legal.legal.legal.legal.legal.toward:not(.target),#board .cell.legal.legal.legal.legal.legal.toward:not(.target){background-image:linear-gradient(#ffe650,#ffe650)!important;box-shadow:inset 0 0 0 3px #111,inset 0 0 0 7px #fff!important}
 #board .cell>.aim{position:absolute;inset:16%;border-radius:50%;border:3px solid #ff7a1a;box-shadow:0 0 0 2px #111,inset 0 0 0 2px #111,0 0 0 4px #fff;z-index:5;pointer-events:none;
   background:linear-gradient(#ff7a1a,#ff7a1a) center/3px 70% no-repeat,linear-gradient(#ff7a1a,#ff7a1a) center/70% 3px no-repeat}
 #board .cell>.kring{position:absolute;inset:4%;border-radius:50%;border:4px solid #ffd21f;box-shadow:0 0 0 2px #111,inset 0 0 0 2px #111,0 0 0 4px #fff;z-index:7;pointer-events:none}
@@ -32,12 +35,11 @@ html[data-theme] #board .cell.stone,#board .cell.stone,html[data-theme] #board .
 .lgpic li{display:flex;align-items:center;gap:8px}
 .lgs{position:relative;display:inline-block;flex:none;width:30px;height:30px;border-radius:4px;background:#264a85}
 .lgs svg{width:100%;height:100%}
-.lgs.mvdot,.lgs.aim,.lgs.kring,.lgs.wrecked,.lgs.dashed{position:relative}
-.lgs.mvdot::before{content:'';position:absolute;left:50%;top:50%;width:8px;height:8px;margin:-4px 0 0 -4px;border-radius:50%;background:#ffd21f;box-shadow:0 0 0 2px #111,0 0 0 4px #fff}
+.lgs.lit,.lgs.aim,.lgs.kring,.lgs.wrecked,.lgs.maybe{position:relative}
+.lgs.lit{background:linear-gradient(rgba(255,225,77,.84),rgba(255,225,77,.84)),#264a85;box-shadow:inset 0 0 0 2px #111,inset 0 0 0 4px #fff7c2}
 .lgs.aim::before{content:'';position:absolute;inset:5px;border-radius:50%;border:3px solid #ff7a1a;box-shadow:0 0 0 2px #111,0 0 0 4px #fff;background:linear-gradient(#ff7a1a,#ff7a1a) center/3px 70% no-repeat,linear-gradient(#ff7a1a,#ff7a1a) center/70% 3px no-repeat}
 .lgs.kring::before{content:'';position:absolute;inset:3px;border-radius:50%;border:4px solid #ffd21f;box-shadow:0 0 0 2px #111,0 0 0 4px #fff}
 .lgs.wrecked{background:#14213d}.lgs.wrecked::before{content:'';position:absolute;inset:4px;background:linear-gradient(45deg,transparent 44%,#d9dde4 44% 56%,transparent 56%),linear-gradient(-45deg,transparent 44%,#d9dde4 44% 56%,transparent 56%)}
-.lgs.dashed::before{content:'';position:absolute;inset:3px;border-radius:40%;border:3px dashed #fff;box-shadow:0 0 0 2px #111}
 /* the toast: one neutral line at the top edge of the board (position set by script); red only for bad news to this phone */
 #announce{top:0;left:50%;font-size:15px!important;line-height:1.2;padding:8px 12px!important;border:2px solid #fff!important;border-radius:12px!important;background:#1b2540!important;color:#fff!important;max-width:92vw;box-shadow:0 2px 10px #0008}
 #announce.bad{background:#b3123f!important}
@@ -54,10 +56,9 @@ html[data-theme] #board .cell.stone,#board .cell.stone,html[data-theme] #board .
 #board .cell>.karrow::after{content:'';position:absolute;right:-6px;top:-9px;border-left:10px solid #ffd21f;border-top:7px solid transparent;border-bottom:7px solid transparent}
 /* fog of war for birds: squares beyond 2 from your bird (where it cannot see a hunter) are a little darker. Subtle; hunters get none. */
 html[data-theme] #board .cell.fog,#board .cell.fog{box-shadow:inset 0 0 0 1px rgba(255,255,255,.2),inset 0 0 0 2px rgba(0,0,0,.30),inset 0 0 0 60px rgba(0,0,0,.14)!important}
-/* the hunter's "a bird may be here": one dashed outline around the area; the part inside both Pounce readings is filled */
+/* the hunter's "a bird may be here" is a small bird outline in the corner of each square (part1.css), not a pink dot */
 #board .cell.maybird::after,#board .cell.maybird.bright::after{display:none!important}
-#board>.senseArea{position:absolute;box-sizing:border-box;border:3px dashed #fff;box-shadow:0 0 0 2px #111,inset 0 0 0 2px #111;border-radius:6px;z-index:5;pointer-events:none;grid-column:auto;grid-row:auto}
-#board>.senseArea.overlap{background:rgba(255,255,255,.3);border-style:solid;border-width:2px;z-index:6}
 /* selected tool: a check and one outline, the same in every theme; not available: 40% and grey */
 html[data-theme] #actions button.on,html[data-theme] #actions button[aria-pressed="true"]{outline:3px solid #fff!important;outline-offset:2px;box-shadow:0 0 0 2px #111!important}
 html[data-theme] #actions button:disabled{opacity:.4!important;filter:grayscale(1)!important}
+.lgs.maybe{background:#264a85}.lgs.maybe>.cmark{position:absolute;left:4%;top:4%;width:56%;height:56%;display:block}.lgs.maybe>.cmark svg{display:block;width:100%;height:100%;overflow:visible}

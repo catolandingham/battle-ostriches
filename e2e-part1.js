@@ -88,10 +88,10 @@ const hint = p => p.evaluate(() => document.getElementById('hint').textContent.t
   const btnAnim = await V.evaluate(() => getComputedStyle(document.querySelector('#actions button.cuebtn')).animationName); assert.notEqual(btnAnim, 'none', 'the Throw button pulses');
   ok('vulture with a stone next to a found egg: crosshair on the egg and the Throw button pulse, nothing else');
   await checkLayout(V, 'vulture with cue');
-  // move dots: small, and on the found egg's square the dot is replaced by the crosshair
-  const dots = await V.evaluate(() => { const c = document.querySelector('#board .cell'), cw = c.getBoundingClientRect().width, d = document.querySelector('#board .cell.legal>.mvdot'); const r = d.getBoundingClientRect(); return { ratio: r.width / cw, rings: document.querySelectorAll('#board .cell>.mvring').length, onEgg: !!document.querySelectorAll('#board .cell')[arguments[0]].querySelector('.mvdot') }; }, idx(...E)).catch(async () => V.evaluate(() => ({ ratio: 0.2, rings: 0 })));
-  assert.ok(dots.ratio <= 0.3 && dots.ratio >= 0.12, 'move dots are small: ' + dots.ratio);
-  ok('move dots are small');
+  // squares you can move to are LIT: the whole square is filled, no dot or ring is drawn
+  const lit = await V.evaluate(() => { const L = [...document.querySelectorAll('#board .cell.legal:not(.target)')], N = [...document.querySelectorAll('#board .cell:not(.legal)')].filter(c => !c.querySelector('.pc,.ic')); const bg = c => getComputedStyle(c).backgroundImage; return { n: L.length, allFilled: L.every(c => /rgba\(255, 225, 77/.test(bg(c))), noneFilled: N.every(c => !/rgba\(255, 225, 77/.test(bg(c))), dots: document.querySelectorAll('#board .mvdot,#board .mvring').length }; });
+  assert.ok(lit.n >= 3 && lit.allFilled, 'every square you can fly to is lit ' + JSON.stringify(lit)); assert.ok(lit.noneFilled, 'no other square is lit'); assert.equal(lit.dots, 0, 'no move dots');
+  ok('squares you can move to are lit, with no dots');
   // tapping the crosshair in fly mode picks Throw; the found egg then throws on one tap (no confirm)
   await cell(V, ...E).click(); await V.waitForFunction(() => UI._mode() === 'throw'); assert.equal((await cueState(V)).confirm, 0);
   // wrong tap while in throw mode on a far square: "Too far." and the egg square pulses
@@ -117,12 +117,17 @@ const hint = p => p.evaluate(() => document.getElementById('hint').textContent.t
   g.stones = 1; await push(); assert.deepEqual(await cueState(V), { aimcue: [], cue: [], rock: [], toward: [], btn: [], confirm: 0 }, 'a stone and no found egg: no cue at all');
   alive.forEach((e, i) => { e.pos = old[i]; }); await push();
   ok('the vulture cue never depends on where a hidden egg is');
-  // --- may be here: one dashed outline, no dashed egg on any square
+  // --- may be here: a small egg outline in the corner of each of the 8 squares around where the vulture landed; only the latest sniff
   g = room2().g; g.turn = 'red'; g.stones = 1; g.vulture = [2, 2]; g.marks = {}; g.sniff = { p: [2, 2], yes: true, round: g.round }; g.lastAction = { type: 'fly', from: [3, 3], smell: true }; await push(); await V.waitForFunction(() => UI._S().myTurn); await sleep(300);
-  const area = await V.evaluate(() => { const a = [...document.querySelectorAll('#board>.senseArea')], r = a.map(e => e.getBoundingClientRect()), cs = document.querySelectorAll('#board .cell'), c0 = cs[1 * 9 + 1].getBoundingClientRect(), c1 = cs[3 * 9 + 3].getBoundingClientRect(); return { n: a.length, dashed: a.map(e => getComputedStyle(e).borderTopStyle), r: r[0] && [Math.round(r[0].left), Math.round(r[0].top), Math.round(r[0].right), Math.round(r[0].bottom)], want: [Math.round(c0.left), Math.round(c0.top), Math.round(c1.right), Math.round(c1.bottom)], maybe: document.querySelectorAll('#board .cell.maybe,#board .ic-maybe,#board .cell.snseen').length }; });
-  assert.equal(area.n, 1); assert.deepEqual(area.dashed, ['dashed']); assert.equal(area.maybe, 0, 'no per-square dashed eggs');
-  for (let i = 0; i < 4; i++) assert.ok(Math.abs(area.r[i] - area.want[i]) <= 4, 'the outline wraps the 3 x 3 squares ' + JSON.stringify(area));
-  ok('"may be here" is one dashed outline around the sniffed squares, with no dashed egg on any square');
+  const eggMarks = () => V.evaluate(() => { const cs = [...document.querySelectorAll('#board .cell')]; return { sa: document.querySelectorAll('#board>.senseArea').length, dashedSq: document.querySelectorAll('#board .cell.maybe,#board .ic-maybe,#board .cell.snseen').length, at: cs.map((c, i) => c.querySelector('.cmark.cm-egg') ? i : -1).filter(i => i >= 0), geo: cs.filter(c => c.querySelector('.cmark.cm-egg')).map(c => { const r = c.getBoundingClientRect(), m = c.querySelector('.cmark.cm-egg').getBoundingClientRect(), mx = (m.left + m.right) / 2 - r.left, my = (m.top + m.bottom) / 2 - r.top; return { cornerX: mx < r.width * 0.4, cornerY: my < r.height * 0.4, centreFree: !(m.left <= r.left + r.width / 2 && m.right >= r.left + r.width / 2 && m.top <= r.top + r.height / 2 && m.bottom >= r.top + r.height / 2), w: m.width / r.width }; }) }; });
+  let em = await eggMarks(); const ring = (cx, cy) => { const o = []; for (let y = cy - 1; y <= cy + 1; y++) for (let x = cx - 1; x <= cx + 1; x++) if ((x !== cx || y !== cy) && x >= 0 && y >= 0 && x < 9 && y < 7) o.push(idx(x, y)); return o.sort((a, c) => a - c); };
+  assert.deepEqual(em.at, ring(2, 2), 'one egg outline in each of the 8 squares around the landing square ' + JSON.stringify(em.at)); assert.equal(em.sa, 0, 'no dashed area box'); assert.equal(em.dashedSq, 0, 'no dashed egg filling a square');
+  assert.ok(em.geo.every(q => q.cornerX && q.cornerY && q.centreFree && q.w < 0.5), 'each egg outline sits in a corner, small, and leaves the middle of the square free ' + JSON.stringify(em.geo[0]));
+  // only the latest sniff shows: a new landing replaces the 8 marks, and a sniff with no egg draws nothing
+  g = room2().g; g.vulture = [6, 4]; g.sniff = { p: [6, 4], yes: true, round: g.round }; await push(); em = await eggMarks(); assert.deepEqual(em.at, ring(6, 4), 'the new sniff replaces the old one: nothing is kept across landings');
+  g.sniff = { p: [6, 4], yes: false, round: g.round }; await push(); em = await eggMarks(); assert.deepEqual(em.at, [], 'a sniff with no egg draws nothing');
+  g.vulture = [2, 2]; g.sniff = { p: [2, 2], yes: true, round: g.round }; await push(); await sleep(1400); // a new sniff holds taps for a moment
+  ok('"may be here" is a small egg outline in the corner of each of the 8 squares around the landing, only for the latest sniff');
   // --- confirm before the only stone is spent
   const tgt = [3, 2]; await cell(V, 2, 2).click(); await V.waitForFunction(() => UI._mode() === 'throw' || true); // own square is legal in fly mode? choose Throw instead
   await V.evaluate(() => UI.setMode('throw')); await sleep(200);
@@ -148,9 +153,9 @@ const hint = p => p.evaluate(() => document.getElementById('hint').textContent.t
   const O = await solo2(b, 'blue');
   for (const [x, y] of [[2, 1], [6, 2], [3, 5]]) { await cell(O, x, y).click(); await sleep(150); }
   await O.waitForFunction(() => UI._S().phase === 'setupOstrich'); await sleep(400);
-  const setup = await O.evaluate(() => ({ eggs: document.querySelectorAll('#board .ic-myegg').length, legal: document.querySelectorAll('#board .cell.legal').length, eggRings: document.querySelectorAll('#board .cell.legal.holds .ic-myegg').length, dots: document.querySelectorAll('#board .cell.legal>.mvdot').length, bad: [...document.querySelectorAll('#board .cell.legal')].filter(c => c.querySelector('.mvdot') && c.querySelector('.ic,.pc')).length }));
-  assert.equal(setup.eggs, 3, 'all three placed eggs stay visible while picking the start'); assert.equal(setup.eggRings, 3, 'an egg square shows an edge ring, not a dot on the egg'); assert.equal(setup.bad, 0, 'no dot on anything that matters');
-  await checkLayout(O, 'ostrich picks its start'); ok('placed eggs stay visible while the ostrich picks its start; dots sit only on empty squares, a ring on squares that hold something');
+  const setup = await O.evaluate(() => ({ eggs: document.querySelectorAll('#board .ic-myegg').length, legal: document.querySelectorAll('#board .cell.legal').length, lit: [...document.querySelectorAll('#board .cell.legal')].filter(c => /rgba\(255, 225, 77/.test(getComputedStyle(c).backgroundImage)).length, dots: document.querySelectorAll('#board .mvdot,#board .mvring').length }));
+  assert.equal(setup.eggs, 3, 'all three placed eggs stay visible while picking the start'); assert.equal(setup.lit, 0, 'while setting up nothing is lit (almost every square is allowed)'); assert.equal(setup.dots, 0);
+  await checkLayout(O, 'ostrich picks its start'); ok('placed eggs stay visible while the ostrich picks its start; no square is lit during setup');
   await O.screenshot({ path: OUT + 'pick-start.png' });
   await cell(O, 3, 4).click(); await O.waitForFunction(() => UI._S().phase === 'play'); room2().aiT = 1;
   g = room2().g; { const q = B.flyTargets(g).filter(c => !B.isRock(g, c) && !B.isFood(g, c) && key(c) !== key(g.ostrich))[0]; B.vultureFly(g, q); await push(); } await myTurn(O); await quiet(O);
@@ -192,16 +197,15 @@ const hint = p => p.evaluate(() => document.getElementById('hint').textContent.t
   ok('3 players: header shows the round number unclipped; no text over the board with any message showing');
   // no bird near -> nothing is cued; bird near -> the area pulses; pounce -> one area only
   await H.evaluate(() => UI._rr()); await sleep(100);
-  let none = await H.evaluate(() => ({ sa: document.querySelectorAll('#board>.senseArea').length, cue: document.querySelectorAll('#board>.senseArea.cue').length })); assert.deepEqual(none, { sa: 0, cue: 0 }, 'no bird near: no area, no cue');
+  const birdMarks = () => H.evaluate(() => { const cs = [...document.querySelectorAll('#board .cell')], m = cs.filter(c => c.querySelector('.cmark.cm-bird')); return { sa: document.querySelectorAll('#board>.senseArea').length, marks: m.length, maybird: document.querySelectorAll('#board .cell.maybird').length, cue: m.filter(c => c.querySelector('.cmark.cue')).length, strong: m.filter(c => c.querySelector('.cmark.strong')).length, bright: document.querySelectorAll('#board .cell.bright').length, anim: m[0] ? getComputedStyle(m[0].querySelector('.cmark')).animationName : null, corner: m.every(c => { const r = c.getBoundingClientRect(), q = c.querySelector('.cmark').getBoundingClientRect(); return (q.left + q.right) / 2 - r.left < r.width * 0.4 && (q.top + q.bottom) / 2 - r.top < r.height * 0.4; }) }; });
+  const none = await birdMarks(); assert.deepEqual([none.sa, none.marks, none.cue], [0, 0, 0], 'no bird near: no outlines, no cue');
   await cell(H, 7, 3).click(); await sleep(500); act('red', { a: 'fly', p: B.flyTargets(g3()).filter(c => !B.isRock(g3(), c) && !B.isFood(g3(), c))[0] }); g3().ostrich = [4, 2]; bc(); act('blue', { a: 'step', p: [5, 2] });
   await myTurn(H); await sleep(1500); await quiet(H);
-  const near1 = await H.evaluate(() => ({ sa: document.querySelectorAll('#board>.senseArea').length, cue: document.querySelectorAll('#board>.senseArea.cue').length, dashed: getComputedStyle(document.querySelector('#board>.senseArea')).borderTopStyle }));
-  assert.deepEqual(near1, { sa: 1, cue: 1, dashed: 'dashed' }, 'bird near: one dashed outline, and it pulses');
+  const near1 = await birdMarks(); assert.ok(near1.marks >= 5 && near1.marks === near1.maybird && near1.cue === near1.marks && near1.sa === 0 && near1.corner && near1.anim === 'cuepulse', 'bird near: a small bird outline in the corner of each square in range, and they pulse ' + JSON.stringify(near1));
   await H.screenshot({ path: OUT + 'hyena-bird-near.png' });
   await cell(H, 6, 3).click(); await sleep(600);
-  const pn = await H.evaluate(() => { const a = [...document.querySelectorAll('#board>.senseArea')]; return { total: a.length, outlines: a.filter(e => getComputedStyle(e).borderTopWidth !== '0px').length, overlap: a.filter(e => e.classList.contains('overlap')).length }; });
-  assert.equal(pn.outlines, 1, 'the Pounce shows one outlined area, not two'); assert.equal(pn.overlap, 1, 'the overlap is only filled');
-  ok('hyena: no cue with no bird near; one pulsing dashed area when a bird is near; the Pounce shows one area');
+  const pn = await birdMarks(); assert.equal(pn.sa, 0, 'the Pounce draws no boxes'); assert.ok(pn.strong >= 1 && pn.strong === pn.bright && pn.strong < pn.marks, 'the squares in both readings get the bigger outline, and only those ' + JSON.stringify(pn));
+  ok('hyena: no cue with no bird near; a pulsing bird outline in the corner of each square in range when a bird is near; the Pounce makes the overlap bigger');
   await Promise.all([A.context().close(), Vp.context().close(), H.context().close()]);
 
   // ================= 4 players: hunters (badger buried, bird next to it) =================
@@ -239,7 +243,7 @@ const hint = p => p.evaluate(() => document.getElementById('hint').textContent.t
   const P = await phone(b); await P.goto(U); await P.click('#homeGear'); await P.click('#howBtn'); await sleep(500);
   const how = await P.evaluate(() => { const r = document.getElementById('rules'), h2 = r.querySelector('h2').getBoundingClientRect(), pics = [...r.querySelectorAll('figure.pic')], h3 = r.querySelector('h3').getBoundingClientRect();
     return { st: r.scrollTop, h2top: h2.top, h2vis: h2.top >= 0 && h2.bottom <= innerHeight, pics: pics.length, caps: pics.map(f => f.querySelector('figcaption').textContent), firstPicTop: pics[0].getBoundingClientRect().top, h3top: h3.top, picsBeforeText: pics[3].getBoundingClientRect().bottom <= h3.top + 1,
-      marks: { dot: !!pics[0].querySelector('.mvdot'), you: !!pics[0].querySelector('.youflag'), sat: !!pics[0].querySelector('.cell.sat .ic-myegg'), area: !!pics[1].querySelector('.senseArea'), found: !!pics[2].querySelector('.ic-spot') && !!pics[2].querySelector('.aim'), wrecked: !!pics[3].querySelector('.cell.hit .ic-hit') }, sh: r.scrollHeight, ch: r.clientHeight }; });
+      marks: { lit: pics[0].querySelectorAll('.cell.legal').length === 5, you: !!pics[0].querySelector('.youflag'), sat: !!pics[0].querySelector('.cell.sat .ic-myegg'), eggs: pics[1].querySelectorAll('.cmark.cm-egg').length === 5, found: !!pics[2].querySelector('.ic-spot') && !!pics[2].querySelector('.aim'), wrecked: !!pics[3].querySelector('.cell.hit .ic-hit') }, sh: r.scrollHeight, ch: r.clientHeight }; });
   assert.equal(how.st, 0, 'How to play opens at its top'); assert.ok(how.h2vis, 'the heading is on screen'); assert.equal(how.pics, 4, 'four pictures'); assert.ok(how.picsBeforeText, 'the pictures come before the text sections'); assert.ok(how.firstPicTop < 664 / 2, 'the first picture is on the first screen');
   assert.ok(Object.values(how.marks).every(Boolean), 'each picture draws its real marks ' + JSON.stringify(how.marks)); for (const c of how.caps) assert.ok(c.split(/\s+/).length <= 6, 'one short line: ' + c);
   await P.screenshot({ path: OUT + 'how-to-play-top.png' });

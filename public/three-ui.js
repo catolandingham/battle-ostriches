@@ -186,17 +186,17 @@ function bPump(tries){if(bBusy||!bQ.length)return;
  setTimeout(()=>{o.remove();bBusy=false;bPump(0);},3000);}
 function badgerLines(S,prev){if(S===bLastS)return;bLastS=S;if(!prev||(prev.round!=null&&S.round<prev.round))bPicker=BL.createPicker();
  for(const e of BL.detect(prev,S,bPicker))badgerSay(e.text);}
-// Where a bird may be: ONE dashed outline around the whole area (not a dot on every square). On the second Pounce reading the part that is inside both readings is filled.
-// one dashed outline around an area, clipped to the board; cls adds the rest (also used for the vulture's sniff and a last-known burrow)
-function area(board,S,p,range,cls){senseBox(board,S,p[0],p[1],range,cls);}
-function senseBox(board,S,cx,cy,range,cls){const C=S.cfg,b={x0:Math.max(0,cx-range),y0:Math.max(0,cy-range),x1:Math.min(C.cols-1,cx+range),y1:Math.min(C.rows-1,cy+range)};
- const a=board.children[b.y0*C.cols+b.x0],z=board.children[b.y1*C.cols+b.x1];if(!a||!z||!a.offsetWidth)return null;
- const o=document.createElement('div');o.className='senseArea '+(cls||'');o.style.left=a.offsetLeft+'px';o.style.top=a.offsetTop+'px';o.style.width=(z.offsetLeft+z.offsetWidth-a.offsetLeft)+'px';o.style.height=(z.offsetTop+z.offsetHeight-a.offsetTop)+'px';board.appendChild(o);return o;}
-function senseArea(board,S,hx,hy,range){const C=S.cfg,box=(cx,cy)=>({x0:Math.max(0,cx-range),y0:Math.max(0,cy-range),x1:Math.min(C.cols-1,cx+range),y1:Math.min(C.rows-1,cy+range)});
- const place=(b,cls)=>{const a=board.children[b.y0*C.cols+b.x0],z=board.children[b.y1*C.cols+b.x1];if(!a||!z||!a.offsetWidth)return;
-  const o=document.createElement('div');o.className=cls;o.style.left=a.offsetLeft+'px';o.style.top=a.offsetTop+'px';o.style.width=(z.offsetLeft+z.offsetWidth-a.offsetLeft)+'px';o.style.height=(z.offsetTop+z.offsetHeight-a.offsetTop)+'px';board.appendChild(o);};
- const cur=box(hx,hy),pul=window.NextStep?NextStep.compute(S).kind==='area':false;place(cur,'senseArea'+(pul&&!S.pounce?' cue':''));
- if(S.pounce&&S.firstAt){const f=box(S.firstAt[0],S.firstAt[1]),i={x0:Math.max(cur.x0,f.x0),y0:Math.max(cur.y0,f.y0),x1:Math.min(cur.x1,f.x1),y1:Math.min(cur.y1,f.y1)};if(i.x0<=i.x1&&i.y0<=i.y1)place(i,'senseArea overlap'+(pul?' cue':''));}}
+// "May be here" is a small outline of the animal in one corner of a square, never over the square's middle. "Is here" is the real animal, drawn solid and full size.
+// One outline per square: an egg for the vulture's sniff, a bird for the hunters' sense, a badger for a burrow a bird saw being dug.
+const CM={
+ egg:'<svg viewBox="0 0 40 40" aria-hidden="true"><ellipse cx="20" cy="21" rx="13" ry="16.5" fill="none" stroke="#111" stroke-width="9"/><ellipse cx="20" cy="21" rx="13" ry="16.5" fill="none" stroke="#fff" stroke-width="5"/></svg>',
+ bird:'<svg viewBox="0 0 40 40" aria-hidden="true"><g fill="none" stroke-linejoin="round" stroke-linecap="round"><path d="M5 27C5 18 12 14 18 17L21 10A5 5 0 1 1 28 14L36 16L28 19L28 24C28 32 20 36 13 34L9 37L10 32C7 31 5 29 5 27Z" stroke="#111" stroke-width="9"/><path d="M5 27C5 18 12 14 18 17L21 10A5 5 0 1 1 28 14L36 16L28 19L28 24C28 32 20 36 13 34L9 37L10 32C7 31 5 29 5 27Z" stroke="#fff" stroke-width="5"/></g></svg>',
+ badger:'<svg viewBox="0 0 40 40" aria-hidden="true"><g fill="none" stroke-linejoin="round" stroke-linecap="round"><path d="M6 33L8 15L15 21L20 19L25 21L32 15L34 33Z" stroke="#111" stroke-width="9"/><path d="M6 33L8 15L15 21L20 19L25 21L32 15L34 33Z" stroke="#fff" stroke-width="5"/><path d="M20 19L20 31" stroke="#111" stroke-width="8"/><path d="M20 19L20 31" stroke="#fff" stroke-width="4"/></g></svg>'};
+function mark(cell,kind,cls){if(!cell||!CM[kind])return null;const i=document.createElement('i');i.className='cmark cm-'+kind+(cls?' '+cls:'');i.setAttribute('aria-hidden','true');i.innerHTML=CM[kind];cell.appendChild(i);return i;}
+// the same mark in every square of the box around (cx,cy), clipped to the board; the centre square is left out
+function marksAround(board,S,cx,cy,range,kind,cls){const C=S.cfg;let n=0;
+ for(let y=Math.max(0,cy-range);y<=Math.min(C.rows-1,cy+range);y++)for(let x=Math.max(0,cx-range);x<=Math.min(C.cols-1,cx+range);x++){if(x===cx&&y===cy)continue;const c=board.children[y*C.cols+x];if(c&&c.classList&&c.classList.contains('cell')&&mark(c,kind,cls))n++;}
+ return n;}
 function pop(board,txt,cls){const o=document.createElement('div');o.className='h3pop '+cls;o.textContent=txt;const slot=document.getElementById('msgslot');slot.querySelectorAll('.h3pop:not(#badgerline)').forEach(x=>x.remove());slot.appendChild(o);setTimeout(()=>o.remove(),cls==='catch'?3400:1800);} // in the message slot above the board, never over it
 // --- Announcements: one plain line for a big event (catch, knock-out, the hunters meeting, the badger coming out, the start-of-game line) on every phone.
 // The line lives in #announce, outside #board, so a board redraw never erases it. Each line stays up about 3 seconds, one at a time, in order.
@@ -230,7 +230,7 @@ function after(S,prev,board){badgerLines(S,prev);chips(S);clock(S);kindPick(S);i
  // hunter piece: the hunter always sees itself; a bird only sees it within 2 squares (never a burrowed badger)
  const hp=h.hunter,hc=cellAt(board,S,hp);
  // a mound where the badger dug in, only for a bird that saw it dig and only while it stays buried (the server sends h.mound to nobody else)
- if(h.mound){const mc=cellAt(board,S,h.mound);if(mc&&!board.querySelector('.senseArea.dig')){senseBox(board,S,h.mound[0],h.mound[1],0,'may dig');mc.dataset.tip=(mc.dataset.tip?mc.dataset.tip+' · ':'')+'The honey badger dug in here';mc.setAttribute('aria-label',(mc.getAttribute('aria-label')?mc.getAttribute('aria-label')+'. ':'')+'Honey badger dug in here');}}
+ if(h.mound){const mc=cellAt(board,S,h.mound);if(mc&&!mc.querySelector('.cmark.cm-badger')){mark(mc,'badger');mc.dataset.tip=(mc.dataset.tip?mc.dataset.tip+' · ':'')+'The honey badger dug in here';mc.setAttribute('aria-label',(mc.getAttribute('aria-label')?mc.getAttribute('aria-label')+'. ':'')+'Honey badger dug in here');}}
  if(hc){const bur=me==='hunter'&&S.burrowed;const pc=document.createElement('div');pc.className='pc ph h'+k+(bur?' bur':'')+(me==='hunter'?' mine':'');pc.innerHTML=bur?MOUND:KIND[k].art;hc.appendChild(pc);hc.classList.add('hcell');if(me==='hunter'){const old=document.getElementById('current');if(old&&old!==hc)old.removeAttribute('id');hc.id='current';}
   hc.dataset.tip=(hc.dataset.tip?hc.dataset.tip+' · ':'')+(me==='hunter'?(bur?'You, hidden.':'You.'):KIND[k].n+'. Don\'t let it land on you.');
 }
@@ -241,11 +241,10 @@ function after(S,prev,board){badgerLines(S,prev);chips(S);clock(S);kindPick(S);i
   c.dataset.tip=(c.dataset.tip?c.dataset.tip+' · ':'')+'Bird next to you.';c.setAttribute('aria-label',(c.getAttribute('aria-label')?c.getAttribute('aria-label')+'. ':'')+'Bird next to you');}
  // sense: hunter only. The shaded box is yes or no. It does not name a direction or draw a compass.
  if(me==='hunter'&&S.phase==='play'&&S.sense!=null&&S.myTurn){
-  const hx=S.hunter[0],hy=S.hunter[1],range=h.senseRange;
+  const hx=S.hunter[0],hy=S.hunter[1],range=h.senseRange,area=!!(window.NextStep&&NextStep.compute(S).kind==='area');
   if(S.sense){for(let y=0;y<S.cfg.rows;y++)for(let x=0;x<S.cfg.cols;x++){const dx=x-hx,dy=y-hy;if(!dx&&!dy)continue;if(Math.max(Math.abs(dx),Math.abs(dy))>range)continue;
    const c=board.children[y*S.cfg.cols+x];if(!c||!c.classList||!c.classList.contains('cell'))continue;if(c.querySelector('.pc.po,.pc.pv'))continue;
-   c.classList.add('maybird');if(S.pounce&&S.firstAt&&Math.max(Math.abs(x-S.firstAt[0]),Math.abs(y-S.firstAt[1]))<=range)c.classList.add('bright');const had=c.getAttribute('aria-label')||'';if(!/Bird may be here/.test(had))c.setAttribute('aria-label',had?had+'. Bird may be here':'Bird may be here');}}
-  if(S.sense)senseArea(board,S,hx,hy,range);
+   c.classList.add('maybird');const both=S.pounce&&S.firstAt&&Math.max(Math.abs(x-S.firstAt[0]),Math.abs(y-S.firstAt[1]))<=range;if(both)c.classList.add('bright');mark(c,'bird',(both?'strong ':'')+(area&&(both||!S.pounce)?'cue':''));const had=c.getAttribute('aria-label')||'';if(!/Bird may be here/.test(had))c.setAttribute('aria-label',had?had+'. Bird may be here':'Bird may be here');}}
   const sk=S.round+':'+S.senseSeq;if(sk!==lastSense){lastSense=sk;UI.pause(1100);
    pop(board,S.sense?(S.pounce?'Still near.':'Bird near.'):'Nothing near.',S.sense?'yes':'no');
    window.SFX&&SFX.play(S.sense?'sniffYes':'sniffNo');}
@@ -278,6 +277,6 @@ function over(S){if(S.h3.hunt)return hOver(S);if(S.h3.team)return tOver(S);const
   :w==='red'?(S.winBy==='cold'?`The last egg went cold in round ${S.round}.`:S.winBy==='starved'?'The ostrich was out and no eggs were left.':`The vulture smashed every egg by round ${S.round}.`)
   :S.winBy==='time'?'Time ran out: the ostrich was out and the vulture never got every egg.':'The eggs were lost, but the vulture was already out.';
  return `<div class="lobbybox"><div class="bigost">${art}</div><h1>${title}</h1><p>${S.endWhy||why}</p>${winNote(S)}${endBits(S)}</div>`;}
-window.T3UI={area,after,events,startLine,announce,hint,tag,waitMsg,nopeMsg,over,endBits,KIND};
+window.T3UI={mark,marksAround,after,events,startLine,announce,hint,tag,waitMsg,nopeMsg,over,endBits,KIND};
 document.readyState==='loading'?document.addEventListener('DOMContentLoaded',lobby):lobby();
 })();
