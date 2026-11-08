@@ -1,0 +1,73 @@
+/* Part 1 of the usability fixes (loaded last). One look per meaning, the same in every theme.
+   Rules here use :is(#board,.mini) so the pictures in How to play draw the same marks as the real board. */
+
+/* ===== 1. The next step of the loop: one quiet pulsing cue at a time ===== */
+@keyframes cuepulse{0%,100%{opacity:.4;transform:scale(.93)}50%{opacity:1;transform:scale(1)}}
+@keyframes aimpulse{0%,100%{transform:scale(.92)}50%{transform:scale(1.1)}}
+@keyframes btnpulse{0%,100%{box-shadow:0 0 0 0 rgba(255,210,31,0)}50%{box-shadow:0 0 0 7px rgba(255,210,31,.95)}}
+html #board .cell.cue::after{content:'';position:absolute;inset:2px;border-radius:5px;border:3px solid #fff;box-shadow:0 0 0 2px #111,inset 0 0 0 2px #111;z-index:47;pointer-events:none;animation:cuepulse 1.4s ease-in-out infinite}
+html #board .cell.cue.sat::after{inset:0}
+#board .cell>.aim.cue{animation:aimpulse 1.2s ease-in-out infinite}
+#board .cell>.kring.cue{animation:aimpulse 1.2s ease-in-out infinite}
+html[data-theme] #actions button.cuebtn:not(:disabled){animation:btnpulse 1s ease-in-out 3}
+/* moves that lead toward the thing to reach are a little bolder */
+#board .cell.toward>.mvdot{width:30%;height:30%;background:#ffd21f;box-shadow:0 0 0 2px #111,0 0 0 4px #fff}
+#board .cell.toward>.mvring{border-width:5px}
+@media (prefers-reduced-motion:reduce){html #board .cell.cue::after,#board .cell>.aim.cue,#board .cell>.kring.cue{animation:none}html[data-theme] #actions button.cuebtn:not(:disabled){animation:none;box-shadow:0 0 0 4px #ffd21f}}
+/* the older guide glows are replaced by the one cue */
+html #board .cell.gpath::after,html #board .cell.gtarget::after,html #board .cell.gloud::after,html #board .cell.gcool::after{display:none!important}
+
+/* ===== 5. Move dots: small, translucent, only on empty squares; a thin ring on the edge of a square that holds something ===== */
+:is(#board,.mini) .cell>.mvdot{position:absolute;left:50%;top:50%;width:20%;height:20%;transform:translate(-50%,-50%);border-radius:50%;background:rgba(255,210,31,.88);box-shadow:0 0 0 1.5px rgba(17,17,17,.9),0 0 0 3px rgba(255,255,255,.75);z-index:5;pointer-events:none}
+:is(#board,.mini) .cell>.mvring{position:absolute;inset:2px;border-radius:6px;border:3px solid rgba(255,210,31,.95);box-shadow:0 0 0 1.5px #111,inset 0 0 0 1.5px #111;z-index:5;pointer-events:none}
+
+/* ===== 2. One message slot above the board; nothing with words sits on the board ===== */
+#msgslot{position:relative;flex:none;height:44px;margin:0}
+html #app #msgslot>#hint,html #app #msgslot>#hint.guide,html #app #msgslot>#hint.empty{height:44px!important;min-height:44px!important;max-height:44px!important;padding:3px 10px!important;overflow:hidden!important;font-size:15px!important;line-height:1.15!important;margin:0!important;display:flex;flex-direction:column;justify-content:center;align-items:center}
+html #app #msgslot>#hint .skipguide{display:none!important}
+/* every transient message takes the same rectangle as the hint and covers it for a moment */
+html body #msgslot>:is(#banner,#tipbar,#announce,#snpop,.h3pop){position:absolute!important;left:0!important;top:0!important;right:0!important;bottom:auto!important;transform:none!important;width:auto!important;max-width:none!important;height:44px!important;min-height:0!important;margin:0!important;box-sizing:border-box;border:0!important;border-radius:12px!important;padding:2px 10px!important;font:800 15px/1.15 system-ui,-apple-system,sans-serif!important;white-space:normal!important;text-align:center;overflow:hidden;z-index:6;pointer-events:none;animation:slotin .18s ease-out!important;text-shadow:none!important;letter-spacing:0!important;text-transform:none!important;box-shadow:inset 0 0 0 2px rgba(255,255,255,.55)!important}
+html body #msgslot>:is(#banner,#tipbar,#announce,#snpop,.h3pop):not(.hidden):not(#announce):not(#tipbar){display:flex;align-items:center;justify-content:center}
+html body #msgslot>#banner.hidden,html body #msgslot>#tipbar.hidden{display:none!important;visibility:visible!important}
+html body #msgslot>#tipbar:not(.hidden){display:flex;align-items:center;justify-content:center;background:#f4f1e8!important;color:#111!important}
+html body #msgslot>#tipbar>span{flex:none}
+html body #msgslot>#announce{display:none!important;z-index:9;background:#1b2540!important;color:#fff!important}
+html body #msgslot>#announce.show{display:flex!important;align-items:center;justify-content:center}
+html body #msgslot>#announce.bad{background:#b3123f!important}
+html body #msgslot>#badgerline{position:absolute!important;left:0!important;top:0!important;right:0!important;transform:none!important;width:auto!important;max-width:none!important;height:44px!important;margin:0!important;display:flex;align-items:center;justify-content:center;box-sizing:border-box;border:0!important;border-radius:12px!important;padding:2px 10px!important;font:800 15px/1.15 system-ui,-apple-system,sans-serif!important;text-align:center;overflow:hidden;z-index:8;animation:slotin .18s ease-out!important;box-shadow:inset 0 0 0 2px rgba(255,210,31,.8)!important}
+html body #msgslot>#snpop{font-size:17px!important}
+@keyframes slotin{from{opacity:0}to{opacity:1}}
+#app{gap:6px}
+/* labels that used to sit on squares are pictures now: the seen-by-the-vulture eye is a small badge, and the buried badger shows only its mound */
+#board .cell>.sittag{left:auto;right:1px;top:1px;bottom:auto;transform:none;width:18px;height:18px;padding:1px;border-radius:50%;background:#fff;border:1.5px solid #111;display:flex;align-items:center;justify-content:center;z-index:9}
+#board .cell>.sittag svg.eye{width:14px;height:14px;margin:0!important;vertical-align:baseline!important}
+/* the board is exactly its seven rows tall: no empty band under it, and it only scrolls if a very short screen leaves no room */
+html #app #stage{flex:0 1 auto;min-height:0}
+html #app #stage #board{flex:0 1 auto;border-bottom-width:5px}
+html #app #actions{margin-top:auto!important}
+/* 3-player header: the round number always has room (the timer switch is a clock symbol, not a wide label) */
+html body.three #hud #timerToggle{width:32px!important;min-width:32px!important;max-width:32px!important;height:32px!important;min-height:32px!important;padding:0!important;border-radius:50%!important;flex:0 0 32px!important}
+html body.three #hud #timerToggle svg{display:block;margin:auto}
+html #hud>div:first-child{overflow:visible!important}
+
+/* ===== 4. "May be here" is one dashed outline around an area (sniff, sense, last-known burrow); "is here" is the real thing drawn solid ===== */
+:is(#board,.mini)>.senseArea{position:absolute;box-sizing:border-box;border:3px dashed #fff;box-shadow:0 0 0 2px #111,inset 0 0 0 2px #111;border-radius:6px;z-index:5;pointer-events:none}
+:is(#board,.mini)>.senseArea.cue{animation:cuepulse 1.4s ease-in-out infinite}
+/* the Pounce shows one area: the part inside both readings is only filled, with no second outline */
+#board>.senseArea.overlap,.mini>.senseArea.overlap{border:0!important;box-shadow:none!important;background:rgba(255,255,255,.3);border-radius:0;z-index:6}
+@media (prefers-reduced-motion:reduce){:is(#board,.mini)>.senseArea.cue{animation:none}}
+
+/* ===== 3. Your own square reads at a glance ===== */
+/* the YOU tag hangs above the square */
+#stage>.youflag,html[data-theme] #stage>.youflag{position:absolute;transform:translate(-50%,-100%);z-index:21;pointer-events:none;font:900 9px/1 system-ui,-apple-system,sans-serif!important;letter-spacing:.3px;text-transform:none!important;padding:1.5px 5px 2px;background:#ffd21f;color:#111;border:1.5px solid #111;border-bottom:0;border-radius:5px 5px 0 0;white-space:nowrap}
+/* the egg under your animal peeks out from under it: animal up and to the left, egg down and to the right, the ring around the whole square */
+#board .cell.sat .pc.po,html[data-theme] #board .cell.sat .pc.po,#board .cell.vfound .pc.pv,html[data-theme] #board .cell.vfound .pc.pv{left:3%;top:2%;width:68%;height:68%;z-index:6}
+#board .cell.sat .ic-myegg,#board .cell.vfound .ic-myegg,#board .cell.vfound .ic-spot,html[data-theme] #board .cell.sat .ic-myegg{left:auto;top:auto;right:5%;bottom:5%;width:56%;height:68%;transform:none!important;z-index:3}
+#board .cell.sat .ic-myegg svg:first-child,#board .cell.vfound .ic-myegg svg:first-child{left:0!important;top:0!important;width:100%!important;height:100%!important}
+#board .cell.vfound .ic-spot svg{width:100%;height:100%}
+#board .wring.sq,html[data-theme] #board .wring.sq{position:absolute;left:0!important;top:0!important;width:100%!important;height:100%!important;inset:auto;z-index:41!important;filter:none}
+#board .cell.sat>.wnum{left:auto!important;right:3px;top:3px!important;transform:none!important;z-index:42!important}
+/* arriving on the egg: the ring refills from where it was */
+@keyframes ringfill{from{stroke-dasharray:var(--f0) 100;stroke:var(--c0)}}
+#board .wring.sq.refill rect:last-child{animation:ringfill .9s ease-out both}
+@media (prefers-reduced-motion:reduce){#board .wring.sq.refill rect:last-child{animation:none}}

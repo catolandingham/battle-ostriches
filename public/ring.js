@@ -205,7 +205,7 @@
     b.removeAttribute('aria-disabled');
     b.setAttribute('aria-pressed', on ? 'true' : 'false');
     b.classList.toggle('on', on);
-    b.textContent = on ? 'Timer on' : 'Timer off';
+    if (!b.dataset.icon) { b.dataset.icon = '1'; b.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M12 7v5l3 2" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>'; } // a clock symbol: lit while the shot clock is on
     const action = host ? (on ? 'Turn timer off' : 'Turn timer on') : (on ? 'Timer on' : 'Timer off');
     b.setAttribute('aria-label', action);
     b.title = action;

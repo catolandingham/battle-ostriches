@@ -28,6 +28,9 @@ const WSTOPS=[[0,[111,200,255]],[.34,[236,240,236]],[.67,[255,154,46]],[1,[232,5
 function warmCol(f){f=Math.max(0,Math.min(1,f));for(let i=1;i<WSTOPS.length;i++)if(f<=WSTOPS[i][0]){const[a,ca]=WSTOPS[i-1],[b,cb]=WSTOPS[i],t=(f-a)/(b-a);return'rgb('+ca.map((c,j)=>Math.round(c+(cb[j]-c)*t)).join(',')+')';}return'rgb(232,56,47)';}
 function warmRing(n,W){const f=Math.max(0,n)/W,C=2*Math.PI*17,col=warmCol(f);
  return `<svg class="wring" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="17" fill="none" stroke="rgba(0,0,0,.45)" stroke-width="5"/><circle cx="20" cy="20" r="17" fill="none" stroke="${col}" stroke-width="4.5" stroke-linecap="round" stroke-dasharray="${(C*f).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 20 20)"/></svg><span class="wnum${n<=2?' low':''}" style="--wc:${col}">${n}</span>`;}
+// the same ring for the egg you stand on, drawn round the whole square; when the egg was warmed since the last view it visibly refills from where it was
+function sqRing(n,W,was){const f=Math.max(0,Math.min(1,n/W)),col=warmCol(f),refill=was!=null&&n>was,f0=refill?Math.max(0,Math.min(1,was/W)):f;
+ return `<svg class="wring sq${refill?' refill':''}" viewBox="0 0 40 40" preserveAspectRatio="none" aria-hidden="true" style="--f0:${(f0*100).toFixed(1)};--c0:${warmCol(f0)}"><rect x="2" y="2" width="36" height="36" rx="5" fill="none" stroke="rgba(0,0,0,.45)" stroke-width="5"/><rect x="2" y="2" width="36" height="36" rx="5" fill="none" stroke="${col}" stroke-width="4.5" stroke-linecap="round" pathLength="100" stroke-dasharray="${(f*100).toFixed(1)} 100"/></svg><span class="wnum${n<=2?' low':''}" style="--wc:${col}">${n}</span>`;}
 const icon=(t,cls)=>`<span class="ic ic-${t}${cls?' '+cls:''}" data-t="${t}">${VOCAB[t][0]}</span>`;
 const C0=window.BO.CONFIG;
 // an eye: standard symbol for "seen by others" (on the Sit button, since a sitting ostrich shows where it is)
@@ -183,7 +186,8 @@ function hideTip(){clearTimeout(tipT);TT.classList.add('hidden');}
  B.addEventListener('contextmenu',e=>{if(cellOf(e))e.preventDefault();});
  document.addEventListener('scroll',hideTip,true);}
 // taps on a square only go to the server when that square is glowing; otherwise explain right here
-function tipBar(t){const b=$('tipbar');if(!t){b.classList.add('hidden');return;}b.innerHTML=`<span>${t}</span> <button class="tipoff" id="tipOff">Turn off tips</button>`;b.classList.remove('hidden');tapper($('tipOff'),()=>{localStorage.setItem('bo_tips_off','1');tipBar(null);});}
+// tips use the one message slot above the board (never a bar that pushes the board down); each shows about 5 seconds, once
+function tipBar(t){const b=$('tipbar');clearTimeout(tipBar.t);if(!t){b.classList.add('hidden');b.textContent='';return;}b.textContent=t;b.classList.remove('hidden');tipBar.t=setTimeout(()=>tipBar(null),5000);}
 function nope(msg){const h=$('hint');h.textContent=msg;h.classList.remove('empty');h.classList.remove('nudge');void h.offsetWidth;h.classList.add('nudge');}
 const isF=(C,k)=>C.foods.some(q=>key(q)===k),isR=(C,k)=>C.rocks.some(q=>key(q)===k);
 const nearF=(C,p)=>C.foods.some(q=>Math.max(Math.abs(q[0]-p[0]),Math.abs(q[1]-p[1]))<=1);
@@ -197,6 +201,7 @@ function tap(x,y){if(!S||locked)return;if(Date.now()<sniffUntil){clearTimeout(ta
  if(S.phase!=='play')return;if(!S.myTurn)return nope(S.three?window.T3UI.waitMsg(S):S.role==='blue'?'Wait. Vulture\'s turn.':'Wait. Ostrich\'s turn.');
  const m0=curMode();if(m0==='hmove'){if(!ok)return nope('Too far.');return send({t:'act',a:'hmove',p});}
  const m=curMode();if(!m)return;
+ if(S.role==='red'&&m==='fly'){const cc=$('board').children[y*S.cfg.cols+x];if(cc&&cc.classList.contains('aimcue'))return UI.setMode('throw');} // the crosshair on a found egg: tapping it picks Throw
  if(!ok&&m==='carry'&&isF(S.cfg,key(p))&&gd(p,S.ostrich)===1){const c=$('board').children[p[1]*S.cfg.cols+p[0]];c&&c.animate([{transform:'translateX(0)'},{transform:'translateX(-3px)'},{transform:'translateX(3px)'},{transform:'translateX(0)'}],{duration:180});return nope('No eggs by food.');}
  if(!ok)return nope(m==='throw'?(S.stones<1?'No stone. Go to rocks.':'Too far.'):m==='kick'?'Tap an animal.':m==='carry'?'Not there.':'Too far.');
  if(m==='kick'){const kk=key(p);if(kickPick!==kk){kickPick=kk;render();return;}kickPick=null;} // select, see where it goes, tap again to kick
@@ -244,12 +249,16 @@ function guideApply(){if(S&&!S._o)S._o={m:S.moves,c:S.carryMoves,cc:S.can&&S.can
 // The pulse plays once per turn (youKey); a re-render inside those 0.6 s picks the animation up where it was.
 let youKey='',youAt=0;
 function youTag(board){
+ $('stage').querySelectorAll('.youflag').forEach(x=>x.remove());
  if(!S||S.god||S.phase==='over'){youKey='';return;}
  const bs=S.h3&&S.h3.birds,mb=bs&&bs[S.h3.mySeat||S.role];if(mb&&mb.out)return;
  const mine=board.querySelector('.pc.ph.mine'),cell=mine?mine.closest('.cell'):board.querySelector('.cell[data-tags~="me"]');
  if(!cell)return;
  const ring=document.createElement('i');ring.className='youring';cell.appendChild(ring); // one ring under your own animal, the same in every theme
- const t=document.createElement('span');t.className='youtag'+(cell.querySelector('.pouncetag')?' low':'');t.textContent='YOU';cell.appendChild(t);
+ // the YOU tag hangs above the square (in the stage, outside the board's clipping), so it never covers the animal, the egg under it or its number
+ const stage=$('stage');stage.querySelectorAll('.youflag').forEach(x=>x.remove());
+ const t=document.createElement('span');t.className='youtag youflag';t.textContent='YOU';
+ const sr=stage.getBoundingClientRect(),cr=cell.getBoundingClientRect();t.style.left=(cr.left-sr.left+cr.width/2)+'px';t.style.top=(cr.top-sr.top+1)+'px';stage.appendChild(t);
  if(S.phase!=='play'||!S.myTurn)return;
  const k=S.role+':'+S.round+':'+S.turn;if(k!==youKey){youKey=k;youAt=Date.now();}
  const el=Date.now()-youAt;if(el>=600)return;
@@ -273,6 +282,9 @@ function drawKickPreview(board,S,C,kicking){
 // Kick preview (long-press tooltip): the direction and how far, nothing about what lies there. It wraps at the edge and may stop early.
 function kickTip(x,y){const o=S.ostrich,dx=Math.sign(x-o[0]),dy=Math.sign(y-o[1]),A={'0,-1':'up','0,1':'down','-1,0':'left','1,0':'right','-1,-1':'up and left','1,-1':'up and right','-1,1':'down and left','1,1':'down and right'};
  return 'Kick it '+(A[dx+','+dy]||'away')+', up to '+S.cfg.kickPush+' squares ('+S.cfg.kickPushBadger+' for a honey badger). It may stop early.';}
+// a move dot sits only on an empty square; on a square that holds something (an egg, a bird, rocks, a leaf) the cue is a thin ring on the square's edge so the thing stays readable
+function fixMoveMarks(board){board.querySelectorAll('.cell.legal').forEach(c=>{const dot=c.querySelector(':scope>.mvdot');if(!dot)return;
+ if(c.querySelector('.pc:not(.kghost),.ic:not(.ic-hit),.carry')){dot.className='mvring';c.classList.add('holds');}});}
 function render(prev){
  maybeCard();$('lobby').classList.add('hidden');const C=S.cfg,blue=S.role==='blue',body=document.body;body.className=(S.role==='hunter'?'hunter':blue?'blue':'red')+(S.three?' three':'')+(S.god?' godview':'');
  $('turnTag').innerHTML=S.role==='hunter'||(S.h3&&S.h3.team)?window.T3UI.tag(S):`<span style="display:inline-block;width:26px;height:26px;vertical-align:middle">${blue?OST:VUL}</span> ${blue?'OSTRICH':'VULTURE'}`;
@@ -304,9 +316,10 @@ function render(prev){
   if(route&&route.len>0&&S.hungerLeft<=route.len+1&&route.next&&base.some(p=>key(p)===key(route.next))){if(!(S.moves||[]).some(p=>key(p)===key(route.next)))S.moves=(S.moves||[]).concat([route.next]);foodText=`Leaf in ${route.len} move${route.len===1?'':'s'} · ${S.hungerLeft} left`;foodLead=true;}}
  const L=!S.myTurn?[]:S.role==='hunter'?(S.hmoves||[]):(blue?(M==='carry'?S.carryMoves:M==='kick'?S.kickTargets||[]:S.moves):(M==='throw'?S.throw:S.fly));
  const lk=new Set(L.map(key)),setup=blue&&(S.phase==='setupEggs'||S.phase==='setupOstrich');
+ const NS=window.NextStep?NextStep.compute(S):{kind:null,targets:[],toward:[],button:null},nsT=new Set(NS.targets),nsW=new Set(NS.toward); // the next step of this animal's loop, drawn on the board (nextstep.js)
  const board=$('board');board.style.gridTemplateColumns=`repeat(${C.cols},minmax(0,1fr))`;board.style.alignContent='start';board.style.alignItems='start';board.innerHTML='';
  const la=S.lastAction,newTurn=!!(prev&&(prev.turn!==S.turn||prev.round!==S.round));
- const lastThrow=la&&la.type==='throw'&&la.p&&newTurn?key(la.p):null;const eggAt={};(S.eggs||[]).forEach(e=>{if(e.alive&&e.pos)eggAt[key(e.pos)]=e;});
+ const lastThrow=la&&la.type==='throw'&&la.p&&newTurn?key(la.p):null;const eggAt={};(S.eggs||[]).forEach((e,i)=>{if(e.alive&&e.pos){e._i=i;eggAt[key(e.pos)]=e;}});
  const sn=S.phase==='play'&&S.sniff?S.sniff:null,snK=sn?((sn.round!=null?sn.round:'x')+'|'+sn.p+'|'+sn.yes):'';
  // This animal, this sense, once, and only while that sense is still the current round. The live round
  // used to be part of the key, so the ostrich's move replayed "Egg nearby!" after the egg could leave.
@@ -321,21 +334,17 @@ function render(prev){
   const m=S.marks[k];if(m)d.classList.add(m);const tags=[],tip=[];
   if(fogOf&&Math.max(Math.abs(x-fogOf[0]),Math.abs(y-fogOf[1]))>2)d.classList.add('fog'); // fog of war: a bird sees hunters only within 2 (hunters get none)
   const legal=lk.has(k)||(setup&&legalNow().some(q=>key(q)===k));
-  if(W&&W.cool.has(k)){if(W.loud===k){d.classList.add('gloud');if(W.urgent)d.classList.add('urgent');}else d.classList.add('gcool');}
-  if(G&&G.path&&G.path.includes(k))d.classList.add(k===key(G.t)?'gtarget':'gpath');
-  if(legal){d.classList.add('legal');if(throwing||kicking)d.classList.add('target');tags.push(throwing||kicking?'target':'legal');d.setAttribute('aria-label',throwing?'Throw here':kicking?'Kick here':'Legal step');}
-  const maybe=!found&&!blue&&sn&&sn.yes&&inSn(k)&&!m&&k!==ok&&!isF(C,k)&&!isR(C,k);
-  if(blue&&sn&&sn.yes&&inSn(k)&&m!=='hit')d.classList.add('snseen');
-  if(maybe){d.classList.add('maybe');tags.push('maybe');tip.push('Egg may be here.');}
+  if(nsT.has(k)&&NS.kind!=='rocks')d.classList.add('cue','cue-'+NS.kind);
+  if(legal){d.classList.add('legal');if(throwing||kicking)d.classList.add('target');tags.push(throwing||kicking?'target':'legal');d.setAttribute('aria-label',throwing?'Throw here':kicking?'Kick here':'Legal step');if(nsW.has(k))d.classList.add('toward');}
+  if(!blue&&sn&&sn.yes&&!found&&inSn(k)&&!m&&k!==ok)tip.push('Egg may be here.'); // the area is drawn once, as one dashed outline (below)
   if(sn&&snNew&&inSn(k)&&!found){d.classList.add(sn.yes?'snyes':'snno');d.style.animationDelay=(Math.max(Math.abs(x-sn.p[0]),Math.abs(y-sn.p[1]))*.18)+'s';}
   // exactly one tile icon: smashed > found egg > own egg > food > rocks
-  const e=eggAt[k];let h='';
+  const e=eggAt[k];let h='';const under=!!(blue&&e&&k===ok&&S.phase==='play'); // the egg you stand on: ring around the whole square
   if(m==='hit'){h=icon('hit');tip.push(SHORT.hit);}
   else if(m==='stone'){h=icon('hit');tip.push(SHORT.stone);} // every wrecked square looks the same: one X
   else if(!blue&&m==='spotted'){h=icon('spot');tip.push(SHORT.spot);}
-  else if((blue||S.god)&&e){h=`<span class="ic ic-myegg${m==='spotted'?' found':''}${S.god&&!blue?' godegg':''}" data-t="myegg">${MYEGG}${S.phase==='play'?warmRing(e.coldIn,C.warmth):''}</span>`;
+  else if((blue||S.god)&&e){h=`<span class="ic ic-myegg${m==='spotted'?' found':''}${S.god&&!blue?' godegg':''}" data-t="myegg">${MYEGG}${S.phase==='play'&&!under?warmRing(e.coldIn,C.warmth):''}</span>${under?sqRing(e.coldIn,C.warmth,prev&&prev.eggs&&prev.eggs[e._i]&&prev.eggs[e._i].alive?prev.eggs[e._i].coldIn:null):''}`;
    tip.push((blue?'Your egg. ':'Egg. ')+'Cold in '+e.coldIn+'.'+(m==='spotted'?' Found.':''));}
-  else if(maybe){h=icon('maybe');}
   else if(isF(C,k)){h=icon('food');tip.push(SHORT.food);}
   else if(isR(C,k)){h=icon('rock');tip.push(SHORT.rock);}
   if(h)tags.push(h.match(/data-t="(\w+)"/)[1]);
@@ -347,12 +356,16 @@ function render(prev){
   if(k===ok){if(blue&&e){d.classList.add('sat');}h+=`<div class="pc po">${OST}</div>`+(S.carried?'<span class="carry">'+MYEGG+'</span>':'');tip.push(blue?'You.':'The ostrich');tags.push(blue?'me':'ost');
    if(blue&&S.carried&&S.eggs&&S.eggs[S.carrying])h+=warmRing(S.eggs[S.carrying].coldIn,C.warmth);}
   if(legal)tip.push(kicking?kickTip(x,y):throwing?'Throw here.':setup?(S.phase==='setupEggs'?'Hide an egg here':'Start here'):blue?'Move here':'Fly here');
-  d.innerHTML=h+(legal?(kicking?'<i class="kring"></i>':throwing?'<i class="aim"></i>':'<i class="mvdot"></i>'):'');d.dataset.tip=[...new Set(tip)].join(' · ');
+  const aimCue=NS.kind==='throw'&&nsT.has(k); // a found egg in throw range: the crosshair already sits on it
+  if(aimCue&&!throwing)d.classList.add('aimcue');
+  d.innerHTML=h+(aimCue&&!throwing?'<i class="aim cue"></i>':legal?(kicking?'<i class="kring"></i>':throwing?'<i class="aim'+(aimCue?' cue':'')+'"></i>':'<i class="mvdot"></i>'):'');d.dataset.tip=[...new Set(tip)].join(' · ');
   d.dataset.tags=tags.join(' ');if(tags.includes('me'))d.id='current';d.onclick=()=>{if(Date.now()<noClick)return;tap(x,y);};board.appendChild(d);}
  {const cs=getComputedStyle(board),gap=parseFloat(cs.columnGap)||0,pad=parseFloat(cs.paddingLeft)+parseFloat(cs.paddingRight),inner=board.clientWidth-pad,w=(inner-gap*(C.cols-1))/C.cols;if(w>1){board.style.gridAutoRows='0';board.style.gridTemplateRows=`repeat(${C.rows},${w}px)`;}}
  if(prev&&blue&&S.hungerLeft>prev.hungerLeft&&S.ostrich&&S.ostrich[0]>=0){const c=board.children[S.ostrich[1]*C.cols+S.ostrich[0]];if(c)c.classList.add('ate');}
+ // "may be here" is always one dashed outline around an area: the vulture's sniff (its own phone, and the ostrich's when the sniff was near an egg)
+ if(sn&&sn.yes&&!found&&S.phase==='play'&&window.T3UI)T3UI.area(board,S,sn.p,1,'may sniffarea');
  if(snNew){const vc=board.children[sn.p[1]*C.cols+sn.p[0]];if(vc&&!found){const w=document.createElement('div');w.className='snwave '+(sn.yes?'yes':'no');vc.appendChild(w);}
-  if(!window.BORing||BORing.showSniffPop(blue,!!sn.yes,found)){const o=document.createElement('div');o.id='snpop';o.className=(found?'yes found':sn.yes?'yes':'no')+(blue?' small':'');o.textContent=found?(blue?'Vulture found your egg!':'Found egg!'):sn.yes?(blue?'Vulture sniffed an egg.':'Egg nearby!'):'No egg nearby';board.appendChild(o);setTimeout(()=>o.remove(),1400);}}
+  if(!window.BORing||BORing.showSniffPop(blue,!!sn.yes,found)){const o=document.createElement('div');o.id='snpop';o.className=(found?'yes found':sn.yes?'yes':'no')+(blue?' small':'');o.textContent=found?(blue?'Vulture found your egg!':'Found egg!'):sn.yes?(blue?'Vulture sniffed an egg.':'Egg nearby!'):'No egg nearby';$('msgslot').appendChild(o);setTimeout(()=>o.remove(),1400);}}
  // sniff banner: the vulture's yes/no for this sense only (a later round must not repeat it), plus hunger
  const bn=$('banner');let bt='',bc='';
  const smashed=la&&la.type==='throw'&&la.result==='hit';
@@ -376,6 +389,7 @@ function render(prev){
   h=M==='kick'?'Kick it away.':M==='carry'?'Pick where the egg goes.':S.moves.length?'Your turn. Tap to move.':'';
  } else if(S.phase==='play'){
   a.innerHTML=btn('fl','Fly',M==='fly',"UI.setMode('fly')")+btn('th','Throw',M==='throw',"UI.setMode('throw')",S.stones<1);
+  if(NS.button==='throw'&&M!=='throw'){const tb=[...a.querySelectorAll('button')].find(x=>/Throw/.test(x.textContent));if(tb)tb.classList.add('cuebtn');}
   h=S.stones<1?'No stone. Go to rocks.':M==='throw'?'Tap to throw.':'Your turn. Tap to fly.';}
  a.className=S.phase==='play'&&S.myTurn?'mine':'';
  // ONE message per turn: the most important event wins
@@ -414,10 +428,11 @@ function render(prev){
  document.body.classList.remove('coaching');ce.className='hidden';
  if(CM){let an=CM.at==='board'?null:[...a.querySelectorAll('button')].find(b=>(CM.at==='sit'?/Sit/:/Throw/).test(b.textContent));
   if(an&&!an.disabled){an.classList.add('spot','pulse');}if(CM.at==='board'||(an&&!an.disabled))h=CM.txt+(h&&CM.at!=='board'?' — or '+h.charAt(0).toLowerCase()+h.slice(1):'');}
- (S.sittingAt||[]).forEach(q=>{const c=board.children[q[1]*C.cols+q[0]];if(c&&c.classList&&!c.querySelector('.sittag')){const t=document.createElement('span');t.className='sittag';t.textContent='sitting';c.appendChild(t);}});
+ (S.sittingAt||[]).forEach(q=>{const c=board.children[q[1]*C.cols+q[0]];if(c&&c.classList&&!c.querySelector('.sittag')){const t=document.createElement('span');t.className='sittag';t.innerHTML=EYE;t.setAttribute('aria-label','Seen by the vulture');c.appendChild(t);}});
  if(S.three)window.T3UI.after(S,prev,board);
  drawKickPreview(board,S,C,blue&&M==='kick'); // after the hunters are drawn, so a kicked hunter can be copied as the faded landing piece
  window.T3UI.events(S,prev,board);window.T3UI.startLine(S,prev,cardMode(S));
+ fixMoveMarks(board);
  youTag(board);
  if(window.BORing)BORing.sync(S);
  if(S.role!=='hunter'){requestAnimationFrame(()=>window.FX&&FX.update(S,prev));window.SMASH&&SMASH.update(S,prev);}
