@@ -24,7 +24,7 @@ let seed = 7; const rnd = n => { seed = (seed * 16807) % 2147483647; return seed
         if (st.btns.some(x => x.pressed && /Throw/.test(x.t))) return /Tap to throw\./.test(h);
         return /Your turn\. Tap to fly\./.test(h);
       }
-      return /Tap to move|Pick where the egg goes|Kick it away|Your turn/i.test(h);
+      return /Tap to move|Pick where the egg goes|Kick it away|Your turn|Hide your eggs|Pick your start/i.test(h);
     };
     for (let turn = 0; turn < 400; turn++) {
       await P.waitForFunction(() => { const S = UI._S(); return S && (S.phase === 'over' || ((S.myTurn || S.phase.startsWith('setup') && S.role === 'blue') && !UI._locked() && document.getElementById('handoff').classList.contains('hidden'))) || !document.getElementById('handoff').classList.contains('hidden'); }, null, { timeout: 15000 });

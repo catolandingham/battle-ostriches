@@ -85,7 +85,7 @@ tapper($('homeGear'),()=>{const m=$('homeMenu'),closed=m.classList.toggle('hidde
 // --- pass & play: one phone, both sides. Only the side holding the phone is ever rendered; an opaque cover sits between turns ---
 const NAME={blue:'Ostrich',red:'Vulture'};let PV=null,holder=null,lastBy={},locked=false,hT=null;
 function showCover(r,first){const h=$('handoff');h.className=r;$('hArt').innerHTML=r==='blue'?OST:VUL;
- $('hTitle').textContent=`Pass to the ${NAME[r]}${r==='red'?' 🦅':' 🐦'}`;
+ $('hTitle').textContent=`Pass to the ${NAME[r]}`;
  $('hSub').textContent=first?`The ${NAME[r]} goes first and hides the eggs. ${NAME[r==='blue'?'red':'blue']}, look away!`:`${NAME[r==='blue'?'red':'blue']}, hand over the phone. No peeking!`;
  $('hGo').textContent=`I'm the ${NAME[r]} — tap to start`;
  $('board').innerHTML='';$('actions').innerHTML='';$('hint').textContent='';
@@ -103,7 +103,7 @@ tapper($('inviteBtn'),()=>{sheetOpen=!sheetOpen;render();});tapper($('waitClose'
 // invite popover closes on any tap outside it (or its chip)
 const outside=e=>{if(sheetOpen&&!e.target.closest('#wait,#inviteBtn')){sheetOpen=false;render();}};
 document.addEventListener('touchstart',outside,{passive:true,capture:true});document.addEventListener('mousedown',outside,true);tapper($('howBtn'),()=>UI.rules());tapper($('helpBtn'),()=>UI.rules());
-function muteLabel(){const t=SFX.muted?'Sound off':'Sound on';$('muteBtn').textContent=SFX.muted?'🔇':'🔊';$('muteBtn').setAttribute('aria-label',t);if($('muteBtn2')){$('muteBtn2').textContent=t;$('muteBtn2').setAttribute('aria-label',t);}}
+function muteLabel(){const t=SFX.muted?'Sound off':'Sound on';$('muteBtn').innerHTML=SFX.muted?'<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M3 9v6h4l5 4V5L7 9H3z" fill="#fff" stroke="#111" stroke-width="1.5" stroke-linejoin="round"/><path d="M16 9l5 6M21 9l-5 6" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>':'<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M3 9v6h4l5 4V5L7 9H3z" fill="#fff" stroke="#111" stroke-width="1.5" stroke-linejoin="round"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>';$('muteBtn').setAttribute('aria-label',t);if($('muteBtn2')){$('muteBtn2').textContent=t;$('muteBtn2').setAttribute('aria-label',t);}}
 muteLabel();tapper($('muteBtn'),()=>{SFX.toggle();muteLabel();});tapper($('muteBtn2'),()=>{SFX.toggle();muteLabel();});
 function sounds(prev){if(!prev)return;const blue=S.role==='blue';
  if(S.phase==='over'&&prev.phase!=='over')return SFX.play(S.winner===S.role?'win':'lose');
@@ -183,7 +183,7 @@ function hideTip(){clearTimeout(tipT);TT.classList.add('hidden');}
  B.addEventListener('contextmenu',e=>{if(cellOf(e))e.preventDefault();});
  document.addEventListener('scroll',hideTip,true);}
 // taps on a square only go to the server when that square is glowing; otherwise explain right here
-function tipBar(t){const b=$('tipbar');if(!t){b.classList.add('hidden');return;}b.innerHTML=`<span>💡 ${t}</span> <button class="tipoff" id="tipOff">Turn off tips</button>`;b.classList.remove('hidden');tapper($('tipOff'),()=>{localStorage.setItem('bo_tips_off','1');tipBar(null);});}
+function tipBar(t){const b=$('tipbar');if(!t){b.classList.add('hidden');return;}b.innerHTML=`<span>${t}</span> <button class="tipoff" id="tipOff">Turn off tips</button>`;b.classList.remove('hidden');tapper($('tipOff'),()=>{localStorage.setItem('bo_tips_off','1');tipBar(null);});}
 function nope(msg){const h=$('hint');h.textContent=msg;h.classList.remove('empty');h.classList.remove('nudge');void h.offsetWidth;h.classList.add('nudge');}
 const isF=(C,k)=>C.foods.some(q=>key(q)===k),isR=(C,k)=>C.rocks.some(q=>key(q)===k);
 const nearF=(C,p)=>C.foods.some(q=>Math.max(Math.abs(q[0]-p[0]),Math.abs(q[1]-p[1]))<=1);
@@ -290,7 +290,7 @@ function render(prev){
  else if(sheetOpen&&!S.ai){w.classList.remove('hidden');w.classList.add('sheet');document.body.appendChild(w);} else{w.classList.add('hidden');w.classList.remove('sheet');sheetOpen=false;}
  w.firstElementChild.nextElementSibling.textContent=waiting?'Waiting for your opponent. Send them this link:':'Room code';
  // share first: while nobody else has joined and nothing is placed yet, pick (or change) your side under the code
- const sp=$('seatPick'),SNM={blue:'🐦 Ostrich',red:'🦅 Vulture',hunter:'🐾 Hunter',hyena:'🐾 Hyena',badger:'🦡 Honey badger',o1:'🐦 Ostrich 1',o2:'🐦 Ostrich 2',v1:'🦅 Vulture 1',v2:'🦅 Vulture 2'};
+ const sp=$('seatPick'),SNM={blue:'Ostrich',red:'Vulture',hunter:'Hunter',hyena:'Hyena',badger:'Honey badger',o1:'Ostrich 1',o2:'Ostrich 2',v1:'Vulture 1',v2:'Vulture 2'};
  const mySeat=S.h3&&S.h3.mySeat||S.role,seatsAll=S.h3?Object.entries(S.h3.seats):[['blue',S.role==='blue'?'on':'open'],['red',S.role==='red'?'on':'open']];
  const fresh=waiting&&(S.phase==='setupEggs'||S.phase==='setup')&&!(S.eggs||[]).length&&!(S.h3&&S.h3.setupStep&&S.h3.setupStep!=='eggs');
  const choices=seatsAll.filter(([r,v])=>r===mySeat||v==='open').map(([r])=>r);
@@ -381,12 +381,12 @@ function render(prev){
  // ONE message per turn: the most important event wins
  let ev='';const myNew=newTurn&&S.myTurn;
  if(myNew&&la){
-  if(blue&&la.type==='throw')ev=la.result==='bounce'?(la.egg?'Bounced! Egg under ostrich.':'Bounced! No egg.'):la.result==='hit'?'💥 An egg was smashed!':'The stone missed.';
+  if(blue&&la.type==='throw')ev=la.result==='bounce'?'Kicked it back!':la.result==='hit'?'Egg smashed.':'Missed.';
   if(blue&&!ev&&la.spotted)ev='The vulture found an egg! Move it or sit on it.';
   if(!blue&&la.type==='fly'&&la.spotted)ev='Found an egg. Throw on it.';
-  if(S.lastCold&&!ev&&!smashed)ev=`❄️ An egg went cold.`;
+  if(S.lastCold&&!ev&&!smashed)ev='An egg went cold.';
  }
- if(smashed)ev='💥 Smash!';
+ if(smashed)ev='Smashed!';
  else if(!blue&&prev&&prev.turn==='red'&&la&&la.type==='throw'&&S.turn==='blue')ev=la.result==='bounce'?(la.egg?'Bounced! Egg under ostrich.':'Bounced! No egg.'):'Miss.';
  else if(!blue&&S.role==='red'&&S.phase==='play'&&!S.myTurn&&la&&la.type==='fly'){ // the vulture's own landing, shown while the ostrich takes its turn
   if(la.spotted&&S.stones<1)ev=NOSTONE_FOUND;else if(la.refill)ev='Picked up a stone.';}

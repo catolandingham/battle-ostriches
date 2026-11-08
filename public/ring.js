@@ -96,7 +96,7 @@
     if (!b) return '';
     const t = b.textContent.replace(/^✓\s*/, '').toLowerCase();
     if (t.startsWith('walk')) return 'step';
-    if (t.startsWith('carry') || t.startsWith('🥚')) return 'carry';
+    if (t.startsWith('carry') ) return 'carry';
     if (t.startsWith('kick')) return 'kick';
     if (t.startsWith('fly')) return 'fly';
     if (t.startsWith('throw')) return 'throw';
