@@ -46,3 +46,11 @@ html[data-theme] #board .cell.stone,#board .cell.stone,html[data-theme] #board .
 .cell.h3kb::after{content:'';position:absolute;inset:8%;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 2px #111;z-index:9;pointer-events:none;animation:ping .6s ease-out 2}
 @keyframes ping{0%{transform:scale(.4);opacity:1}100%{transform:scale(1.5);opacity:0}}
 #board .ic-hit svg path:first-child{stroke:#111!important}#board .ic-hit svg path:last-child{stroke:#d9dde4!important}
+/* Kick preview: dots along the push, a faded copy where it lands, an arrow leaving the animal */
+#board .cell>.kpath{position:absolute;left:50%;top:50%;width:22%;height:22%;transform:translate(-50%,-50%);border-radius:50%;background:#ffd21f;box-shadow:0 0 0 2px #111,0 0 0 4px #fff;z-index:6;pointer-events:none}
+#board .cell>.kpath.hollow{background:transparent;border:3px solid #ffd21f;box-sizing:border-box;width:26%;height:26%}
+#board .cell>.kghost{opacity:.45!important;z-index:5!important}
+#board .cell>.karrow{position:absolute;left:50%;top:50%;width:46%;height:0;border-top:4px solid #ffd21f;transform-origin:0 0;transform:rotate(var(--ang,0deg));z-index:8;pointer-events:none;filter:drop-shadow(0 0 1px #111) drop-shadow(0 0 1px #111)}
+#board .cell>.karrow::after{content:'';position:absolute;right:-6px;top:-9px;border-left:10px solid #ffd21f;border-top:7px solid transparent;border-bottom:7px solid transparent}
+/* fog of war for birds: squares beyond 2 from your bird (where it cannot see a hunter) are a little darker. Subtle; hunters get none. */
+html[data-theme] #board .cell.fog,#board .cell.fog{box-shadow:inset 0 0 0 1px rgba(255,255,255,.2),inset 0 0 0 2px rgba(0,0,0,.30),inset 0 0 0 60px rgba(0,0,0,.14)!important}
