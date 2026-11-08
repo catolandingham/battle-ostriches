@@ -81,7 +81,8 @@ let seed = 7; const rnd = n => { seed = (seed * 16807) % 2147483647; return seed
       else {
         const L = await P.evaluate(() => { const S = UI._S(); return (S.myTurn || S.phase.startsWith('setup') && S.role === 'blue') ? UI._legal().map(p => p[1] * S.cfg.cols + p[0]) : []; });
         if (!L.length) continue; // no longer this player's turn: loop again, the wait at the top handles it
-        await cells.nth(L[rnd(L.length)]).click({ force: true });
+        const target = cells.nth(L[rnd(L.length)]); await target.click({ force: true });
+        if (await P.evaluate(() => UI._mode && UI._mode() === 'kick')) { await P.waitForTimeout(80); await target.click({ force: true }); } // a kick is two taps: pick the animal, tap it again
       }
       // Wait for the server's answer, so the next pass never reads the old turn (the stale state still said myTurn, with Throw left selected).
       // The pass-and-play cover also counts: the handoff screen shows once the move was played.
