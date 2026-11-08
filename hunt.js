@@ -146,7 +146,7 @@ function moveDir(from, to) { const dx = to[0] - from[0], dy = to[1] - from[1];
 function hunterMove(g, p) {
   const h = g.turn; if (!hunterMoves(g, h).some(q => K(q) === K(p))) return false;
   const t = g.hunt, x = t.hs[h], o = h === 'hyena' ? 'badger' : 'hyena', y = t.hs[o], from = x.p.slice(), dir = moveDir(from, p), wasP = x.pounce, wasBur = x.burrowed;
-  x.burrowed = false; x.dig = 0; t.popout = null;
+  x.burrowed = false; x.dig = 0; t.popout = null; if (h === 'hyena') x.came = { to: p.slice(), dir };
   if (K(y.p) === K(p) && !(y.burrowed && h === 'hyena')) { // the hunters meet (rule 8): the mover pushes the other 2 squares; nobody is hurt. A hyena that walks onto a buried badger just shares the square.
     const wasBurO = y.burrowed; y.burrowed = false; y.dig = 0; x.p = p.slice();
     const to = B.slide(g.cfg, p, dir, TH.rivalKnock, m => upAt(g, m, o) || K(m) === K(p), g.marks);
@@ -163,9 +163,24 @@ function hunterMove(g, p) {
   if (!caught && !wasP && h === 'hyena' && x.sense) { x.pounce = true; x.firstAt = from.slice(); x.sense = senses(g, h); x.senseSeq++; return true; } // Pounce
   endHunter(g, h); return true;
 }
+// Burst out (rule 7.4): a buried badger with the hyena standing on its square may, on its turn, come up instead of moving. The hyena is pushed 2 back the
+// way it came (the opposite of the move that put it on this square); if that is not known, in a random open direction. Nothing is caught.
+const canBurst = g => g.phase === 'play' && g.turn === 'badger' && !g.hunt.hs.badger.pounce && g.hunt.hs.badger.burrowed && K(g.hunt.hs.badger.p) === K(g.hunt.hs.hyena.p);
+function hunterBurst(g) {
+  if (!canBurst(g)) return false;
+  const t = g.hunt, x = t.hs.badger, y = t.hs.hyena, at = x.p.slice(), c = y.came, dir = c && K(c.to) === K(y.p) ? [-c.dir[0], -c.dir[1]] : null;
+  const to = dir ? B.slide(g.cfg, at, dir, TH.rivalKnock, m => upAt(g, m, 'hyena'), g.marks)
+    : B.scrambleTo(g.cfg, at, m => !B.wrecked(g, m) && !upAt(g, m, 'hyena'), TH.rivalKnock) || at.slice();
+  const n = D(to, at); y.p = to.slice(); y.came = null; x.burrowed = false; x.dig = 0; t.popout = null;
+  t.burst = { seq: t.burstSeq = (t.burstSeq || 0) + 1, round: g.round, n, at, to: to.slice() }; x.last = { type: 'burst', at };
+  endHunter(g, 'badger'); return true;
+}
 function hunterStay(g) {
   const h = g.turn; if (g.phase !== 'play' || !isH(h)) return false;
-  g.hunt.popout = null; const x = g.hunt.hs[h]; if (!x.pounce && h === 'badger') { x.dig = 2; x.burrowed = true; } // one still turn always burrows
+  g.hunt.popout = null; const x = g.hunt.hs[h];
+  if (!x.pounce && h === 'badger') { // one still turn always burrows, on any square
+    if (!x.burrowed) { const t = g.hunt; t.dug = { seq: t.digSeq = (t.digSeq || 0) + 1, round: g.round }; t.mound = { at: x.p.slice(), seenBy: BIRDS.filter(b => seen(g, b, 'badger')) }; } // the birds that could see it dig see the spot
+    x.dig = 2; x.burrowed = true; }
   x.last = { type: x.pounce ? 'skip' : 'stay' }; endHunter(g, h); return true;
 }
 function timeout(g) {
@@ -176,5 +191,5 @@ function timeout(g) {
 }
 function statusH(g) { const t = g.hunt;
   return { hunt: true, ko: TH.ko, birds: JSON.parse(JSON.stringify(t.birds)), order: ORDER, hkos: { hyena: t.hs.hyena.kos, badger: t.hs.badger.kos } }; }
-module.exports = { TH, OFF, BIRDS, HUNTERS, ORDER, isH, newHunt, senses, seen, ambushSight, hunterMoves, hunterMove, hunterStay, hunterRange, moveDir, upAt, placeOstrichH, vultureFlyH,
+module.exports = { TH, OFF, BIRDS, HUNTERS, ORDER, isH, newHunt, senses, seen, ambushSight, hunterMoves, hunterMove, hunterStay, hunterBurst, canBurst, hunterRange, moveDir, upAt, placeOstrichH, vultureFlyH,
   vultureThrowH, ostrichActH, finish, kickableH, kickTargetsH, ostrichKickH, timeout, statusH, isOut, pos, advance, catchBird, knockout, hunterAt };

@@ -34,9 +34,9 @@ const at = { state: 'attached' };
   await shot(A, '1-kick-button');
   // Carry selected: Kick is disabled and says why
   await A.locator('#actions button:has-text("Carry")').click({ force: true });
-  await A.waitForFunction(() => /carrying an egg/.test(document.getElementById('hint').textContent));
+  await A.waitForFunction(() => /Pick where the egg goes\./.test(document.getElementById('hint').textContent));
   assert.equal(await A.locator('#actions button:has-text("Kick")').isDisabled(), true, 'Kick is off on a carry turn');
-  assert.match(await A.textContent('#hint'), /You can't kick while carrying an egg\./); await shot(A, '2-kick-off-while-carrying');
+  assert.match(await A.textContent('#hint'), /Pick where the egg goes\./); await shot(A, '2-kick-off-while-carrying');
   await A.locator('#actions button:has-text("Walk")').click({ force: true });
   assert.equal(await A.locator('#actions button:has-text("Kick")').isDisabled(), false);
   // a burrowed badger can't be seen, so the button goes away
@@ -44,11 +44,11 @@ const at = { state: 'attached' };
   g.hunt.hs.badger.burrowed = false; server.broadcast(room); await A.waitForSelector('#actions button:has-text("Kick")');
   // kick: the badger flies 2 squares east
   await A.locator('#actions button:has-text("Kick")').click({ force: true });
-  await A.waitForFunction(() => /Tap the glowing animal to kick it\./.test(document.getElementById('hint').textContent));
-  assert.equal(await A.locator('.cell.legal').count(), 1, 'only the badger glows'); await cell(A, 3, 5).click();
+  await A.waitForFunction(() => /Kick it away\./.test(document.getElementById('hint').textContent));
+  assert.equal(await A.locator('.cell.legal').count(), 1, 'only the badger glows'); await cell(A, 3, 5).click(); await A.waitForSelector('.kpath'); assert.ok(await A.locator('.karrow').count() === 1 && await A.locator('.kghost').count() === 1, 'the preview shows an arrow, dots and a ghost'); await cell(A, 3, 5).click(); // tap again to kick
   for (let i = 0; i < 100 && !g.lastKick; i++) await A.waitForTimeout(50);
   assert.deepEqual(g.hunt.hs.badger.p, [5, 5], 'pushed 2 squares straight away: ' + JSON.stringify([g.hunt.hs.badger.p, g.hunt.hs.hyena.p, g.vulture, g.ostrich])); assert.deepEqual(g.ostrich, [2, 5], 'the ostrich stays'); assert.equal(g.lastKick.who, 'badger');
-  const line = 'The ostrich kicked the honey badger back 2 squares.';
+  const line = 'Ostrich kicked the honey badger 2 squares away.';
   for (const [P, name] of [[A, 'ostrich'], [Y, 'badger']]) await P.waitForFunction(t => (document.getElementById('announce') || {}).textContent === t, line, { timeout: 6000 }).catch(e => { throw new Error(name + ' phone never showed the kick line: ' + e.message); });
   for (const P of [A, Y]) await P.waitForFunction(t => (document.getElementById('badgerline') || {}).textContent === t, BL.LINES.kicked, { timeout: 8000 });
   assert.equal(BL.LINES.kicked, "Ouch. I mean... honey badger don't care.");

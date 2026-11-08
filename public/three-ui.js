@@ -9,8 +9,8 @@ const MOUND='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" aria-hi
 const CLAW='<svg viewBox="0 0 40 40" aria-hidden="true"><path d="M10 6 L18 34 M19 4 L25 34 M28 6 L32 32" stroke="#000" stroke-width="8" stroke-linecap="round"/><path d="M10 6 L18 34 M19 4 L25 34 M28 6 L32 32" stroke="#ff2a6d" stroke-width="4.5" stroke-linecap="round"/></svg>';
 const OSTI='<svg viewBox="0 0 40 40"><path d="M6 26 L18 18 L30 22 L24 32 L10 32 Z" fill="#38d6f0" stroke="#000" stroke-width="3" stroke-linejoin="round"/><path d="M26 22 L28 6 L34 7" fill="none" stroke="#000" stroke-width="4" stroke-linecap="round"/></svg>';
 const VULI='<svg viewBox="0 0 40 40"><path d="M4 18 L20 12 L36 18 L26 22 L20 32 L14 22 Z" fill="#2b3245" stroke="#000" stroke-width="3" stroke-linejoin="round"/><circle cx="20" cy="11" r="5" fill="#f3dfae" stroke="#000" stroke-width="2.5"/></svg>';
-const KIND={hyena:{n:'Hyena',art:HYENA,pw:'Pounce',pwTxt:'If your sense says a bird is within 2, you get one extra 1-square move that turn. A bird is out after 2 catches.'},
- badger:{n:'Honey badger',art:BADGER,pw:'Burrow',pwTxt:'Stay still to burrow. Birds cannot see you then. Moving pops you up, and you can catch on that move. A bird is out after 2 catches.'}};
+const KIND={hyena:{n:'Hyena',art:HYENA,pw:'Pounce',pwTxt:'Pounce: missed? Move 1 more.'},
+ badger:{n:'Honey badger',art:BADGER,pw:'Burrow',pwTxt:'Burrow: stay still to hide.'}};
 const BN={blue:'Ostrich',red:'Vulture',hunter:'Hunter'};
 const hName=S=>S.h3&&S.h3.kind?KIND[S.h3.kind].n:'Hunter';
 const tname=(S,r)=>r==='hunter'?hName(S):r==='hyena'||r==='badger'?KIND[r].n:(S&&S.h3&&S.h3.team?{o1:'Ostrich 1',o2:'Ostrich 2',v1:'Vulture 1',v2:'Vulture 2'}[r]:0)||BN[r];
@@ -23,7 +23,7 @@ const MODES=[['2','Classic','2 players'],['3','3','+ hunter'],['4','4','2 vs 2']
 const TITLE={'3':'3 players · + hunter','4':'4 players · 2 vs 2','4h':'4 players · Hunters','5':'5 players · 2 vs 2 + hunter'};
 const isOs=r=>r==='blue'||r==='o1'||r==='o2';
 const seatArt=(r,k)=>r==='hunter'?KIND[k].art:r==='hyena'||r==='badger'?KIND[r].art:isOs(r)?OSTI:VULI;
-const SUB={blue:'hide eggs',red:'hunt eggs',hunter:'catch birds',o1:'team ostrich',o2:'team ostrich',v1:'team vulture',v2:'team vulture',hyena:'Pounce · 2 catches',badger:'Burrow · 2 catches'};
+const SUB={blue:'hide eggs',red:'hunt eggs',hunter:'catch birds',o1:'team ostrich',o2:'team ostrich',v1:'team vulture',v2:'team vulture',hyena:'Pounce',badger:'Burrow'};
 let mode='2',three=false;
 let myRole='blue',kind=localStorage.getItem('bo_kind')||'hyena',seat={};
 function rulesMode(m){document.querySelectorAll('.mrules').forEach(e=>e.classList.toggle('hidden',e.dataset.m!==m));}
@@ -69,25 +69,25 @@ function tTag(S){const r=S.h3.mySeat;if(r==='hunter')return tag(S);return `<span
 function tHint(S,a){const r=S.h3.mySeat,t=S.turn,h=S.h3;
   if(r==='hunter'&&S.myTurn)return hint(Object.assign({},S,{h3:h}),a);
  if(!h.ready)return h.needKind?'Pick your hunter.':`Waiting for all ${h.n} players…`;
- if(h.setupStep==='done'&&h.teamSetup&&h.teamSetup!=='done')return h.teamSetup==='eggs'?'Waiting for the other ostrich to hide eggs…':'Waiting for the other ostrich to finish placing.';
- const me=h.birds[r];if(me&&me.out)return `You're out (${me.why==='starved'?'starved':'knocked out'}). Watching the board — no moves.`;
- if(h.lost&&h.lost.bird===r&&h.lost.round>=S.round-1&&t!==r)return 'Caught! You lost this turn. '+tname(S,t)+'\'s turn…';
- const mt=t&&t!=='hunter'&&t[0]===r[0]?' (your teammate)':'';return `${tname(S,t)}'s turn${mt}…`;}
+ if(h.setupStep==='done'&&h.teamSetup&&h.teamSetup!=='done')return h.teamSetup==='eggs'?'Partner is hiding eggs…':'Partner is placing…';
+ const me=h.birds[r];if(me&&me.out)return 'You\'re out. Watching.';
+ if(h.lost&&h.lost.bird===r&&h.lost.round>=S.round-1&&t!==r)return 'Caught! Turn lost.';
+ if((r==='blue'||r==='o1'||r==='o2')&&window.UI&&UI._S()&&UI._S().sittingAt&&UI._S().ostrich&&UI._S().sittingAt.some(q=>q[0]===UI._S().ostrich[0]&&q[1]===UI._S().ostrich[1]))return 'The vulture sees you sit.';return `${tname(S,t)}'s turn…`;}
 function tChips(S){let bar=$('h3bar');if(!bar){bar=document.createElement('div');bar.id='h3bar';$('hud').after(bar);
   bar.addEventListener('click',e=>{const c=e.target.closest('[data-tip]');if(c&&UI._tip)UI._tip(c.dataset.tip);});}
  const h=S.h3,live=S.phase==='play',five=h.n===5,ko=h.ko;bar.classList.add('team');
  const bird=r=>{const b=h.birds[r],pips=five?Array.from({length:ko},(_,i)=>`<i class="pip${i<b.catches?' on':''}"></i>`).join(''):'';
-  const tip=`${SN[r]}${r===h.mySeat?' (you)':''}${five?`: caught ${b.catches} of ${ko} times`:''}${b.out?' · OUT ('+(b.why==='starved'?'starved':'knocked out')+')':b.catches?' · HURT'+(b.skip?' · loses its next turn':''):''}`;
+  const tip=`${SN[r]}${r===h.mySeat?' (you)':''}: ${b.out?'out.':b.catches?'caught '+(b.catches===1?'once.':b.catches+' times.'):'not caught.'}`;
   return `<span class="bchip ${isOs(r)?'blue':'red'} s${r}${b.out?' out':''}${b.catches&&!b.out?' injured':''}${live&&S.turn===r?' now':''}${r===h.mySeat?' me':''}" data-tip="${tip}" data-b="${r}">${sp(isOs(r)?OSTI:VULI,22)}<b class="cnum">${NUM(r)}</b>${five?`<span class="pips">${pips}</span>`:''}${b.out?'<b class="ko">OUT</b>':''}</span>`;};
  const k=h.kind||'hyena';
- bar.innerHTML=h.order.filter(r=>r!=='hunter').map(bird).join('')+(five?`<span class="bchip hunter${live&&S.turn==='hunter'?' now':''}" data-tip="${KIND[k].n}: ${KIND[k].pw}. Moves 1 square a turn. Wins by knocking out an ostrich AND a vulture.">${sp(KIND[k].art,24)}<b>1</b></span>`:'');}
+ bar.innerHTML=h.order.filter(r=>r!=='hunter').map(bird).join('')+(five?`<span class="bchip hunter${live&&S.turn==='hunter'?' now':''}" data-tip="${KIND[k].n}: catches birds.">${sp(KIND[k].art,24)}<b>1</b></span>`:'');}
 function tPieces(S,board){const h=S.h3,me=h.mySeat;
  const badge=(c,r,mate)=>{const b=document.createElement('b');b.className='snum '+(isOs(r)?'o':'v')+(mate?' mate':'')+(r===me?' me':'');b.textContent=NUM(r);c.appendChild(b);};
  for(const q of h.pieces){if(h.birds&&h.birds[q.seat]&&h.birds[q.seat].out)continue;const c=cellAt(board,S,q.p);if(!c||q.p[0]<0)continue;const d=document.createElement('div');d.className='pc '+(q.type==='o'?'po':'pv')+' other'+(q.mate?' mate':' opp');
   d.innerHTML=q.type==='o'?OSTI:VULI;c.appendChild(d);c.dataset.seat=q.seat;badge(c,q.seat,q.mate);
   c.dataset.tip=(c.dataset.tip?c.dataset.tip+' · ':'')+SN[q.seat]+(q.mate?' (your teammate)':'')+(q.carrying?', carrying an egg':'');}
  const mine=me==='hunter'?null:cellAt(board,S,isOs(me)?S.ostrich:S.vulture);if(mine)badge(mine,me,false);
- const ms=h.mateSniff;if(ms){const c=cellAt(board,S,ms.p);if(c){const r=document.createElement('div');r.className='msniff '+(ms.yes?'yes':'no');r.textContent=ms.yes?'👃!':'👃';c.appendChild(r);
+ const ms=h.mateSniff;if(ms){const c=cellAt(board,S,ms.p);if(c){const r=document.createElement('div');r.className='msniff '+(ms.yes?'yes':'no');r.textContent=ms.yes?'Egg near':'No egg';c.appendChild(r);
   c.dataset.tip=(c.dataset.tip?c.dataset.tip+' · ':'')+(isOs(me)?'':'Your teammate sniffed here: ')+(ms.yes?'an egg is on or next to this square':'no egg on or next to this square');}}
  if(isOs(me)&&S.eggs)S.eggs.forEach(e=>{if(!e.alive||!e.pos||e.mine)return;const c=cellAt(board,S,e.pos);c&&c.classList.add('mateegg');});}
 function tOver(S){const h=S.h3,w=S.winner,me=h.mySeat,C=S.cfg,mySide=me==='hunter'?'hunter':isOs(me)?'blue':'red';
@@ -102,7 +102,7 @@ function hChips(S){let bar=$('h3bar');if(!bar){bar=document.createElement('div')
   bar.addEventListener('click',e=>{const c=e.target.closest('[data-tip]');if(c&&UI._tip)UI._tip(c.dataset.tip);});}
  const h=S.h3,live=S.phase==='play',me=h.mySeat;bar.classList.add('team');
  const bird=r=>{const b=h.birds[r],pips=Array.from({length:2},(_,i)=>`<i class="pip${i<b.catches?' on':''}"></i>`).join('');
-  const tip=`${BN[r]}${r===me?' (you)':''}: caught ${b.catches} time${b.catches===1?'':'s'} (${h.ko.hyena===h.ko.badger?h.ko.hyena+' catches knock a bird out':'hyena needs '+h.ko.hyena+', honey badger '+h.ko.badger})${b.out?' · OUT ('+(b.why==='starved'?'starved':'knocked out')+')':b.catches?' · HURT'+(b.skip?' · loses its next turn':''):''}`;
+  const tip=`${BN[r]}${r===me?' (you)':''}: ${b.out?'out.':b.catches?b.catches+' of '+(h.ko.hyena===h.ko.badger?h.ko.hyena:h.ko.hyena)+' catches.':'not caught.'}`;
   return `<span class="bchip ${r}${b.out?' out':''}${b.catches&&!b.out?' injured':''}${live&&S.turn===r?' now':''}${r===me?' me':''}" data-tip="${tip}" data-b="${r}">${sp(r==='blue'?OSTI:VULI,22)}<span class="pips">${pips}</span>${b.out?'<b class="ko">OUT</b>':''}</span>`;};
  const hun=k=>{const now=live&&(S.turn===k||(S.turn==='hunter'&&me===k)),n=h.hkos[k];
   return `<span class="bchip hunter h${k}${now?' now':''}${k===me?' me':''}" data-b="${k}" data-tip="${KIND[k].n}${k===me?' (you)':''}: ${KIND[k].pw}. ${h.ko[k]} catches knock a bird out. Knock-outs: ${n}.">${sp(KIND[k].art,24)}<b>${n}</b></span>`;};
@@ -111,7 +111,7 @@ function hPieces(S,board,prev){const h=S.h3,me=h.mySeat;
  for(const x of h.hunters||[]){const c=cellAt(board,S,x.p);if(!c)continue;const bur=x.burrowed;const pc=document.createElement('div');
   pc.className='pc ph h'+x.kind+(bur?' bur':'')+(x.me?' mine':' rival');pc.innerHTML=bur?MOUND:KIND[x.kind].art;c.appendChild(pc);c.classList.add('hcell');
   if(x.me){const old=document.getElementById('current');if(old&&old!==c)old.removeAttribute('id');c.id='current';}
-  c.dataset.tip=(c.dataset.tip?c.dataset.tip+' · ':'')+(x.me?(bur?'You, burrowed: nobody can see you':'You ('+KIND[x.kind].n+')'):me==='hyena'||me==='badger'?`Your rival, the ${KIND[x.kind].n}. ${x.kind==='badger'?'If it moves onto you, you are knocked back 2. If you move onto it, you bounce back 2.':'If you move onto it, it is knocked back 2.'}`:`${KIND[x.kind].n}! It catches a bird by landing on it (or if you step onto it)`);
+  c.dataset.tip=(c.dataset.tip?c.dataset.tip+' · ':'')+(x.me?(bur?'You, hidden.':'You.'):me==='hyena'||me==='badger'?'Rival. Landing on it shoves it.':KIND[x.kind].n+'. Don\'t let it land on you.');
   if(bur){const l=document.createElement('span');l.className='burtag';l.textContent='BURROWED';c.appendChild(l);}
 }
 }
@@ -133,22 +133,23 @@ function waitMsg(S){return `Wait, it's the ${tname(S,S.turn)}'s turn.`;}
 function nopeMsg(S){return `Move up to ${S.h3.range} square${S.h3.range>1?'s':''}: tap a glowing square.`;}
 function hint(S,a){if(S.h3.team&&!hint.in){hint.in=1;try{return tHint(S,a);}finally{hint.in=0;}}const r=S.role,t=S.turn;
  if(r==='hunter'&&S.myTurn){const k=S.h3.kind;
-  a.innerHTML=S.pounce?'<button class="on" title="Skip this extra move. You will not catch the bird." onclick="UI.send({t:\'act\',a:\'hstay\'})">Stop</button>':`<button title="${k==='badger'?(S.burrowed?'Stay burrowed. Birds still cannot see you.':'Stay still to burrow.'):'Stay put and end your turn.'}" onclick="UI.send({t:'act',a:'hstay'})">${k==='badger'?(S.burrowed?'Stay':'Burrow'):'Stay'}</button>`;
-  if(S.pounce)return 'One more square. Bright dots: the bird is most likely here.';
-  const burrowNote=k!=='badger'||S.burrowed?'':'Stay still to burrow. ';
-  return burrowNote+`Tap a glowing square to move up to ${S.h3.range}. ${S.sense?'Rose dots: a bird may be here.':'No bird near.'}`;}
+  a.innerHTML=S.pounce?'<button class="on" title="Skip this extra move. You will not catch the bird." onclick="UI.send({t:\'act\',a:\'hstay\'})">Stop</button>':`<button title="${k==='badger'?(S.burrowed?'Stay burrowed. Birds still cannot see you.':'Stay still to burrow.'):'Stay put and end your turn.'}" onclick="UI.send({t:'act',a:'hstay'})">${k==='badger'?(S.burrowed?'Stay':'Burrow'):'Stay'}</button>${S.canBurst?`<button title="Come up and shove the hyena back." onclick="UI.send({t:'act',a:'hburst'})">Burst out</button>`:''}`;
+  if(S.pounce)return 'Pounce: 1 more square.';
+  const burrowNote=k==='badger'&&!S.burrowed?'Tap to move, or Burrow. ':'Your turn. Tap to move. ';
+  return burrowNote+(S.sense?'':'No bird near.');}
  if(!S.h3.ready)return S.h3.needKind?'Pick your hunter.':`Waiting for all ${S.h3.hunt?4:3} players…`;
- const lost=S.h3.lost;if(r!=='hunter'&&lost&&lost.bird===r&&lost.round>=S.round-1&&t!==r)return 'Caught! You lost this turn. '+tname(S,t)+'\'s turn…';
- if(r!=='hunter'&&S.h3.birds[r]&&S.h3.birds[r].out)return `You're out (${S.h3.birds[r].why==='starved'?'starved':'knocked out'}). Watching the board — no moves.`;
+ const lost=S.h3.lost;if(r!=='hunter'&&lost&&lost.bird===r&&lost.round>=S.round-1&&t!==r)return 'Caught! Turn lost.';
+ if(r!=='hunter'&&S.h3.birds[r]&&S.h3.birds[r].out)return 'You\'re out. Watching.';
+ if(r==='blue'&&window.UI&&UI._S()&&UI._S().sittingAt&&UI._S().ostrich&&UI._S().sittingAt.some(q=>q[0]===UI._S().ostrich[0]&&q[1]===UI._S().ostrich[1]))return 'The vulture sees you sit.';
  return `${tname(S,t)}'s turn…`;}
 function chips(S){if(S.h3.hunt)return hChips(S);if(S.h3.team)return tChips(S);let bar=$('h3bar');if(!bar){bar=document.createElement('div');bar.id='h3bar';$('hud').after(bar);
   bar.addEventListener('click',e=>{const c=e.target.closest('[data-tip]');if(c&&UI._tip)UI._tip(c.dataset.tip);});}
  const h=S.h3,ko=h.ko,live=S.phase==='play';
  const bird=r=>{const b=h.birds[r],pips=Array.from({length:ko},(_,i)=>`<i class="pip${i<b.catches?' on':''}"></i>`).join('');
-  const tip=`${BN[r]}: caught ${b.catches} of ${ko} times${b.out?' · OUT ('+(b.why==='starved'?'starved':'knocked out')+')':b.catches?' · HURT'+(b.skip?' · loses its next turn':''):''}`;
+  const tip=`${BN[r]}: ${b.out?'out.':b.catches?b.catches+' of '+ko+' catches.':'not caught.'}`;
   return `<span class="bchip ${r}${b.out?' out':''}${b.catches&&!b.out?' injured':''}${live&&S.turn===r?' now':''}" data-tip="${tip}" data-b="${r}">${sp(r==='blue'?OSTI:VULI,24)}<span class="pips">${pips}</span>${b.out?'<b class="ko">OUT</b>':''}</span>`;};
  const k=h.kind||'hyena';
- bar.innerHTML=bird('red')+bird('blue')+`<span class="bchip hunter${live&&S.turn==='hunter'?' now':''}" data-tip="${KIND[k].n}: ${KIND[k].pw}. Moves 1 square a turn. Wins by knocking out both birds.">${sp(KIND[k].art,26)}<b>1</b></span>`;}
+ bar.innerHTML=bird('red')+bird('blue')+`<span class="bchip hunter${live&&S.turn==='hunter'?' now':''}" data-tip="${KIND[k].n}: catches birds.">${sp(KIND[k].art,26)}<b>1</b></span>`;}
 function clock(S){let c=$('clock3');if(!c){c=document.createElement('div');c.id='clock3';c.innerHTML='<div class="cfill"></div><span class="ctxt"></span>';$('h3bar').after(c);}
  const on=S.phase==='play'&&S.h3.clockLeft!=null;c.classList.toggle('hidden',!on);if(!on){cancelAnimationFrame(raf);return;}
  const tk=S.round+':'+S.turn+':'+S.h3.clockLeft,local=Math.max(0,deadline-Date.now());if(tk!==lastTurnKey||Math.abs(local-S.h3.clockLeft)>1500){lastTurnKey=tk;deadline=Date.now()+S.h3.clockLeft;clockMs=S.h3.clockMs;}
@@ -160,8 +161,8 @@ function cellAt(board,S,p){return p&&p[0]>=0?board.children[p[1]*S.cfg.cols+p[0]
 function noteBanner(cls,txt,force){const bn=$('banner');if(!bn)return;if(!force&&bn.textContent&&!bn.classList.contains('hidden'))return;bn.textContent=txt;bn.className=cls;}
 function markHurt(S,board){const birds=S.h3&&S.h3.birds;if(!birds)return;
  const tag=(cell,b)=>{if(!cell||!b||b.out||!b.catches)return;cell.classList.add('injured');const pc=cell.querySelector('.pc');if(pc)pc.classList.add('injured');
-  if(!cell.querySelector('.hurtag')){const l=document.createElement('span');l.className='hurtag';l.textContent='HURT';cell.appendChild(l);}
-  cell.dataset.tip=(cell.dataset.tip?cell.dataset.tip+' · ':'')+(b.skip?'Hurt: caught, and loses its next turn.':'Hurt: caught '+b.catches+' time'+(b.catches===1?'':'s')+'. Still in the game.');};
+  if(!cell.querySelector('.hurtag')){const l=document.createElement('span');l.className='hurtag';l.textContent='\u2665';cell.appendChild(l);}
+  cell.dataset.tip=(cell.dataset.tip?cell.dataset.tip+' · ':'')+'Caught '+(b.catches===1?'once.':b.catches+' times.');};
  if(S.h3.team){for(const [r,b] of Object.entries(birds)){let cell=board.querySelector('.cell[data-seat="'+r+'"]');if(!cell&&r===S.h3.mySeat)cell=board.querySelector('.cell[data-tags~="me"]');tag(cell,b);}}
  else{const po=board.querySelector('.pc.po'),pv=board.querySelector('.pc.pv');tag(po&&po.closest('.cell'),birds.blue);tag(pv&&pv.closest('.cell'),birds.red);}}
 // "The ostrich is out." once per elimination, for everyone still playing. outSeen remembers which birds were already out (a re-render, or opening
@@ -189,6 +190,12 @@ function bPump(tries){if(bBusy||!bQ.length)return;
  setTimeout(()=>{o.remove();bBusy=false;bPump(0);},3000);}
 function badgerLines(S,prev){if(S===bLastS)return;bLastS=S;if(!prev||(prev.round!=null&&S.round<prev.round))bPicker=BL.createPicker();
  for(const e of BL.detect(prev,S,bPicker))badgerSay(e.text);}
+// Where a bird may be: ONE dashed outline around the whole area (not a dot on every square). On the second Pounce reading the part that is inside both readings is filled.
+function senseArea(board,S,hx,hy,range){const C=S.cfg,box=(cx,cy)=>({x0:Math.max(0,cx-range),y0:Math.max(0,cy-range),x1:Math.min(C.cols-1,cx+range),y1:Math.min(C.rows-1,cy+range)});
+ const place=(b,cls)=>{const a=board.children[b.y0*C.cols+b.x0],z=board.children[b.y1*C.cols+b.x1];if(!a||!z||!a.offsetWidth)return;
+  const o=document.createElement('div');o.className=cls;o.style.left=a.offsetLeft+'px';o.style.top=a.offsetTop+'px';o.style.width=(z.offsetLeft+z.offsetWidth-a.offsetLeft)+'px';o.style.height=(z.offsetTop+z.offsetHeight-a.offsetTop)+'px';board.appendChild(o);};
+ const cur=box(hx,hy);place(cur,'senseArea');
+ if(S.pounce&&S.firstAt){const f=box(S.firstAt[0],S.firstAt[1]),i={x0:Math.max(cur.x0,f.x0),y0:Math.max(cur.y0,f.y0),x1:Math.min(cur.x1,f.x1),y1:Math.min(cur.y1,f.y1)};if(i.x0<=i.x1&&i.y0<=i.y1)place(i,'senseArea overlap');}}
 function pop(board,txt,cls){const o=document.createElement('div');o.className='h3pop '+cls;o.textContent=txt;board.appendChild(o);setTimeout(()=>o.remove(),cls==='catch'?3400:1800);}
 // --- Announcements: one plain line for a big event (catch, knock-out, the hunters meeting, the badger coming out, the start-of-game line) on every phone.
 // The line lives in #announce, outside #board, so a board redraw never erases it. Each line stays up about 3 seconds, one at a time, in order.
@@ -197,15 +204,15 @@ const ANN_MS=3000,annQ=[];let annBusy=false;
 function announce(txt){if(!txt)return;annQ.push(txt);if(annQ.length>4)annQ.shift();annPump();}
 function annPump(){if(annBusy||!annQ.length)return;annBusy=true;
  let o=$('announce');if(!o){o=document.createElement('div');o.id='announce';o.setAttribute('role','status');o.setAttribute('aria-live','polite');document.body.appendChild(o);}
- o.textContent=annQ.shift();o.className='show';
+ const t=annQ.shift(),bd=document.getElementById('board');o.textContent=t;o.className='show'+(/^Caught!|^A hidden|knocked you out/.test(t)?' bad':'');if(bd)o.style.top=(bd.getBoundingClientRect().top+8)+'px'; // a one-line toast at the top edge of the board; red only for bad news to this phone
  setTimeout(()=>{o.className='';o.textContent='';setTimeout(()=>{annBusy=false;annPump();},120);},ANN_MS);}
-const evSeen={kick:0,pop:0,rival:0,stone:0};
+const evSeen={kick:0,pop:0,rival:0,stone:0,dug:0,burst:0};
 function events(S,prev,board){
  if(!S)return;if(!S.three)rulesMode('2');
  const h=S.h3||{};
  for(const e of window.CatchText.newEvents(evSeen,S,prev)){announce(e.text);
   // the square highlight: the hyena's landing square for the meeting; the badger's own square for a pop-out, only if this phone can see the badger
-  const sq=e.kind==='rival'||e.kind==='kick'?e.square:e.seen?(h.hunters?(h.hunters.find(x=>x.kind==='badger')||{}).p:h.hunter):null,c=cellAt(board,S,sq);c&&c.classList.add('h3kb');}}
+  const sq=e.kind==='rival'||e.kind==='kick'||e.kind==='burst'?e.square:e.kind==='dug'?null:e.seen?(h.hunters?(h.hunters.find(x=>x.kind==='badger')||{}).p:h.hunter):null,c=cellAt(board,S,sq);c&&c.classList.add('h3kb');}}
 // One plain line at the start of every game: who hunts what, naming only the animals in the game (roles.js).
 let startDone=false;
 function startLine(S,prev,mode){
@@ -218,26 +225,29 @@ function after(S,prev,board){badgerLines(S,prev);chips(S);clock(S);kindPick(S);i
  const h=S.h3,k=h.kind||'hyena',me=S.role;
  // hunter piece: the hunter always sees itself; a bird only sees it within 2 squares (never a burrowed badger)
  const hp=h.hunter,hc=cellAt(board,S,hp);
+ // a mound where the badger dug in, only for a bird that saw it dig and only while it stays buried (the server sends h.mound to nobody else)
+ if(h.mound){const mc=cellAt(board,S,h.mound);if(mc&&!mc.querySelector('.pc.mound')){const d=document.createElement('div');d.className='pc ph bur mound';d.innerHTML=MOUND;mc.appendChild(d);mc.dataset.tip=(mc.dataset.tip?mc.dataset.tip+' · ':'')+'The honey badger dug in here';mc.setAttribute('aria-label',(mc.getAttribute('aria-label')?mc.getAttribute('aria-label')+'. ':'')+'Honey badger dug in here');}}
  if(hc){const bur=me==='hunter'&&S.burrowed;const pc=document.createElement('div');pc.className='pc ph h'+k+(bur?' bur':'')+(me==='hunter'?' mine':'');pc.innerHTML=bur?MOUND:KIND[k].art;hc.appendChild(pc);hc.classList.add('hcell');if(me==='hunter'){const old=document.getElementById('current');if(old&&old!==hc)old.removeAttribute('id');hc.id='current';}
-  hc.dataset.tip=(hc.dataset.tip?hc.dataset.tip+' · ':'')+(me==='hunter'?(bur?'You, burrowed: the birds can\'t see you':'You ('+KIND[k].n+')'):`${KIND[k].n}! It catches a bird by landing on it (or if you step onto it)`);
+  hc.dataset.tip=(hc.dataset.tip?hc.dataset.tip+' · ':'')+(me==='hunter'?(bur?'You, hidden.':'You.'):KIND[k].n+'. Don\'t let it land on you.');
   if(bur){const l=document.createElement('span');l.className='burtag';l.textContent='BURROWED';hc.appendChild(l);}
 }
  // ambush sight: a burrowed badger sees the exact square of any bird next to it (S.seenBirds comes from the rules only while burrowed)
  if(me==='hunter'&&S.phase==='play'&&S.burrowed&&S.seenBirds)for(const q of S.seenBirds){const c=cellAt(board,S,q.p);if(!c||c.querySelector('.pc.po,.pc.pv'))continue;
   const d=document.createElement('div');d.className='pc '+(q.type==='o'?'po':'pv')+' ambushsee';d.innerHTML=q.type==='o'?OSTI:VULI;c.appendChild(d);
-  c.dataset.tip=(c.dataset.tip?c.dataset.tip+' · ':'')+'A bird is next to you. You can see it from your burrow.';c.setAttribute('aria-label',(c.getAttribute('aria-label')?c.getAttribute('aria-label')+'. ':'')+'Bird next to you');}
+  c.dataset.tip=(c.dataset.tip?c.dataset.tip+' · ':'')+'Bird next to you.';c.setAttribute('aria-label',(c.getAttribute('aria-label')?c.getAttribute('aria-label')+'. ':'')+'Bird next to you');}
  // sense: hunter only. The shaded box is yes or no. It does not name a direction or draw a compass.
  if(me==='hunter'&&S.phase==='play'&&S.sense!=null&&S.myTurn){
   const hx=S.hunter[0],hy=S.hunter[1],range=h.senseRange;
   if(S.sense){for(let y=0;y<S.cfg.rows;y++)for(let x=0;x<S.cfg.cols;x++){const dx=x-hx,dy=y-hy;if(!dx&&!dy)continue;if(Math.max(Math.abs(dx),Math.abs(dy))>range)continue;
    const c=board.children[y*S.cfg.cols+x];if(!c||!c.classList||!c.classList.contains('cell'))continue;if(c.querySelector('.pc.po,.pc.pv'))continue;
    c.classList.add('maybird');if(S.pounce&&S.firstAt&&Math.max(Math.abs(x-S.firstAt[0]),Math.abs(y-S.firstAt[1]))<=range)c.classList.add('bright');const had=c.getAttribute('aria-label')||'';if(!/Bird may be here/.test(had))c.setAttribute('aria-label',had?had+'. Bird may be here':'Bird may be here');}}
+  if(S.sense)senseArea(board,S,hx,hy,range);
   const sk=S.round+':'+S.senseSeq;if(sk!==lastSense){lastSense=sk;UI.pause(1100);
-   pop(board,S.sense?(S.pounce?'Still close.':'Bird may be here.'):'Nothing near',S.sense?'yes':'no');
+   pop(board,S.sense?(S.pounce?'Still near.':'Bird near.'):'Nothing near.',S.sense?'yes':'no');
    window.SFX&&SFX.play(S.sense?'sniffYes':'sniffNo');}
   if(S.pounce)noteBanner('pounce','Pounce!',true);}
- if(S.pounce&&S.myTurn&&me==='hunter'){const mine=board.querySelector('.pc.ph.mine');const cell=hc||(mine&&mine.closest('.cell'));
-  if(cell&&!cell.querySelector('.pouncetag')){const t=document.createElement('span');t.className='pouncetag';t.textContent='CAN CATCH';cell.appendChild(t);}}
+ if(false&&S.pounce&&S.myTurn&&me==='hunter'){const mine=board.querySelector('.pc.ph.mine');const cell=hc||(mine&&mine.closest('.cell'));
+  if(cell&&!cell.querySelector('.pouncetag')){const t=document.createElement('span');t.className='pouncetag';t.textContent='';cell.appendChild(t);}}
  // catch + knockback feedback
  if(S.phase&&S.phase.startsWith('setup'))lastCatch=0;
  const lc=h.lastCatch;if(lc&&lc.seq!==lastCatch){const fresh=lastCatch!==0||(prev&&prev.h3);lastCatch=lc.seq;

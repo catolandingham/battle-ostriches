@@ -45,7 +45,7 @@ const OUT = 'shots/share/'; fs.mkdirSync(OUT, { recursive: true });
   await V.screenshot({ path: OUT + '5-hunger-bar.jpg', type: 'jpeg', quality: 88 });
   await V.evaluate(() => { const S = UI._S(); S.vulture = [6, 5]; S.ostrich = [1, 1]; S.eggs[0].pos = [1, 1]; S.myTurn = true; S.phase = 'play'; S.can = { sit: true, carry: true }; S.carryMoves = [[2, 0], [1, 0], [2, 2]]; S.moves = [[0, 0], [1, 0], [2, 0]]; S._o = null; UI._rr(); UI.setMode('carry'); });
   await V.locator('.cell').nth(0).click(); await V.waitForTimeout(60);
-  const ht = await V.textContent('#hint, #tipbar, body'); assert.ok(/Can't carry egg and food/.test(ht), 'carry-onto-food message'); assert.ok(!/hands full/i.test(ht));
+  const ht = await V.textContent('#hint, #tipbar, body'); assert.ok(/No eggs by food\./.test(ht), 'carry-onto-food message'); assert.ok(!/hands full/i.test(ht));
   await V.screenshot({ path: OUT + '6-cant-carry-egg-and-food.jpg', type: 'jpeg', quality: 88 });
   // buttons stay on screen (iPhone 13) even with a tip + banner showing; carried egg is drawn in the beak; final-rounds banner
   await V.evaluate(() => { const S = UI._S(); S.carried = true; S.carrying = 0; S.hungerLeft = 3; S.round = S.cfg.rounds - 2; UI._rr(); UI._tip('Tip: this is a long just-in-time tip that wraps onto a second line to push things down.'); });

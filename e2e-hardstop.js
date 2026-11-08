@@ -22,7 +22,7 @@ const OUT = 'shots/hardstop/'; fs.mkdirSync(OUT, { recursive: true });
   await vfly(4, 2);
   assert.ok(!(await V.locator('#hint.guide').count()), 'vulture never guided');
   // 1) start: a one-time TIP only. No path/pulse toward any egg (would reveal it to an onlooker) and no move restriction.
-  assert.match(await A.textContent('#hint'), /sit on eggs to keep them warm/i); let L = await legal();
+  assert.match(await A.textContent('#hint'), /sit on eggs to warm them/i); let L = await legal();
   const allMoves = await A.evaluate(() => UI._S()._o ? UI._S()._o.m : UI._S().moves);
   assert.deepEqual(L.map(String).sort(), allMoves.map(String).sort(), 'start tip does not restrict moves'); assert.ok(L.length >= 3, 'free moves ' + JSON.stringify(L));
   assert.equal(await A.locator('.cell.gpath,.cell.gtarget').count(), 0, 'no path toward an egg');
@@ -42,10 +42,10 @@ const OUT = 'shots/hardstop/'; fs.mkdirSync(OUT, { recursive: true });
   await A.evaluate(() => localStorage.setItem('bo_g_hungry', '1')); await A.evaluate(() => { UI._S().hungerLeft = 13; UI._rr(); });
   // 3) cold egg: NOT forced. First time <=8 rounds: loud pulse + warning, escalating; afterward subtle pulse only.
   const setCold = n => A.evaluate(n => { const S = UI._S(); S.eggs.find(e => e.pos[0] === 3).coldIn = n; UI._rr(); }, n);
-  await setCold(8); assert.match(await A.textContent('#hint'), /Egg cooling — 8 rounds left/);
+  await setCold(8); assert.match(await A.textContent('#hint'), /Egg cooling\. Go back\./);
   assert.ok(await A.locator('.cell.gloud .ic-myegg').count() === 1, 'cold egg pulses loudly');
   assert.ok((await legal()).length >= 3, 'cold egg does not restrict moves'); await shot('4-egg-cooling-early.jpg');
-  await setCold(3); assert.match(await A.textContent('#hint'), /3 rounds left! Hurry back/); assert.ok(await A.locator('.cell.gloud.urgent').count() === 1); await shot('5-egg-cooling-urgent.jpg');
+  await setCold(3); assert.match(await A.textContent('#hint'), /Egg cooling\. Go back\./); assert.ok(await A.locator('.cell.gloud.urgent').count() === 1); await shot('5-egg-cooling-urgent.jpg');
   await A.evaluate(() => localStorage.setItem('bo_g_cold', '1')); await setCold(6);
   assert.ok(!(await A.locator('#hint.guide').count()), 'no banner after first time');
   assert.ok(await A.locator('.cell.gcool').count() === 1 && !(await A.locator('.cell.gloud').count()), 'subtle pulse afterward'); await shot('6-egg-cooling-later-subtle.jpg');

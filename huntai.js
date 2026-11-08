@@ -24,6 +24,6 @@ function act(g, r, m) {
   if (g.phase !== 'play' || g.turn !== r) return false;
   if (r === 'blue') return m.a === 'sit' || m.a === 'step' || m.a === 'carry' || m.a === 'kick' ? H.ostrichActH(g, m.a, m.p) : false;
   if (r === 'red') return m.a === 'fly' ? H.vultureFlyH(g, m.p) : m.a === 'throw' ? !!H.vultureThrowH(g, m.p) : false;
-  return m.a === 'hmove' ? H.hunterMove(g, m.p) : m.a === 'hstay' ? H.hunterStay(g) : false;
+  return m.a === 'hmove' ? H.hunterMove(g, m.p) : m.a === 'hstay' ? H.hunterStay(g) : m.a === 'hburst' ? H.hunterBurst(g) : false;
 }
 module.exports = { hunterView, move, act, threat };

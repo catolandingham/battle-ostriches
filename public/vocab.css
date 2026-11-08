@@ -147,9 +147,6 @@ html[data-theme] #board .cell.hit,#board .cell.hit{background-image:linear-gradi
 
 
 /* ===== sniff + stone + egg-maybe states (shape + color, all themes) ===== */
-html[data-theme] #board .cell.maybe,#board .cell.maybe{background:#14b84a!important;background-image:none!important}
-html[data-theme] #board .cell.maybe.legal:not(.target){box-shadow:inset 0 0 0 4px #ffe14d,0 0 12px 3px rgba(255,225,77,.85)!important}
-html[data-theme] #board .cell.maybe.legal.target{background:#14b84a!important;background-image:none!important}
 #board .ic-maybe svg{filter:drop-shadow(0 1px 1px #0008)}
 #board .ic-stone{opacity:.85}
 html[data-theme] #board .cell.stone,#board .cell.stone{background-image:radial-gradient(circle,rgba(0,0,0,.28) 0 30%,transparent 62%)!important}
@@ -168,7 +165,6 @@ html[data-theme] #board .cell.stone,#board .cell.stone{background-image:radial-g
 @media (prefers-reduced-motion:reduce){.snwave,#snpop,#board .cell.snno::before,#board .cell.snyes::before,#board .cell.bounce{animation-duration:.01s!important}}
 /* phone header: role pill shows only its bird icon so ROUNDS never hides behind it */
 @media (max-width:440px){#hud #turnTag{font-size:0!important;padding:4px 6px!important;gap:0!important}#hud #turnTag svg,#hud #turnTag img,#hud #turnTag span{font-size:13px}#hud>div:first-child{overflow:hidden}}
-html[data-theme] #board .cell.maybe.legal.target,#board .cell.maybe.legal.target{animation:none!important;box-shadow:inset 0 0 0 4px #ff5a1f,inset 0 0 0 6px rgba(0,0,0,.6),0 0 14px 4px rgba(255,80,30,.95)!important}
 @media (max-width:440px){#hud .ctr{white-space:normal!important;line-height:1.15}}
 @media (max-width:440px){#hud #inviteCode{display:none}#hud #inviteBtn{padding:4px 8px!important}}
 html[data-theme] #board .cell.legal.target:not(.maybe){outline:none!important}

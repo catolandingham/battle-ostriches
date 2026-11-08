@@ -1,0 +1,63 @@
+/* Signals: one look per meaning, in every theme (loaded after every theme file; themes restyle floors and animals, never a signal).
+   Every signal carries a thin dark edge and a thin light edge, so it reads on a pale tile and on a dark tile. */
+/* A square you can act on has no glow of its own: its signal is a mark in the middle (a dot to move, a crosshair to throw, a ring to kick). */
+html[data-theme] #board .cell.legal.legal.legal.legal.legal,#board .cell.legal.legal.legal.legal.legal{box-shadow:inset 0 0 0 1px rgba(255,255,255,.28),inset 0 0 0 2px rgba(0,0,0,.30)!important;outline:none!important;animation:none!important;filter:none!important;z-index:2}
+html[data-theme] #board .cell.legal.legal.legal.legal.legal.alt{background-image:linear-gradient(rgba(255,255,255,.13),rgba(255,255,255,.13))!important}
+html[data-theme] #board .cell.legal.legal.legal.legal.legal:not(.alt){background-image:linear-gradient(rgba(0,0,0,.13),rgba(0,0,0,.13))!important}
+#board .cell>.mvdot{position:absolute;left:50%;top:50%;width:26%;height:26%;transform:translate(-50%,-50%);border-radius:50%;background:#ffd21f;box-shadow:0 0 0 2px #111,0 0 0 4px #fff;z-index:5;pointer-events:none}
+#board .cell>.aim{position:absolute;inset:16%;border-radius:50%;border:3px solid #ff7a1a;box-shadow:0 0 0 2px #111,inset 0 0 0 2px #111,0 0 0 4px #fff;z-index:5;pointer-events:none;
+  background:linear-gradient(#ff7a1a,#ff7a1a) center/3px 70% no-repeat,linear-gradient(#ff7a1a,#ff7a1a) center/70% 3px no-repeat}
+#board .cell>.kring{position:absolute;inset:4%;border-radius:50%;border:4px solid #ffd21f;box-shadow:0 0 0 2px #111,inset 0 0 0 2px #111,0 0 0 4px #fff;z-index:7;pointer-events:none}
+/* The whole board stays on a phone screen (390 x 664): a compact header, no reserved banner slot, and the banner floats over the top edge of the board. */
+#stage{position:relative;flex:1 1 auto;min-height:0;display:flex;flex-direction:column}
+#app #stage #board{flex:1 1 auto}
+html[data-theme] #stage #banner,#stage #banner{position:absolute;top:6px;left:8px;right:8px;margin:0!important;z-index:30;pointer-events:none;min-height:0!important;max-width:none}
+body.red #stage #banner.hidden,body.blue #stage #banner.hidden,body.hunter #stage #banner.hidden,#stage #banner.hidden{display:none!important}
+@media (max-width:520px){
+  #app{gap:6px;padding-top:calc(env(safe-area-inset-top) + 4px)}
+  #hud{display:grid!important;grid-template-columns:1fr auto;align-items:center;gap:4px 6px;padding:4px 8px!important;border-width:3px!important;border-radius:12px!important}
+  #hud>div:first-child{flex:none;min-width:0}
+  #hud .logo{display:none!important}
+  #hud .ctr{font-size:12px!important;line-height:1.1}
+  #hud>div:last-child{flex:none;justify-content:flex-end}
+  #hint,#hint.guide,#hint.empty{min-height:36px;padding:5px 10px}
+}
+#board .cell>.youring{position:absolute;inset:3%;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 2px #111,inset 0 0 0 2px #111;z-index:3;pointer-events:none}
+#markkey{display:none!important}
+/* One look for every wrecked square (a smashed egg or a stone): a darkened square with one X. */
+html[data-theme] #board .cell.stone,#board .cell.stone,html[data-theme] #board .cell.hit,#board .cell.hit{background:none!important;background-image:linear-gradient(rgba(0,0,0,.5),rgba(0,0,0,.5))!important}
+
+/* the picture legend in How to play: the same marks the board draws */
+.lgpic{list-style:none;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:6px 10px}
+.lgpic li{display:flex;align-items:center;gap:8px}
+.lgs{position:relative;display:inline-block;flex:none;width:30px;height:30px;border-radius:4px;background:#264a85}
+.lgs svg{width:100%;height:100%}
+.lgs.mvdot,.lgs.aim,.lgs.kring,.lgs.wrecked,.lgs.dashed{position:relative}
+.lgs.mvdot::before{content:'';position:absolute;left:50%;top:50%;width:8px;height:8px;margin:-4px 0 0 -4px;border-radius:50%;background:#ffd21f;box-shadow:0 0 0 2px #111,0 0 0 4px #fff}
+.lgs.aim::before{content:'';position:absolute;inset:5px;border-radius:50%;border:3px solid #ff7a1a;box-shadow:0 0 0 2px #111,0 0 0 4px #fff;background:linear-gradient(#ff7a1a,#ff7a1a) center/3px 70% no-repeat,linear-gradient(#ff7a1a,#ff7a1a) center/70% 3px no-repeat}
+.lgs.kring::before{content:'';position:absolute;inset:3px;border-radius:50%;border:4px solid #ffd21f;box-shadow:0 0 0 2px #111,0 0 0 4px #fff}
+.lgs.wrecked{background:#14213d}.lgs.wrecked::before{content:'';position:absolute;inset:4px;background:linear-gradient(45deg,transparent 44%,#d9dde4 44% 56%,transparent 56%),linear-gradient(-45deg,transparent 44%,#d9dde4 44% 56%,transparent 56%)}
+.lgs.dashed::before{content:'';position:absolute;inset:3px;border-radius:40%;border:3px dashed #fff;box-shadow:0 0 0 2px #111}
+/* the toast: one neutral line at the top edge of the board (position set by script); red only for bad news to this phone */
+#announce{top:0;left:50%;font-size:15px!important;line-height:1.2;padding:8px 12px!important;border:2px solid #fff!important;border-radius:12px!important;background:#1b2540!important;color:#fff!important;max-width:92vw;box-shadow:0 2px 10px #0008}
+#announce.bad{background:#b3123f!important}
+/* a ping where it happened (only drawn on a square the viewer can see): two short rings */
+.cell.h3kb{animation:none!important;transform:none!important}
+.cell.h3kb::after{content:'';position:absolute;inset:8%;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 2px #111;z-index:9;pointer-events:none;animation:ping .6s ease-out 2}
+@keyframes ping{0%{transform:scale(.4);opacity:1}100%{transform:scale(1.5);opacity:0}}
+#board .ic-hit svg path:first-child{stroke:#111!important}#board .ic-hit svg path:last-child{stroke:#d9dde4!important}
+/* Kick preview: dots along the push, a faded copy where it lands, an arrow leaving the animal */
+#board .cell>.kpath{position:absolute;left:50%;top:50%;width:22%;height:22%;transform:translate(-50%,-50%);border-radius:50%;background:#ffd21f;box-shadow:0 0 0 2px #111,0 0 0 4px #fff;z-index:6;pointer-events:none}
+#board .cell>.kpath.hollow{background:transparent;border:3px solid #ffd21f;box-sizing:border-box;width:26%;height:26%}
+#board .cell>.kghost{opacity:.45!important;z-index:5!important}
+#board .cell>.karrow{position:absolute;left:50%;top:50%;width:46%;height:0;border-top:4px solid #ffd21f;transform-origin:0 0;transform:rotate(var(--ang,0deg));z-index:8;pointer-events:none;filter:drop-shadow(0 0 1px #111) drop-shadow(0 0 1px #111)}
+#board .cell>.karrow::after{content:'';position:absolute;right:-6px;top:-9px;border-left:10px solid #ffd21f;border-top:7px solid transparent;border-bottom:7px solid transparent}
+/* fog of war for birds: squares beyond 2 from your bird (where it cannot see a hunter) are a little darker. Subtle; hunters get none. */
+html[data-theme] #board .cell.fog,#board .cell.fog{box-shadow:inset 0 0 0 1px rgba(255,255,255,.2),inset 0 0 0 2px rgba(0,0,0,.30),inset 0 0 0 60px rgba(0,0,0,.14)!important}
+/* the hunter's "a bird may be here": one dashed outline around the area; the part inside both Pounce readings is filled */
+#board .cell.maybird::after,#board .cell.maybird.bright::after{display:none!important}
+#board>.senseArea{position:absolute;box-sizing:border-box;border:3px dashed #fff;box-shadow:0 0 0 2px #111,inset 0 0 0 2px #111;border-radius:6px;z-index:5;pointer-events:none;grid-column:auto;grid-row:auto}
+#board>.senseArea.overlap{background:rgba(255,255,255,.3);border-style:solid;border-width:2px;z-index:6}
+/* selected tool: a check and one outline, the same in every theme; not available: 40% and grey */
+html[data-theme] #actions button.on,html[data-theme] #actions button[aria-pressed="true"]{outline:3px solid #fff!important;outline-offset:2px;box-shadow:0 0 0 2px #111!important}
+html[data-theme] #actions button:disabled{opacity:.4!important;filter:grayscale(1)!important}

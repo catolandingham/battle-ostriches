@@ -12,7 +12,7 @@
     rotate: ["Honey badger don't care.", 'Look at this nasty badass.'], // staying burrowed on later turns, and later burrows, taking turns
     sight: "Nothing can stop the honey badger when it's hungry.", // ambush sight shows a bird next to the burrow
     kicked: 'Ouch. I mean... honey badger don\'t care.',      // the ostrich kicks the badger
-    shove: "Look! It's chasing a jackal! ... Honey badger doesn't care, it doesn't give a sh*t, it just takes what it wants.", // Hunters: the badger moves onto the hyena
+    shove: "Look! It's chasing a jackal! ... Honey badger doesn't care, it doesn't give a #$%!, it just takes what it wants.", // Hunters: the badger moves onto the hyena
     win: 'Look at this nasty badass.',                        // the badger wins the game
   };
   const WHO = { ambush: 'all', openCatch: 'all', walkIn: 'all', popOut: 'all who see it', shove: 'all', kicked: 'all', win: 'all',
@@ -30,6 +30,7 @@
     const out = [], h = S && S.h3; if (!prev || !h || S.phase !== 'play') return out;
     const ph = prev.h3 || {};
     if (h.rival && h.rival.by === 'badger' && (!ph.rival || ph.rival.seq !== h.rival.seq)) out.push({ event: 'shove', text: LINES.shove });
+    else if (h.burst && (!ph.burst || ph.burst.seq !== h.burst.seq)) out.push({ event: 'shove', text: LINES.shove }); // bursting out from under the hyena shoves it too
     else if (h.popout && h.popout.seen && (prev.turn === 'hunter' || prev.turn === 'badger') && S.turn !== prev.turn && (!ph.popout || ph.popout.seq !== h.popout.seq)) out.push({ event: 'popOut', text: LINES.popOut });
     if (S.kick && S.kick.who === 'badger' && (!prev.kick || prev.kick.seq !== S.kick.seq)) out.push({ event: 'kicked', text: LINES.kicked });
     if (isBadgerPlayer(S) && prev.phase === 'play') {

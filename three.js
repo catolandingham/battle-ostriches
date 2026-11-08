@@ -149,7 +149,10 @@ function hunterMove(g, p) {
 }
 function hunterStay(g) { // badger: staying still burrows it (invisible to birds). During a pounce: skip the extra move.
   if (g.phase !== 'play' || g.turn !== 'hunter') return false;
-  const t = g.three; t.popout = null; if (!t.pounce && t.kind === 'badger') { t.dig = 2; t.burrowed = true; } // one still turn always burrows
+  const t = g.three; t.popout = null;
+  if (!t.pounce && t.kind === 'badger') { // one still turn always burrows, on any square
+    if (!t.burrowed) { t.dug = { seq: t.digSeq = (t.digSeq || 0) + 1, round: g.round }; t.mound = { at: t.h.slice(), seenBy: BIRDS.filter(b => hunterSeenBy(g, b)) }; } // the birds that could see it dig see the spot
+    t.dig = 2; t.burrowed = true; }
   t.lastHunter = { type: t.pounce ? 'skip' : 'stay' }; endHunter(g); return true;
 }
 // shot clock ran out: the current player's turn ends (vulture passes, ostrich stays put, hunter stays put)

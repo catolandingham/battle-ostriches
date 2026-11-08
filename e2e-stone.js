@@ -8,8 +8,8 @@ process.env.PORT = 3970; process.env.BO_BOTMS = '500'; process.env.BO_NOSTORE = 
 const server = require('./server.js'), B = require('./game.js');
 const OUT = 'shots/stone/'; fs.mkdirSync(OUT, { recursive: true });
 const U = 'http://localhost:3970/';
-const NO_STONE = 'No stone. Land on a glowing rock pile to pick one up.';
-const FOUND = 'You found an egg, but you have no stone. Get one, then come back.';
+const NO_STONE = 'No stone. Go to rocks.';
+const FOUND = 'Found it. Get a stone first.';
 const THEMES = ['classic', 'nature', 'notes', 'golden', 'paper', 'arcade', 'toybox', 'tactical', 'storm', 'volcano', 'comic', 'pharaoh', 'neon'];
 (async () => {
   const b = await webkit.launch(), errs = [];
@@ -47,7 +47,7 @@ const THEMES = ['classic', 'nature', 'notes', 'golden', 'paper', 'arcade', 'toyb
     assert.equal(L.glow.length, 2, label + ': exactly two glowing piles');
     assert.equal(L.guide, 0, label + ': no one-time guide on screen');
     assert.equal(L.ring.content !== 'none' && L.ring.pos === 'absolute' && parseFloat(L.ring.bw) >= 3, true, label + ': the glow ring is drawn: ' + JSON.stringify(L.ring));
-    assert.equal(L.th, 'Throw stone (none)', label + ': Throw button text'); assert.ok(L.thDis, label + ': Throw button disabled'); assert.ok(parseFloat(L.thOpacity) < 0.8, label + ': Throw looks disabled (opacity ' + L.thOpacity + ')');
+    assert.equal(L.th, 'Throw', label + ': Throw button text'); assert.ok(L.thDis, label + ': Throw button disabled'); assert.ok(parseFloat(L.thOpacity) < 0.8, label + ': Throw looks disabled (opacity ' + L.thOpacity + ')');
     return { L, h };
   };
   const flyToward = async (S, target) => { // the legal square nearest the target that is not an egg
@@ -60,7 +60,7 @@ const THEMES = ['classic', 'nature', 'notes', 'golden', 'paper', 'arcade', 'toyb
   // 1) turn 1: the vulture has its stone. No glow, "Throw stone · 1/1".
   let S = await myTurn();
   assert.equal(S.stones, 1);
-  let L = await look(S); assert.deepEqual(L.glow, [], 'stone in hand: no rock glow'); assert.equal(L.th, 'Throw stone · 1/1'); assert.equal(L.thDis, false);
+  let L = await look(S); assert.deepEqual(L.glow, [], 'stone in hand: no rock glow'); assert.equal(L.th, 'Throw'); assert.equal(L.thDis, false);
   assert.ok(!/No stone/.test(await hint()), 'stone in hand: hint does not say no stone');
   await P.click('#actions button:has-text("Throw")', { force: true });
   const tgt = (await P.evaluate(() => UI._legal()))[0]; await cellAt(S, tgt).click(); // throw the one stone (may smash or miss)
@@ -115,8 +115,8 @@ const THEMES = ['classic', 'nature', 'notes', 'golden', 'paper', 'arcade', 'toyb
 
   // 6) next vulture turn: stone in hand, no glow, Throw enabled again, the hint is the normal fly line
   S = await myTurn(); assert.equal(S.stones, 1);
-  L = await look(S); assert.deepEqual(L.glow, []); assert.equal(L.th, 'Throw stone · 1/1'); assert.equal(L.thDis, false);
-  assert.match(await turnHint(), /^Tap a glowing square to fly\. Tap yourself to Throw\./);
+  L = await look(S); assert.deepEqual(L.glow, []); assert.equal(L.th, 'Throw'); assert.equal(L.thDis, false);
+  assert.match(await turnHint(), /^Your turn\. Tap to fly\./);
   assert.ok(!/Out of stones/.test(await P.textContent('body')), 'the old guide text is gone');
   console.log('found egg seen again on a later own turn:', sawFoundAgain, '| errors', errs);
   assert.equal(errs.length, 0);

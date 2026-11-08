@@ -23,7 +23,7 @@ const OUT = 'shots/pass/'; fs.mkdirSync(OUT, { recursive: true });
   const eggs = [[3, 4], [6, 4], [2, 1]];
   for (const [x, y] of [...eggs, [7, 1]]) { await cell(x, y).click(); await P.waitForTimeout(80); }
   const vultureTurn = async (shot) => {
-    await P.waitForSelector('#handoff.red'); assert.match(await P.textContent('#hTitle'), /Pass to the Vulture 🦅/);
+    await P.waitForSelector('#handoff.red'); assert.match(await P.textContent('#hTitle'), /Pass to the Vulture/);
     assert.equal(await P.locator('#board .ic-myegg').count(), 0, 'cover: nothing behind');
     const bg = await P.evaluate(() => getComputedStyle(document.getElementById('handoff')).backgroundImage); assert.ok(/gradient/.test(bg), 'opaque cover');
     if (shot) await P.screenshot({ path: OUT + 'handoff-vulture.jpg', type: 'jpeg', quality: 85 });

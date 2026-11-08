@@ -5,7 +5,7 @@
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.BORing = api;
 })(typeof window !== 'undefined' ? window : globalThis, function () {
-  const IDS = ['step', 'carry', 'sit', 'kick', 'fly', 'throw', 'hstay'];
+  const IDS = ['step', 'carry', 'sit', 'kick', 'fly', 'throw', 'hstay', 'hburst'];
   function bearing(dx, dy) {
     if (!dx && !dy) return { key: 'here', name: 'here', dx: 0, dy: 0 };
     const ns = dy < 0 ? 'north' : dy > 0 ? 'south' : '';
@@ -31,25 +31,25 @@
     const C = S.cfg || {};
     if (S.role === 'hunter') {
       const k = (S.h3 && S.h3.kind) || S.kind || 'hyena';
-      if (S.pounce) return [{ id: 'hstay', label: 'Stop', detail: 'Skip this extra move. You will not catch the bird.', enabled: true, run: 'hstay' }];
+      if (S.pounce) return [{ id: 'hstay', label: 'Stop', detail: 'Skip the extra move.', enabled: true, run: 'hstay' }];
       if (k === 'badger') {
-        if (S.burrowed) return [{ id: 'hstay', label: 'Stay', detail: 'Stay burrowed. Birds still cannot see you.', enabled: true, run: 'hstay' }];
-        return [{ id: 'hstay', label: 'Burrow', detail: 'Stay still to burrow.', enabled: true, run: 'hstay' }];
+        if (S.burrowed) return [{ id: 'hstay', label: 'Stay', detail: 'Stay hidden.', enabled: true, run: 'hstay' }].concat(S.canBurst ? [{ id: 'hburst', label: 'Burst out', detail: 'Come up and shove the hyena away.', enabled: true, run: 'hburst' }] : []);
+        return [{ id: 'hstay', label: 'Burrow', detail: 'Stay still to hide.', enabled: true, run: 'hstay' }];
       }
-      return [{ id: 'hstay', label: 'Stay', detail: 'Stay put and end your turn.', enabled: true, run: 'hstay' }];
+      return [{ id: 'hstay', label: 'Stay', detail: 'End your turn.', enabled: true, run: 'hstay' }];
     }
     if (S.role === 'blue') {
       const items = [];
-      if (mode === 'carry') items.push({ id: 'step', label: 'Move', detail: 'Tap a glowing square to walk.', enabled: true, mode: 'step' });
-      else if ((S.moves || []).length) items.push({ id: 'step', label: 'Walk', detail: 'Walk is selected. Tap a glowing square.', enabled: true, mode: 'step' });
-      if (S.onEgg && S.can && S.can.carry) items.push({ id: 'carry', label: 'Carry', detail: 'Carry the egg 1 square.', enabled: true, mode: 'carry' });
-      if (S.onEgg && S.can && S.can.sit) items.push({ id: 'sit', label: 'Sit', detail: 'Warm the egg. Others can see you sitting.', enabled: true, act: 'sit' });
+      if (mode === 'carry') items.push({ id: 'step', label: 'Move', detail: '', enabled: true, mode: 'step' });
+      else if ((S.moves || []).length) items.push({ id: 'step', label: 'Walk', detail: '', enabled: true, mode: 'step' });
+      if (S.onEgg && S.can && S.can.carry) items.push({ id: 'carry', label: 'Carry', detail: 'Move the egg 1 square.', enabled: true, mode: 'carry' });
+      if (S.onEgg && S.can && S.can.sit) items.push({ id: 'sit', label: 'Sit', detail: 'Warm the egg. The vulture sees you.', enabled: true, act: 'sit' });
       if (S.kickNear) items.push({ id: 'kick', label: 'Kick', detail: mode === 'carry' ? "You can't kick while carrying an egg." : `Push the animal next to you back ${C.kickPush || 2} squares.`, enabled: mode !== 'carry' && !!(S.can && S.can.kick), act: 'kick' });
       return items;
     }
     const items = [];
     const stones = S.stones | 0;
-    items.push({ id: 'fly', label: 'Fly', detail: 'Fly is selected. Tap a glowing square.', enabled: true, mode: 'fly' });
+    items.push({ id: 'fly', label: 'Fly', detail: '', enabled: true, mode: 'fly' });
     if (stones > 0) items.push({ id: 'throw', label: 'Throw', detail: `Throw at your square or one next to it. Stones ${stones}/${C.stones}.`, enabled: true, mode: 'throw' });
     return items;
   }
@@ -59,7 +59,7 @@
     if (S.role === 'red' && (S.stones | 0) < 1) notes.push('No stone. Land on a rock pile to pick one up.');
     return notes;
   }
-  function hunterNearLabel(kind) { return kind === 'badger' ? 'HONEY BADGER NEAR' : 'HYENA NEAR'; }
+  function hunterNearLabel(kind) { return kind === 'badger' ? 'Badger near!' : 'Hyena near!'; }
   function hunterAlerts(prevKinds, nowKinds) {
     const prev = new Set(prevKinds || []);
     return (nowKinds || []).filter(k => k && !prev.has(k));
@@ -96,7 +96,7 @@
     if (!b) return '';
     const t = b.textContent.replace(/^✓\s*/, '').toLowerCase();
     if (t.startsWith('walk')) return 'step';
-    if (t.startsWith('carry') || t.startsWith('🥚')) return 'carry';
+    if (t.startsWith('carry') ) return 'carry';
     if (t.startsWith('kick')) return 'kick';
     if (t.startsWith('fly')) return 'fly';
     if (t.startsWith('throw')) return 'throw';
@@ -179,6 +179,7 @@
         if (it.mode) UI.setMode(it.mode);
         else if (it.act) UI.act(it.act);
         else if (it.run === 'hstay') UI.send({ t: 'act', a: 'hstay' });
+        else if (it.run === 'hburst') UI.send({ t: 'act', a: 'hburst' });
       });
       root.appendChild(b);
     });

@@ -102,8 +102,8 @@ ok('hunter near is a one-shot on entering sight, not while burrowed', () => {
   assert.deepEqual(R.hunterAlerts(['hyena'], ['hyena']), []);
   assert.deepEqual(R.hunterAlerts(['hyena'], []), []);
   assert.deepEqual(R.hunterAlerts([], ['badger']), ['badger']);
-  assert.equal(R.hunterNearLabel('hyena'), 'HYENA NEAR');
-  assert.equal(R.hunterNearLabel('badger'), 'HONEY BADGER NEAR');
+  assert.equal(R.hunterNearLabel('hyena'), 'Hyena near!');
+  assert.equal(R.hunterNearLabel('badger'), 'Badger near!');
   assert.ok(!/\d|north|east|south|west/i.test(R.hunterNearLabel('hyena') + R.hunterNearLabel('badger')));
   const bird = (extra) => Object.assign({ phase: 'play', role: 'blue', h3: { kind: 'hyena', hunter: null, burrowed: false, birds: { blue: { out: false } } } }, extra);
   assert.deepEqual(R.seenHunterKinds(bird()), []);

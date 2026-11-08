@@ -12,9 +12,9 @@ ok('the words are Brian\'s, exactly', () => {
   assert.equal(BL.LINES.firstBurrow, 'The honey badger has been referred to by the Guinness Book of World Records as the most fearless animal in all of the animal kingdom.');
   assert.deepEqual(BL.LINES.rotate, ["Honey badger don't care.", 'Look at this nasty badass.']);
   assert.equal(BL.LINES.sight, "Nothing can stop the honey badger when it's hungry.");
-  assert.equal(BL.LINES.shove, "Look! It's chasing a jackal! ... Honey badger doesn't care, it doesn't give a sh*t, it just takes what it wants.");
+  assert.equal(BL.LINES.shove, "Look! It's chasing a jackal! ... Honey badger doesn't care, it doesn't give a #$%!, it just takes what it wants.");
   assert.equal(BL.LINES.win, 'Look at this nasty badass.');
-  const all = [].concat(...Object.values(BL.LINES)); assert.equal(all.filter(l => /sh\*t/.test(l)).length, 1, 'the sh*t words appear only in the shove line'); });
+  const all = [].concat(...Object.values(BL.LINES)); assert.equal(all.filter(l => /\#\$%!/.test(l)).length, 1, 'the grawlix appear only in the shove line'); });
 
 ok('catch lines: ambush, walk-in and open catch each get their own quote, for every viewer, only for the badger', () => {
   const lc = o => Object.assign({ bird: 'blue', ko: false, seq: 1, round: 2 }, o);

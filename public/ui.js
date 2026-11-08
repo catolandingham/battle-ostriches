@@ -17,12 +17,12 @@ const STONE='<svg viewBox="0 0 40 40" aria-hidden="true"><path d="M7 27l5-13 13-
 const XMARK='<svg viewBox="0 0 40 40" aria-hidden="true"><path d="M9 9L31 31M31 9L9 31" stroke="#1a0000" stroke-width="11" stroke-linecap="round"/><path d="M9 9L31 31M31 9L9 31" stroke="#ff2a1f" stroke-width="7" stroke-linecap="round"/></svg>';
 const EGG='<svg viewBox="0 0 40 40" aria-hidden="true"><ellipse cx="20" cy="22" rx="12" ry="15" fill="#ffd21f" stroke="#3a2a00" stroke-width="3"/><ellipse cx="15" cy="15" rx="3" ry="5" fill="#fff6c0"/></svg>';
 const MYEGG='<svg viewBox="0 0 40 40" aria-hidden="true"><ellipse cx="20" cy="21" rx="11" ry="14" fill="#fffaf0" stroke="#2a2418" stroke-width="2.5"/></svg>';
-const MAYBE='<svg viewBox="0 0 40 40" aria-hidden="true"><ellipse cx="20" cy="21" rx="11" ry="14" fill="none" stroke="#fff" stroke-width="3" stroke-dasharray="5 3"/><text x="20" y="28" text-anchor="middle" font-size="19" font-weight="900" fill="#fff" font-family="sans-serif">?</text></svg>';
-let sniffSeen={},sniffUntil=0,overHold=0;
-const VOCAB={maybe:[MAYBE,'Egg might be here: your last sniff said "Egg nearby!" and nothing rules this square out'],legal:['','Glowing square = you can move here'],target:['','Red-orange glow = you can throw a stone here'],stone:[STONE,'Stone mark: a stone landed here. The ostrich won\'t carry an egg onto it'],food:[LEAF,'Food: the ostrich must step here at least every '+window.BO.CONFIG.food+' turns or it starves'],
- rock:[ROCKS,'Rock pile: the vulture lands here to pick up a stone (holds 1)'],hit:[XMARK,'Smashed egg: this square is blocked now'],spot:[EGG,'Found egg: the vulture landed on it'],
- myegg:[MYEGG,'Your egg: the ring drains as it cools; the number is rounds left'],me:['','This is you'],vul:['','The vulture'],ost:['','The ostrich']};
-const SHORT={stone:'Stone mark (no carrying eggs here)',hit:'Smashed egg (square blocked)',spot:'Found egg',food:'Food',rock:'Rock pile (stone refill)',vul:'The vulture',ost:'The ostrich'};
+const MAYBE='<svg viewBox="0 0 40 40" aria-hidden="true"><ellipse cx="20" cy="21" rx="11" ry="14" fill="none" stroke="#111" stroke-width="6"/><ellipse cx="20" cy="21" rx="11" ry="14" fill="none" stroke="#fff" stroke-width="3" stroke-dasharray="5 3"/></svg>'; // a dashed egg outline: an egg may be here
+let sniffSeen={},sniffUntil=0,overHold=0,kickPick=null; // kickPick: the animal chosen to kick (tap it again to kick)
+const VOCAB={maybe:[MAYBE,'Egg may be here.'],legal:['','Move here.'],target:['','Throw here.'],stone:[STONE,'Wrecked. Can\'t land.'],food:[LEAF,'Food.'],
+ rock:[ROCKS,'Rocks: get a stone.'],hit:[XMARK,'Smashed. Can\'t land.'],spot:[EGG,'Found egg.'],
+ myegg:[MYEGG,'Your egg.'],me:['','You.'],vul:['','The vulture'],ost:['','The ostrich']};
+const SHORT={stone:'Wrecked. Can\'t land.',hit:'Smashed. Can\'t land.',spot:'Found egg',food:'Food',rock:'Rocks: get a stone.',vul:'The vulture',ost:'The ostrich'};
 // warmth ring: full red when just warmed -> orange -> pale -> icy blue as it cools (never purple)
 const WSTOPS=[[0,[111,200,255]],[.34,[236,240,236]],[.67,[255,154,46]],[1,[232,56,47]]];
 function warmCol(f){f=Math.max(0,Math.min(1,f));for(let i=1;i<WSTOPS.length;i++)if(f<=WSTOPS[i][0]){const[a,ca]=WSTOPS[i-1],[b,cb]=WSTOPS[i],t=(f-a)/(b-a);return'rgb('+ca.map((c,j)=>Math.round(c+(cb[j]-c)*t)).join(',')+')';}return'rgb(232,56,47)';}
@@ -30,7 +30,10 @@ function warmRing(n,W){const f=Math.max(0,n)/W,C=2*Math.PI*17,col=warmCol(f);
  return `<svg class="wring" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="17" fill="none" stroke="rgba(0,0,0,.45)" stroke-width="5"/><circle cx="20" cy="20" r="17" fill="none" stroke="${col}" stroke-width="4.5" stroke-linecap="round" stroke-dasharray="${(C*f).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 20 20)"/></svg><span class="wnum${n<=2?' low':''}" style="--wc:${col}">${n}</span>`;}
 const icon=(t,cls)=>`<span class="ic ic-${t}${cls?' '+cls:''}" data-t="${t}">${VOCAB[t][0]}</span>`;
 const C0=window.BO.CONFIG;
-['eggs','warm','sit','fly','rounds','smell','food','stones','walk','carry','kick','kickb'].forEach(k=>document.querySelectorAll('.c-'+k).forEach(e=>e.textContent={eggs:C0.eggs,warm:C0.warmth,fly:C0.vultureFly,rounds:C0.rounds,smell:C0.smellRange,food:C0.food,stones:C0.stones,walk:C0.ostrichWalk,carry:C0.carryWalk,kick:C0.kickPush,kickb:C0.kickPushBadger}[k]));
+// an eye: standard symbol for "seen by others" (on the Sit button, since a sitting ostrich shows where it is)
+const EYE='<svg class="eye" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" style="vertical-align:-3px;margin-right:4px"><path d="M1 12 C5 5 19 5 23 12 C19 19 5 19 1 12Z" fill="#fff" stroke="#111" stroke-width="2"/><circle cx="12" cy="12" r="3.6" fill="#111"/></svg>';
+const satNote=S=>!!(S&&S.sittingAt&&S.ostrich&&S.sittingAt.some(q=>q[0]===S.ostrich[0]&&q[1]===S.ostrich[1]));
+['eggs','warm','sit','fly','rounds','smell','food','stones','walk','carry','kick','kickb','push'].forEach(k=>document.querySelectorAll('.c-'+k).forEach(e=>e.textContent={push:C0.pushHunters,eggs:C0.eggs,warm:C0.warmth,fly:C0.vultureFly,rounds:C0.rounds,smell:C0.smellRange,food:C0.food,stones:C0.stones,walk:C0.ostrichWalk,carry:C0.carryWalk,kick:C0.kickPush,kickb:C0.kickPushBadger}[k]));
 // --- robust connection layer ---
 let pending=null,pendTimer=null,connTimer=null,attempts=0,hb=null,lastPong=0;
 function status(msg,err){const e=$('lobbyErr');if(e){e.textContent=msg||'';e.style.color=err?'#ffb3a8':'#fff';}
@@ -82,7 +85,7 @@ tapper($('homeGear'),()=>{const m=$('homeMenu'),closed=m.classList.toggle('hidde
 // --- pass & play: one phone, both sides. Only the side holding the phone is ever rendered; an opaque cover sits between turns ---
 const NAME={blue:'Ostrich',red:'Vulture'};let PV=null,holder=null,lastBy={},locked=false,hT=null;
 function showCover(r,first){const h=$('handoff');h.className=r;$('hArt').innerHTML=r==='blue'?OST:VUL;
- $('hTitle').textContent=`Pass to the ${NAME[r]}${r==='red'?' 🦅':' 🐦'}`;
+ $('hTitle').textContent=`Pass to the ${NAME[r]}`;
  $('hSub').textContent=first?`The ${NAME[r]} goes first and hides the eggs. ${NAME[r==='blue'?'red':'blue']}, look away!`:`${NAME[r==='blue'?'red':'blue']}, hand over the phone. No peeking!`;
  $('hGo').textContent=`I'm the ${NAME[r]} — tap to start`;
  $('board').innerHTML='';$('actions').innerHTML='';$('hint').textContent='';
@@ -100,7 +103,7 @@ tapper($('inviteBtn'),()=>{sheetOpen=!sheetOpen;render();});tapper($('waitClose'
 // invite popover closes on any tap outside it (or its chip)
 const outside=e=>{if(sheetOpen&&!e.target.closest('#wait,#inviteBtn')){sheetOpen=false;render();}};
 document.addEventListener('touchstart',outside,{passive:true,capture:true});document.addEventListener('mousedown',outside,true);tapper($('howBtn'),()=>UI.rules());tapper($('helpBtn'),()=>UI.rules());
-function muteLabel(){const t=SFX.muted?'Sound off':'Sound on';$('muteBtn').textContent=SFX.muted?'🔇':'🔊';$('muteBtn').setAttribute('aria-label',t);if($('muteBtn2')){$('muteBtn2').textContent=t;$('muteBtn2').setAttribute('aria-label',t);}}
+function muteLabel(){const t=SFX.muted?'Sound off':'Sound on';$('muteBtn').innerHTML=SFX.muted?'<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M3 9v6h4l5 4V5L7 9H3z" fill="#fff" stroke="#111" stroke-width="1.5" stroke-linejoin="round"/><path d="M16 9l5 6M21 9l-5 6" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>':'<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M3 9v6h4l5 4V5L7 9H3z" fill="#fff" stroke="#111" stroke-width="1.5" stroke-linejoin="round"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>';$('muteBtn').setAttribute('aria-label',t);if($('muteBtn2')){$('muteBtn2').textContent=t;$('muteBtn2').setAttribute('aria-label',t);}}
 muteLabel();tapper($('muteBtn'),()=>{SFX.toggle();muteLabel();});tapper($('muteBtn2'),()=>{SFX.toggle();muteLabel();});
 function sounds(prev){if(!prev)return;const blue=S.role==='blue';
  if(S.phase==='over'&&prev.phase!=='over')return SFX.play(S.winner===S.role?'win':'lose');
@@ -117,12 +120,7 @@ if(!roomQ)TUT.firstVisit();
 if(roomQ){$('codeIn').value=roomQ;open({t:'join',code:roomQ,token:me.code===roomQ.toUpperCase()?me.token:undefined});}
 $('shareBtn').onclick=()=>{const u=$('shareLink').value;if(navigator.share)navigator.share({title:'Battle Ostriches',text:'Play Battle Ostriches with me! Code '+S.code,url:u}).catch(()=>{});else{navigator.clipboard&&navigator.clipboard.writeText(u);$('shareBtn').textContent='Copied!';}};
 // --- walkthrough (same chips as the board) ---
-const WALK={blue:[['🥚','Your goal','Hide '+C0.eggs+' eggs. Keep at least one alive for '+C0.rounds+' rounds. The vulture sees you, but not your eggs.'],
-  ['👆','Your turn','Walk up to '+C0.ostrichWalk+' squares. On an egg: Sit (others can see you sitting) or Carry it '+C0.carryWalk+' square. Kick pushes an animal next to you back '+C0.kickPush+' squares. The ring on each egg drains as it cools: visit it before the number hits 0.'],
-  ['🍃','Stay fed','Step on a leaf at least every '+C0.food+' turns or you starve. A stone thrown at you just bounces off, so your square (and an egg in your beak) is always safe. Squares next to you are not!']],
- red:[['💥','Your goal','Smash all '+C0.eggs+' hidden eggs. You can see the ostrich; its eggs are hidden.'],
-  ['👆','Your turn','Fly up to '+C0.vultureFly+' squares. Each landing tells you "Egg nearby!" or "No egg nearby" (within 1 square). Land on an egg to find it.'],
-  ['🪨','Stones','You carry 1 stone. Throw at your square or one next to it. A stone at the ostrich just bounces off. A missed stone stays on the board, and the ostrich won\'t carry an egg onto it. Land on a rock pile to pick up another.']]};
+const WALK={}; // the walkthrough cards are gone: the role card and the first-use tips teach the rest
 let wi=0,wr='blue',wDone=null;
 function maybeWalk(r){if(!WALK[r]||localStorage.getItem('bo_walk_'+r))return;walk(r);}
 function walk(role,done){wr=(role&&WALK[role]&&role)||(S&&WALK[S.role]&&S.role)||'blue';if(!WALK[wr])return;wi=0;wDone=done||null;drawWalk();$('walk').classList.remove('hidden');}
@@ -134,7 +132,7 @@ function drawWalk(){const st=WALK[wr],cur=st[wi],W=$('walk');
 let cardOpen=null;
 const cardSeen=id=>{try{return localStorage.getItem('bo_card_'+id)||localStorage.getItem('bo_card_off')}catch(e){return 1}};
 // How to play: the first line of each mode's rules says who hunts what (roles.js huntLine), naming the hunter once the game knows it
-function fillHuntLines(){const R=S&&S.rules;if(R){document.querySelectorAll('[data-r]').forEach(e=>{const v=e.dataset.r.split('.').reduce((o,k)=>o&&o[k],R);if(v!=null&&typeof v!=='object')e.textContent=v;});
+function fillHuntLines(){document.querySelectorAll('[data-ic]').forEach(e=>{e.innerHTML={ROCKS,LEAF,EGG}[e.dataset.ic]||'';});const R=S&&S.rules;if(R){document.querySelectorAll('[data-r]').forEach(e=>{const v=e.dataset.r.split('.').reduce((o,k)=>o&&o[k],R);if(v!=null&&typeof v!=='object')e.textContent=v;});
  const m=R.modes||{},goal=(g,mode,hy)=>{g=g||{kind:'all',n:0};if(mode==='5')return g.kind==='first'?'knock out an ostrich and a vulture.':'knock out every bird.';return g.kind==='catches'?'make '+g.n+' catches. A bird is out after 2 catches.':g.kind==='first'?'knock out one bird.':'knock out both birds.';};
  const a=document.querySelector('.hgoal3'),b=document.querySelector('.hgoal5');if(a&&m['3'])a.textContent=goal(m['3'].goal,'3');if(b&&m['5'])b.textContent=goal(m['5'].goal,'5');}const k=S&&(S.role==='hunter'?(S.kind||(S.h3&&S.h3.kind)):(S.h3&&S.h3.kind));document.querySelectorAll('.mrules').forEach(e=>{const l=e.querySelector('.huntline');if(l&&window.Roles)l.textContent=Roles.huntLine(e.dataset.m,k);});}
 function cardMode(s){return !s.three?'2':s.h3&&s.h3.team?String(s.h3.n):s.h3&&s.h3.hunt?'4h':'3';}
@@ -143,7 +141,7 @@ function cardFor(s){if(!s||!window.Roles||!s.rules)return null;const h=s.h3||{};
 function cardArt(k){return k==='ostrich'?OST:k==='vulture'?VUL:window.T3UI&&T3UI.KIND[k]?T3UI.KIND[k].art:'';}
 const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function showCard(c,picked,again){const el=$('rolecard');if(!el||!c)return;cardOpen={id:c.id,again:!!again};
- el.innerHTML=`<div class="rc" data-animal="${c.animal}"><span class="rpic">${cardArt(c.picture)}</span><h2>${esc(c.title)}</h2>${picked?`<p class="rpicked">${esc(Roles.PICKED)}</p>`:''}<p class="rgoal">${esc(c.goal)}</p><ul class="rmoves">${c.moves.map(m=>`<li>${esc(m)}</li>`).join('')}</ul><p class="rlose">${esc(c.lose)}</p><button type="button" class="rok">Got it</button></div>`;
+ el.innerHTML=`<div class="rc" data-animal="${c.animal}"><span class="rpic">${cardArt(c.picture)}</span><h2>${esc(c.title)}</h2>${picked?`<p class="rpicked">${esc(Roles.PICKED)}</p>`:''}<p class="rgoal">${esc(c.goal)}</p><ul class="rmoves">${c.moves.map(m=>`<li>${esc(m)}</li>`).join('')}</ul>${c.lose?`<p class="rlose">${esc(c.lose)}</p>`:''}<button type="button" class="rok">Got it</button></div>`;
  el.classList.remove('hidden');}
 function closeCard(){const el=$('rolecard');if(!el||!cardOpen)return;el.classList.add('hidden');
  if(!cardOpen.again)try{localStorage.setItem('bo_card_'+cardOpen.id,'1')}catch(e){}cardOpen=null;}
@@ -154,18 +152,18 @@ function maybeCard(){if(cardOpen||!S||S.phase!=='play'||S.god)return;const h=S.h
  const c=cardFor(S);if(!c||cardSeen(c.id))return;showCard(c,S.picked,false);}
 tapper($('rolecard'),closeCard);
 window.UI={card(){showCard(cardFor(S),S&&S.picked,true);},walk(){walk();},rules(){fillHuntLines();$('rules').classList.remove('hidden');const rb=$('roleCardBtn');if(rb)rb.classList.toggle('hidden',!cardFor(S));const b=document.getElementById('guideToggle');if(b){const on=!localStorage.getItem('bo_hs_off');b.textContent=on?'Ostrich guides: ON (tap to turn off)':'Ostrich guides: OFF (tap to turn on)';}},closeRules(){$('rules').classList.add('hidden')},
- setMode(m){if(locked||!S||!S.myTurn)return;mode=m;if(m==='throw')coachDid('throw');render();},
- kick(){if(locked||!S||!S.myTurn||S.role!=='blue')return;if(curMode()==='carry')return nope("You can't kick while carrying an egg.");
-  if(!(S.can&&S.can.kick))return nope('Nothing to kick next to you.');
-  mode='kick';render();}, // like Throw: Kick selects the mode, then a tap on the glowing animal kicks it
- act(a){if(a==='kick')return UI.kick();if(locked||!S||!S.myTurn)return;if(a==='sit'&&!(S.can&&S.can.sit))return nope('Sit only works while you stand on an egg.');coachDid(a);if(a==='sit'&&G&&G.id==='start')gSet('start','1');send({t:'act',a})},guides(on){if(on)localStorage.removeItem('bo_hs_off');else localStorage.setItem('bo_hs_off','1');const b=document.getElementById('guideToggle');if(b)b.textContent=on?'Ostrich guides: ON (tap to turn off)':'Ostrich guides: OFF (tap to turn on)';if(S)render();},replayCoach(){Object.keys(localStorage).filter(k=>k.startsWith('bo_g_')).forEach(k=>localStorage.removeItem(k));['blue','red'].forEach(r=>localStorage.removeItem('bo_cs_'+r));localStorage.removeItem('bo_tips_off');Object.keys(localStorage).filter(k=>k.startsWith('bo_tip_')).forEach(k=>localStorage.removeItem(k));if(S)render();},rematch(how){holder=null;lastBy={};sniffSeen={};send({t:'act',a:'rematch',how:how||'same'})},
- _rr(){if(S)render();},open(m){open(m);},pause(ms){sniffUntil=Math.max(sniffUntil,Date.now()+ms);},send(o){send(o);},_tip:t=>tipBar(t),_S:()=>S,_legal:()=>legalNow(),_locked:()=>locked,menu(){S=null;localStorage.removeItem('bo_me');location.href='/';}};
+ setMode(m){if(locked||!S||!S.myTurn)return;kickPick=null;mode=m;if(m==='throw')coachDid('throw');render();},
+ kick(){if(locked||!S||!S.myTurn||S.role!=='blue')return;if(curMode()==='carry')return nope('Not while carrying.');
+  if(!(S.can&&S.can.kick))return nope('Nothing to kick.');
+  kickPick=null;mode='kick';render();}, // like Throw: Kick selects the mode, then a tap on the glowing animal kicks it
+ act(a){if(a==='kick')return UI.kick();if(locked||!S||!S.myTurn)return;if(a==='sit'&&!(S.can&&S.can.sit))return nope('Not there.');coachDid(a);if(a==='sit'&&G&&G.id==='start')gSet('start','1');send({t:'act',a})},guides(on){if(on)localStorage.removeItem('bo_hs_off');else localStorage.setItem('bo_hs_off','1');const b=document.getElementById('guideToggle');if(b)b.textContent=on?'Ostrich guides: ON (tap to turn off)':'Ostrich guides: OFF (tap to turn on)';if(S)render();},replayCoach(){Object.keys(localStorage).filter(k=>k.startsWith('bo_g_')).forEach(k=>localStorage.removeItem(k));['blue','red'].forEach(r=>localStorage.removeItem('bo_cs_'+r));localStorage.removeItem('bo_tips_off');Object.keys(localStorage).filter(k=>k.startsWith('bo_tip_')).forEach(k=>localStorage.removeItem(k));if(S)render();},rematch(how){holder=null;lastBy={};sniffSeen={};send({t:'act',a:'rematch',how:how||'same'})},
+ _rr(){if(S)render();},_mode:()=>curMode(),open(m){open(m);},pause(ms){sniffUntil=Math.max(sniffUntil,Date.now()+ms);},send(o){send(o);},_tip:t=>tipBar(t),_S:()=>S,_legal:()=>legalNow(),_locked:()=>locked,menu(){S=null;localStorage.removeItem('bo_me');location.href='/';}};
 // --- learn-by-playing coach marks: one hint, anchored, everything else dimmed; advances when the player does it ---
 const COACH={blue:[
-  {when:S=>S.myTurn&&S.moves.length,txt:'Tap a glowing square to walk',at:'board',done:'step'},
-  {when:S=>S.myTurn&&S.can.sit,txt:'Sit to warm this egg (the ring refills)',at:'sit',done:'sit'}],
- red:[{when:S=>S.myTurn,txt:'Tap a glowing square to fly and sniff',at:'board',done:'fly'},
-  {when:S=>S.myTurn&&S.throw&&S.throw.length,txt:'Tip: tap Throw stone to aim',at:'throw',done:'throw'}]};
+  {when:S=>S.myTurn&&S.moves.length,txt:'Tap to move.',at:'board',done:'step'},
+  {when:S=>S.myTurn&&S.can.sit,txt:'Sit to warm this egg.',at:'sit',done:'sit'}],
+ red:[{when:S=>S.myTurn,txt:'Tap to fly.',at:'board',done:'fly'},
+  {when:S=>S.myTurn&&S.throw&&S.throw.length,txt:'Tap Throw to aim.',at:'throw',done:'throw'}]};
 const cIdx=r=>+(localStorage.getItem('bo_cs_'+r)||0);
 function coachNow(){return null;if(!S||S.phase!=='play')return null;const st=COACH[S.role][cIdx(S.role)];return st&&st.when(S)?st:null;}
 function coachDid(a){if(!S)return;const st=COACH[S.role][cIdx(S.role)];if(st&&st.done===a&&st.when(S))localStorage.setItem('bo_cs_'+S.role,cIdx(S.role)+1);}
@@ -185,7 +183,7 @@ function hideTip(){clearTimeout(tipT);TT.classList.add('hidden');}
  B.addEventListener('contextmenu',e=>{if(cellOf(e))e.preventDefault();});
  document.addEventListener('scroll',hideTip,true);}
 // taps on a square only go to the server when that square is glowing; otherwise explain right here
-function tipBar(t){const b=$('tipbar');if(!t){b.classList.add('hidden');return;}b.innerHTML=`<span>💡 ${t}</span> <button class="tipoff" id="tipOff">Turn off tips</button>`;b.classList.remove('hidden');tapper($('tipOff'),()=>{localStorage.setItem('bo_tips_off','1');tipBar(null);});}
+function tipBar(t){const b=$('tipbar');if(!t){b.classList.add('hidden');return;}b.innerHTML=`<span>${t}</span> <button class="tipoff" id="tipOff">Turn off tips</button>`;b.classList.remove('hidden');tapper($('tipOff'),()=>{localStorage.setItem('bo_tips_off','1');tipBar(null);});}
 function nope(msg){const h=$('hint');h.textContent=msg;h.classList.remove('empty');h.classList.remove('nudge');void h.offsetWidth;h.classList.add('nudge');}
 const isF=(C,k)=>C.foods.some(q=>key(q)===k),isR=(C,k)=>C.rocks.some(q=>key(q)===k);
 const nearF=(C,p)=>C.foods.some(q=>Math.max(Math.abs(q[0]-p[0]),Math.abs(q[1]-p[1]))<=1);
@@ -194,20 +192,21 @@ function legalNow(){if(!S)return[];const blue=S.role==='blue',M=curMode(),C=S.cf
  if(blue&&S.phase==='setupOstrich'){const blocked=new Set();if(S.h3){(S.h3.block||[]).forEach(q=>blocked.add(key(q)));(S.h3.pieces||[]).forEach(q=>{if(q.p&&q.p[0]>=0)blocked.add(key(q.p));});}const r=[];for(let y=0;y<C.rows;y++)for(let x=0;x<C.cols;x++){const k=x+','+y;if(!blocked.has(k))r.push([x,y]);}return r;}
  if(!S.myTurn)return[];if(S.role==='hunter')return S.hmoves||[];return blue?(M==='carry'?S.carryMoves:M==='kick'?S.kickTargets||[]:S.moves):(M==='throw'?S.throw:S.fly);}
 function tap(x,y){if(!S||locked)return;if(Date.now()<sniffUntil){clearTimeout(tap.q);tap.q=setTimeout(()=>tap(x,y),sniffUntil-Date.now()+20);return;}const p=[x,y],ok=legalNow().some(q=>q[0]===x&&q[1]===y);
- if(!ok){const c=$('board').children[y*S.cfg.cols+x];if(c&&c.dataset.tip&&c.dataset.tags)showTip(c,c.dataset.tip,2600);}
- if(S.role==='blue'&&(S.phase==='setupEggs'||S.phase==='setupOstrich'))return ok?send({t:'act',a:'place',p}):nope('Tap a glowing square. Eggs can\'t go on rocks, or on or next to food.');
- if(S.phase!=='play')return;if(!S.myTurn)return nope(S.three?window.T3UI.waitMsg(S):S.role==='blue'?'Wait, it\'s the Vulture\'s turn.':'Wait, it\'s the Ostrich\'s turn.');
- const m0=curMode();if(m0==='hmove'){if(!ok)return nope(window.T3UI.nopeMsg(S));return send({t:'act',a:'hmove',p});}
+ if(!ok){const c=$('board').children[y*S.cfg.cols+x];if(c&&c.dataset.tip&&c.dataset.tags)showTip(c,c.dataset.tip,2600);if(c&&c.animate)c.animate([{transform:'translateX(0)'},{transform:'translateX(-4px)'},{transform:'translateX(4px)'},{transform:'translateX(-3px)'},{transform:'translateX(0)'}],{duration:220});}
+ if(S.role==='blue'&&(S.phase==='setupEggs'||S.phase==='setupOstrich'))return ok?send({t:'act',a:'place',p}):nope('Not there.');
+ if(S.phase!=='play')return;if(!S.myTurn)return nope(S.three?window.T3UI.waitMsg(S):S.role==='blue'?'Wait. Vulture\'s turn.':'Wait. Ostrich\'s turn.');
+ const m0=curMode();if(m0==='hmove'){if(!ok)return nope('Too far.');return send({t:'act',a:'hmove',p});}
  const m=curMode();if(!m)return;
- if(!ok&&m==='carry'&&isF(S.cfg,key(p))&&gd(p,S.ostrich)===1){const c=$('board').children[p[1]*S.cfg.cols+p[0]];c&&c.animate([{transform:'translateX(0)'},{transform:'translateX(-3px)'},{transform:'translateX(3px)'},{transform:'translateX(0)'}],{duration:180});return nope("Can't carry egg and food");}
- if(!ok)return nope(m==='throw'?(S.stones<1?'No stone. Land on a rock pile to pick one up.':'Throw at a red-orange square: your square or one next to you. A stone at the ostrich just bounces off.'):m==='kick'?'Tap the animal you want to kick: it glows next to you.':m==='fly'?`Too far. Fly up to ${S.cfg.vultureFly} squares: tap a glowing square.`:m==='carry'?'Carry 1 square: tap a glowing square (not onto an egg, food, rocks, a stone mark, or a smashed square).':`Walk up to ${S.cfg.ostrichWalk} squares: tap a glowing square (smashed squares are blocked).`);
+ if(!ok&&m==='carry'&&isF(S.cfg,key(p))&&gd(p,S.ostrich)===1){const c=$('board').children[p[1]*S.cfg.cols+p[0]];c&&c.animate([{transform:'translateX(0)'},{transform:'translateX(-3px)'},{transform:'translateX(3px)'},{transform:'translateX(0)'}],{duration:180});return nope('No eggs by food.');}
+ if(!ok)return nope(m==='throw'?(S.stones<1?'No stone. Go to rocks.':'Too far.'):m==='kick'?'Tap an animal.':m==='carry'?'Not there.':'Too far.');
+ if(m==='kick'){const kk=key(p);if(kickPick!==kk){kickPick=kk;render();return;}kickPick=null;} // select, see where it goes, tap again to kick
  coachDid(m==='carry'?'step':m);send({t:'act',a:m,p});}
 function curMode(){if(!S.myTurn)return null;if(S.role==='hunter')return'hmove';if(S.role==='red')return mode||'fly';
  if(mode==='carry'&&S.can&&S.can.carry)return'carry';if(mode==='kick'&&S.kickTargets&&S.kickTargets.length)return'kick';return S.moves.length?'step':null;}
 // --- GUIDED HARD STOPS (human ostrich only, client-side): once per device, the ostrich must DO the thing.
 // start: just a one-time tip, never restricts (Brian 11/4). hungry: only moves toward the nearest leaf until it eats. cold: only moves toward the coldest egg until it stands on it.
 // Server rules and the computer ostrich are untouched. Skip in tests: localStorage bo_hs_off=1.
-const NOSTONE_FOUND='You found an egg, but you have no stone. Get one, then come back.';
+const NOSTONE_FOUND='Found it. Get a stone first.';
 const gd=(a,b)=>Math.max(Math.abs(a[0]-b[0]),Math.abs(a[1]-b[1]));
 const gGet=id=>localStorage.getItem('bo_g_'+id),gSet=(id,v)=>localStorage.setItem('bo_g_'+id,v);
 let G=null;
@@ -224,8 +223,8 @@ function guideNow(){G=null;
  const st2=gGet('start');if(st2&&st2.startsWith('on:')&&S.round>+st2.slice(3))gSet('start','1');
  if(gGet('start')!=='1'&&!(gGet('start')||'').startsWith('on:'))gSet('start','1');
  if(gGet('start')!=='on'&&!(gGet('start')||'').startsWith('on:')){const fd=gd(near(C.foods),o);if(!gGet('hungry')&&S.hungerLeft<=Math.max(4,fd+2))gSet('hungry','on');}
- if((gGet('start')||'').startsWith('on:'))return G={id:'start',tip:1,txt:'Tip: sit on eggs to keep them warm'};
- if(gGet('hungry')==='on')return G={id:'hungry',t:near(C.foods),txt:`You're hungry! Go eat (${S.hungerLeft} left)`};
+ if((gGet('start')||'').startsWith('on:'))return G={id:'start',tip:1,txt:'Sit on eggs to warm them.'};
+ if(gGet('hungry')==='on')return G={id:'hungry',t:near(C.foods),txt:'Hungry! Go eat.'};
  return null;}
 // cold egg: NOT forced. First time any egg has <=8 rounds left: loud pulse + one-line warning until it's warmed. Afterward: subtle ring pulse only.
 const COOL=8;let W=null;
@@ -236,7 +235,7 @@ function coolNow(){W=null;if(!S||S.role!=='blue'||S.phase!=='play')return;const 
  if(!off&&!gGet('cold')&&ce&&ce.coldIn<=COOL&&key(ce.pos)!==key(S.ostrich)&&!(gGet('start')||'').startsWith('on:'))gSet('cold','on:'+ce.i);
  const c=gGet('cold');const loud=!off&&c&&c.startsWith('on:')?S.eggs[+c.slice(3)]:null;
  W={cool:new Set(eggs.filter(e=>e.coldIn<=COOL&&key(e.pos)!==key(S.ostrich)).map(e=>key(e.pos))),loud:loud?key(loud.pos):null,
-  txt:loud?`Egg cooling — ${loud.coldIn} round${loud.coldIn===1?'':'s'} left!${loud.coldIn<=4?' Hurry back!':''}`:'',urgent:loud&&loud.coldIn<=4};}
+  txt:loud?'Egg cooling. Go back.':'',urgent:loud&&loud.coldIn<=4};}
 function guideApply(){if(S&&!S._o)S._o={m:S.moves,c:S.carryMoves,cc:S.can&&S.can.carry};else if(S){S.moves=S._o.m;S.carryMoves=S._o.c;if(S.can)S.can.carry=S._o.cc;}if(!G)return;const o=S.ostrich;if(!G.t)return;if(G.free){G.path=[];let p=o.slice();for(let k=0;k<20&&gd(p,G.t)>0;k++){p=[p[0]+Math.sign(G.t[0]-p[0]),p[1]+Math.sign(G.t[1]-p[1])];G.path.push(key(p));}return;}const tg=G.any||[G.t],f=ms=>{const r=(ms||[]).filter(p=>tg.some(t=>gd(p,t)<gd(o,t)));return r.length||!(ms||[]).length?r:ms;};
  if(G.sit&&S.can&&S.can.sit){S.moves=[];S.carryMoves=[];S.can.carry=false;}else{S.moves=f(S.moves);S.carryMoves=f(S.carryMoves);}
  G.path=[];let p=o.slice();for(let k=0;k<20&&gd(p,G.t)>0;k++){p=[p[0]+Math.sign(G.t[0]-p[0]),p[1]+Math.sign(G.t[1]-p[1])];G.path.push(key(p));}}
@@ -249,13 +248,29 @@ function youTag(board){
  const bs=S.h3&&S.h3.birds,mb=bs&&bs[S.h3.mySeat||S.role];if(mb&&mb.out)return;
  const mine=board.querySelector('.pc.ph.mine'),cell=mine?mine.closest('.cell'):board.querySelector('.cell[data-tags~="me"]');
  if(!cell)return;
+ const ring=document.createElement('i');ring.className='youring';cell.appendChild(ring); // one ring under your own animal, the same in every theme
  const t=document.createElement('span');t.className='youtag'+(cell.querySelector('.pouncetag')?' low':'');t.textContent='YOU';cell.appendChild(t);
  if(S.phase!=='play'||!S.myTurn)return;
  const k=S.role+':'+S.round+':'+S.turn;if(k!==youKey){youKey=k;youAt=Date.now();}
  const el=Date.now()-youAt;if(el>=600)return;
  const p=document.createElement('span');p.className='youpulse';p.style.animationDelay=(-el)+'ms';cell.appendChild(p);
  setTimeout(()=>document.querySelectorAll('.youpulse').forEach(e=>e.remove()),650-el);}
-// Kick preview: the direction and how far, nothing about what lies there. It wraps at the edge and may stop early.
+// Kick, shown instead of told: the chosen animal gets a straight line of dots (one per square it will travel, around the edge if it wraps) and a faded copy of it
+// where it lands. Dots on squares the ostrich can see are solid; dots beyond its sight are hollow. Nothing says what lies there.
+function drawKickPreview(board,S,C,kicking){
+ if(!kicking||!kickPick||!S.ostrich){kickPick=null;return;}
+ const [tx,ty]=kickPick.split(',').map(Number),o=S.ostrich;
+ if(!(S.kickTargets||[]).some(q=>q[0]===tx&&q[1]===ty)){kickPick=null;return;}
+ const dx=Math.sign(tx-o[0]),dy=Math.sign(ty-o[1]),h=S.h3||{};
+ const isBadger=(h.hunter&&h.kind==='badger'&&h.hunter[0]===tx&&h.hunter[1]===ty)||(h.hunters||[]).some(x=>x.kind==='badger'&&x.p[0]===tx&&x.p[1]===ty);
+ const n=isBadger?S.cfg.kickPushBadger:S.cfg.kickPush,from=board.children[ty*C.cols+tx];
+ let x=tx,y=ty,last=null;
+ for(let i=1;i<=n;i++){x=(x+dx+C.cols)%C.cols;y=(y+dy+C.rows)%C.rows;const c=board.children[y*C.cols+x];if(!c)break;
+  const d=document.createElement('i');d.className='kpath'+(Math.max(Math.abs(x-o[0]),Math.abs(y-o[1]))<=2?'':' hollow');c.appendChild(d);last=c;}
+ const art=from&&from.querySelector('.pc:not(.po)');if(last&&art){const g=document.createElement('div');g.className='pc kghost';g.innerHTML=art.innerHTML;last.appendChild(g);}
+ if(from){const a=document.createElement('i');a.className='karrow';a.style.setProperty('--ang',(Math.atan2(dy,dx)*180/Math.PI)+'deg');from.appendChild(a);}
+}
+// Kick preview (long-press tooltip): the direction and how far, nothing about what lies there. It wraps at the edge and may stop early.
 function kickTip(x,y){const o=S.ostrich,dx=Math.sign(x-o[0]),dy=Math.sign(y-o[1]),A={'0,-1':'up','0,1':'down','-1,0':'left','1,0':'right','-1,-1':'up and left','1,-1':'up and right','-1,1':'down and left','1,1':'down and right'};
  return 'Kick it '+(A[dx+','+dy]||'away')+', up to '+S.cfg.kickPush+' squares ('+S.cfg.kickPushBadger+' for a honey badger). It may stop early.';}
 function render(prev){
@@ -275,7 +290,7 @@ function render(prev){
  else if(sheetOpen&&!S.ai){w.classList.remove('hidden');w.classList.add('sheet');document.body.appendChild(w);} else{w.classList.add('hidden');w.classList.remove('sheet');sheetOpen=false;}
  w.firstElementChild.nextElementSibling.textContent=waiting?'Waiting for your opponent. Send them this link:':'Room code';
  // share first: while nobody else has joined and nothing is placed yet, pick (or change) your side under the code
- const sp=$('seatPick'),SNM={blue:'🐦 Ostrich',red:'🦅 Vulture',hunter:'🐾 Hunter',hyena:'🐾 Hyena',badger:'🦡 Honey badger',o1:'🐦 Ostrich 1',o2:'🐦 Ostrich 2',v1:'🦅 Vulture 1',v2:'🦅 Vulture 2'};
+ const sp=$('seatPick'),SNM={blue:'Ostrich',red:'Vulture',hunter:'Hunter',hyena:'Hyena',badger:'Honey badger',o1:'Ostrich 1',o2:'Ostrich 2',v1:'Vulture 1',v2:'Vulture 2'};
  const mySeat=S.h3&&S.h3.mySeat||S.role,seatsAll=S.h3?Object.entries(S.h3.seats):[['blue',S.role==='blue'?'on':'open'],['red',S.role==='red'?'on':'open']];
  const fresh=waiting&&(S.phase==='setupEggs'||S.phase==='setup')&&!(S.eggs||[]).length&&!(S.h3&&S.h3.setupStep&&S.h3.setupStep!=='eggs');
  const choices=seatsAll.filter(([r,v])=>r===mySeat||v==='open').map(([r])=>r);
@@ -301,94 +316,96 @@ function render(prev){
  const birdGone=side=>{const b=S.h3&&S.h3.birds;if(!b)return false;if(S.h3.team){const me=S.h3.mySeat;return side==='o'?!!((me==='o1'||me==='o2')&&b[me]&&b[me].out):!!((me==='v1'||me==='v2')&&b[me]&&b[me].out);}return side==='o'?!!(b.blue&&b.blue.out):!!(b.red&&b.red.out);};
  const onBoard=p=>p&&p[0]>=0&&p[1]>=0;
  const noStone=!blue&&S.role==='red'&&S.phase==='play'&&S.myTurn&&S.stones<1,throwing=!blue&&M==='throw',kicking=blue&&M==='kick',ok=onBoard(S.ostrich)&&!birdGone('o')?key(S.ostrich):'',vk=onBoard(S.vulture)&&!birdGone('v')?key(S.vulture):'';
+ const fogP=S.phase==='play'&&!S.god&&S.role!=='hunter'?(S.role==='blue'?S.ostrich:S.role==='red'?S.vulture:null):null,fogOf=fogP&&fogP[0]>=0?fogP:null;
  for(let y=0;y<C.rows;y++)for(let x=0;x<C.cols;x++){const k=x+','+y,d=document.createElement('div');d.className='cell'+((x+y)%2?' alt':'');
   const m=S.marks[k];if(m)d.classList.add(m);const tags=[],tip=[];
+  if(fogOf&&Math.max(Math.abs(x-fogOf[0]),Math.abs(y-fogOf[1]))>2)d.classList.add('fog'); // fog of war: a bird sees hunters only within 2 (hunters get none)
   const legal=lk.has(k)||(setup&&legalNow().some(q=>key(q)===k));
   if(W&&W.cool.has(k)){if(W.loud===k){d.classList.add('gloud');if(W.urgent)d.classList.add('urgent');}else d.classList.add('gcool');}
   if(G&&G.path&&G.path.includes(k))d.classList.add(k===key(G.t)?'gtarget':'gpath');
   if(legal){d.classList.add('legal');if(throwing||kicking)d.classList.add('target');tags.push(throwing||kicking?'target':'legal');d.setAttribute('aria-label',throwing?'Throw here':kicking?'Kick here':'Legal step');}
   const maybe=!found&&!blue&&sn&&sn.yes&&inSn(k)&&!m&&k!==ok&&!isF(C,k)&&!isR(C,k);
   if(blue&&sn&&sn.yes&&inSn(k)&&m!=='hit')d.classList.add('snseen');
-  if(maybe){d.classList.add('maybe');tags.push('maybe');tip.push('Egg might be here (sniff)');}
+  if(maybe){d.classList.add('maybe');tags.push('maybe');tip.push('Egg may be here.');}
   if(sn&&snNew&&inSn(k)&&!found){d.classList.add(sn.yes?'snyes':'snno');d.style.animationDelay=(Math.max(Math.abs(x-sn.p[0]),Math.abs(y-sn.p[1]))*.18)+'s';}
   // exactly one tile icon: smashed > found egg > own egg > food > rocks
   const e=eggAt[k];let h='';
   if(m==='hit'){h=icon('hit');tip.push(SHORT.hit);}
-  else if(m==='stone'){h=icon('stone');tip.push(SHORT.stone);}
+  else if(m==='stone'){h=icon('hit');tip.push(SHORT.stone);} // every wrecked square looks the same: one X
   else if(!blue&&m==='spotted'){h=icon('spot');tip.push(SHORT.spot);}
   else if((blue||S.god)&&e){h=`<span class="ic ic-myegg${m==='spotted'?' found':''}${S.god&&!blue?' godegg':''}" data-t="myegg">${MYEGG}${S.phase==='play'?warmRing(e.coldIn,C.warmth):''}</span>`;
-   tip.push((blue?'Your egg: ':'Egg: ')+e.coldIn+' round'+(e.coldIn===1?'':'s')+' until cold'+(m==='spotted'?' · the vulture found it':'')+(S.god&&!blue?' · watching':''));}
+   tip.push((blue?'Your egg. ':'Egg. ')+'Cold in '+e.coldIn+'.'+(m==='spotted'?' Found.':''));}
   else if(maybe){h=icon('maybe');}
-  else if(isF(C,k)){h=icon('food');tip.push(SHORT.food+': resets the ostrich\'s hunger to '+C.food);}
+  else if(isF(C,k)){h=icon('food');tip.push(SHORT.food);}
   else if(isR(C,k)){h=icon('rock');tip.push(SHORT.rock);}
   if(h)tags.push(h.match(/data-t="(\w+)"/)[1]);
   if(noStone&&isR(C,k))d.classList.add('rockcall'); // vulture with no stone: both rock piles glow (every turn)
   if(k===lastThrow&&(la.result==='miss'||la.result==='bounce')){d.classList.add(la.result==='bounce'?'bounce':'flash');}
   if(k===vk&&k!==ok&&(m==='spotted'||(blue&&e)))d.classList.add('vfound'); // vulture on a found egg: both show, corner layout
   if(k===vk&&k===ok){d.classList.add('both');tip.push('Vulture and ostrich share this square');}
-  if(k===vk){h+=`<div class="pc pv">${VUL}</div>`;tip.push(blue?'The vulture':'You (vulture)');tags.push(blue?'vul':'me');}
-  if(k===ok){if(blue&&e){d.classList.add('sat');}h+=`<div class="pc po">${OST}</div>`+(S.carried?'<span class="carry">'+MYEGG+'</span>':'');tip.push(blue?'You (ostrich)'+(S.carried?', carrying an egg':''):'The ostrich'+(S.carried?' (carrying something)':''));tags.push(blue?'me':'ost');
+  if(k===vk){h+=`<div class="pc pv">${VUL}</div>`;tip.push(blue?'The vulture':'You.');tags.push(blue?'vul':'me');}
+  if(k===ok){if(blue&&e){d.classList.add('sat');}h+=`<div class="pc po">${OST}</div>`+(S.carried?'<span class="carry">'+MYEGG+'</span>':'');tip.push(blue?'You.':'The ostrich');tags.push(blue?'me':'ost');
    if(blue&&S.carried&&S.eggs&&S.eggs[S.carrying])h+=warmRing(S.eggs[S.carrying].coldIn,C.warmth);}
-  if(legal)tip.push(kicking?kickTip(x,y):throwing?'Throw a stone here':setup?(S.phase==='setupEggs'?'Hide an egg here':'Start here'):blue?'Move here':'Fly here');
-  d.innerHTML=h;d.dataset.tip=[...new Set(tip)].join(' · ');
+  if(legal)tip.push(kicking?kickTip(x,y):throwing?'Throw here.':setup?(S.phase==='setupEggs'?'Hide an egg here':'Start here'):blue?'Move here':'Fly here');
+  d.innerHTML=h+(legal?(kicking?'<i class="kring"></i>':throwing?'<i class="aim"></i>':'<i class="mvdot"></i>'):'');d.dataset.tip=[...new Set(tip)].join(' · ');
   d.dataset.tags=tags.join(' ');if(tags.includes('me'))d.id='current';d.onclick=()=>{if(Date.now()<noClick)return;tap(x,y);};board.appendChild(d);}
  {const cs=getComputedStyle(board),gap=parseFloat(cs.columnGap)||0,pad=parseFloat(cs.paddingLeft)+parseFloat(cs.paddingRight),inner=board.clientWidth-pad,w=(inner-gap*(C.cols-1))/C.cols;if(w>1){board.style.gridAutoRows='0';board.style.gridTemplateRows=`repeat(${C.rows},${w}px)`;}}
  if(prev&&blue&&S.hungerLeft>prev.hungerLeft&&S.ostrich&&S.ostrich[0]>=0){const c=board.children[S.ostrich[1]*C.cols+S.ostrich[0]];if(c)c.classList.add('ate');}
  if(snNew){const vc=board.children[sn.p[1]*C.cols+sn.p[0]];if(vc&&!found){const w=document.createElement('div');w.className='snwave '+(sn.yes?'yes':'no');vc.appendChild(w);}
-  if(!window.BORing||BORing.showSniffPop(blue,!!sn.yes,found)){const o=document.createElement('div');o.id='snpop';o.className=(found?'yes found':sn.yes?'yes':'no')+(blue?' small':'');o.textContent=found?(blue?'Vulture found your egg!':'Found egg!'):sn.yes?(blue?'Vulture smells an egg nearby':'Egg nearby!'):'No egg nearby';board.appendChild(o);setTimeout(()=>o.remove(),1400);}}
+  if(!window.BORing||BORing.showSniffPop(blue,!!sn.yes,found)){const o=document.createElement('div');o.id='snpop';o.className=(found?'yes found':sn.yes?'yes':'no')+(blue?' small':'');o.textContent=found?(blue?'Vulture found your egg!':'Found egg!'):sn.yes?(blue?'Vulture sniffed an egg.':'Egg nearby!'):'No egg nearby';board.appendChild(o);setTimeout(()=>o.remove(),1400);}}
  // sniff banner: the vulture's yes/no for this sense only (a later round must not repeat it), plus hunger
  const bn=$('banner');let bt='',bc='';
  const smashed=la&&la.type==='throw'&&la.result==='hit';
- if(smashed){bt='💥 Smash!';bc='yes';}
+ if(smashed){bt='Smashed!';bc='yes';}
  else if(foodLead){bt=foodText;bc='hungry';}
  else if(BO.sniffAnnounce(S)){bt=BO.sniffAnnounce(S);bc=bt==='No egg nearby'?'no':'yes';}
- else if(S.phase==='play'&&blue&&S.ostrich&&S.ostrich[0]>=0&&!BO.foodRoute(C,S.ostrich,S.marks)&&S.hungerLeft<=2){bt=`Hungry! ${S.hungerLeft} left, no open path to a leaf`;bc='hungry';}
+ else if(S.phase==='play'&&blue&&S.ostrich&&S.ostrich[0]>=0&&!BO.foodRoute(C,S.ostrich,S.marks)&&S.hungerLeft<=2){bt='Hungry. No way to food.';bc='hungry';}
  if(prev&&S.phase==='play'&&(S.lastCold|0)>(prev.lastCold|0)&&!smashed){bt='An egg went cold.';bc='no';}
  if(prev&&blue&&S.hungerLeft>prev.hungerLeft){bt='Ate the leaf. Hunger restored.';bc='yes';}
- {const left=C.rounds-S.round+1;if(S.phase==='play'&&left<=3&&!bt){bt=left===1?'⏳ Last round!':`⏳ Final ${left} rounds!`;bc='final';}}
+ {const left=C.rounds-S.round+1;if(S.phase==='play'&&left<=3&&!bt){bt=left===1?'Last round!':`Final ${left} rounds!`;bc='final';}}
  if(bn){bn.textContent=bt;bn.className=bt?bc:'hidden';}
  $('warm').innerHTML='';
  const a=$('actions');let h='';a.innerHTML='';const CM=coachNow(),coach=!!CM;
  const btn=(id,lbl,on,click,dis)=>`<button class="${on&&!dis?'on':''}" ${dis?'disabled aria-disabled="true"':''} ${on?'aria-pressed="true"':''} onclick="${click}">${on&&!dis?'✓ ':''}${lbl}</button>`;
- if(S.phase==='setupEggs')h=blue?`Tap a glowing square to hide an egg (${S.h3&&S.h3.eggsToPlace!=null?S.h3.eggsToPlace:C.eggs-S.eggs.length} left). Not on rocks, or on or next to food.`:(S.h3&&S.h3.teamSetup==='ostrich'?'The ostriches are choosing where to start…':'The ostrich is hiding its eggs…');
- else if(S.phase==='setupOstrich')h=blue?'Tap a glowing square to place your ostrich.':(S.h3&&S.h3.teamSetup==='ostrich'?'The ostriches are choosing where to start…':'The ostrich is hiding its eggs…');
+ if(S.phase==='setupEggs')h=blue?`Hide your eggs. ${S.h3&&S.h3.eggsToPlace!=null?S.h3.eggsToPlace:C.eggs-S.eggs.length} left.`:(S.h3&&S.h3.teamSetup==='ostrich'?'The ostriches are choosing where to start…':'The ostrich is hiding its eggs…');
+ else if(S.phase==='setupOstrich')h=blue?'Pick your start.':(S.h3&&S.h3.teamSetup==='ostrich'?'The ostriches are choosing where to start…':'The ostrich is hiding its eggs…');
  else if(S.phase==='play'&&S.three&&(!S.myTurn||S.role==='hunter'))h=window.T3UI.hint(S,a);
- else if(S.phase==='play'&&!S.myTurn)h=blue?'Vulture\'s turn…':'Ostrich\'s turn…';
+ else if(S.phase==='play'&&!S.myTurn)h=blue?(satNote(S)?'The vulture sees you sit.':'Vulture\'s turn…'):'Ostrich\'s turn…';
  else if(S.phase==='play'&&blue){
-  a.innerHTML=btn('s','Walk',M==='step',"UI.setMode('step')")+(S.onEgg?btn('c',M==='carry'?'Carry selected · tap a square':'+ Carry',M==='carry',"UI.setMode('carry')",M==='carry'||!S.can.carry)+btn('t','Sit',false,"UI.act('sit')",!S.can.sit):'')+(S.kickNear?btn('k','Kick',M==='kick',"UI.kick()",M==='carry'||!(S.can&&S.can.kick)):'');
-  h=M==='kick'?'Tap the glowing animal to kick it.':M==='carry'?'Carry selected. Tap a glowing square. This does not end your turn.'+(S.kickNear?" You can't kick while carrying an egg.":''):S.moves.length?(S.onEgg&&S.can&&(S.can.sit||S.can.carry)?'Tap a glowing square to move. + Carry selects a move and does not end the turn.':'Tap a glowing square to move.'):'';
+  a.innerHTML=btn('s','Walk',M==='step',"UI.setMode('step')")+(S.onEgg?btn('c','Carry',M==='carry',"UI.setMode('carry')",M==='carry'||!S.can.carry)+btn('t',EYE+'Sit',false,"UI.act('sit')",!S.can.sit):'')+(S.kickNear?btn('k','Kick',M==='kick',"UI.kick()",M==='carry'||!(S.can&&S.can.kick)):'');
+  h=M==='kick'?'Kick it away.':M==='carry'?'Pick where the egg goes.':S.moves.length?'Your turn. Tap to move.':'';
  } else if(S.phase==='play'){
-  a.innerHTML=btn('fl','Fly',M==='fly',"UI.setMode('fly')")+btn('th',S.stones<1?'Throw stone (none)':`Throw stone · ${S.stones}/${C.stones}`,M==='throw',"UI.setMode('throw')",S.stones<1);
-  h=S.stones<1?'No stone. Land on a glowing rock pile to pick one up.':M==='throw'?'Tap a red-orange square to throw your stone.':S.stones>0?'Tap a glowing square to fly. Tap yourself to Throw.':'Tap a glowing square to fly there.';}
+  a.innerHTML=btn('fl','Fly',M==='fly',"UI.setMode('fly')")+btn('th','Throw',M==='throw',"UI.setMode('throw')",S.stones<1);
+  h=S.stones<1?'No stone. Go to rocks.':M==='throw'?'Tap to throw.':'Your turn. Tap to fly.';}
  a.className=S.phase==='play'&&S.myTurn?'mine':'';
  // ONE message per turn: the most important event wins
  let ev='';const myNew=newTurn&&S.myTurn;
  if(myNew&&la){
-  if(blue&&la.type==='throw')ev=la.result==='bounce'?(la.egg?'Bounced! Egg under ostrich.':'Bounced! No egg.'):la.result==='hit'?'💥 An egg was smashed!':'The stone missed.';
+  if(blue&&la.type==='throw')ev=la.result==='bounce'?'Kicked it back!':la.result==='hit'?'Egg smashed.':'Missed.';
   if(blue&&!ev&&la.spotted)ev='The vulture found an egg! Move it or sit on it.';
-  if(!blue&&la.type==='fly'&&la.spotted)ev='You found an egg. Smash it: tap Throw stone, then your square.';
-  if(S.lastCold&&!ev&&!smashed)ev=`❄️ An egg went cold.`;
+  if(!blue&&la.type==='fly'&&la.spotted)ev='Found an egg. Throw on it.';
+  if(S.lastCold&&!ev&&!smashed)ev='An egg went cold.';
  }
- if(smashed)ev='💥 Smash!';
+ if(smashed)ev='Smashed!';
  else if(!blue&&prev&&prev.turn==='red'&&la&&la.type==='throw'&&S.turn==='blue')ev=la.result==='bounce'?(la.egg?'Bounced! Egg under ostrich.':'Bounced! No egg.'):'Miss.';
  else if(!blue&&S.role==='red'&&S.phase==='play'&&!S.myTurn&&la&&la.type==='fly'){ // the vulture's own landing, shown while the ostrich takes its turn
   if(la.spotted&&S.stones<1)ev=NOSTONE_FOUND;else if(la.refill)ev='Picked up a stone.';}
  if(ev)h=ev+(h?' '+h:'');
  if(W&&W.txt&&!G)h=W.txt;
  if(G&&!(foodLead&&G.id==='hungry')&&M!=='carry')h=G.txt;
- if(!blue&&S.phase==='play'&&S.myTurn&&S.marks[key(S.vulture)]==='spotted'&&S.stones>0&&!smashed)h=M==='throw'?'Tap your own square to smash the egg.':'Smash it: tap Throw stone, then your square.';
+ if(!blue&&S.phase==='play'&&S.myTurn&&S.marks[key(S.vulture)]==='spotted'&&S.stones>0&&!smashed)h='Throw on your own square.';
  if(!blue&&S.role==='red'&&S.phase==='play'&&S.myTurn&&S.marks[key(S.vulture)]==='spotted'&&S.stones<1&&!smashed)h=NOSTONE_FOUND; // standing on a found egg with no stone: say why you can't smash it
  // just-in-time tips (once each)
  if(window.TUT&&S.phase==='play'){const T=TUT.tip;
-  if(la&&la.type==='throw'&&la.result==='hit')T('hit','Red X = a smashed egg. Nobody can step there now.');
-  if(la&&la.type==='throw'&&la.result==='miss')T('stone','Gray stone = a stone landed here. It stays all game, and the ostrich won\'t carry an egg onto it.');
-  if(la&&la.spotted)T('spotted',blue?'The vulture landed on your egg and found it. Sit on it or carry it away.':'Big yellow egg = found. It stays found until the ostrich carries it away.');
-  if(!blue&&S.myTurn&&la&&la.type==='fly')T('sniff',`After each landing you sniff: "Egg nearby!" means an egg is on your square or next to it, and the possible squares turn green.`);
-  if(!blue&&S.myTurn&&M==='throw')T('throwtip','Red-orange = you can throw here. Green ? = an egg might be here. A stone at the ostrich just bounces off.');}
+  if(la&&la.type==='throw'&&la.result==='hit')T('hit','Smashed. Nobody can land here.');
+  if(la&&la.type==='throw'&&la.result==='miss')T('stone','Wrecked. Nobody can land here.');
+  if(la&&la.spotted)T('spotted',blue?'Found! Sit on it or move it.':'Found. It stays found until moved.');
+  if(!blue&&S.myTurn&&la&&la.type==='fly')T('sniff','Each landing sniffs the squares around you.');
+  if(!blue&&S.myTurn&&M==='throw')T('throwtip','Throwing at the ostrich bounces back.');}
  if(window.TUT&&blue&&S.phase==='play'&&S.myTurn){const T=TUT.tip;
-  if(S.round>1)T('warm','The ring on each egg drains as it cools. Stand on the egg to refill it.');
-  if(S.hungerLeft<=C.food/2&&!foodLead)T('food',`Step on a green leaf within ${S.hungerLeft} turns or you starve.`);
-  if(S.onEgg&&S.can.carry&&S.round>3)T('carry','Carry egg: move it 1 square to hide it again.');
+  if(S.round>1)T('warm','Stand on an egg to warm it.');
+  if(S.hungerLeft<=C.food/2&&!foodLead)T('food',`Eat within ${S.hungerLeft} turns.`);
+  if(S.onEgg&&S.can.carry&&S.round>3)T('carry','Carry moves an egg 1 square.');
   if(S.kickNear&&S.can&&S.can.kick)T('kick','Kick: push the animal next to you back '+C.kickPush+' squares instead of walking.');
 }
  if(window.TUT&&S.phase==='play'&&S.round>2)TUT.tip('marks','Hover or tap a square to see what it is.');
@@ -399,6 +416,7 @@ function render(prev){
   if(an&&!an.disabled){an.classList.add('spot','pulse');}if(CM.at==='board'||(an&&!an.disabled))h=CM.txt+(h&&CM.at!=='board'?' — or '+h.charAt(0).toLowerCase()+h.slice(1):'');}
  (S.sittingAt||[]).forEach(q=>{const c=board.children[q[1]*C.cols+q[0]];if(c&&c.classList&&!c.querySelector('.sittag')){const t=document.createElement('span');t.className='sittag';t.textContent='sitting';c.appendChild(t);}});
  if(S.three)window.T3UI.after(S,prev,board);
+ drawKickPreview(board,S,C,blue&&M==='kick'); // after the hunters are drawn, so a kicked hunter can be copied as the faded landing piece
  window.T3UI.events(S,prev,board);window.T3UI.startLine(S,prev,cardMode(S));
  youTag(board);
  if(window.BORing)BORing.sync(S);
@@ -406,7 +424,7 @@ function render(prev){
  // make 'your turn' + what to do impossible to miss (Brian playtest: a player missed the instructions)
  const mt=S.phase==='play'&&S.myTurn&&!S.pass;$('hint').classList.toggle('myturn',!!mt);
  if(window.BORing&&S.phase==='play'&&S.myTurn){for(const note of BORing.omittedNotes(S)){const sit=/^sit/i.test(note),stone=/stone/i.test(note);if(sit&&!/step off|sit is used/i.test(h))h=(h?h+' ':'')+note;if(stone&&!/stone/i.test(h))h=(h?h+' ':'')+note;}}
- if(mt&&!/your turn/i.test(h)){const what=S.role==='red'?'Tap a glowing square to fly'+(S.stones>0?'. Tap yourself to Throw':''):S.role==='hunter'?'Tap a glowing square to move. Tap yourself to stay':'Tap a glowing square to walk'+(S.onEgg&&S.can&&(S.can.sit||S.can.carry)?'. Tap your ostrich for Sit or Carry':'');h='YOUR TURN · '+(h&&!/turn…$/.test(h)?h:what);}
+ if(mt&&(!h||/turn…$/.test(h))){const what=S.role==='red'?'Tap to fly':S.role==='hunter'?'Tap to move':'Tap to move';h=(h&&!/turn…$/.test(h)?h:'Your turn. '+what+'.');}
  $('hint').textContent=h;if(h&&(G||(W&&W.txt))){const sb=document.createElement('button');sb.className='skipguide';sb.id='skipGuide';sb.textContent='Skip guide';$('hint').appendChild(sb);tapper(sb,()=>{UI.guides(false)});}$('hint').classList.toggle('empty',!h);$('hint').classList.toggle('guide',!!G||!!(W&&W.txt));$('hint').classList.toggle('cold',!G&&!!(W&&W.txt));$('hint').classList.toggle('urgent',!G&&!!(W&&W.urgent));$('log').textContent=S.joined&&!S.opponent&&S.phase!=='over'?'Opponent offline… they can rejoin with the same link.':'';
  // cause before result (D36): stone into the count, carried egg slide, cold egg dims, badger sinks; each only on a screen that already held the facts (fx.js)
  if(window.CAUSE)CAUSE.run(S,prev,board,{stone:STONE,egg:MYEGG,ring:n=>warmRing(n,C.warmth)});

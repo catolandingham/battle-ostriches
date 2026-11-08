@@ -26,7 +26,7 @@ const vis = p => p.evaluate(() => { const w = document.getElementById('wait'), r
     const [V2, cV2] = await mk(); await V2.goto(link + '&theme=' + th); await V2.waitForFunction(() => /already running/.test(document.getElementById('roomLobby').textContent)); // a third phone waits for the next game; the offline opponent's seat stays reserved
     await A.screenshot({ path: OUT + th + '-ingame.png' });
     await A.click('#inviteBtn'); await A.waitForTimeout(150); const h = await vis(A);
-    assert.ok(h > 50 && h < 300, th + ': popover ' + h); assert.ok(/^[A-Z]{4}$/.test(await A.textContent('#shareCode')), 'popover shows the code'); assert.equal((await A.textContent('#inviteBtn')).trim(), '🔗', 'no room code in the in-game header');
+    assert.ok(h > 50 && h < 300, th + ': popover ' + h); assert.ok(/^[A-Z]{4}$/.test(await A.textContent('#shareCode')), 'popover shows the code'); assert.equal((await A.textContent('#inviteBtn')).trim(), '', 'no room code in the in-game header');
     await A.screenshot({ path: OUT + th + '-popover.png' });
     await A.touchscreen.tap(200, 600); await A.waitForTimeout(150); assert.equal(await vis(A), 0, th + ': closes on outside tap');
     console.log('ok', th); await cA.close(); await cV2.close();
