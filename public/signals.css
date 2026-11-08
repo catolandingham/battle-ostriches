@@ -26,7 +26,7 @@ body.red #stage #banner.hidden,body.blue #stage #banner.hidden,body.hunter #stag
 #markkey{display:none!important}
 /* One look for every wrecked square (a smashed egg or a stone): a darkened square with one X. */
 html[data-theme] #board .cell.stone,#board .cell.stone,html[data-theme] #board .cell.hit,#board .cell.hit{background:none!important;background-image:linear-gradient(rgba(0,0,0,.5),rgba(0,0,0,.5))!important}
-#board .ic-hit svg path{stroke:#d9dde4!important;filter:drop-shadow(0 0 1px #000)}
+
 /* the picture legend in How to play: the same marks the board draws */
 .lgpic{list-style:none;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:6px 10px}
 .lgpic li{display:flex;align-items:center;gap:8px}
@@ -38,3 +38,11 @@ html[data-theme] #board .cell.stone,#board .cell.stone,html[data-theme] #board .
 .lgs.kring::before{content:'';position:absolute;inset:3px;border-radius:50%;border:4px solid #ffd21f;box-shadow:0 0 0 2px #111,0 0 0 4px #fff}
 .lgs.wrecked{background:#14213d}.lgs.wrecked::before{content:'';position:absolute;inset:4px;background:linear-gradient(45deg,transparent 44%,#d9dde4 44% 56%,transparent 56%),linear-gradient(-45deg,transparent 44%,#d9dde4 44% 56%,transparent 56%)}
 .lgs.dashed::before{content:'';position:absolute;inset:3px;border-radius:40%;border:3px dashed #fff;box-shadow:0 0 0 2px #111}
+/* the toast: one neutral line at the top edge of the board (position set by script); red only for bad news to this phone */
+#announce{top:0;left:50%;font-size:15px!important;line-height:1.2;padding:8px 12px!important;border:2px solid #fff!important;border-radius:12px!important;background:#1b2540!important;color:#fff!important;max-width:92vw;box-shadow:0 2px 10px #0008}
+#announce.bad{background:#b3123f!important}
+/* a ping where it happened (only drawn on a square the viewer can see): two short rings */
+.cell.h3kb{animation:none!important;transform:none!important}
+.cell.h3kb::after{content:'';position:absolute;inset:8%;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 2px #111;z-index:9;pointer-events:none;animation:ping .6s ease-out 2}
+@keyframes ping{0%{transform:scale(.4);opacity:1}100%{transform:scale(1.5);opacity:0}}
+#board .ic-hit svg path:first-child{stroke:#111!important}#board .ic-hit svg path:last-child{stroke:#d9dde4!important}

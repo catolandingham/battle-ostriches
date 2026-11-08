@@ -198,7 +198,7 @@ const ANN_MS=3000,annQ=[];let annBusy=false;
 function announce(txt){if(!txt)return;annQ.push(txt);if(annQ.length>4)annQ.shift();annPump();}
 function annPump(){if(annBusy||!annQ.length)return;annBusy=true;
  let o=$('announce');if(!o){o=document.createElement('div');o.id='announce';o.setAttribute('role','status');o.setAttribute('aria-live','polite');document.body.appendChild(o);}
- o.textContent=annQ.shift();o.className='show';
+ const t=annQ.shift(),bd=document.getElementById('board');o.textContent=t;o.className='show'+(/^Caught!|^A hidden|knocked you out/.test(t)?' bad':'');if(bd)o.style.top=(bd.getBoundingClientRect().top+8)+'px'; // a one-line toast at the top edge of the board; red only for bad news to this phone
  setTimeout(()=>{o.className='';o.textContent='';setTimeout(()=>{annBusy=false;annPump();},120);},ANN_MS);}
 const evSeen={kick:0,pop:0,rival:0,stone:0,dug:0,burst:0};
 function events(S,prev,board){
