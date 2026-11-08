@@ -188,10 +188,13 @@ function badgerLines(S,prev){if(S===bLastS)return;bLastS=S;if(!prev||(prev.round
  for(const e of BL.detect(prev,S,bPicker))badgerSay(e.text);}
 // One look per meaning, in one corner of the square (never over its middle). "May be here" is the animal's small outline, dashed and unfilled. "Is here" (known to be there) is the same small shape filled white with a dark edge. Animals themselves stay full size.
 // The shapes: an egg for the vulture's sniff and for eggs you know, a bird for the hunters' sense, a badger for a burrow a bird saw being dug. Style (dashed or filled) lives in part1.css.
+const EGGD='M6 21A14 17.5 0 1 1 34 21A14 17.5 0 1 1 6 21Z',BIRDD='M2 34L10 24L12 15L18 9L26 8L30 12L38 14L31 18L30 26L24 33L16 35L8 36Z',BADGERD='M3 35C3 19 11 8 20 8C29 8 37 19 37 35Z';
+// each outline is drawn twice: a wider dark dash underneath (mk-d) and the white dash on top (mk), so the dashes stay crisp on any tile
+const two=d=>'<path class="mk-d" pathLength="100" d="'+d+'"/><path class="mk" pathLength="100" d="'+d+'"/>';
 const CM={
- egg:'<svg viewBox="0 0 40 40" aria-hidden="true"><path class="mk" pathLength="100" d="M6 21A14 17.5 0 1 1 34 21A14 17.5 0 1 1 6 21Z"/></svg>',
- bird:'<svg viewBox="0 0 40 40" aria-hidden="true"><path class="mk" pathLength="100" d="M2 34L10 24L12 15L18 9L26 8L30 12L38 14L31 18L30 26L24 33L16 35L8 36Z"/></svg>',
- badger:'<svg viewBox="0 0 40 40" aria-hidden="true"><path class="mk" pathLength="100" d="M3 35C3 19 11 8 20 8C29 8 37 19 37 35Z"/><path class="mk mk-line" d="M13 35C13 26 27 26 27 35"/></svg>'};
+ egg:'<svg viewBox="0 0 40 40" aria-hidden="true">'+two(EGGD)+'</svg>',
+ bird:'<svg viewBox="0 0 40 40" aria-hidden="true">'+two(BIRDD)+'</svg>',
+ badger:'<svg viewBox="0 0 40 40" aria-hidden="true">'+two(BADGERD)+'<path class="mk mk-line" d="M13 35C13 26 27 26 27 35"/></svg>'};
 function markHTML(kind,cls){return CM[kind]?'<i class="cmark cm-'+kind+(cls?' '+cls:'')+'" aria-hidden="true">'+CM[kind]+'</i>':'';}
 function mark(cell,kind,cls){if(!cell||!CM[kind])return null;
  // one mark per square: what is known ("is here", solid) replaces a "may be here" outline on the same square, and never the other way round
