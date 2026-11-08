@@ -154,7 +154,7 @@ function maybeCard(){if(cardOpen||!S||S.phase!=='play'||S.god)return;const h=S.h
  const walk=$('walk'),tut=document.getElementById('tut');if(!walk.classList.contains('hidden')||(tut&&!tut.classList.contains('hidden')))return;
  const c=cardFor(S);if(!c||cardSeen(c.id))return;showCard(c,S.picked,false);}
 tapper($('rolecard'),closeCard);
-window.UI={card(){showCard(cardFor(S),S&&S.picked,true);},walk(){walk();},rules(){fillHuntLines();$('rules').classList.remove('hidden');const rb=$('roleCardBtn');if(rb)rb.classList.toggle('hidden',!cardFor(S));const b=document.getElementById('guideToggle');if(b){const on=!localStorage.getItem('bo_hs_off');b.textContent=on?'Ostrich guides: ON (tap to turn off)':'Ostrich guides: OFF (tap to turn on)';}},closeRules(){$('rules').classList.add('hidden')},
+window.UI={card(){showCard(cardFor(S),S&&S.picked,true);},walk(){walk();},rules(){fillHuntLines();$('rules').classList.remove('hidden');$('rules').scrollTop=0;howPics();const rb=$('roleCardBtn');if(rb)rb.classList.toggle('hidden',!cardFor(S));const b=document.getElementById('guideToggle');if(b){const on=!localStorage.getItem('bo_hs_off');b.textContent=on?'Ostrich guides: ON (tap to turn off)':'Ostrich guides: OFF (tap to turn on)';}},closeRules(){$('rules').classList.add('hidden')},
  setMode(m){if(locked||!S||!S.myTurn)return;kickPick=null;throwPick=null;mode=m;if(m==='throw')coachDid('throw');render();},
  kick(){if(locked||!S||!S.myTurn||S.role!=='blue')return;if(curMode()==='carry')return nope('Not while carrying.');
   if(!(S.can&&S.can.kick))return nope('Nothing to kick.');
@@ -292,6 +292,21 @@ function drawKickPreview(board,S,C,kicking){
 // Kick preview (long-press tooltip): the direction and how far, nothing about what lies there. It wraps at the edge and may stop early.
 function kickTip(x,y){const o=S.ostrich,dx=Math.sign(x-o[0]),dy=Math.sign(y-o[1]),A={'0,-1':'up','0,1':'down','-1,0':'left','1,0':'right','-1,-1':'up and left','1,-1':'up and right','-1,1':'down and left','1,1':'down and right'};
  return 'Kick it '+(A[dx+','+dy]||'away')+', up to '+S.cfg.kickPush+' squares ('+S.cfg.kickPushBadger+' for a honey badger). It may stop early.';}
+// How to play: four small pictures of the board, drawn with the real marks (the same classes and art the game uses), one short line each
+function howPics(){const box=$('howPics');if(!box)return;
+ const mini=(cols,rows,cells,after)=>{const m=document.createElement('div');m.className='mini';m.style.gridTemplateColumns=`repeat(${cols},44px)`;m.style.gridTemplateRows=`repeat(${rows},44px)`;
+  for(let y=0;y<rows;y++)for(let x=0;x<cols;x++){const d=document.createElement('div');d.className='cell'+((x+y)%2?' alt':'');d.innerHTML=(cells[x+','+y]||'');m.appendChild(d);}
+  return {m,after:()=>after&&after(m,{cfg:{cols,rows}})};};
+ const dot='<i class="mvdot"></i>',ring='<i class="mvring"></i>',myegg=`<span class="ic ic-myegg" data-t="myegg">${MYEGG}</span>`;
+ const flag=(m,x,y)=>{const c=m.children[y*(+m.style.gridTemplateColumns.match(/\d+(?=,)/)||4)+x]||m.children[0];const t=document.createElement('span');t.className='youtag youflag';t.textContent='YOU';t.style.left=(c.offsetLeft+c.offsetWidth/2)+'px';t.style.top=(c.offsetTop+1)+'px';m.appendChild(t);};
+ const pics=[
+  mini(4,2,{'1,1':`${myegg}<div class="pc po">${OST}</div>${sqRing(11,C0.warmth,null)}`,'0,0':dot,'1,0':dot,'2,0':dot,'0,1':dot,'2,1':dot},m=>{m.children[5].classList.add('sat');flag(m,1,1);}),
+  mini(4,2,{'1,1':`<div class="pc pv">${VUL}</div>`},(m,s)=>{if(window.T3UI)T3UI.area(m,s,[1,1],1,'may');}),
+  mini(4,2,{'1,1':`<div class="pc pv">${VUL}</div>`,'2,1':`<span class="ic ic-spot" data-t="spot">${EGG}</span><i class="aim"></i>`},m=>{flag(m,1,1);}),
+  mini(4,2,{'1,1':`<span class="ic ic-hit" data-t="hit">${XMARK}</span>`,'2,1':`<div class="pc po">${OST}</div>`},m=>{m.children[5].classList.add('hit');})];
+ const lines=['Tap a dot to move.','An egg or bird may be in here.','Throw a stone at a found egg.','Wrecked: no one can land.'];
+ box.innerHTML='';pics.forEach((p,i)=>{const f=document.createElement('figure');f.className='pic';f.appendChild(p.m);const c=document.createElement('figcaption');c.textContent=lines[i];f.appendChild(c);box.appendChild(f);});
+ pics.forEach(p=>p.after());}
 // a move dot sits only on an empty square; on a square that holds something (an egg, a bird, rocks, a leaf) the cue is a thin ring on the square's edge so the thing stays readable
 function fixMoveMarks(board){board.querySelectorAll('.cell.legal').forEach(c=>{const dot=c.querySelector(':scope>.mvdot');if(!dot)return;
  if(c.querySelector('.pc:not(.kghost),.ic:not(.ic-hit),.carry')){dot.className='mvring';c.classList.add('holds');}});}
