@@ -25,7 +25,9 @@ const ratio = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) +
     await p.evaluate(x => THEME.set(x), t); await p.waitForTimeout(250);
     const r = await p.evaluate(() => { const d = [...document.querySelectorAll('#board .cell.legal > .mvdot')].pop(); if (!d) return null; const q = d.getBoundingClientRect(), cr = d.parentElement.getBoundingClientRect(); return { cx: q.left + q.width / 2, cy: q.top + q.height / 2, w: q.width, left: cr.left, top: cr.top, cw: cr.width }; });
     assert.ok(r, t + ': a move dot is drawn');
-    const half = r.w / 2, [centre, dark, light, tile] = await pixels(null, [[r.cx, r.cy], [r.cx - half - 1, r.cy], [r.cx - half - 3, r.cy], [r.left + 4, r.top + 4]]);
+    // the dot is small now, so its edges fall between screen pixels: take the darkest pixel across the dark edge and the lightest across the light edge
+    const half = r.w / 2, px = await pixels(null, [[r.cx, r.cy], [r.cx - half - 0.5, r.cy], [r.cx - half - 1, r.cy], [r.cx - half - 1.5, r.cy], [r.cx - half - 2.5, r.cy], [r.cx - half - 3, r.cy], [r.cx - half - 3.5, r.cy], [r.left + 4, r.top + 4]]);
+    const sum = c => c[0] + c[1] + c[2], centre = px[0], dark = px.slice(1, 4).sort((a, c) => sum(a) - sum(c))[0], light = px.slice(4, 7).sort((a, c) => sum(c) - sum(a))[0], tile = px[7];
     const cs = { fill: ratio(centre, dark), vsTile: Math.max(ratio(light, tile), ratio(dark, tile)) };
     rows.push(t + ' dot/edge ' + cs.fill.toFixed(1) + ' edge/tile ' + cs.vsTile.toFixed(1));
     assert.ok(cs.vsTile >= 3, t + ': the move dot reads against the tile, ' + cs.vsTile.toFixed(2) + ' (needs 3.0)');

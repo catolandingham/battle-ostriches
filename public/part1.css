@@ -18,7 +18,7 @@ html[data-theme] #actions button.cuebtn:not(:disabled){animation:btnpulse 1s eas
 html #board .cell.gpath::after,html #board .cell.gtarget::after,html #board .cell.gloud::after,html #board .cell.gcool::after{display:none!important}
 
 /* ===== 5. Move dots: small, translucent, only on empty squares; a thin ring on the edge of a square that holds something ===== */
-:is(#board,.mini) .cell>.mvdot{position:absolute;left:50%;top:50%;width:20%;height:20%;transform:translate(-50%,-50%);border-radius:50%;background:rgba(255,210,31,.92);box-shadow:0 0 0 2px #111,0 0 0 4px #fff;z-index:5;pointer-events:none}
+:is(#board,.mini) .cell>.mvdot{position:absolute;left:50%;top:50%;width:22%;height:22%;transform:translate(-50%,-50%);border-radius:50%;background:#ffd21f;box-shadow:0 0 0 2px #111,0 0 0 4px #fff;z-index:5;pointer-events:none}
 :is(#board,.mini) .cell>.mvring{position:absolute;inset:2px;border-radius:6px;border:3px solid rgba(255,210,31,.95);box-shadow:0 0 0 1.5px #111,inset 0 0 0 1.5px #111;z-index:5;pointer-events:none}
 
 /* ===== 2. One message slot above the board; nothing with words sits on the board ===== */

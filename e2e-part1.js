@@ -208,6 +208,16 @@ const hint = p => p.evaluate(() => document.getElementById('hint').textContent.t
   ok('hunters game: no text over the board with any message showing');
   await Promise.all([A4.context().close(), Y.context().close()]);
 
+  // ================= the start line never sits on the role card =================
+  { const c = await b.newContext({ viewport: { width: 390, height: 664 }, deviceScaleFactor: 2, hasTouch: true, isMobile: true }); const R = await c.newPage();
+    await R.addInitScript(() => { for (const k of ['bo_hs_off', 'bo_tut_seen', 'bo_walk_blue', 'bo_walk_red', 'bo_tips_off']) localStorage.setItem(k, '1'); }); R.on('pageerror', e => errs.push(e.message));
+    await R.goto(U); await R.click('#playSolo'); await R.click('[data-bots="1"]'); await R.click('#soloGo'); await R.waitForSelector('[data-role="red"]'); await R.click('[data-role="red"]'); await R.click('#startGame');
+    await R.waitForSelector('#rolecard:not(.hidden)', { timeout: 20000 });
+    let leaked = false; for (let i = 0; i < 8; i++) { if (await R.evaluate(() => !!document.querySelector('#announce.show'))) leaked = true; await sleep(200); }
+    assert.ok(!leaked, 'no start toast runs while the role card is up');
+    await R.click('#rolecard .rok'); await R.waitForSelector('#announce.show', { timeout: 4000 }); await checkLayout(R, 'start line after the card');
+    await c.close(); ok('the start line waits for the role card to close, then shows in the slot'); }
+
   // ================= How to play =================
   const P = await phone(b); await P.goto(U); await P.click('#homeGear'); await P.click('#howBtn'); await sleep(500);
   const how = await P.evaluate(() => { const r = document.getElementById('rules'), h2 = r.querySelector('h2').getBoundingClientRect(), pics = [...r.querySelectorAll('figure.pic')], h3 = r.querySelector('h3').getBoundingClientRect();
