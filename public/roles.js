@@ -44,7 +44,7 @@
     if (m === '4h') names.push('hyena', 'honey badger'); else if ((m === '3' || m === '5')) names.push(HUNTERS[kind] || 'hunter');
     return 'a ' + (names.length < 2 ? names[0] : names.slice(0, -1).join(', ') + ' or ' + names[names.length - 1]);
   }
-  const kickLine = (mode, kind, c) => `Kick: push ${kickList(mode, kind)} next to you back ${c.kick} squares${/honey badger/.test(kickList(mode, kind)) ? ` (${c.kickBadger} for a badger)` : ''}. Not while carrying.`;
+  const kickLine = (mode, kind, c) => `Kick: push ${kickList(mode, kind)} next to you away ${c.kick} squares${/honey badger/.test(kickList(mode, kind)) ? ` (${c.kickBadger} for a badger)` : ''}. Not while carrying.`;
   // One line for the start of a game and for How to play: who hunts what, naming only the animals in the game.
   function huntLine(mode, kind) {
     const m = String(mode || '2');
@@ -53,70 +53,40 @@
     if (m === '4h') return 'The vulture hunts eggs. The hyena and honey badger hunt birds.';
     return `The ${m === '5' ? 'vultures hunt' : 'vulture hunts'} eggs. The ${HUNTERS[kind] || 'hyena or honey badger'} hunts birds.`;
   }
+  // Every card is a title and 4 short lines (goal first), no "lose" line: the goal's opposite is the way to lose, and How to play says the rest.
+  // Kick, Carry and the stone bounce are taught the first time each becomes possible. Numbers come from the rules; no word names a color or a look.
   function ostrich(mode, kind, R) {
     const c = R.cfg, team = mode === '4' || mode === '5', hunt = mode === '3' || mode === '4h' || mode === '5';
     const hl = hunt ? birdHunterLose(mode, kind, R) : [];
-    if (team) return {
-      title: 'You are an Ostrich',
-      goal: `Goal: Keep at least one of your team's eggs alive for ${c.rounds} rounds.`,
-      moves: [`Walk up to ${squares(c.walk)} (${c.carryWalk} with an egg), or sit on an egg. Sitting on an egg shows others where it is.`,
-        kickLine(mode, kind, c),
-        `An egg goes cold if no ostrich stands or sits on it within ${c.warmth} rounds.`,
-        `Eat at a leaf at least every ${c.food} turns.`],
-      lose: 'Your team loses if every egg is smashed or cold.',
-      picture: 'ostrich',
-    };
-    return {
-      title: 'You are the Ostrich',
-      goal: `Goal: Keep one of your ${c.eggs} eggs alive for ${c.rounds} rounds.`,
-      moves: [`Walk up to ${squares(c.walk)} (${c.carryWalk} with an egg), or sit on an egg. Sitting on an egg shows others where it is.`,
-        kickLine(mode, kind, c),
-        `Stand or sit on each egg within ${c.warmth} rounds or it goes cold.`,
-        `Eat at a leaf at least every ${c.food} turns.`],
-      lose: loseList('You lose', ['every egg is smashed or cold', 'you starve'].concat(hl)),
-      picture: 'ostrich',
-    };
+    const ko = hunt && R.modes[mode] ? (mode === '4h' ? R.modes[mode].ko.hyena : R.modes[mode].ko[kind] || R.modes[mode].ko.hyena) : 0;
+    const move = `Move ${c.walk} squares. ${c.carryWalk} with an egg.`;
+    if (team) return { title: 'You are an Ostrich', goal: `Keep 1 team egg alive for ${c.rounds} rounds.`,
+      moves: [move, 'Either ostrich can warm any egg.', `Eat every ${c.food} turns.`], lose: '', picture: 'ostrich' };
+    return { title: 'You are the Ostrich', goal: hunt ? `Keep 1 egg alive. Out after ${ko} catches.` : `Keep 1 egg alive for ${c.rounds} rounds.`,
+      moves: [move, `Stand on each egg every ${c.warmth} rounds.`, `Eat every ${c.food} turns.`], lose: '', picture: 'ostrich' };
   }
 
   function vulture(mode, kind, R) {
     const c = R.cfg, team = mode === '4' || mode === '5', hunt = mode === '3' || mode === '4h' || mode === '5';
-    const hl = hunt ? birdHunterLose(mode, kind, R) : [];
-    const moves = [`Fly up to ${c.fly} squares. Each landing tells you if an egg is within ${c.smell} square${c.smell === 1 ? '' : 's'}.`,
-      `Land on a gray rock pile to pick up a stone. You hold ${c.stones} stone${c.stones === 1 ? '' : 's'}.`,
-      `Throw a stone at a square within ${c.throwRange} of you, even your own. It wrecks the square and smashes an egg there. The ostrich kicks it back.`];
-    if (team) {
-      moves[0] += ' Your teammate sees your sniffs.';
-      return { title: 'You are a Vulture', goal: `Goal: You and your teammate smash every egg before round ${c.rounds} ends.`, moves,
-        lose: `Your team loses if an egg is still alive after round ${c.rounds}.`, picture: 'vulture' };
-    }
-    return { title: 'You are the Vulture', goal: `Goal: Smash every egg before round ${c.rounds} ends.`, moves,
-      lose: loseList('You lose', [`an egg is still alive after round ${c.rounds}`].concat(hl)), picture: 'vulture' };
+    const ko = hunt && R.modes[mode] ? (mode === '4h' ? R.modes[mode].ko.hyena : R.modes[mode].ko[kind] || R.modes[mode].ko.hyena) : 0;
+    const fly = team ? `Fly ${c.fly} squares. You share sniffs with your partner.` : `Fly ${c.fly} squares. Each landing sniffs for eggs.`;
+    return { title: team ? 'You are a Vulture' : 'You are the Vulture', goal: team ? `Break every egg by round ${c.rounds}.` : hunt ? `Break every egg. Out after ${ko} catches.` : `Break every egg by round ${c.rounds}.`,
+      moves: [fly, 'Land on rocks to get a stone.', 'Throw at your square or next to it.'], lose: '', picture: 'vulture' };
   }
 
   // The hunter's goal, from the setting HUNTER_GOAL (game.js) for the mode: 'all', 'first' or 'catches'
   function hunterGoal(mode, m, c) {
     const g = m.goal || { kind: 'all' };
-    if (mode === '5') return g.kind === 'first' ? 'Goal: Knock out an ostrich and a vulture.' : 'Goal: Knock out every bird.';
-    if (g.kind === 'catches') return `Goal: Make ${g.n} catches.`;
-    return g.kind === 'first' ? 'Goal: Knock out one bird.' : 'Goal: Knock out both birds.';
+    if (mode === '5') return g.kind === 'first' ? 'Knock out an ostrich and a vulture.' : 'Knock out every bird.';
+    if (g.kind === 'catches') return `Make ${g.n} catches.`;
+    return g.kind === 'first' ? 'Knock out one bird.' : 'Knock out both birds.';
   }
   function hunter(who, mode, R) {
-    const c = R.cfg, m = R.modes[mode] || R.modes['3'], n = m.ko[who], other = who === 'hyena' ? 'honey badger' : 'hyena';
-    const goal = mode === '4h' ? `Goal: Knock out more birds than the ${other}.` : hunterGoal(mode, m, c);
-    const lose = mode === '4h' ? `You lose if a bird wins first, or if the ${other} knocks out more birds than you.`
-      : mode === '5' ? 'You lose if the ostriches or the vultures win first.' : 'You lose if a bird wins first.';
-    const sense = `Birds see you within ${m.see}. You smell birds (rose dots).`;
-    const out = `A bird is out after ${catches(n)}.`;
-    if (who === 'hyena') return {
-      title: 'You are the Hyena', goal,
-      moves: [`Move up to ${squares(m.walk)} a turn. ${sense}`,
-        `Pounce: If you smell a bird and do not catch it, you smell again and may move ${squares(m.pounce)} more.`, out],
-      lose, picture: 'hyena' };
-    return {
-      title: 'You are the Honey Badger', goal,
-      moves: [`Move up to ${squares(m.walk)} a turn. ${sense} Land on a bird to catch it.`,
-        'Burrow: Stay still to dig in, on any square. Birds cannot see you, and you see any bird next to you. Moving pops you up.', out],
-      lose, picture: 'badger' };
+    const m = R.modes[mode] || R.modes['3'], other = who === 'hyena' ? 'honey badger' : 'hyena';
+    const goal = mode === '4h' ? `Knock out more birds than the ${other}.` : hunterGoal(mode, m, R.cfg);
+    const outline = 'The outline shows where a bird may be.';
+    if (who === 'hyena') return { title: 'You are the Hyena', goal, moves: [`Move ${m.walk} squares.`, outline, `Missed? Move ${m.pounce} more.`], lose: '', picture: 'hyena' };
+    return { title: 'You are the Honey Badger', goal, moves: [`Move ${m.walk} squares.`, outline, 'Stay still to hide underground.'], lose: '', picture: 'badger' };
   }
 
   // role: 'blue' 'red' 'hunter' (the phone's role), or a seat ('o1' 'v2' 'hyena' 'badger'). kind: the hunter's animal ('hyena' or 'badger'),

@@ -385,8 +385,12 @@ function stamp(room, v, seat) {
       v.h3.dug = t.dug ? { seq: t.dug.seq, round: t.dug.round } : null; v.h3.mound = !over && bur && m && (m.seenBy || []).includes(seat) ? m.at.slice() : null;
       const bs = g.hunt && g.hunt.burst; v.h3.burst = bs ? { seq: bs.seq, round: bs.round, n: bs.n, to: over || ['hyena', 'badger'].includes(seat) || HU.seen(g, seat, 'hyena') ? bs.to : null } : null; } }
   if (v && room && room.g) { const g = room.g; v.endWhy = g.phase === 'over' ? g.endWhy || null : null; v.stoneNote = g.lastStone ? { seq: g.lastStone.seq, text: g.lastStone.text } : null;
-    const hid = ['hunter', 'hyena', 'badger'].includes(seat) && g.phase !== 'over'; // hunters see no bird; a bird (or anyone watching) sees an ostrich that is sitting on an egg
-    v.sittingAt = hid ? [] : g.team ? ['o1', 'o2'].filter(o => g.b[o].sitting && g.b[o].pos && g.b[o].pos[0] >= 0).map(o => g.b[o].pos.slice()) : g.sitting && g.ostrich && g.ostrich[0] >= 0 ? [g.ostrich.slice()] : []; }
+    // anyone who can see the ostrich sees it sit: birds always; hunters only through ambush sight (a buried badger with the ostrich next to it)
+    const hunterSeat = ['hunter', 'hyena', 'badger'].includes(seat) && g.phase !== 'over';
+    const amb = !hunterSeat ? [] : (g.three && seat === 'hunter' ? T.ambushSight(g) : g.hunt && seat === 'badger' ? HU.ambushSight(g) : g.team && seat === 'hunter' ? TT.ambushSight(g) : []);
+    const ambAt = p => amb.some(q => q.p[0] === p[0] && q.p[1] === p[1]);
+    v.sittingAt = hunterSeat ? (g.team ? ['o1', 'o2'].filter(o => g.b[o].sitting && g.b[o].pos && g.b[o].pos[0] >= 0 && ambAt(g.b[o].pos)).map(o => g.b[o].pos.slice()) : g.sitting && g.ostrich && g.ostrich[0] >= 0 && ambAt(g.ostrich) ? [g.ostrich.slice()] : [])
+      : g.team ? ['o1', 'o2'].filter(o => g.b[o].sitting && g.b[o].pos && g.b[o].pos[0] >= 0).map(o => g.b[o].pos.slice()) : g.sitting && g.ostrich && g.ostrich[0] >= 0 ? [g.ostrich.slice()] : []; }
   if (v) v.picked = !!((room && room.roster || []).find(r => !r.bot && r.role === seat) || {}).picked;
   if (v) v.rules = RULES;
   if (v) { v.showTimers = timersOn(room); v.clockStopped = !!(room && room.clock === false); v.host = viewerIsHost(room, v); }

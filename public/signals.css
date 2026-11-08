@@ -24,3 +24,17 @@ body.red #stage #banner.hidden,body.blue #stage #banner.hidden,body.hunter #stag
 }
 #board .cell>.youring{position:absolute;inset:3%;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 2px #111,inset 0 0 0 2px #111;z-index:3;pointer-events:none}
 #markkey{display:none!important}
+/* One look for every wrecked square (a smashed egg or a stone): a darkened square with one X. */
+html[data-theme] #board .cell.stone,#board .cell.stone,html[data-theme] #board .cell.hit,#board .cell.hit{background:none!important;background-image:linear-gradient(rgba(0,0,0,.5),rgba(0,0,0,.5))!important}
+#board .ic-hit svg path{stroke:#d9dde4!important;filter:drop-shadow(0 0 1px #000)}
+/* the picture legend in How to play: the same marks the board draws */
+.lgpic{list-style:none;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:6px 10px}
+.lgpic li{display:flex;align-items:center;gap:8px}
+.lgs{position:relative;display:inline-block;flex:none;width:30px;height:30px;border-radius:4px;background:#264a85}
+.lgs svg{width:100%;height:100%}
+.lgs.mvdot,.lgs.aim,.lgs.kring,.lgs.wrecked,.lgs.dashed{position:relative}
+.lgs.mvdot::before{content:'';position:absolute;left:50%;top:50%;width:8px;height:8px;margin:-4px 0 0 -4px;border-radius:50%;background:#ffd21f;box-shadow:0 0 0 2px #111,0 0 0 4px #fff}
+.lgs.aim::before{content:'';position:absolute;inset:5px;border-radius:50%;border:3px solid #ff7a1a;box-shadow:0 0 0 2px #111,0 0 0 4px #fff;background:linear-gradient(#ff7a1a,#ff7a1a) center/3px 70% no-repeat,linear-gradient(#ff7a1a,#ff7a1a) center/70% 3px no-repeat}
+.lgs.kring::before{content:'';position:absolute;inset:3px;border-radius:50%;border:4px solid #ffd21f;box-shadow:0 0 0 2px #111,0 0 0 4px #fff}
+.lgs.wrecked{background:#14213d}.lgs.wrecked::before{content:'';position:absolute;inset:4px;background:linear-gradient(45deg,transparent 44%,#d9dde4 44% 56%,transparent 56%),linear-gradient(-45deg,transparent 44%,#d9dde4 44% 56%,transparent 56%)}
+.lgs.dashed::before{content:'';position:absolute;inset:3px;border-radius:40%;border:3px dashed #fff;box-shadow:0 0 0 2px #111}

@@ -12,7 +12,7 @@
     rotate: ["Honey badger don't care.", 'Look at this nasty badass.'], // staying burrowed on later turns, and later burrows, taking turns
     sight: "Nothing can stop the honey badger when it's hungry.", // ambush sight shows a bird next to the burrow
     kicked: 'Ouch. I mean... honey badger don\'t care.',      // the ostrich kicks the badger
-    shove: "Look! It's chasing a jackal! ... Honey badger doesn't care, it doesn't give a sh*t, it just takes what it wants.", // Hunters: the badger moves onto the hyena
+    shove: "Look! It's chasing a jackal! ... Honey badger doesn't care, it doesn't give a #$%!, it just takes what it wants.", // Hunters: the badger moves onto the hyena
     win: 'Look at this nasty badass.',                        // the badger wins the game
   };
   const WHO = { ambush: 'all', openCatch: 'all', walkIn: 'all', popOut: 'all who see it', shove: 'all', kicked: 'all', win: 'all',
