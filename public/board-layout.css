@@ -1,0 +1,46 @@
+/* Board layout and animal art (Brian, 2026-11-08). Loaded last; the same in every theme.
+   The extra :not(#_x) parts only raise priority over the theme sheets loaded before this one. */
+
+/* The four locked animal drawings fill whatever box holds them. */
+.aimg{display:block;width:100%;height:100%;object-fit:contain;pointer-events:none;-webkit-user-drag:none;user-select:none}
+#fx .spr .aimg{image-rendering:auto}
+.h3i>.aimg,#turnTag .aimg,.rolebtn .aimg,.kindbtn .aimg,.ra .aimg,.ka .aimg{width:100%;height:100%}
+
+/* Eggs: shape B, top-left of the square, one fixed size whether alone or sharing the square. */
+html[data-theme] :is(#board,.mini) .cell .cmark.cm-egg:not(#_a):not(#_b):not(#_c):not(#_d){left:4%!important;top:4%!important;width:48%!important;height:58%!important}
+html[data-theme] :is(#board,.mini) .cell .cmark.cm-egg .mk:not(#_a):not(#_b):not(#_c):not(#_d){stroke-width:3.4px}
+/* The countdown number sits inside the egg; the egg body takes the square's own colour so the number reads. */
+html[data-theme] :is(#board,.mini) .cell .wnum:not(#_a):not(#_b):not(#_c):not(#_d){position:absolute!important;inset:auto!important;left:4%!important;top:21%!important;right:auto!important;bottom:auto!important;width:48%!important;height:40%!important;max-width:none!important;display:flex!important;align-items:center!important;justify-content:center!important;margin:0!important;padding:0!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;transform:none!important;font:800 10px/1 -apple-system,"Helvetica Neue",Helvetica,Arial,sans-serif!important;letter-spacing:-.3px!important;text-align:center!important;color:#111!important;-webkit-text-fill-color:#111!important;z-index:48!important;pointer-events:none}
+html[data-theme] :is(#board,.mini) .cell:has(.wnum) .cmark.cm-egg.is svg .mk:not(#_a):not(#_b):not(#_c):not(#_d){fill:#fff!important;stroke:#111!important}
+/* Nearly cold (2 or less): the egg fills in and the number turns light, as the old pill did. */
+html[data-theme] :is(#board,.mini) .cell:has(.wnum.low) .cmark.cm-egg.is svg .mk:not(#_a):not(#_b):not(#_c):not(#_d){fill:#111!important}
+html[data-theme] :is(#board,.mini) .cell .wnum.low:not(#_a):not(#_b):not(#_c):not(#_d){color:#fff!important;-webkit-text-fill-color:#fff!important}
+/* The warmth ring round a carried egg is replaced by the number in the egg. */
+html[data-theme] #board .cell>.wring:not(.sq):not(#_a):not(#_b):not(#_c):not(#_d){display:none!important}
+
+/* Leaf and rock squares: a small leaf or rock always in the bottom-right corner, the same size with or without an animal. */
+html[data-theme] :is(#board,.mini) .cell>.ic:is(.ic-food,.ic-rock):not(#_a):not(#_b):not(#_c):not(#_d){position:absolute!important;inset:auto!important;left:auto!important;top:auto!important;right:3%!important;bottom:3%!important;width:32%!important;height:32%!important;margin:0!important;padding:0!important;transform:none!important;z-index:47!important;display:block!important;opacity:1!important;filter:none!important;animation:none!important}
+html[data-theme] :is(#board,.mini) .cell>.ic:is(.ic-food,.ic-rock) svg:not(#_a):not(#_b):not(#_c):not(#_d){display:block;width:100%!important;height:100%!important;transform:none!important}
+/* In the black-and-white look the corner mark gets a solid body, so an animal's lines never show through it. */
+html[data-theme="bw"] :is(#board,.mini) .cell>.ic:is(.ic-food,.ic-rock) svg path:not([d^="M10 30"]):not(#_a):not(#_b):not(#_c):not(#_d){fill:var(--tile,#fff)!important;stroke-width:3.4px!important}
+html[data-theme="bw"] :is(#board,.mini) .cell>.ic.ic-food svg path[d^="M10 30"]:not(#_a):not(#_b):not(#_c):not(#_d){stroke-width:3.4px!important}
+
+/* Chip row: the animal on top, its hearts or claw marks underneath. Never inside a board square. */
+#h3bar .bchip:not(#_a):not(#_b):not(#_c){flex-direction:column;align-items:center;justify-content:center;gap:2px!important;padding:3px 6px!important;min-width:46px}
+#h3bar .bchip .cnum{position:absolute;left:3px;top:1px}
+#h3bar .pips:not(#_a):not(#_b):not(#_c){display:flex;gap:2px;align-items:center;justify-content:center;height:11px}
+#h3bar .heart{display:block;width:12px;height:11px}
+#h3bar .heart svg{display:block;width:100%;height:100%}
+html[data-theme] #h3bar .heart svg path:not(#_a):not(#_b):not(#_c):not(#_d){fill:#111!important;stroke:#111!important;stroke-width:.8px!important}
+html[data-theme] #h3bar .heart.lost svg path:not(#_a):not(#_b):not(#_c):not(#_d){fill:none!important;stroke:#b3b3b3!important;stroke-width:1.1px!important}
+#h3bar .claws{display:flex;gap:1px;align-items:center;justify-content:center;height:11px}
+#h3bar .claw{display:block;width:11px;height:11px}
+#h3bar .claw svg{display:block;width:100%;height:100%}
+html[data-theme] #h3bar .claw svg path:not(#_a):not(#_b):not(#_c):not(#_d){fill:none!important;stroke:#b3b3b3!important;stroke-width:1.1px!important;stroke-linecap:round!important}
+html[data-theme] #h3bar .claw.on svg path:not(#_a):not(#_b):not(#_c):not(#_d){stroke:#111!important;stroke-width:1.6px!important}
+#h3bar .bchip .ko{font-size:9px!important;line-height:1!important;padding:1px 3px!important}
+/* Header turn button: the animal fills its box. */
+#hud #turnTag:not(#_a):not(#_b){padding:2px!important}
+#hud #turnTag>span:first-child:not(#_a):not(#_b){width:30px!important;height:30px!important}
+/* An animal sharing an egg square sits lower-right, clear of the wider egg. */
+html[data-theme] :is(#board,.mini) .cell:has(.cm-egg)>.pc:not(#_a):not(#_b):not(#_c):not(#_d){inset:auto!important;left:56%!important;top:54%!important;width:42%!important;height:42%!important;transform:none!important}

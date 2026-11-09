@@ -17,7 +17,7 @@ const { webkit } = require('playwright-core');
       for(const key of ['x','y','w','h'])assert.ok(Math.abs(ref[key]-row.egg[key])<.1,theme+' '+row.name+' same egg '+key+': '+JSON.stringify(row));
       assert.ok(row.egg.x<row.cell.w*.1&&row.egg.y<row.cell.h*.1,theme+' upper-left');
       if(row.bird)assert.ok(row.bird.x>=row.egg.right+1,theme+' '+row.name+' bird clears egg');
-      if(row.number){const n=row.number;assert.ok(n.x>=row.egg.right+1&&n.right<=row.cell.w-3&&n.y>=3&&n.bottom<=row.cell.h-3,theme+' '+row.name+' padded number beside egg '+JSON.stringify(row));if(row.bird)assert.ok(n.bottom<=row.bird.y-1,theme+' number clears bird');}
+      if(row.number){const n=row.number,cx=n.x+n.w/2,cy=n.y+n.h/2;assert.ok(cx>row.egg.x&&cx<row.egg.right&&cy>row.egg.y+row.egg.h*.3&&cy<row.egg.bottom-row.egg.h*.15,theme+' '+row.name+' number inside the egg (Brian, 2026-11-08) '+JSON.stringify(row));}
     }
   }
   // Twelve themes draw an FX sprite instead of the hidden .pc SVG. Check the real

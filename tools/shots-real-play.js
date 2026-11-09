@@ -1,5 +1,5 @@
 // Real-play phone screenshots (390x664, default theme), in the order a player meets them.
-// Usage: node tools/shots-real-play.js <outdir> [start,lobby,vulture,ostrich,hyena,badger,howto,howfound,carry,catch,over]
+// Usage: node tools/shots-real-play.js <outdir> [start,lobby,vulture,ostrich,hyena,badger,howto,howfound,carry,catch,over,layout]
 // It starts the game server on port 4172 and plays real turns; BO_* settings slow the computers and fix the hunters' start squares,
 // and the localStorage keys below skip the tutorial, role card and tips so the board is clear. Run `npm run setup:e2e` once first.
 process.env.PORT = 4172; process.env.BO_NOSTORE = '1'; process.env.BO_BOTMS = '4000'; process.env.BO_CLOCKMS = '900000'; process.env.BO_H3START = '8,3'; process.env.BO_H4START = '2,3,4,3';
@@ -194,6 +194,30 @@ const near = (a, c) => Math.max(Math.abs(a[0] - c[0]), Math.abs(a[1] - c[1]));
       await H.evaluate(() => UI.card()); await sleep(400); await shot(H,'rolecard-badger'); await H.click('#rolecard .rok'); await H.evaluate(()=>UI.rules()); await sleep(1800); if(await H.locator('#howPics figcaption').nth(2).textContent()!=='Filled egg: a vulture found an egg.')throw new Error('hunter caption'); await shot(H,'howto-badger-approved');
       for (const p of [H, Vp, A]) await p.context().close();
     }
+  }
+  if (want('layout')) { // board layout + the four locked animals (2026-11-08): a real 4-player Hunters game, one phone per animal
+    const A = await phone(b), Vp = await phone(b), Y = await phone(b), D = await phone(b);
+    await A.goto(U); await A.click('#playFriend'); await A.waitForSelector('#lobbyCode:not(:empty)'); const link = (await A.inputValue('#lobbyLink')).replace(/^http:\/\/[^/]+/, 'http://localhost:4172');
+    for (const p of [Vp, Y, D]) { await p.goto(link); await p.waitForSelector('#roomLobby'); }
+    await A.waitForSelector('[data-role="blue"],[data-role="ostrich"]'); const pick = async (p, ids) => { for (const id of ids) if (await p.locator('[data-role="' + id + '"]').count()) { await p.click('[data-role="' + id + '"]'); return; } throw new Error('no role ' + ids); };
+    await pick(A, ['ostrich', 'blue']); await sleep(300); await pick(Vp, ['vulture', 'red']); await sleep(300); await pick(Y, ['hyena']); await sleep(300); await pick(D, ['badger']); await sleep(600);
+    await A.click('#startGame'); await A.waitForSelector('#board .cell');
+    const room = last(r => r.hunt); if (!room) throw new Error('no Hunters room'); room.aiT = 1;
+    await A.waitForFunction(() => UI._S() && UI._S().phase === 'setupEggs', null, { timeout: 15000 });
+    for (const [x, y] of [[2, 1], [6, 1], [2, 5]]) { await cell(A, x, y).click(); await sleep(200); }
+    await A.waitForFunction(() => UI._S().phase === 'setupOstrich', null, { timeout: 10000 }).catch(() => {}); if (room.g.phase === 'setupOstrich') { await cell(A, 3, 4).click(); }
+    await A.waitForFunction(() => UI._S().phase === 'play', null, { timeout: 15000 });
+    const g = room.g, hs = g.hunt.hs, bc = () => server.broadcast(room), P = { ostrich: A, vulture: Vp, hyena: Y, badger: D };
+    const scene = async (name, f) => { f(); bc(); await sleep(2600); for (const [k, p] of Object.entries(P)) { await p.evaluate(() => document.querySelectorAll('#msgslot>.h3pop,#snpop,#announce').forEach(e => { e.classList.remove('show'); })); await sleep(150); await shot(p, 'layout-' + name + '-' + k); } };
+    // 1: nobody on a leaf, rock or egg; no catches yet. Eggs at 2,1 / 6,1 / 2,5; leaves 0,0 and 8,6; rocks 4,0 and 4,6.
+    await scene('1-start', () => { g.turn = 'blue'; g.ostrich = [3, 3]; g.vulture = [6, 3]; hs.hyena.p = [4, 4]; hs.hyena.burrowed = false; hs.badger.p = [2, 3]; hs.badger.burrowed = false; hs.badger.dig = 0; g.marks['6,1'] = 'spotted'; });
+    // 2: every animal on a leaf or a rock square
+    await scene('2-resources', () => { g.ostrich = [0, 0]; g.vulture = [4, 0]; hs.hyena.p = [8, 6]; hs.badger.p = [4, 6]; });
+    // 3: the ostrich on its egg; the hyena has caught both birds once (hearts and claws in the chip row)
+    await scene('3-catches', () => { g.ostrich = [2, 5]; g.vulture = [5, 2]; hs.hyena.p = [3, 4]; hs.badger.p = [6, 4]; g.hunt.birds.blue.catches = 1; g.hunt.birds.red.catches = 1; hs.hyena.catches = 2; hs.badger.catches = 1; });
+    // 4: the same board in a sprite theme: the same drawings, upright
+    await A.evaluate(() => THEME.set('nature')); await sleep(1500); await shot(A, 'layout-4-theme-nature-ostrich'); await A.evaluate(() => THEME.set('bw'));
+    for (const p of [A, Vp, Y, D]) await p.context().close();
   }
   await b.close(); server.close(); console.log('done'); process.exit(0);
 })().catch(e => { console.error(e); process.exit(1); });

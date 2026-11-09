@@ -29,6 +29,8 @@ const SPR={
  neon:{
   o:'<svg viewBox="0 0 40 40" fill="none" stroke="#38d6f0" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 27 C9 19 16 17 22 19 L28 6 L33 7"/><path d="M9 27 C14 31 24 31 27 24 L22 19"/><path d="M16 30 L14 37 M21 30 L23 37"/></svg>',
   v:'<svg viewBox="0 0 40 40" fill="none" stroke="#e04cff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18 L20 12 L36 18 L26 22 L20 32 L14 22 Z"/><circle cx="20" cy="10" r="4"/><path d="M23 10 L28 12 L23 13"/></svg>'}};
+// One look per animal in every theme (Brian, 2026-11-08): the moving sprites use the same locked drawings as the board, upright.
+if(window.ART)for(const t in SPR){SPR[t].o=window.ART.ostrich;SPR[t].v=window.ART.vulture;}
 const TH={storm:{sz:1.08,th:'stone'},volcano:{sz:1.08,th:'stone'},comic:{sz:1.1,th:'stone',hop:1,squash:1},pharaoh:{sz:1.08,th:'stone'},nature:{sz:1.05,th:'stone',dust:'#d9c296'},neon:{sz:.9,th:'laser',col:'#ff5bd6',ring:1},notes:{sz:1,th:'ink',col:'#2b2118',blot:['#c0563f88','#d9a44a77','#7a9c6a66']},golden:{sz:1.05,th:'stone',dust:'#ffc46b',glow:1},paper:{sz:1,th:'stone',dust:'confetti',hop:1},arcade:{sz:.95,th:'stone',dust:'pixel',steps:1},toybox:{sz:1.02,th:'stone',dust:'#ffffff',hop:1,squash:1},tactical:{sz:.85,th:'ink',ink:'tacarc',ret:1,ring:1,rcol:'#7dffb0',blot:['#7dffb055','#7dffb033','#7dffb044']}};
 let layer,spr={},last={},theme=()=>document.documentElement.getAttribute('data-theme');
 function cellRect(x,y,S){const b=document.getElementById('board');const c=b&&b.children[y*S.cfg.cols+x];if(!c)return null;const r=c.getBoundingClientRect();return{x:r.left+scrollX,y:r.top+scrollY,w:r.width,h:r.height};}
@@ -41,7 +43,8 @@ function sprite(id,svg,S,p,sz,off){let r=cellRect(p[0],p[1],S);if(!r)return;
  if(!e||e.dataset.svg!==svg){if(e)e.remove();e=document.createElement('div');e.className='spr spr-'+id;e.innerHTML=svg;e.dataset.svg=svg;layer.appendChild(e);spr[id]=e;e.style.transition='none';}
  const s=r.w*(sz||1),tx=r.x+(r.w-s)/2,ty=r.y+(r.h-s)/2,prev=e.dataset.pos,np=p.join(',');
  e.style.width=e.style.height=s+'px';
- if(prev&&prev!==np){const[px,py]=prev.split(',').map(Number);const ang=Math.atan2(p[1]-py,p[0]-px)*180/Math.PI+90;e.style.setProperty('--rot',ang+'deg');
+ if(prev&&prev!==np){const ang=0; // faces stay upright (the old top-down sprites turned toward the move)
+  e.style.setProperty('--rot',ang+'deg');
   const C=TH[theme()]||{};if(C.hop){const ox=e._tx||tx,oy=e._ty||ty,rot=ang+'deg';e.style.transition='none';e.style.transform=`translate(${tx}px,${ty}px) rotate(${rot})`;e.animate([{transform:`translate(${ox}px,${oy}px) rotate(${rot}) scale(1)`},...(C.squash?[{transform:`translate(${ox}px,${oy}px) rotate(${rot}) scale(1.25,.75)`,offset:.15}]:[]),{transform:`translate(${(ox+tx)/2}px,${(oy+ty)/2-r.h*.55}px) rotate(${rot}) scale(1.18)`,offset:.5},...(C.squash?[{transform:`translate(${tx}px,${ty}px) rotate(${rot}) scale(1.3,.7)`,offset:.85}]:[]),{transform:`translate(${tx}px,${ty}px) rotate(${rot}) scale(1)`}],{duration:C.squash?620:520,easing:'ease-in-out'});}
   else requestAnimationFrame(()=>{e.style.transition=C.steps?'transform .45s steps(4,end)':'transform .45s cubic-bezier(.4,.1,.3,1)';e.style.transform=`translate(${tx}px,${ty}px) rotate(var(--rot))`;});
   if(C.ring){ring(r.x+r.w/2,r.y+r.h/2,r.w*(C.rcol?1.6:.9),C.rcol||(id==='o'?'#38d6f0':'#e04cff'),C.rcol?.9:.5);}

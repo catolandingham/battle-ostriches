@@ -43,8 +43,8 @@ function contrast(a, b) {
       const r = el.getBoundingClientRect();
       const cell = el.closest('.cell');
       const bg = getComputedStyle(cell).backgroundColor;
-      const path = el.querySelector('svg path');
-      const fill = path ? (document.documentElement.getAttribute('data-theme') === 'bw' ? getComputedStyle(path).stroke : getComputedStyle(path).fill) : ''; // the black-and-white theme draws the body as a line
+      const path = el.querySelector('svg path'), art = el.querySelector('img.aimg'); // the locked animal drawings are images with black lines
+      const fill = art ? 'rgb(0, 0, 0)' : path ? (document.documentElement.getAttribute('data-theme') === 'bw' ? getComputedStyle(path).stroke : getComputedStyle(path).fill) : ''; // the black-and-white theme draws the body as a line
       const hits = [];
       for (const [dx, dy] of [[0.5, 0.35], [0.3, 0.55], [0.7, 0.6], [0.5, 0.75]]) {
         const x = r.left + r.width * dx, y = r.top + r.height * dy;
@@ -56,10 +56,12 @@ function contrast(a, b) {
       }
       let ink = null;
       try {
-        const svg = el.querySelector('svg').cloneNode(true);
+        let url;
+        if (art) url = art.src;
+        else { const svg = el.querySelector('svg').cloneNode(true);
         if (!svg.getAttribute('xmlns')) svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
         const xml = new XMLSerializer().serializeToString(svg);
-        const url = URL.createObjectURL(new Blob([xml], { type: 'image/svg+xml' }));
+        url = URL.createObjectURL(new Blob([xml], { type: 'image/svg+xml' })); }
         const img = new Image();
         await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = url; });
         const c = document.createElement('canvas'); c.width = 40; c.height = 40;
@@ -68,7 +70,7 @@ function contrast(a, b) {
         const base = g.getImageData(0, 0, 40, 40).data;
         g.drawImage(img, 0, 0, 40, 40);
         const data = g.getImageData(0, 0, 40, 40).data;
-        URL.revokeObjectURL(url);
+        if (!art) URL.revokeObjectURL(url);
         const rel = (v) => { v /= 255; return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
         let strong = 0, seen = 0;
         for (let i = 0; i < data.length; i += 4) {
