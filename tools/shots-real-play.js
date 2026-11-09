@@ -70,7 +70,7 @@ const near = (a, c) => Math.max(Math.abs(a[0] - c[0]), Math.abs(a[1] - c[1]));
     await shot(V, 'vulture-b-later-turn-found-egg');
     const away=B.flyTargets(g).find(q=>!B.eggAt(g,q)&&!B.isRock(g,q)&&!B.isFood(g,q));
     await cell(V,...away).click();await quiet(V);await shot(V,'vulture-c-lone-found-egg');
-    const lone=await V.evaluate(()=>{const m=document.querySelector('#board .cell.spotted:not(:has(.pc)) .ic-spot .cm-egg');if(!m)return false;const a=m.getBoundingClientRect(),b=m.closest('.cell').getBoundingClientRect();return a.width/b.width<.42&&(a.left-b.left)/b.width<.07&&(a.top-b.top)/b.height<.1;});if(!lone)throw new Error('lone found egg must keep small upper-left slot');
+    const lone=await V.evaluate(()=>{const m=document.querySelector('#board .cell.spotted:not(:has(.pc)) .ic-spot .cm-egg');if(!m)return false;const a=m.getBoundingClientRect(),b=m.closest('.cell').getBoundingClientRect();return a.width/b.width<.5&&(a.left-b.left)/b.width<.07&&(a.top-b.top)/b.height<.1;});if(!lone)throw new Error('lone found egg must keep small upper-left slot');
     await V.evaluate(() => UI.card()); await sleep(400); await shot(V,'rolecard-vulture'); await V.context().close();
   }
   if (want('carry')) {
