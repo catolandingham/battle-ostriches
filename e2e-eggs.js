@@ -16,12 +16,12 @@ const { webkit } = require('playwright-core');
     for(const row of rows){
       for(const key of ['x','y','w','h'])assert.ok(Math.abs(ref[key]-row.egg[key])<.1,theme+' '+row.name+' same egg '+key+': '+JSON.stringify(row));
       assert.ok(row.egg.x<row.cell.w*.1&&row.egg.y<row.cell.h*.1,theme+' upper-left');
-      if(row.bird){const cx=row.bird.x+row.bird.w/2,cy=row.bird.y+row.bird.h/2;assert.ok(Math.abs(cx-row.cell.w/2)<1&&Math.abs(cy-row.cell.h/2)<1&&row.bird.w/row.cell.w>.8,theme+' '+row.name+' bird stays centred at full size (Brian, PR #24 review) '+JSON.stringify(row));}
+      if(row.bird){const b=row.bird,e=row.egg,cx=b.x+b.w/2,cy=b.y+b.h/2;assert.ok(Math.abs(cx-row.cell.w/2)<1&&Math.abs(cy-row.cell.h/2)<1&&b.w/row.cell.w>=.3,theme+' '+row.name+' bird a little smaller and centred '+JSON.stringify(row));assert.ok(e.right<=b.x||e.bottom<=b.y,theme+' '+row.name+' egg and bird do not overlap '+JSON.stringify(row));}
       if(row.number){const n=row.number,cx=n.x+n.w/2,cy=n.y+n.h/2;assert.ok(cx>row.egg.x&&cx<row.egg.right&&cy>row.egg.y+row.egg.h*.3&&cy<row.egg.bottom-row.egg.h*.15,theme+' '+row.name+' number inside the egg (Brian, 2026-11-08) '+JSON.stringify(row));}
     }
   }
   // Twelve themes draw an FX sprite instead of the hidden .pc SVG. Check the real
-  // sprite too, so it sits in the same centred slot as the board piece.
+  // sprite too, so it sits in the same smaller centred slot as the board piece.
   await page.evaluate(()=>{const c=document.querySelector('[data-eggtest="own + bird, 14"]').cloneNode(true),b=document.querySelector('#board');b.innerHTML='';b.appendChild(c);});
   await page.addScriptTag({path:path.resolve('public/fx.js')});
   for(const theme of themes.filter(t=>!['bw','classic'].includes(t))){

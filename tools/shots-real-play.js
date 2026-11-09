@@ -70,7 +70,7 @@ const near = (a, c) => Math.max(Math.abs(a[0] - c[0]), Math.abs(a[1] - c[1]));
     await shot(V, 'vulture-b-later-turn-found-egg');
     const away=B.flyTargets(g).find(q=>!B.eggAt(g,q)&&!B.isRock(g,q)&&!B.isFood(g,q));
     await cell(V,...away).click();await quiet(V);await shot(V,'vulture-c-lone-found-egg');
-    const lone=await V.evaluate(()=>{const m=document.querySelector('#board .cell.spotted:not(:has(.pc)) .ic-spot .cm-egg');if(!m)return false;const a=m.getBoundingClientRect(),b=m.closest('.cell').getBoundingClientRect();return a.width/b.width<.5&&(a.left-b.left)/b.width<.07&&(a.top-b.top)/b.height<.1;});if(!lone)throw new Error('lone found egg must keep small upper-left slot');
+    const lone=await V.evaluate(()=>{const m=document.querySelector('#board .cell.spotted:not(:has(.pc)) .ic-spot .cm-egg');if(!m)return false;const a=m.getBoundingClientRect(),b=m.closest('.cell').getBoundingClientRect();return a.width/b.width<.3&&(a.left-b.left)/b.width<.1&&(a.top-b.top)/b.height<.12;});if(!lone)throw new Error('lone found egg must keep small upper-left slot');
     await V.evaluate(() => UI.card()); await sleep(400); await shot(V,'rolecard-vulture'); await V.context().close();
   }
   if (want('carry')) {
@@ -222,7 +222,7 @@ const near = (a, c) => Math.max(Math.abs(a[0] - c[0]), Math.abs(a[1] - c[1]));
     await A.waitForFunction(() => UI._S().phase === 'setupOstrich', null, { timeout: 10000 }).catch(() => {}); if (room.g.phase === 'setupOstrich') { await cell(A, 3, 4).click(); }
     await A.waitForFunction(() => UI._S().phase === 'play', null, { timeout: 15000 });
     const g = room.g, hs = g.hunt.hs, bc = () => server.broadcast(room), P = { ostrich: A, vulture: Vp, hyena: Y, badger: D };
-    const scene = async (name, f) => { f(); bc(); await sleep(2600); for (const [k, p] of Object.entries(P)) { await p.evaluate(() => document.querySelectorAll('#msgslot>.h3pop,#snpop,#announce').forEach(e => { e.classList.remove('show'); })); await sleep(150); await shot(p, 'layout-' + name + '-' + k); } };
+    const scene = async (name, f) => { f(); bc(); await sleep(2600); for (const [k, p] of Object.entries(P)) { await p.evaluate(() => document.querySelectorAll('#msgslot>.h3pop,#snpop,#announce').forEach(e => { e.classList.remove('show'); })); await sleep(150); const sq = await p.evaluate(require('./square-overlap').SQUARE_CHECK); if (sq.bad.length) throw new Error('layout-' + name + '-' + k + ': ' + sq.bad.join('; ')); console.log('layout-' + name + '-' + k, 'squares checked:', sq.seen.join(', ') || 'none'); await shot(p, 'layout-' + name + '-' + k); } };
     // 1: nobody on a leaf, rock or egg; no catches yet. Eggs at 2,1 / 6,1 / 2,5; leaves 0,0 and 8,6; rocks 4,0 and 4,6.
     await scene('1-start', () => { g.turn = 'blue'; g.ostrich = [3, 3]; g.vulture = [6, 3]; hs.hyena.p = [4, 4]; hs.hyena.burrowed = false; hs.badger.p = [2, 3]; hs.badger.burrowed = false; hs.badger.dig = 0; g.marks['6,1'] = 'spotted'; });
     // 2: every animal on a leaf or a rock square

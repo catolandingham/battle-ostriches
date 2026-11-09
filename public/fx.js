@@ -37,8 +37,8 @@ function cellRect(x,y,S){const b=document.getElementById('board');const c=b&&b.c
 function ensure(){if(!layer){layer=document.createElement('div');layer.id='fx';document.body.appendChild(layer);}}
 function sprite(id,svg,S,p,sz,off){let r=cellRect(p[0],p[1],S);if(!r)return;
  const cell=document.getElementById('board').children[p[1]*S.cfg.cols+p[0]],pc=cell&&cell.querySelector(id==='o'?'.pc.po':'.pc.pv');
- // The themed sprite must use the same separated animal slot as the SVG board piece.
- if(cell&&cell.querySelector('.cm-egg')&&pc){const q=pc.getBoundingClientRect();r={x:q.left+scrollX,y:q.top+scrollY,w:q.width,h:q.height};sz=1;off=0;}
+ // The themed sprite must use the same animal slot as the SVG board piece (smaller and centred beside an egg, leaf or rock).
+ if(cell&&cell.querySelector('.cm-egg,:scope>.ic-food,:scope>.ic-rock')&&pc){const q=pc.getBoundingClientRect();r={x:q.left+scrollX,y:q.top+scrollY,w:q.width,h:q.height};sz=1;off=0;}
  if(off){r={x:r.x+off*r.w*.2,y:r.y+off*r.h*.2,w:r.w*.6,h:r.h*.6};}let e=spr[id];
  if(!e||e.dataset.svg!==svg){if(e)e.remove();e=document.createElement('div');e.className='spr spr-'+id;e.innerHTML=svg;e.dataset.svg=svg;layer.appendChild(e);spr[id]=e;e.style.transition='none';}
  const s=r.w*(sz||1),tx=r.x+(r.w-s)/2,ty=r.y+(r.h-s)/2,prev=e.dataset.pos,np=p.join(',');

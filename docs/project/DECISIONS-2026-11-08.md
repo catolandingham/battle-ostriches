@@ -2,6 +2,26 @@
 
 # Battle Ostriches: decisions
 
+## Board look (current, check every build against this)
+
+- The animal sits in the centre of its square.
+- An animal moves to a corner only when another animal shares the square.
+- When the square also has an egg or a leaf or rock, the animal shrinks a little so everything fits. Nothing overlaps.
+- Eggs are egg B: small, top-left, the countdown number inside the egg, the same size every time.
+- Leaves and rocks are on the 2 fixed leaf squares and the 2 fixed rock squares. Their mark is small, in the bottom-right corner, with or without an animal there. Never a large leaf or rock.
+- An egg is never on a leaf or rock square.
+- No hearts, claws or catch marks inside board squares.
+- Birds show hearts in the chip row above the board.
+- Hunters show the approved curved claw scratches in the chip row: 3 sets in 3-player games, 4 in Hunters and 5-player games, plus one per extra catch. No number.
+- The four locked animal icons, the same in every theme and everywhere the animal appears:
+  - ostrich: `ostrich/three-quarter.svg`
+  - badger: `badger/front.svg`
+  - vulture: `vulture/three-quarter.svg`
+  - hyena: `hyena/gen3-tone-4.svg`, tight crop
+- The header turn icon uses the same art.
+
+## Log
+
 - 2026-11-06 (Brian, in Claude Code): the game is worked on the same way as Space Snack Quest: truth is the GitHub repo, the Grok threads are archived once and not re-read, no browser-driven playtests by Claude, agents on cheaper models, Brian's recordings decide how it plays.
 - 2026-11-06 (Brian): project folder is this Wyttmab Drive folder; the repo holds the code and working docs.
 - 2026-11-06 (Brian, "ostrich" session): merged the docs-only review set to `main` (PR #6) and closed PR #1 as a duplicate of `dc08fd5`.
@@ -58,6 +78,14 @@
 - 2026-11-07 night (Brian): moves are shown as lit (highlighted) squares, as originally; "egg may be here" is a small egg outline in the corner of each square; only the vulture's latest sniff shows (no sniff memory); the computer vulture also uses only its latest sniff (ai.js keeps the last 4 today), so it plays with the same information as a person; rely on a short picture tutorial to teach. Part 1 (branch ux-part1-next-step, unmerged) to be reworked to this, its two failing tests fixed, then shown to Brian before merge. Mockup: reviews-2026-11-06/move-style-playground.html.
 - 2026-11-07 late (Brian, after the Pounce screenshot): one look per meaning for every mark on the board. "May be here" is the small icon in the corner of the square with a dashed outline and no fill. "Is here" is the same small icon in the same corner, filled white. Yellow means only "you can move here" (lit squares). During a Pounce, only the squares both of the hyena's senses agree on get a bird, all the same look (the second, white-duck tier is dropped: two kinds of "maybe" could not be read at a glance). Screens shown to Brian must come from real play, in the order a player meets them, never a contrived state or a description of a screen he hasn't seen.
 - 2026-11-08 (Brian): the hunter's "a bird may be here" mark is a plain-line side-view bird (bird F), not dashed: dashes broke a small bird shape into a jumble, and a hunter only ever sees "may be here" birds, so nothing filled can be mistaken for it. A badger's dig-in spot is a small dirt pile, filled white. Claws for hunters were considered and set aside for now.
-- 2026-11-08 (Brian): a caught bird's square gets no mark on the board. Catches show only as lost hearts / filled pips in the animal chip row above the board. Hearts and claw marks never appear inside board squares.
-- 2026-11-08 (Brian, PR #24 review): an animal always stays centred in its square at its normal size, with an egg or a leaf or rock there too. The egg keeps its top-left slot (drawn in front, number inside); the leaf or rock keeps its small bottom-right corner. An animal moves to a corner only when another animal shares the square.
-- 2026-11-08 (Brian): hunter catch counter is the "three scratches" look (bw/layout/claw-marks.png): each set is three curved scratches, light and thin until earned, dark and bold once earned. 3 sets in 3-player games; 4 sets in Hunters mode and 5-player games; each catch past the shown sets adds one more earned set. No numbers or count text. In Hunters mode the claws count catches; the knock-out count stays in the tap tip.
+- 2026-11-08 (Brian): a caught bird's square gets no mark on the board. Catches show only in the animal chip row above the board: lost hearts for birds, claw scratches for hunters (the filled pips were replaced). Hearts and claw marks never appear inside board squares.
+- 2026-11-08 (Brian): leaf and rock squares use corner option 2: a small leaf or rock mark in the bottom-right corner, the same size with or without an animal. Only on the 2 fixed leaf and 2 fixed rock squares. Never the large leaf or rock.
+- 2026-11-08 (Brian): eggs are egg B with the countdown number inside the egg, never beside it. The egg is small, top-left and the same size alone or with an animal. An egg is never on a leaf or rock square.
+- 2026-11-08 (Brian): the hunter catch counter is the "three scratches" look (bw/layout/claw-marks.png). Each set is three curved scratches: light and thin until earned, dark and bold once earned. No numbers.
+- 2026-11-08 (Brian, a trial): claw counts are 3 sets in 3-player games and 4 sets in Hunters mode and 5-player games. Each catch past the shown sets adds one more earned set. In Hunters mode the claws count catches; the knock-out count stays in the tap tip.
+- 2026-11-08 (Brian): the hyena icon is gen3-tone-4, tight crop.
+- 2026-11-08 (Brian, PR #24 review): the animal stays in the centre of its square. With an egg or a leaf or rock in the square, it shrinks a little so the egg (top-left) and the mark (bottom-right) fit around it with no overlap, as in the approved full-board layout. The mockup's egg + leaf square and its number beside the egg were errors. An animal moves to a corner only when another animal shares the square.
+- 2026-11-08 (Brian): merged PR #23 (egg fixes, catch markers removed from board squares) to main.
+- 2026-11-08 (Brian): the start-of-game reminder is look A: a card with the mode name and short key rules, no "what changed" box. Words approved, including "Claws: one per catch."
+- 2026-11-08 (Brian): the kick scene lasts 2 seconds; during a scene the other squares stay exactly as they were when it started (no shading changes); a big ostrich foot swinging out to kick is being designed (4 versions to pick from).
+- 2026-11-08 (Brian): every big scene lasts 2 seconds (kicks, catches, knock-outs and the rest).

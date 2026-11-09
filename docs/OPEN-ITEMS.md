@@ -22,7 +22,7 @@ The animal is called the badger.
 - 2026-11-08: Timer-bar mockups: filling or shrinking.
 - 2026-11-08: Mode-differences list and start-of-game reminder mockups.
 - 2026-11-08: Hunter claw-mark counter under icon (PR #24): curved three-scratch sets, 3 in 3-player games, 4 in Hunters and 5-player games, one more per extra catch; no numbers. 3 catches win 3-player mode.
-- 2026-11-08: Animals stay centred in their square with an egg, leaf or rock; corners only when two animals share (PR #24).
+- 2026-11-08: Animals stay centred; beside an egg, leaf or rock they shrink a little so nothing overlaps; corners only when two animals share (PR #24).
 - 2026-11-08: Three or four hyena icon mockups at real size; animal stays hyena.
 - 2026-11-08: Animal commentary lines: draft lines for the hyena, the vulture and the ostrich, needing Brian's approval.
 
