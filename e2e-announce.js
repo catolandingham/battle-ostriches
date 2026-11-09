@@ -48,7 +48,7 @@ const MEET = 'The badger shoved the hyena!';
   for (const p of ALL) {
     const a = await p.evaluate(() => window.__ann.slice()), m = a[1];
     assert.equal(a.length, 2, p.name + ' exactly one meeting line: ' + JSON.stringify(a)); assert.equal(m.text, p.name==='badger'?'You shoved the hyena!':p.name==='hyena'?'The badger shoved you!':MEET, p.name + ' reads its viewer-specific line'); assert.equal(m.inBoard, false, 'the line lives outside the board');
-    const secs = (m.end - m.start) / 1000; assert.ok(secs >= .85 && secs <= 1.4, `${p.name}: the line stayed up ${secs.toFixed(2)} s`);
+    const secs = (m.end - m.start) / 1000; assert.ok(secs >= 1.85 && secs <= 2.6, `${p.name}: the line stayed up ${secs.toFixed(2)} s`);
     console.log(p.name.padEnd(8), 'meeting line up', secs.toFixed(2), 's, highlight', kbNow[p.name]);
   }
   // the square: only the hunters (who can see the hyena) get it; the far birds get the line and no location

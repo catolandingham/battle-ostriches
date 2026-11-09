@@ -1,0 +1,19 @@
+/* The cartoon card. Same white card in every theme: it slides up over the board,
+   plays, then leaves so the live board shows the result. No words of its own. */
+#stage{overflow:visible}
+#stage .cutaway:not(#_a):not(#_b){position:absolute;z-index:400;pointer-events:none;overflow:hidden}
+html[data-theme] #stage .cutaway .cutaway-card:not(#_a):not(#_b):not(#_c){position:absolute;inset:0;background:#fff!important;background-color:#fff!important;border:3px solid #111!important;border-radius:22px!important;box-shadow:7px 10px 0 rgba(0,0,0,.16)!important;overflow:hidden!important;transform:translateY(110%);animation:cutaway-in .18s ease-out forwards}
+html[data-theme] #stage .cutaway.out .cutaway-card:not(#_a):not(#_b):not(#_c){animation:cutaway-out .32s ease-in forwards}
+@keyframes cutaway-in{from{transform:translateY(110%)}to{transform:translateY(0)}}
+@keyframes cutaway-out{from{transform:translateY(0)}to{transform:translateY(120%)}}
+html[data-theme] #stage .cutaway .cutaway-art:not(#_a):not(#_b):not(#_c){position:absolute;inset:0;background:#fff!important;background-color:#fff!important;border:0!important;border-radius:0!important;pointer-events:none;transition:opacity .18s linear}
+html[data-theme] #stage .cutaway.show-path .cutaway-art:not(#_a):not(#_b):not(#_c){opacity:0}
+html[data-theme] #stage .cutaway .cutaway-path:not(#_a):not(#_b):not(#_c){position:absolute;left:7%;right:7%;top:10%;bottom:10%;display:grid;gap:0;opacity:0;transition:opacity .2s linear;background:#fff!important;overflow:hidden!important;border-radius:8px!important}
+html[data-theme] #stage .cutaway.show-path .cutaway-path:not(#_a):not(#_b):not(#_c){opacity:1}
+html[data-theme] #stage .cutaway .cutaway-path>i:not(#_a):not(#_b):not(#_c){display:block;background:#fff!important;border:1px solid #d0d0d0!important;border-radius:0!important;box-shadow:none!important}
+html[data-theme] #stage .cutaway .cutaway-path>i.alt:not(#_a):not(#_b):not(#_c){background:#ececec!important}
+html[data-theme] #stage .cutaway .cutaway-dash:not(#_a):not(#_b):not(#_c){position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
+html[data-theme] #stage .cutaway .cutaway-dash line:not(#_a):not(#_b):not(#_c){stroke:#111!important;stroke-width:1.1!important;stroke-dasharray:2.2 1.6!important;fill:none!important}
+html[data-theme] #stage .cutaway .cutaway-piece:not(#_a):not(#_b):not(#_c){position:absolute;width:18%;height:16%;transform:translate(-50%,-50%);z-index:2;pointer-events:none;background:transparent!important;border:0!important;box-shadow:none!important}
+html[data-theme] #stage .cutaway .cutaway-piece .aimg:not(#_a):not(#_b):not(#_c){width:100%;height:100%;object-fit:contain}
+@media (prefers-reduced-motion:reduce){#stage .cutaway{display:none!important}}

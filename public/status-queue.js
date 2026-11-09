@@ -4,11 +4,16 @@
   let pending=[],active=null,timer=null,serial=0;
   function pump(){timer=null;if(active||!pending.length)return;if(blocked()){timer=schedule(pump,100);return;}
    pending.sort((a,b)=>b.priority-a.priority||a.order-b.order);active=pending.shift();show(active);
-   timer=schedule(()=>{hide(active);active=null;timer=schedule(pump,0);},hold);
+   timer=schedule(()=>{hide(active);active=null;timer=schedule(pump,0);},active.hold==null?hold:active.hold);
   }
   return {add(item){if(!item||!item.text)return;const key=item.key||item.text;
    if(active&&active.key===key||pending.some(x=>x.key===key))return;
-   pending.push({...item,key,priority:item.priority==null?50:item.priority,order:serial++});
+   const entry={...item,key,priority:item.priority==null?50:item.priority,order:serial++};
+   // A new big moment replaces whatever line is already up, so the words and the card start together.
+   // Anything still waiting stays waiting. It must not cover this moment's line.
+   if(item.preempt){if(timer!=null)cancel(timer);timer=null;if(active)hide(active);active=entry;show(active);
+    timer=schedule(()=>{hide(active);active=null;timer=schedule(pump,0);},entry.hold==null?hold:entry.hold);return;}
+   pending.push(entry);
    if(!active&&timer==null)timer=schedule(pump,0);
   },clear(){if(timer!=null)cancel(timer);timer=null;if(active)hide(active);active=null;pending=[];},state:()=>({active,pending:pending.slice()})};
  }
