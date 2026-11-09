@@ -14,7 +14,7 @@ Based on `origin/main` at `559a847`, on the new `egg-fixes` branch. Nothing in t
 ## Behavior and privacy fixes
 
 - Hunter server packets previously reused vulture `spotted` egg marks, including shared 5-player marks. Hunters now receive only public hit/stone wreckage, never found-egg coordinates or egg arrays during play; client rendering is defensive too. Actual legal-find tests cover 3p, Hunters and 5p.
-- B&W’s transparent reset hid `.pip.on`. A catch now visibly fills its marker; knockout has a high-contrast OUT state. Tests cover all viewers in all three multiplayer modes and assert a screenshot-visible change, not only a particular marker design.
+- B&W’s transparent reset hid `.pip.on`. A catch now visibly fills the header chip pips above the board; knockout has a high-contrast OUT state. A caught bird’s square gets no board mark (no heart, claw, or injured outline). Catches show only as filled pips / lost hearts in the animal row. Tests cover all viewers in all three multiplayer modes and assert a screenshot-visible header change.
 - Pushes use an approximately one-second, square-by-square motion with trails, regardless of distance. Reduced motion uses static trails. Only viewer-permitted squares are sent or drawn. Brian’s updated rule: the kicking ostrich sees the full actual kick slide and landing beyond normal sight, including an early stop. This event-only exception does not grant ongoing sight or reveal the blocker. The kicked hunter sees its own whole slide, with no hidden bird square revealed; other watchers keep normal sight filtering. Never draw a hidden scramble destination; hunters never get the caught bird’s scramble animation. Duplicate packets preserve the animation clock. FX sprite themes use the same separated animal box.
 - Approved catch notices use the real distance and singular/plural: “You were caught! You fled 2 squares.” Other viewers see “The <hunter> caught the <bird>!” without the destination.
 - Long facts wrap cleanly with padding and an opaque backing at iPhone 13 width. A shared queue holds one status for about a second, prioritizing personal events; no sniff or fact paints over it.
@@ -27,7 +27,7 @@ Based on `origin/main` at `559a847`, on the new `egg-fixes` branch. Nothing in t
 
 - [Kick on both phones: before / start / mid / after](kick-both-phones.png) · [ostrich strip](kick-ostrich-strip.png) · [hyena strip](kick-hyena-strip.png)
 - [Reduced-motion kick — ostrich](kick-ostrich-reduced.png) · [hyena](kick-hyena-reduced.png)
-- [Contact sheet — 58 phone screenshots (36 prior review states + 22 updated full/early-stop kick views)](00-contact-sheet.png)
+- [Contact sheet — 67 phone screenshots](00-contact-sheet.png)
 - [Real YOU + egg + bird + 14, plus egg states](eggs-closeup.png)
 - [Enlarged real square with YOU + egg + bird + 14](you-egg-bird-14-closeup.png)
 - [All egg states at real size, 1/14 countdowns, plain/lit squares](eggs-real-size.png) — WebKit at 3× phone pixel density; contact-sheet/combined-sheet copies are scaled.
@@ -38,6 +38,7 @@ Based on `origin/main` at `559a847`, on the new `egg-fixes` branch. Nothing in t
 Full-screen shots use WebKit, a 390×664 CSS-pixel phone, 2× pixel density. The icon fixture uses real game classes, paths and stylesheet files at 38px square size; the separate fixture test verifies geometry in all 14 themes.
 
 - Catch scramble (caught bird): [before](catch-scramble-0-before.png), [start](catch-scramble-1-start.png), [mid](catch-scramble-2-mid.png), [after](catch-scramble-3-after.png), [reduced motion](catch-scramble-reduced-motion.png).
+- After a catch, no square mark: [bird phone](catch-bird-after-no-square-mark.png), [hunter phone](catch-hunter-after-no-square-mark.png).
 - [Long wrapping fact](status-long-fact.png).
 
 ## Reproduce

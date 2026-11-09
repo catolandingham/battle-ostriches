@@ -106,8 +106,6 @@ html[data-theme] #board .cell.zone.legal{box-shadow:inset 0 0 0 3px #ffe14d,inse
   text-shadow:0 0 2px #fff,0 0 2px #fff!important;pointer-events:none;letter-spacing:0}
 #board .wnum.low{color:#0b3b66!important}
 #board .pc,html[data-theme] #board .pc{position:absolute;left:8%;top:8%;width:84%;height:84%;background:none!important;border:0!important;box-shadow:none!important;z-index:4;pointer-events:none}
-#board .pc.injured,html[data-theme] #board .pc.injured{outline:3px solid #ff2a6d!important;outline-offset:-3px}
-#board .pc.injured::after,html[data-theme] #board .pc.injured::after{content:'';position:absolute;left:10%;right:10%;top:46%;height:5px;background:#ff2a6d;border:1px solid #3a0010;transform:rotate(-16deg);border-radius:2px;pointer-events:none}
 #board .pc svg{width:100%;height:100%}
 #board .cell>.carry{position:absolute;right:2%;bottom:2%;width:36%;height:36%;z-index:6;pointer-events:none}
 /* legal = the yellow glow from squares.css; throw targets glow red-orange instead */

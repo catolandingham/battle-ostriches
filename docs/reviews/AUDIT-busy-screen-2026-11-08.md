@@ -144,3 +144,6 @@ At the start, show the mode line by itself for about 2 seconds, then remove it s
 For a catch, kick, stone, meeting or burst: one sentence, about a second, naming both animals and saying "you" on the phone it happened to. Then, if this phone may see both squares, a short highlight between them. If it may not see a square, leave that square off and do not say where it is. The planned cut-scenes (1.5 to 2 seconds, tap to skip) fit the catch, the knock-out, the smash, the burst and the kicked-back stone. Ordinary steps stay about 1 second.
 
 Do not play a second pop ("Bird near", "Hyena near") in the same bar during that second. One sound, not a stack. The caught bird should get the warn sound with the "you were caught" line, and nothing else until that line has been up long enough to read.
+
+## Update 2026-11-08
+Brian decided: a caught bird's square gets no mark on the board. Catches show only as lost hearts in the animal chip row above the board. Earlier notes in this audit that put claws or a pink box on a square are superseded.

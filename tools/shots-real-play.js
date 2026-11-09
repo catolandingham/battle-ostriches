@@ -162,6 +162,20 @@ const near = (a, c) => Math.max(Math.abs(a[0] - c[0]), Math.abs(a[1] - c[1]));
       if(await Vp.locator('#announce').textContent()!==`You were caught! You fled ${n} square${n===1?'':'s'}.`)throw new Error('caught bird notice');
       if(await H.locator('#announce').textContent()!=='The hyena caught the vulture!')throw new Error('hunter notice');
       await shot(Vp,'catch-scramble-1-start');bc();await sleep(300);if(!await Vp.locator('.push-actor').count())throw new Error('duplicate packet interrupted one-second motion');await shot(Vp,'catch-scramble-2-mid');await sleep(650);await shot(Vp,'catch-scramble-3-after');
+      await quiet(Vp); await quiet(H);
+      for (const [page, who] of [[Vp, 'bird'], [H, 'hunter']]) {
+        const marks = await page.evaluate(() => ({
+          hurtag: !!document.querySelector('.hurtag'),
+          claw: !!document.querySelector('.h3claw'),
+          cellInjured: !!document.querySelector('#board .cell.injured'),
+          pcInjured: !!document.querySelector('#board .pc.injured'),
+          pips: document.querySelectorAll('#h3bar .bchip .pip.on').length
+        }));
+        if (marks.hurtag || marks.claw || marks.cellInjured || marks.pcInjured) throw new Error(who + ' phone still shows an on-square catch mark');
+        if (marks.pips < 1) throw new Error(who + ' phone header must show a filled catch pip');
+      }
+      await shot(Vp, 'catch-bird-after-no-square-mark');
+      await shot(H, 'catch-hunter-after-no-square-mark');
       await Vp.emulateMedia({reducedMotion:'reduce'});
       const prev=await Vp.evaluate(()=>UI._S());g.three.birds.red.catches=0;g.turn='hunter';g.three.pounce=false;g.three.h=[3,3];g.vulture=[4,3];bc();await sleep(100);
       act('hunter',{a:'hmove',p:[4,3]});await Vp.waitForSelector('.push-motion',{timeout:3000});

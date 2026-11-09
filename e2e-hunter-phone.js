@@ -169,14 +169,25 @@ const phone = { viewport: { width: 390, height: 844 } };
   await guest.waitForFunction(() => UI._S().h3.birds.blue.catches === 1, null, { timeout: 8000 });
   const hurt = await guest.evaluate(() => {
     const pc = document.querySelector('.pc.po');
-    const cs = pc ? getComputedStyle(pc) : null;
-    return { injured: !!(pc && pc.classList.contains('injured')), outline: cs && cs.outlineStyle, hurt: !!document.querySelector('.hurtag'), out: !!document.querySelector('.bchip.blue.out') };
+    const chip = document.querySelector('#h3bar .bchip.blue');
+    return {
+      injured: !!(pc && pc.classList.contains('injured')),
+      hurt: !!document.querySelector('.hurtag'),
+      claw: !!document.querySelector('.h3claw'),
+      cellInjured: !!document.querySelector('#board .cell.injured'),
+      pips: chip ? chip.querySelectorAll('.pip.on').length : 0,
+      chipInjured: !!(chip && chip.classList.contains('injured')),
+      out: !!document.querySelector('.bchip.blue.out')
+    };
   });
-  assert.equal(hurt.injured, true, 'first catch marks the ostrich sprite');
-  assert.equal(hurt.outline, 'solid');
-  assert.equal(hurt.hurt, true);
+  assert.equal(hurt.injured, false, 'caught bird square has no injured mark');
+  assert.equal(hurt.hurt, false, 'caught bird square has no heart tag');
+  assert.equal(hurt.claw, false, 'caught bird square has no claw mark');
+  assert.equal(hurt.cellInjured, false, 'no injured cell on the board');
+  assert.equal(hurt.pips, 1, 'header chip shows one filled catch pip');
+  assert.equal(hurt.chipInjured, true, 'header chip reflects the catch');
   assert.equal(hurt.out, false, 'first catch is not a knockout');
-  await guest.screenshot({ path: OUT + '/ostrich-hurt-sprite.png' });
+  await guest.screenshot({ path: OUT + '/ostrich-after-catch-header.png' });
   assert.equal(errs.length, 0, errs.join('\n'));
   await browser.close();
   server.close();
