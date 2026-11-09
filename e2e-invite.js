@@ -39,6 +39,8 @@ const vis = p => p.evaluate(() => { const w = document.getElementById('wait'), r
     let n = 0, t0 = Date.now(), shot = false;
     while (!(await P.locator('#over:not(.hidden)').count()) && n < 200) {
       await P.waitForSelector('#actions.mine, #over:not(.hidden)', { state: 'attached',  timeout: 10000 }); if (await P.locator('#over:not(.hidden)').count()) break;
+      // a cartoon card (now also the egg smash) holds the next states for 2 s: play on once it has gone, as a player would
+      if (await P.evaluate(() => !!(window.CUTAWAYS && CUTAWAYS.busy()))) { await P.waitForFunction(() => !CUTAWAYS.busy() && !document.getElementById('cutaway'), null, { timeout: 5000 }); continue; }
       if (!shot && n === 3) { await P.screenshot({ path: OUT + 'vsai-' + role + '.png' }); shot = true; }
       if (role === 'blue') { const s = await P.locator('#actions button:has-text("Sit")'); if (await s.count() && await s.isEnabled() && n % 3) await s.click({ force: true }); else await P.locator('.cell.legal').first().click(); }
       else { const tb = P.locator('#actions button:has-text("Throw")'); if (n % 4 === 3 && await tb.isEnabled()) { await tb.click({ force: true }); if (await P.locator('.cell.legal').count()) { await P.locator('.cell.legal').first().click(); if (await P.locator('.cell.confirm').count()) await P.locator('.cell.confirm').click(); /* the only stone at an unfound square asks once more */ } else { await P.click('#actions button:has-text("Fly")', { force: true }); await P.locator('.cell.legal').first().click(); } } else await P.locator('.cell.legal').nth(n % 5).click(); }

@@ -49,5 +49,6 @@ function impact(res,x,y,w,st,egg){res=kind(res);try{document.dispatchEvent(new C
   d.animate([{transform:'translate(-50%,-50%) scale(.4)'},{transform:`translate(calc(-50% + ${Math.cos(ang)*r}px),calc(-50% + ${Math.sin(ang)*r*.5}px)) scale(1)`}],{duration:380,easing:'ease-out',fill:'forwards'});setTimeout(()=>d.animate([{opacity:1},{opacity:0}],{duration:700,fill:'forwards'}),1700);kill(d,2450);}}
 window.SMASH={kind,play,update(S,prev){const la=S&&S.lastAction;if(!la||la.type!=='throw'||!la.from){lastSig=la?JSON.stringify(la)+S.round:null;return;}
  const sig=JSON.stringify(la)+S.round;if(!prev||sig===lastSig){lastSig=sig;return;}lastSig=sig;
+ if(la.result==='hit'&&window.CUTAWAYS&&CUTAWAYS.smashCartoon&&CUTAWAYS.smashCartoon()){window.SFX&&SFX.play('smash');return;} // the egg-smash cartoon shows it instead
  if(prev.turn==='red'&&(S.turn==='blue'||S.phase==='over'))requestAnimationFrame(()=>play(S,la));}};
 })();

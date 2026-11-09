@@ -1,28 +1,34 @@
-// Full-screen cartoon scenes for the big moments that have art.
-// A new pair is a row in TABLE plus a file in public/art/cutaways/. Nothing else.
+// Full-screen cartoon scenes for the big moments that have art, including the vulture smashing an egg.
+// A new pair is a row in TABLE plus its drawings and steps in public/cutaway-scenes.js
+// (made by tools/cutaways/export.py; see tools/cutaways/README.md). Nothing else.
 // The pictures play only for a player who can already see that moment. A wrapping
 // kick (the path leaves one edge and comes back on the other) uses the wrap row.
 (function (root) {
-  const MS = 2000, REVEAL = 1500, FADE = 520;
+  const MS = 2000, REVEAL = 1500, STEP = 50;
+  // The wrap shows the kick, then the little board: it fades in at WRAP_FADE and the hyena
+  // travels the path from WRAP_GO until the card leaves.
+  const WRAP_FADE = 650, WRAP_GO = 900, WRAP_RUN = 600; // the kick fades to white, then the board fades in: never both at once
   const TABLE = [
     // wrap is only the ostrich-kicks-hyena clip. Other pairs use their own kick picture even if the kick wraps.
-    { id: 'kick-wrap', event: 'kick', by: 'ostrich', target: 'hyena', wrap: true, src: '/art/cutaways/kick-wrap.png', frames: 11 },
-    { id: 'kick', event: 'kick', by: 'ostrich', target: 'hyena', wrap: false, src: '/art/cutaways/kick.png', frames: 30 },
-    { id: 'kick-badger', event: 'kick', by: 'ostrich', target: 'badger', src: '/art/cutaways/kick-badger.png', frames: 30 },
-    { id: 'kick-vulture', event: 'kick', by: 'ostrich', target: 'vulture', src: '/art/cutaways/kick-vulture.png', frames: 30 },
-    { id: 'knockout', event: 'knockout', by: 'hyena', target: 'ostrich', src: '/art/cutaways/knockout.png', frames: 30 },
-    { id: 'knockout-hyena-vulture', event: 'knockout', by: 'hyena', target: 'vulture', src: '/art/cutaways/knockout-hyena-vulture.png', frames: 30 },
-    { id: 'knockout-badger-ostrich', event: 'knockout', by: 'badger', target: 'ostrich', src: '/art/cutaways/knockout-badger-ostrich.png', frames: 30 },
-    { id: 'knockout-badger-vulture', event: 'knockout', by: 'badger', target: 'vulture', src: '/art/cutaways/knockout-badger-vulture.png', frames: 30 },
-    { id: 'catch', event: 'catch', by: 'hyena', target: 'ostrich', src: '/art/cutaways/catch.png', frames: 30 },
-    { id: 'catch-hyena-vulture', event: 'catch', by: 'hyena', target: 'vulture', src: '/art/cutaways/catch-hyena-vulture.png', frames: 30 },
-    { id: 'catch-badger-ostrich', event: 'catch', by: 'badger', target: 'ostrich', src: '/art/cutaways/catch-badger-ostrich.png', frames: 30 },
-    { id: 'catch-badger-vulture', event: 'catch', by: 'badger', target: 'vulture', src: '/art/cutaways/catch-badger-vulture.png', frames: 30 },
-    { id: 'stone', event: 'stone', by: 'vulture', target: 'hyena', src: '/art/cutaways/stone.png', frames: 30 },
-    { id: 'stone-badger', event: 'stone', by: 'vulture', target: 'badger', src: '/art/cutaways/stone-badger.png', frames: 30 },
-    { id: 'burst', event: 'burst', by: 'badger', target: 'hyena', src: '/art/cutaways/burst.png', frames: 30 },
-    { id: 'shove-badger-hyena', event: 'shove', by: 'badger', target: 'hyena', src: '/art/cutaways/shove-badger-hyena.png', frames: 30 },
-    { id: 'shove-hyena-badger', event: 'shove', by: 'hyena', target: 'badger', src: '/art/cutaways/shove-hyena-badger.png', frames: 30 }
+    { id: 'kick-wrap', event: 'kick', by: 'ostrich', target: 'hyena', wrap: true },
+    { id: 'kick', event: 'kick', by: 'ostrich', target: 'hyena', wrap: false },
+    { id: 'kick-badger', event: 'kick', by: 'ostrich', target: 'badger' },
+    { id: 'kick-vulture', event: 'kick', by: 'ostrich', target: 'vulture' },
+    { id: 'knockout', event: 'knockout', by: 'hyena', target: 'ostrich' },
+    { id: 'knockout-hyena-vulture', event: 'knockout', by: 'hyena', target: 'vulture' },
+    { id: 'knockout-badger-ostrich', event: 'knockout', by: 'badger', target: 'ostrich' },
+    { id: 'knockout-badger-vulture', event: 'knockout', by: 'badger', target: 'vulture' },
+    { id: 'catch', event: 'catch', by: 'hyena', target: 'ostrich' },
+    { id: 'catch-hyena-vulture', event: 'catch', by: 'hyena', target: 'vulture' },
+    { id: 'catch-badger-ostrich', event: 'catch', by: 'badger', target: 'ostrich' },
+    { id: 'catch-badger-vulture', event: 'catch', by: 'badger', target: 'vulture' },
+    // the vulture's stone smashes an egg (Brian's pick 5a). It comes before the stone rows: a stone that smashes an egg shows the egg.
+    { id: 'egg-smash', event: 'smash', by: 'vulture', target: 'egg' },
+    { id: 'stone', event: 'stone', by: 'vulture', target: 'hyena' },
+    { id: 'stone-badger', event: 'stone', by: 'vulture', target: 'badger' },
+    { id: 'burst', event: 'burst', by: 'badger', target: 'hyena' },
+    { id: 'shove-badger-hyena', event: 'shove', by: 'badger', target: 'hyena' },
+    { id: 'shove-hyena-badger', event: 'shove', by: 'hyena', target: 'badger' }
   ];
   const pointOk = p => Array.isArray(p) && p[0] >= 0 && p[1] >= 0;
   const anyPoint = pts => Array.isArray(pts) && pts.some(pointOk);
@@ -67,6 +73,8 @@
         if (trail && anyPoint(trail.points)) out.push({ event: 'stone', by: kindOf(note.by || 'vulture'), target, seq: note.seq });
       }
     }
+    const sm = S.smashNote; // every player is told about a smashed egg, so every player sees it
+    if (fresh(sm, prev.smashNote)) out.push({ event: 'smash', by: 'vulture', target: 'egg', seq: sm.seq });
     const b = h.burst;
     if (fresh(b, oh.burst) && (pointOk(b.to) || anyPoint(b.trail))) out.push({ event: 'burst', by: 'badger', target: 'hyena', seq: b.seq });
     const rv = h.rival;
@@ -92,6 +100,8 @@
   let apply = null, queue = [], busyUntil = 0, serial = 0, nextCard = null, holdEl = null;
   api.bind = fn => { apply = fn; };
   api.busy = () => busyUntil > Date.now();
+  // true while the egg-smash cartoon is about to play or playing: smash.js then skips its own little egg-crack on the board
+  api.smashCartoon = () => !!((nextCard && nextCard.scene.id === 'egg-smash') || document.querySelector('#cutaway[data-scene="egg-smash"]'));
   api.defer = state => { if (busyUntil > Date.now()) { queue.push(state); return true; } return false; };
   const reduced = () => { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } };
   function pieceSel(key) {
@@ -143,6 +153,7 @@
     if (token !== serial) return;
     serial++; busyUntil = 0; reveal();
     const card = document.getElementById('cutaway'); if (card) card.remove();
+    document.documentElement.classList.remove('cutaway-up');
     while (queue.length && !(busyUntil > Date.now())) { const s = queue.shift(); try { apply && apply(s); } catch (e) { console.error(e); } }
   }
   function stepDir(a, b, cols, rows) {
@@ -153,10 +164,14 @@
   }
   // The little board inside a wrapping kick. It follows this phone's trail,
   // including which way it left the edge, and draws no egg or hidden animal.
+  // The kicked hyena is the same cartoon drawing as the kick, so it stays sharp.
   function buildPath(card, scene, S) {
     const cfg = S.cfg || { cols: 9, rows: 7 }, cols = cfg.cols, rows = cfg.rows;
     const pts = (scene.trail || []).filter(pointOk);
     const box = document.createElement('div'); box.className = 'cutaway-path';
+    // square squares, centred on the card
+    const bw = 88, bh = bw * rows / cols * (ART_W / ART_H);
+    box.style.cssText = 'left:' + (100 - bw) / 2 + '%;width:' + bw + '%;top:' + (100 - bh) / 2 + '%;height:' + bh + '%';
     box.style.gridTemplateColumns = 'repeat(' + cols + ',1fr)';
     box.style.gridTemplateRows = 'repeat(' + rows + ',1fr)';
     for (let i = 0; i < cols * rows; i++) { const c = document.createElement('i'); if ((i % cols + (i / cols | 0)) % 2) c.className = 'alt'; box.appendChild(c); }
@@ -170,65 +185,106 @@
       else { const d = stepDir(a, b, cols, rows); seg(a, [a[0] + d[0], a[1] + d[1]]); seg([b[0] - d[0], b[1] - d[1]], b); }
     }
     box.appendChild(svg);
+    const cw = 100 / cols, ch = 100 / rows;
     if (pointOk(S.ostrich)) {
       const o = document.createElement('div'); o.className = 'cutaway-piece ostrich'; o.innerHTML = (root.ART && ART.ostrich) || '';
-      const p = xy(S.ostrich); o.style.left = p[0] + '%'; o.style.top = p[1] + '%';
-      const leg = document.createElement('i'); leg.className = 'kick-leg'; o.appendChild(leg); box.appendChild(o);
+      const p = xy(S.ostrich); o.style.left = p[0] + '%'; o.style.top = p[1] + '%'; o.style.width = cw * 1.1 + '%'; o.style.height = ch * 1.1 + '%';
+      box.appendChild(o);
     }
     if (pts.length) {
-      const h = document.createElement('div'); h.className = 'cutaway-piece hyena'; h.innerHTML = (root.ART && ART.hyena) || '';
+      const art = root.CUTAWAY_ART, src = art && art.sprites && art.sprites.hf;
+      const h = document.createElement('div'); h.className = 'cutaway-piece hyena flier';
+      h.style.width = cw * 2.2 + '%'; h.style.height = ch * 2.2 + '%';
+      h.innerHTML = src ? '<img class="aimg" src="' + src + '" alt="" draggable="false">' : ((root.ART && ART.hyena) || '');
+      const d0 = pts.length > 1 ? stepDir(pts[0], pts[1], cols, rows) : [1, 0];
+      const face = d => { h.style.transform = 'translate(-50%,-50%)' + (src && d[0] < 0 ? ' scaleX(-1)' : ''); };
+      face(d0);
       const p0 = xy(pts[0]); h.style.left = p0[0] + '%'; h.style.top = p0[1] + '%'; box.appendChild(h);
-      const dur = 780;
-      const startAt = performance.now() + Math.max(0, FADE + 40);
+      const startAt = performance.now() + WRAP_GO;
       const tick = now => {
         if (!h.isConnected) return;
-        const t = Math.min(1, (now - startAt) / dur);
+        const t = Math.min(1, Math.max(0, (now - startAt) / WRAP_RUN));
+        const e = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
         if (pts.length === 1 || t <= 0) { h.style.left = p0[0] + '%'; h.style.top = p0[1] + '%'; }
         else {
-          const segs = pts.length - 1, x = Math.min(segs - 0.0001, t * segs), i = Math.floor(x), u = x - i;
+          const segs = pts.length - 1, x = Math.min(segs - 0.0001, e * segs), i = Math.floor(x), u = x - i;
           const a = pts[i], b = pts[i + 1], wrap = Math.max(Math.abs(b[0] - a[0]), Math.abs(b[1] - a[1])) > 1;
           let pos;
+          const d = stepDir(a, b, cols, rows); face(d);
           if (!wrap) pos = [a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u];
-          else {
-            const d = stepDir(a, b, cols, rows);
-            pos = u < 0.5 ? [a[0] + d[0] * u * 2, a[1] + d[1] * u * 2] : [b[0] - d[0] * (1 - (u - 0.5) * 2), b[1] - d[1] * (1 - (u - 0.5) * 2)];
-          }
+          else pos = u < 0.5 ? [a[0] + d[0] * u * 2, a[1] + d[1] * u * 2] : [b[0] - d[0] * (1 - (u - 0.5) * 2), b[1] - d[1] * (1 - (u - 0.5) * 2)];
           const q = xy(pos); h.style.left = q[0] + '%'; h.style.top = q[1] + '%';
         }
         if (t < 1) requestAnimationFrame(tick);
       };
-      setTimeout(() => requestAnimationFrame(tick), Math.max(0, FADE + 40));
+      requestAnimationFrame(tick);
     }
     card.appendChild(box);
+  }
+  // Drawings load once, after the game has started, so the first scene never waits on them.
+  const images = {};
+  function picture(name) {
+    const art = root.CUTAWAY_ART; if (!art || !art.sprites[name]) return null;
+    if (!images[name]) { const im = new Image(); im.decoding = 'async'; im.src = art.sprites[name]; images[name] = im; }
+    return images[name];
+  }
+  function preload() { const art = root.CUTAWAY_ART; if (art) for (const n in art.sprites) picture(n); }
+  // The card keeps the drawings' own shape (ART_W x ART_H, never stretched). Its top is the
+  // board's top, so the line above the board stays in view; it shrinks only on a short screen.
+  const ART_W = 336, ART_H = 412, EDGE = 3, SHADOW_X = 8, SHADOW_Y = 11;
+  function cardBox(board, stage) {
+    const b = board.getBoundingClientRect(), s = stage.getBoundingClientRect();
+    const vh = window.innerHeight || document.documentElement.clientHeight || 844;
+    const bar = document.getElementById('actions'), ar = bar && bar.getBoundingClientRect();
+    const floor = ar && ar.height > 0 && ar.top > b.top + 120 ? Math.min(vh, ar.top) : vh;
+    const room = Math.max(160, floor - b.top - SHADOW_Y - 4);
+    let w = b.width, h = (w - 2 * EDGE) * ART_H / ART_W + 2 * EDGE;
+    if (h > room) { h = room; w = (h - 2 * EDGE) * ART_W / ART_H + 2 * EDGE; }
+    return { left: b.left - s.left + (b.width - w) / 2, top: b.top - s.top, w, h };
+  }
+  function drawStep(ctx, scene, i) {
+    const steps = scene.steps, st = steps[Math.min(steps.length - 1, i)];
+    ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    ctx.setTransform(ctx.canvas.width / ART_W, 0, 0, ctx.canvas.height / ART_H, 0, 0);
+    let ready = true;
+    for (const L of st) {
+      const im = picture(scene.sprites[L[0]]);
+      if (!im || !im.complete || !im.naturalWidth) { ready = false; continue; }
+      const x = L[1], y = L[2], w = L[3], h = L[4], rot = L[5] || 0, a = L.length > 6 ? L[6] : 1;
+      ctx.globalAlpha = a;
+      if (rot) { ctx.save(); ctx.translate(x + w / 2, y + h / 2); ctx.rotate(-rot * Math.PI / 180); ctx.drawImage(im, -w / 2, -h / 2, w, h); ctx.restore(); }
+      else ctx.drawImage(im, x, y, w, h);
+    }
+    ctx.globalAlpha = 1;
+    return ready;
   }
   function showCard(scene, S, board) {
     const stage = document.getElementById('stage'); if (!stage || !board) return;
     const old = document.getElementById('cutaway'); if (old) old.remove();
+    const data = root.CUTAWAY_ART && CUTAWAY_ART.scenes[scene.id]; if (!data) return;
     const el = document.createElement('div'); el.id = 'cutaway'; el.className = 'cutaway'; el.dataset.scene = scene.id; el.setAttribute('aria-hidden', 'true');
+    const box = cardBox(board, stage);
+    el.style.left = box.left + 'px'; el.style.top = box.top + 'px'; el.style.width = (box.w + SHADOW_X) + 'px'; el.style.height = (box.h + SHADOW_Y) + 'px';
     const card = document.createElement('div'); card.className = 'cutaway-card';
-    const art = document.createElement('div'); art.className = 'cutaway-art';
-    const frames = scene.frames || 1;
-    const set = (prop, value) => art.style.setProperty(prop, value, 'important');
-    set('background-image', 'url("' + scene.src + '")');
-    set('background-repeat', 'no-repeat');
-    set('background-color', '#fff');
-    set('background-size', '100% ' + (frames * 100) + '%');
-    set('background-position', '0 0');
+    card.style.width = box.w + 'px'; card.style.height = box.h + 'px';
+    const art = document.createElement('canvas'); art.className = 'cutaway-art';
+    const dpr = Math.min(3, Math.max(1, window.devicePixelRatio || 1));
+    art.width = Math.round((box.w - 2 * EDGE) * dpr); art.height = Math.round((box.h - 2 * EDGE) * dpr);
     card.appendChild(art); el.appendChild(card);
-    const b = board.getBoundingClientRect(), s = stage.getBoundingClientRect();
-    el.style.left = (b.left - s.left) + 'px'; el.style.top = (b.top - s.top) + 'px'; el.style.width = b.width + 'px'; el.style.height = b.height + 'px';
     stage.appendChild(el);
+    document.documentElement.classList.add('cutaway-up');
+    const ctx = art.getContext('2d'); ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
     if (scene.wrap) buildPath(card, scene, S);
-    const t0 = performance.now();
+    const t0 = performance.now(), last = data.steps.length - 1;
+    let shown = -1, whole = false;
     const step = now => {
       if (!art.isConnected) return;
-      const i = Math.min(frames - 1, Math.floor((now - t0) / 50));
-      const p = frames <= 1 ? 0 : (i / (frames - 1)) * 100;
-      art.style.setProperty('background-position', '0 ' + p + '%', 'important');
-      if (i < frames - 1) requestAnimationFrame(step);
+      const i = Math.min(last, Math.floor((now - t0) / STEP));
+      if (i !== shown || !whole) { whole = drawStep(ctx, data, i); shown = i; }
+      if (i < last || !whole) requestAnimationFrame(step);
     };
-    requestAnimationFrame(step);
-    if (scene.wrap) setTimeout(() => { if (el.isConnected) el.classList.add('show-path'); }, FADE);
+    step(t0);
+    if (scene.wrap) setTimeout(() => { if (el.isConnected) el.classList.add('show-path'); }, WRAP_FADE);
   }
   api.prepare = function (S, prev, board) {
     if (!board || busyUntil > Date.now()) return;
@@ -264,5 +320,5 @@
       if (pc && !pc.querySelector('.kick-leg')) pc.appendChild(leg.cloneNode(true));
     }
   };
-  TABLE.forEach(row => { const im = new Image(); im.src = row.src; });
+  if (document.readyState === 'complete') setTimeout(preload, 1500); else window.addEventListener('load', () => setTimeout(preload, 1500));
 })(typeof window === 'undefined' ? globalThis : window);

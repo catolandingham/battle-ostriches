@@ -243,6 +243,53 @@ for (const mode of ['3p', 'Hunters', '5p']) {
   assert.equal(C.sceneFor(f.view('blue'), mid.blue), null, 'a repeat of the same kick does not play again');
 }
 
+// --- egg smash: every player is told an egg was smashed, so every player sees the egg-smash cartoon; a miss shows none ---
+for (const mode of ['3p', 'Hunters', '5p']) {
+  const f = make(S, mode), g = f.g;
+  if (mode === '5p') { g.turn = 'v1'; g.b.v1.pos = [2, 2]; g.h.p = [8, 6]; }
+  else { g.turn = 'red'; g.vulture = [2, 2]; g.stones = 1; if (mode === '3p') g.three.h = [8, 6]; else { g.hunt.hs.hyena.p = [8, 6]; g.hunt.hs.badger.p = [8, 0]; } }
+  const before = shot(f);
+  const ok = mode === '5p' ? TT.vultureThrow(g, 'v1', [2, 1]) : mode === '3p' ? T.vultureThrow3(g, [2, 1]) : H.vultureThrowH(g, [2, 1]);
+  assert.ok(ok, mode + ' throw'); assert.equal(g.lastAction.result, 'hit', mode + ' the stone hit the egg');
+  const got = ids(f, before);
+  for (const r of f.roles) assert.equal(got[r], 'egg-smash', mode + ' ' + r + ' sees the egg smash');
+  const mid = shot(f);
+  for (const r of f.roles) assert.equal(C.sceneFor(f.view(r), mid[r]), null, mode + ' the same smash does not play twice');
+  const m = make(S, mode), mg = m.g;
+  if (mode === '5p') { mg.turn = 'v1'; mg.b.v1.pos = [3, 3]; mg.h.p = [8, 6]; } else { mg.turn = 'red'; mg.vulture = [3, 3]; mg.stones = 1; if (mode === '3p') mg.three.h = [8, 6]; else { mg.hunt.hs.hyena.p = [8, 6]; mg.hunt.hs.badger.p = [8, 0]; } }
+  const mb = shot(m);
+  assert.ok(mode === '5p' ? TT.vultureThrow(mg, 'v1', [4, 4]) : mode === '3p' ? T.vultureThrow3(mg, [4, 4]) : H.vultureThrowH(mg, [4, 4]));
+  for (const r of m.roles) assert.equal(C.sceneFor(m.view(r), mb[r]), null, mode + ' a miss has no egg-smash cartoon');
+}
+{ // the two-player game too
+  const room = { code: 'EGG2', g: B.newGame(), players: {} };
+  {
+    const g = room.g;
+    for (const p of [[2, 1], [6, 1], [2, 5]]) B.placeEgg(g, p);
+    if (g.phase === 'setupOstrich') B.placeOstrich(g, [6, 5]);
+    g.phase = 'play'; g.turn = 'red'; g.vulture = [2, 2]; g.stones = 1;
+    const vb = S.view(room, 'blue'), vr = S.view(room, 'red');
+    assert.ok(B.vultureThrow(g, [2, 1])); assert.equal(g.lastAction.result, 'hit');
+    assert.equal(C.sceneFor(S.view(room, 'blue'), vb).id, 'egg-smash', '2-player ostrich sees the egg smash');
+    assert.equal(C.sceneFor(S.view(room, 'red'), vr).id, 'egg-smash', '2-player vulture sees the egg smash');
+  }
+}
+
 S.close();
-console.log('PASS cutaway scenes: mapping and who may see them, including a wrap');
+// every scene in the table has its drawings: steps of 50 ms, each drawing a file in public/art/cutaways, inside the 336 x 412 card
+{
+  const fs = require('fs'), path = require('path'), ART = require('./public/cutaway-scenes');
+  assert.equal(ART.w, 336); assert.equal(ART.h, 412);
+  for (const name in ART.sprites) assert.ok(fs.existsSync(path.join(__dirname, 'public', ART.sprites[name])), 'drawing file for ' + name);
+  for (const id of C.TABLE.map(r => r.id)) {
+    const sc = ART.scenes[id]; assert.ok(sc, 'drawings for ' + id);
+    assert.equal(sc.steps.length, id === 'kick-wrap' ? 14 : 30, id + ' step count');
+    for (const st of sc.steps) for (const l of st) {
+      assert.ok(sc.sprites[l[0]] && ART.sprites[sc.sprites[l[0]]], id + ' uses a known drawing');
+      assert.ok(l[3] > 0 && l[4] > 0, id + ' layer has a size');
+    }
+  }
+}
+
+console.log('PASS cutaway scenes: mapping and who may see them, including a wrap and the egg smash, and every scene has its drawings');
 process.exit(0);
