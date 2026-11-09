@@ -128,10 +128,11 @@ function view3(room, role) {
     v = view(sub, role); v.myTurn = mine; v.joined = SEATS3.every(s => room.players[s]); v.ai = null;
     if (role === 'blue' && !mine) { v.moves = []; v.carryMoves = []; v.can = { sit: false, carry: false }; }
     if (role === 'red' && !mine) { v.fly = []; v.throw = []; }
-    // Knockout does not grant new sight; only the finished game reveals the board.
+    // Brian: an eliminated bird watches a read-only full board for the rest of the game.
     if (g.phase === 'play' && T.isOut(g, role)) {
-      v.myTurn = false; v.moves = []; v.carryMoves = []; v.fly = []; v.throw = []; v.hmoves = [];
-      v.can = { sit: false, carry: false };
+      v.god = true; v.myTurn = false; v.moves = []; v.carryMoves = []; v.fly = []; v.throw = []; v.hmoves = [];
+      v.can = { sit: false, carry: false }; v.ostrich = g.ostrich; v.vulture = g.vulture; v.eggs = eggView(g);
+      h3.hunter = t.h.slice(); h3.burrowed = !!t.burrowed; if (h3.popout) h3.popout.seen = true; if (lc) lc.at = t.lastCatch.at;
     }
   }
   // Kick: the ostrich's options; the kick itself is announced to every seat, the square it ended on only to a seat that can see that square
@@ -244,8 +245,11 @@ function viewT(room, seat) {
     kickTargets: mine ? TT.kickTargets(g, seat) : [], kickNear: mine && TT.kickable(g, seat).length > 0 });
   if (isV) Object.assign(v, { fly: mine ? TT.flyTargets(g, seat) : [], throw: mine ? TT.throwTargets(g, seat) : [] });
   if (myB.out && g.phase === 'play') {
-    v.myTurn = false; v.moves = []; v.carryMoves = []; v.fly = []; v.throw = []; v.hmoves = [];
-    v.can = { sit: false, carry: false, kick: false }; v.kickTargets = []; v.kickNear = false;
+    v.god = true; v.myTurn = false; v.moves = []; v.carryMoves = []; v.fly = []; v.throw = []; v.hmoves = [];
+    v.can = { sit: false, carry: false, kick: false }; v.kickTargets = []; v.kickNear = false; v.kick = kickOf(true); v.eggs = eggs();
+    v.h3.pieces = TT.OS.concat(TT.VS).filter(s => s !== seat && TT.live(g, s))
+      .map(s => ({ seat: s, type: TT.isO(s) ? 'o' : 'v', p: g.b[s].pos, mate: (TT.isO(s) && isO) || (TT.isV(s) && isV), carrying: isO && TT.isO(s) && g.b[s].carrying != null }));
+    if (g.h) { v.h3.hunter = g.h.p.slice(); v.h3.burrowed = !!g.h.burrowed; if (v.h3.popout) v.h3.popout.seen = true; if (lc) lc.at = g.lastCatch.at; }
   } else if (myB.out) { v.myTurn = false; v.moves = []; v.carryMoves = []; v.fly = []; v.throw = []; }
   return stamp(room, v, seat);
 }
@@ -327,8 +331,10 @@ function viewH(room, seat) {
     if (seat === 'blue' && !mine) { v.moves = []; v.carryMoves = []; v.can = { sit: false, carry: false }; }
     if (seat === 'red' && !mine) { v.fly = []; v.throw = []; }
     if (g.phase === 'play' && HU.isOut(g, seat)) {
-      v.myTurn = false; v.moves = []; v.carryMoves = []; v.fly = []; v.throw = []; v.hmoves = [];
-      v.can = { sit: false, carry: false };
+      v.god = true; v.myTurn = false; v.moves = []; v.carryMoves = []; v.fly = []; v.throw = []; v.hmoves = [];
+      v.can = { sit: false, carry: false }; v.ostrich = g.ostrich; v.vulture = g.vulture; v.eggs = eggView(g);
+      h3.hunters = HU.HUNTERS.map(h => ({ kind: h, p: t.hs[h].p.slice(), burrowed: !!t.hs[h].burrowed, me: false }));
+      if (h3.rival) h3.rival.to = t.rival.to; if (h3.popout) h3.popout.seen = true; if (lc) lc.at = t.lastCatch.at;
     }
   }
   if (seat === 'blue') { v.kickTargets = mine && !v.god ? HU.kickTargetsH(g) : []; v.kickNear = !!mine && !v.god && HU.kickableH(g).length > 0; v.can = Object.assign(v.can || {}, { kick: v.kickTargets.length > 0 }); }
@@ -374,6 +380,17 @@ function viewerIsHost(room, v) {
   return roster.some(r => r.host && (r.role === v.role || (v.role === 'hunter' && (r.role === v.kind || r.role === 'hunter'))));
 }
 // picked: true means Start gave this seat to the player; they did not choose it (lobby.js plan). Roster seat = view seat.
+// Motion packets contain ONLY squares this viewer may see. Null steps preserve public timing, not hidden destinations.
+const motionPath=require('./public/push-motion').path;
+function trailView(room,v,seat,key,from,to,wrap=false,n=3){
+ const g=room.g,pts=motionPath(g.cfg,from,to,wrap,n),isHunter=['hunter','hyena','badger'].includes(seat),ownKind=v.kind||(v.h3||{}).kind;
+ return pts.map(p=>{if(g.phase==='over'||v.god)return p;
+  const bird=key==='blue'||key==='red'||/^[ov][12]$/.test(key);
+  if(bird)return isHunter?null:p;
+  if(isHunter){if(key===ownKind||key===seat)return p;return g.hunt&&v.hunter&&B.dist(v.hunter,p)<=2?p:null;}
+  const eye=v.role==='blue'?v.ostrich:v.vulture;return eye&&eye[0]>=0&&B.dist(eye,p)<=2?p:null;
+ });
+}
 function stamp(room, v, seat) {
   if (v && room && room.g) {
     if (room.g.phase === 'over') v.god = true; // Brian: finished-game full reveal for everyone.
@@ -385,8 +402,13 @@ function stamp(room, v, seat) {
     const g = room.g, t = g.three || g.hunt || (g.team && g.h ? g : null), over = g.phase === 'over';
     if (t) { const bur = g.three ? g.three.burrowed : g.hunt ? g.hunt.hs.badger.burrowed : g.h.burrowed, m = t.mound;
       v.h3.dug = t.dug ? { seq: t.dug.seq, round: t.dug.round } : null; v.h3.mound = !over && bur && m && (m.seenBy || []).includes(seat) ? m.at.slice() : null;
-      const bs = g.hunt && g.hunt.burst; v.h3.burst = bs ? { seq: bs.seq, round: bs.round, n: bs.n, to: over || ['hyena', 'badger'].includes(seat) || HU.seen(g, seat, 'hyena') ? bs.to : null } : null; } }
-  if (v && room && room.g) { const g = room.g; v.endWhy = g.phase === 'over' ? g.endWhy || null : null; v.stoneNote = g.lastStone ? { seq: g.lastStone.seq, text: g.lastStone.text, by: g.lastStone.by, targets: g.lastStone.targets || [] } : null;
+      const bs = g.hunt && g.hunt.burst; v.h3.burst = bs ? { seq: bs.seq, round: bs.round, n: bs.n, to: over || v.god || ['hyena', 'badger'].includes(seat) || HU.seen(g, seat, 'hyena') ? bs.to : null } : null; } }
+  if (v && room && room.g) { const g = room.g; v.endWhy = g.phase === 'over' ? g.endWhy || null : null; v.stoneNote = g.lastStone ? { seq: g.lastStone.seq, text: g.lastStone.text, by: g.lastStone.by, targets: g.lastStone.targets || [], kicker:g.lastStone.kicker||null } : null;
+    v.smashNote = g.lastSmash ? {seq:g.lastSmash.seq,by:g.lastSmash.by,owner:v.role==='blue'||v.god?g.lastSmash.owner:null} : null;
+    if(v.kick&&g.lastKick){const k=g.lastKick,key=g.team?(k.seat==='hunter'?g.h.kind:k.seat):k.who==='vulture'?'red':k.who;v.kick.trail=trailView(room,v,seat,key,k.from,k.to,true,k.moved||3);v.kick.key=key;}
+    if(v.stoneNote)v.stoneNote.trails=(g.lastStone.trails||[]).map(t=>({key:t.key,points:trailView(room,v,seat,t.key,t.from,t.to,false,2)}));
+    if(v.h3&&g.hunt){const rv=g.hunt.rival,bs=g.hunt.burst;if(v.h3.rival&&rv)v.h3.rival.trail=trailView(room,v,seat,rv.by==='hyena'?'badger':'hyena',rv.at,rv.to,false,2);if(v.h3.burst&&bs)v.h3.burst.trail=trailView(room,v,seat,'hyena',bs.at,bs.to,false,2);}
+
     // anyone who can see the ostrich sees it sit: birds always; hunters only through ambush sight (a buried badger with the ostrich next to it)
     const hunterSeat = ['hunter', 'hyena', 'badger'].includes(seat) && g.phase !== 'over';
     const amb = !hunterSeat ? [] : (g.three && seat === 'hunter' ? T.ambushSight(g) : g.hunt && seat === 'badger' ? HU.ambushSight(g) : g.team && seat === 'hunter' ? TT.ambushSight(g) : []);

@@ -119,12 +119,12 @@ ok('2 vs 2 + hunter: a catch and a knock-out reach every seat; the square only t
   const room = roomT('hyena'), g = room.g = team('hyena', pos); assert.ok(TT.hunterMove(g, [4, 2])); assert.equal(g.lastCatch.ko, false);
   const v = seatsOf(s => S.viewT(room, s), ST);
   for (const s of ST) { assert.equal(v[s].h3.lastCatch.bird, 'o1', s); assert.match(lineFor(v[s], s), /hyena|ostrich|[Cc]aught|knocked/, s); }
-  assert.equal(lineFor(v.o1, 'o1'), "You were caught! You fled 2 squares."); assert.equal(lineFor(v.o2, 'o2'), 'The hyena caught the ostrich!'); assert.equal(lineFor(v.v1, 'v1'), 'The hyena caught the ostrich!'); assert.equal(lineFor(v.hunter, 'hunter'), 'The hyena caught the ostrich!');
+  assert.equal(lineFor(v.o1, 'o1'), "You were caught! You fled 2 squares."); assert.equal(lineFor(v.o2, 'o2'), 'The hyena caught Ostrich 1!'); assert.equal(lineFor(v.v1, 'v1'), 'The hyena caught Ostrich 1!'); assert.equal(lineFor(v.hunter, 'hunter'), 'The hyena caught Ostrich 1!');
   assert.deepEqual(v.o1.h3.lastCatch.at, [4, 2]); assert.deepEqual(v.hunter.h3.lastCatch.at, [4, 2]); assert.deepEqual(v.v2.h3.lastCatch.at, [4, 2], 'v2 at (4,4) is 2 squares from the hyena');
   for (const s of ['o2', 'v1']) { assert.equal(v[s].h3.lastCatch.at, null, s + ' cannot see the hyena'); assert.equal(has(v[s], [4, 2]), false, s); }
   const rk = roomT('badger'), k = rk.g = team('badger', pos); k.b.o1.catches = 1; assert.ok(TT.hunterMove(k, [4, 2])); assert.equal(k.lastCatch.ko, true);
   const w = seatsOf(s => S.viewT(rk, s), ST);
   for (const s of ST) assert.equal(w[s].h3.lastCatch.ko, true, s);
-  assert.ok(lineFor(w.o1, 'o1').startsWith('The badger knocked you out.')); assert.ok(lineFor(w.o2, 'o2').startsWith('The badger knocked out the ostrich.')); assert.ok(lineFor(w.hunter, 'hunter').startsWith('Ostrich knocked out!')); });
+  assert.ok(lineFor(w.o1, 'o1').startsWith('The badger knocked you out.')); assert.ok(lineFor(w.o2, 'o2').startsWith('The badger knocked out Ostrich 1.')); assert.ok(lineFor(w.hunter, 'hunter').startsWith('Ostrich 1 knocked out!')); });
 
 console.log(`PASS testannounce (${n} groups)`); process.exit(0);

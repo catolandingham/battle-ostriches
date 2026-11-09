@@ -117,7 +117,7 @@ const near = (a, c) => Math.max(Math.abs(a[0] - c[0]), Math.abs(a[1] - c[1]));
     await shot(O, 'ostrich-b-walked-away'); await O.evaluate(() => UI.card()); await sleep(400); await shot(O,'rolecard-ostrich');
     await O.context().close();
   }
-  if (want('hyena') || want('badger') || want('catch')) {
+  if (want('hyena') || want('badger') || want('catch') || want('kick')) {
     const lobby = async kind => {
       const A = await phone(b), Vp = await phone(b), H = await phone(b);
       await A.goto(U); await A.click('#playFriend'); await A.waitForSelector('#lobbyCode:not(:empty)'); const link = (await A.inputValue('#lobbyLink')).replace(/^http:\/\/[^/]+/, 'http://localhost:4172');
@@ -130,6 +130,23 @@ const near = (a, c) => Math.max(Math.abs(a[0] - c[0]), Math.abs(a[1] - c[1]));
       const act = (role, m) => { if (!server.act3(r3, role, m)) throw new Error('illegal ' + role + JSON.stringify(m)); bc(); };
       return { A, Vp, H, r3, g3, bc, act };
     };
+    if (want('kick')) {
+      const {A,Vp,H,g3,bc,act}=await lobby('hyena'),g=g3();g.turn='blue';g.ostrich=[3,3];g.vulture=[8,6];g.three.h=[4,3];g.three.pounce=false;bc();await sleep(3400);
+      await shot(A,'kick-ostrich-0-before');await shot(H,'kick-hyena-0-before');act('blue',{a:'kick',p:[4,3]});
+      await A.waitForSelector('.partial-motion .push-actor');await H.waitForSelector('.push-motion .push-actor');
+      const fade=await A.locator('.partial-motion .push-actor').evaluate(e=>e.getAnimations()[0].effect.getKeyframes().some(f=>f.opacity===0||f.opacity==='0'));if(!fade)throw new Error('missing sight-edge fade');
+      const ka=await A.evaluate(()=>UI._S().kick),kh=await H.evaluate(()=>UI._S().kick);
+      if(ka.to!==null||ka.trail.some(p=>p&&Math.max(Math.abs(p[0]-3),Math.abs(p[1]-3))>2))throw new Error('kick leaked a hidden landing/path square');
+      if(ka.trail.filter(Boolean).length!==2||kh.trail.filter(Boolean).length!==4)throw new Error('kick must fade at sight edge, while own phone sees all three steps');
+      if(await H.locator('#board .pc.po').count())throw new Error('hunter learned a hidden ostrich position');
+      if(!await A.locator('#board .pc.po .kick-leg').count()||!await H.locator('#h3bar [data-b="blue"] .kick-leg').count())throw new Error('missing viewer-correct kick cause');
+      await shot(A,'kick-ostrich-1-start');await shot(H,'kick-hyena-1-start');bc();await sleep(300);
+      if(!await A.locator('.partial-motion .push-actor').count())throw new Error('duplicate packet interrupted partial slide');
+      await shot(A,'kick-ostrich-2-mid');await shot(H,'kick-hyena-2-mid');await sleep(750);await shot(A,'kick-ostrich-3-after');await shot(H,'kick-hyena-3-after');
+      await A.emulateMedia({reducedMotion:'reduce'});await H.emulateMedia({reducedMotion:'reduce'});g.turn='blue';g.three.h=[4,3];bc();await sleep(100);act('blue',{a:'kick',p:[4,3]});await A.waitForSelector('.partial-motion');
+      if(await A.locator('.push-actor').count()||await H.locator('.push-actor').count())throw new Error('reduced-motion kick must have static trails only');
+      await shot(A,'kick-ostrich-reduced');await shot(H,'kick-hyena-reduced');for(const p of [A,Vp,H])await p.context().close();
+    }
     if (want('catch')) {
       const { A, Vp, H, g3, bc, act } = await lobby('hyena');
       const g=g3();g.turn='hunter';g.three.h=[3,3];g.three.pounce=false;g.vulture=[4,3];g.ostrich=[6,1];bc();await sleep(3400);

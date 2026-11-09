@@ -1,23 +1,35 @@
-# DRAFT wording in this unmerged PR — Brian’s approval required
+# Approved lines and remaining DRAFT words — Brian, 2026-11-08
 
-The previously approved filled-egg captions and catch notices remain exact. The caught bird gets “You were caught! You fled 2 squares.” first, then the already-approved named catch notice as a separate one-second message.
+## APPROVED, implemented
 
-New draft templates (rendered with the real animal / team-seat names and actual distance):
+- Kicker: “You kicked the hyena 3 squares!”
+- Kicked hunter: “The ostrich kicked you 3 squares!”
+- Stone thrower: “Your stone hit the hyena!”
+- Hunter hit by a stone: “A stone hit you!”
+- Egg-smashing vulture: “You smashed an egg!”
+- Ostrich whose egg was smashed: “The vulture smashed your egg!”
+- Hunter watching a smash: “The vulture smashed an egg.”
+- Hunter that shoves: “You shoved the badger!”
+- Shoved hunter: “The hyena shoved you!”
+
+Use actual hunter names and actual distances, with “1 square” for one. In team modes, references to an ostrich in another player's line use “Ostrich 1” / “Ostrich 2”. Previously approved filled-egg captions and catch/flee notices stay exact except that numbered ostrich identity is now explicit in team bystander lines.
+
+## DRAFT, still needs approval
 
 - “Your teammate found an egg.”
-- “You, the ostrich, kicked the hyena 3 squares away.”
-- “The ostrich kicked you, the hyena, 3 squares away.”
-- “You, the vulture, hit the hyena with a stone.”
-- “The vulture’s stone hit you, the hyena.”
-- “The vulture’s stone hit the hyena.” (bystanders; fixes the false badger-pop story)
-- “You, the hyena, shoved the badger.” / “The hyena shoved you, the badger.”
-- “You, the badger, burst out and shoved the hyena 2 squares.”
-- “The badger burst out and shoved you, the hyena, 2 squares.”
+- Third-person kick: “The ostrich kicked the hyena 3 squares!” (or “Ostrich 1 …” / “Ostrich 2 …”).
+- Numbered stone-kickback watcher: “Ostrich 1 kicked the stone right back!” / “… Ostrich 2 …”.
+- Third-person stone hit: “The vulture's stone hit the hyena.”
+- Third-person meeting: “Hyena shoved the badger.” / “Badger shoved the hyena.”
+- Personal burst: “You, the badger, burst out and shoved the hyena 2 squares.” / “The badger burst out and shoved you, the hyena, 2 squares.”
+- Third-person burst: “The badger burst out and shoved the hyena back 2 squares!”
+- Teammate's smashed egg: “The vulture smashed Ostrich 1's egg!” / “… Ostrich 2's egg!”
+- Kick variants when the target is the vulture, and a stone hitting both hunters together, remain draft extensions.
 
-Substitute badger/vulture as the actual kick target; substitute hyena/badger as actual shover/stone target; use “1 square” for one, the real distance otherwise. Team doers use ostrich 1/2 or vulture 1/2 when available. A stone can hit both hunters sharing a square; the bystander/doer line names both actual targets. No hidden square is included in these words.
+Third-person catch keeps the already approved “The <hunter> caught the <bird>!” template, using numbered ostrich names in team games. Other watcher lines remain drafts even when earlier code used similar words.
 
-## Already approved, deferred with the reminder work
+## Approved but deferred
 
-“Help warm your teammate's eggs, but eat for yourself.”
+“Help warm your teammate's eggs, but eat for yourself.” — ostriches in 2v2 / 5p; mockup first when reminder work resumes.
 
-Only for ostriches in 2v2 / 5p. Mockup first; do not build the new reminder before that work is resumed after icon selection. This shorter version replaces the earlier long sentence. It is not implemented by this behavior PR.
+Big scenes are NOT built or timed by this PR. Brian wants to see examples first, leaning toward about two seconds; no duration or tap-to-skip design is locked in. Ordinary board motion is about one second, with reduced-motion static trails and viewer-filtered squares only.

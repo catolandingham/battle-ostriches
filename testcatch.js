@@ -9,7 +9,7 @@ ok('approved catch notices are viewer-specific and use the real distance',()=>{
   assert.equal(CT.catchLine(lc({...c,to:[2,1]}),bird,kind,1),'You were caught! You fled 1 square.');
   for(const viewer of ['blue','red','o1','o2','v1','v2','hunter','hyena','badger'].filter(v=>v!==bird)){
    const k=kind==='badger'?'badger':'hyena',b=bird==='red'||bird[0]==='v'?'vulture':'ostrich';
-   assert.equal(CT.catchLine({...c,to:null},viewer,kind,1),`The ${k} caught the ${b}!`);
+   assert.equal(CT.catchLine({...c,to:null},viewer,kind,1),`The ${k} caught ${bird==='o1'?'Ostrich 1':'the '+b}!`);
   }
  }
  assert.equal(CT.catchLine(lc({ko:true,to:null}),'blue','hyena',0),'The hyena knocked you out.');

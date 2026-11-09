@@ -135,3 +135,5 @@ html #board .cell.vfound>.aim{z-index:3}
 /* The shared status queue owns the slot while a message is held. Never paint a second line underneath. */
 #app #msgslot[data-status-active]>:not(.status-active):not(#_a):not(#_b){visibility:hidden!important}
 #app #msgslot[data-status-active]>.status-active:not(#_a):not(#_b){visibility:visible!important;animation:none!important;opacity:1!important}
+
+.push-cause{outline:2px solid currentColor;outline-offset:2px}.kick-leg{position:absolute;left:50%;top:65%;width:40%;border-bottom:2px solid currentColor;transform-origin:left;animation:kickleg 1s ease-out;pointer-events:none}@keyframes kickleg{0%,100%{transform:rotate(60deg) scaleX(.3)}30%,55%{transform:rotate(-20deg) scaleX(1)}}@media(prefers-reduced-motion:reduce){.kick-leg{animation:none}}

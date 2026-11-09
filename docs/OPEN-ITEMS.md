@@ -7,6 +7,7 @@ The animal is called the badger.
 ## In progress
 
 - 2026-11-08: Audit busy screens with real-play iPhone captures: first three turns of every mode and the caught bird’s view; propose spacing and a clear personal catch moment (report first).
+- 2026-11-08: Keep full-board god view for knocked-out birds in every mode; restore in PR #23, read-only.
 - 2026-11-08: Same-size top-left eggs; countdown inside square; lone egg small in top-left.
 - 2026-11-08: Hunters caption: “Filled egg: a vulture found an egg.”; fun-fact box fits its text.
 - 2026-11-08: Fix hunter found-egg leak server-side (another worker); catch pips visibly change, with tests.
@@ -26,7 +27,7 @@ The animal is called the badger.
 
 - 2026-11-08: Review original hyena, vulture and ostrich commentary drafts; approve words and allowed moments before any implementation, without adding clutter or revealing hidden events.
 - 2026-11-08: Approve new words and each open look before building.
-- 2026-11-08: Decide whether big cut-scenes may take 1.5–2 seconds with tap-to-skip; ordinary animations stay about 1 second.
+- 2026-11-08: See big-scene samples first; no duration or skip design approved (Brian is leaning toward about 2 seconds). Ordinary board animations stay about 1 second.
 - 2026-11-08: Confirm nobody is playing before any approved merge; deployment ends games.
 - 2026-11-08: Game saving with Render Key Value when Brian is at a computer.
 

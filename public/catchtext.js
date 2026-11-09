@@ -2,7 +2,8 @@
 // Rules live in three.js / hunt.js / team.js; this only turns a lastCatch into a sentence. The numbers come from the rules, never typed here.
 (function () {
   const isVulture = b => b === 'red' || b === 'v1' || b === 'v2';
-  const birdWord = b => isVulture(b) ? 'vulture' : 'ostrich';
+  const birdWord = b => isVulture(b) ? 'vulture' : b==='o1'?'Ostrich 1':b==='o2'?'Ostrich 2':'ostrich';
+  const birdObject=b=>/^o[12]$/.test(b)?birdWord(b):'the '+birdWord(b);
   const hunterWord = k => k === 'badger' ? 'badger' : 'hyena';
   const SEAT = { o1: 'Ostrich 1', o2: 'Ostrich 2', v1: 'Vulture 1', v2: 'Vulture 2' };
   const more = n => n === 1 ? 'one more catch' : n + ' more catches';
@@ -21,7 +22,7 @@
   function catchLine(lc, viewer, kind, left) {
     if(!lc.ko){
       if(viewer===lc.bird){const n=lc.at&&lc.to?Math.max(Math.abs(lc.to[0]-lc.at[0]),Math.abs(lc.to[1]-lc.at[1])):0;return `You were caught! You fled ${n} square${n===1?'':'s'}.`;}
-      return `The ${hunterWord(kind||lc.by)} caught the ${birdWord(lc.bird)}!`;
+      return `The ${hunterWord(kind||lc.by)} caught ${birdObject(lc.bird)}!`;
     }
     const line = baseLine(lc, viewer, kind, left);
     return hunterWord(kind || lc.by) === 'badger' ? line + ' ' + BL.catchTail(lc) : line;
@@ -34,7 +35,7 @@
     }
     if (viewer === 'hunter' || (lc.by && viewer === lc.by))
       return lc.ko ? `${bird[0].toUpperCase() + bird.slice(1)} knocked out!` : `Caught the ${bird}!`;
-    return `The ${hunter} ${lc.ko ? 'knocked out' : 'caught'} the ${bird}.`;
+    return `The ${hunter} ${lc.ko ? 'knocked out' : 'caught'} ${birdObject(lc.bird)}.`;
   }
   // banner for a bird that is out ("The ostrich is out."; in 2 vs 2 the seat name: "Ostrich 1 is out.")
   const outLine = b => SEAT[b] ? `${SEAT[b]} is out.` : `The ${birdWord(b)} is out.`;
@@ -57,8 +58,9 @@
   function newEvents(seen, S, prev) {
     const out = [], h = (S && S.h3) || {};
     if (!S) return out;
-    if (S.phase && S.phase.startsWith('setup')) { seen.pop = seen.rival = seen.kick = seen.stone = seen.dug = seen.burst = 0; return out; }
+    if (S.phase && S.phase.startsWith('setup')) { seen.pop = seen.rival = seen.kick = seen.stone = seen.dug = seen.burst = seen.smash = 0; return out; }
     const po = h.popout, rv = h.rival, k = S.kick;
+    if(S.smashNote&&S.smashNote.seq!==seen.smash){seen.smash=S.smashNote.seq;if(prev)out.push({kind:'smash',text:'The vulture smashed an egg.'});}
     const la=S.lastAction;if(prev&&h.team&&S.role==='red'&&la&&la.type==='fly'&&la.spotted&&la.seat!==h.mySeat&&JSON.stringify(la)!==JSON.stringify(prev.lastAction))out.push({kind:'teamFound',text:'Your teammate found an egg.'});
     if (k && k.seq !== seen.kick) { seen.kick = k.seq; if (prev) out.push({ kind: 'kick', text: kickLine(k.who, k.moved, S.cfg && S.cfg.kickPush), square: k.to || null }); }
     if (S.stoneNote && S.stoneNote.seq !== seen.stone) { seen.stone = S.stoneNote.seq; if (prev) out.push({ kind: 'stone', text: S.stoneNote.text }); }
@@ -72,19 +74,22 @@
   function viewerEvent(e,S) {
     const h=S.h3||{},seat=h.mySeat||S.role,viewer=S.role==='hunter'?(S.kind||h.kind||seat):seat;
     const name=x=>SEAT[x]?SEAT[x].toLowerCase():x==='blue'?'ostrich':x==='red'?'vulture':x;
+    if(e.kind==='smash'){const n=S.smashNote;if(seat===n.by)return 'You smashed an egg!';if(S.role==='blue')return n.owner&&/^o[12]$/.test(n.owner)&&seat!==n.owner?`The vulture smashed ${SEAT[n.owner]}'s egg!`:'The vulture smashed your egg!';return 'The vulture smashed an egg.';}
     if(e.kind==='kick') {const k=S.kick,n=k.moved==null?(S.cfg||{}).kickPush:k.moved,who=kickWho(k.who),unit=n===1?'square':'squares';
       if(n===0)return e.text;
-      if(seat===(k.by||'blue'))return `You, the ${name(seat)}, kicked the ${who} ${n} ${unit} away.`;
-      if(viewer===(k.target|| (who==='vulture'?'red':who)))return `The ostrich kicked you, the ${name(viewer)}, ${n} ${unit} away.`;
+      if(seat===(k.by||'blue'))return `You kicked the ${who} ${n} ${unit}!`;
+      if(viewer===(k.target|| (who==='vulture'?'red':who)))return `${SEAT[k.by]||'The ostrich'} kicked you ${n} ${unit}!`;
+      return `${SEAT[k.by]||'The ostrich'} kicked the ${who} ${n} ${unit}!`; // DRAFT watcher line
     }
+    if(e.kind==='stone'&&S.stoneNote&&SEAT[S.stoneNote.kicker]&&/^The ostrich kicked the stone/.test(e.text))return e.text.replace('The ostrich',SEAT[S.stoneNote.kicker]);
     if(e.kind==='stone'&&S.stoneNote&&S.stoneNote.targets&&S.stoneNote.targets.length) {
       const n=S.stoneNote,targets=n.targets.join(' and the ');
-      if(seat===n.by)return `You, the ${name(seat)}, hit the ${targets} with a stone.`;
-      if(n.targets.includes(viewer))return `The vulture's stone hit you, the ${name(viewer)}.`;
+      if(seat===n.by)return `Your stone hit the ${targets}!`;
+      if(n.targets.includes(viewer))return 'A stone hit you!';
     }
     if(e.kind==='rival') {const by=h.rival.by,other=by==='hyena'?'badger':'hyena';
-      if(viewer===by)return `You, the ${by}, shoved the ${other}.`;
-      if(viewer===other)return `The ${by} shoved you, the ${other}.`;
+      if(viewer===by)return `You shoved the ${other}!`;
+      if(viewer===other)return `The ${by} shoved you!`;
     }
     if(e.kind==='burst') {
       if(viewer==='badger')return `You, the badger, burst out and shoved the hyena ${h.burst.n} square${h.burst.n===1?'':'s'}.`;

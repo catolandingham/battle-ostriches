@@ -79,7 +79,7 @@ const PIECE = { ostrich: '.pc.po', vulture: '.pc.pv', hyena: '.pc.ph.mine', badg
   assert.ok((await pulses(H)).adds >= 1, 'hunter: pulse at the start of its turn'); await H.waitForTimeout(900); const ph = await pulses(H); assert.equal(ph.live, 0); assert.ok(ph.lastRem - ph.first <= 1000);
   await check(H, 'hyena', 'hyena turn'); await check(A, 'ostrich', 'after move'); await check(V, 'vulture', 'after move');
   // eliminated bird: off the board, so no tag; the others keep theirs
-  T3.knockout(room3.g, 'red', 'caught'); server.broadcast(room3); await V.waitForFunction(() => UI._S().h3.birds.red.out && !UI._S().god); // knockout is not a full-reveal spectator view
+  T3.knockout(room3.g, 'red', 'caught'); server.broadcast(room3); await V.waitForFunction(() => UI._S().h3.birds.red.out && UI._S().god); // out bird gets the approved full-board spectator view
   assert.equal(await V.locator('.youtag').count(), 0, 'eliminated vulture: no YOU tag'); await check(A, 'ostrich', 'vulture out'); await check(H, 'hyena', 'vulture out');
   await Promise.all([A.context().close(), V.context().close(), H.context().close()]);
 
