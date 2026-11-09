@@ -209,12 +209,12 @@ function marksAround(board,S,cx,cy,range,kind,cls){const C=S.cfg;let n=0;
  return n;}
 function pop(board,txt,cls){window.STATUS_QUEUE.add({className:'h3pop '+cls,text:txt,priority:10});}
 // Shared with sniff/fact notices: one one-second message, personal events before background facts.
-function announce(txt,priority,hold){window.STATUS_QUEUE.add({id:'announce',className:'show'+(/you/i.test(txt)?' bad':''),text:txt,priority:priority==null?(/\byou\b/i.test(txt)?100:50):priority,hold:hold||undefined});}
+function announce(txt,priority,hold,preempt){window.STATUS_QUEUE.add({id:'announce',className:'show'+(/you/i.test(txt)?' bad':''),text:txt,priority:priority==null?(/\byou\b/i.test(txt)?100:50):priority,hold:hold||undefined,preempt:!!preempt});}
 const evSeen={kick:0,pop:0,rival:0,stone:0,dug:0,burst:0};
 function events(S,prev,board){
  if(!S)return;if(!S.three)rulesMode('2');
  const h=S.h3||{};
- for(const e of window.CatchText.newEvents(evSeen,S,prev)){const big=e.kind==='kick'||e.kind==='burst'||e.kind==='rival'||(e.kind==='stone'&&S.stoneNote&&(S.stoneNote.targets||[]).length);announce(window.CatchText.viewerEvent(e,S),null,big?2000:undefined);
+ for(const e of window.CatchText.newEvents(evSeen,S,prev)){const big=e.kind==='kick'||e.kind==='burst'||e.kind==='rival'||(e.kind==='stone'&&S.stoneNote&&(S.stoneNote.targets||[]).length);announce(window.CatchText.viewerEvent(e,S),null,big?2000:undefined,big);
   // the square highlight: the hyena's landing square for the meeting; the badger's own square for a pop-out, only if this phone can see the badger
   const sq=e.kind==='rival'||e.kind==='kick'||e.kind==='burst'?e.square:e.kind==='dug'?null:e.seen?(h.hunters?(h.hunters.find(x=>x.kind==='badger')||{}).p:h.hunter):null,c=cellAt(board,S,sq);c&&c.classList.add('h3kb');}}
 // One plain line at the start of every game: who hunts what, naming only the animals in the game (roles.js).
@@ -261,7 +261,7 @@ function after(S,prev,board){badgerLines(S,prev);chips(S);clock(S);kindPick(S);i
    if(tc)tc.classList.add('h3kb');
    // what the catch means, in words: hurt or out, and who did it (catchtext.js)
    const CT=window.CatchText,seat=h.mySeat||me,by=lc.by||k;
-   announce(CT.catchLine(lc,seat,by,CT.catchesLeft(h,lc)),seat===lc.bird?100:50,2000);
+   announce(CT.catchLine(lc,seat,by,CT.catchesLeft(h,lc)),seat===lc.bird?100:50,2000,true);
    if(seat===lc.bird&&!lc.ko)announce(CT.catchLine(lc,'hunter',by,CT.catchesLeft(h,lc)),90);
    const ch=document.querySelector('#h3bar .bchip.'+lc.bird);ch&&ch.classList.add('hitnow');window.SFX&&SFX.play(me==='hunter'?'win':'warn');}}
  outBanner(S,prev);
