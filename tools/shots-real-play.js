@@ -80,7 +80,7 @@ const near = (a, c) => Math.max(Math.abs(a[0] - c[0]), Math.abs(a[1] - c[1]));
     await O.waitForFunction(()=>UI._S().phase==='play');room2().aiT=1;const g=room2().g;
     if(g.turn==='red'){B.vultureFly(g,B.flyTargets(g).find(q=>!B.eggAt(g,q)&&near(q,g.ostrich)>1));await push();}
     await myTurn(O);const q=B.ostrichMoves(g,true)[0];await O.evaluate(()=>UI.setMode('carry'));await cell(O,...q).click();
-    await O.waitForFunction(()=>UI._S().carried);await quiet(O);await shot(O,'ostrich-d-carried-egg');await O.context().close();
+    await O.waitForFunction(()=>UI._S().carried);await quiet(O);await sleep(4000);await shot(O,'ostrich-d-carried-egg'); // after the carry slide endsawait O.context().close();
   }
   if (want('howfound')) { // ostrich's view: never label the other player's vulture YOU in its found-egg picture
     const O = await solo2(b, 'blue');

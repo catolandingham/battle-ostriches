@@ -7,10 +7,10 @@
 .h3i>.aimg,#turnTag .aimg,.rolebtn .aimg,.kindbtn .aimg,.ra .aimg,.ka .aimg{width:100%;height:100%}
 
 /* Eggs: shape B, top-left of the square, one fixed size whether alone or sharing the square. */
-html[data-theme] :is(#board,.mini) .cell .cmark.cm-egg:not(#_a):not(#_b):not(#_c):not(#_d){left:4%!important;top:4%!important;width:48%!important;height:58%!important}
+html[data-theme] :is(#board,.mini) .cell .cmark.cm-egg:not(#_a):not(#_b):not(#_c):not(#_d){left:3%!important;top:4%!important;width:46%!important;height:56%!important}
 html[data-theme] :is(#board,.mini) .cell .cmark.cm-egg .mk:not(#_a):not(#_b):not(#_c):not(#_d){stroke-width:3.4px}
 /* The countdown number sits inside the egg; the egg body takes the square's own colour so the number reads. */
-html[data-theme] :is(#board,.mini) .cell .wnum:not(#_a):not(#_b):not(#_c):not(#_d){position:absolute!important;inset:auto!important;left:4%!important;top:21%!important;right:auto!important;bottom:auto!important;width:48%!important;height:40%!important;max-width:none!important;display:flex!important;align-items:center!important;justify-content:center!important;margin:0!important;padding:0!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;transform:none!important;font:800 10px/1 -apple-system,"Helvetica Neue",Helvetica,Arial,sans-serif!important;letter-spacing:-.3px!important;text-align:center!important;color:#111!important;-webkit-text-fill-color:#111!important;z-index:48!important;pointer-events:none}
+html[data-theme] :is(#board,.mini) .cell .wnum:not(#_a):not(#_b):not(#_c):not(#_d){position:absolute!important;inset:auto!important;left:3%!important;top:24%!important;right:auto!important;bottom:auto!important;width:46%!important;height:28%!important;max-width:none!important;display:flex!important;align-items:center!important;justify-content:center!important;margin:0!important;padding:0!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;transform:none!important;font:800 10px/1 -apple-system,"Helvetica Neue",Helvetica,Arial,sans-serif!important;letter-spacing:-.3px!important;text-align:center!important;color:#111!important;-webkit-text-fill-color:#111!important;z-index:48!important;pointer-events:none}
 html[data-theme] :is(#board,.mini) .cell:has(.wnum) .cmark.cm-egg.is svg .mk:not(#_a):not(#_b):not(#_c):not(#_d){fill:#fff!important;stroke:#111!important}
 /* Nearly cold (2 or less): the egg fills in and the number turns light, as the old pill did. */
 html[data-theme] :is(#board,.mini) .cell:has(.wnum.low) .cmark.cm-egg.is svg .mk:not(#_a):not(#_b):not(#_c):not(#_d){fill:#111!important}
@@ -43,4 +43,4 @@ html[data-theme] #h3bar .claw.on svg path:not(#_a):not(#_b):not(#_c):not(#_d){st
 #hud #turnTag:not(#_a):not(#_b){padding:2px!important}
 #hud #turnTag>span:first-child:not(#_a):not(#_b){width:30px!important;height:30px!important}
 /* An animal sharing an egg square sits lower-right, clear of the wider egg. */
-html[data-theme] :is(#board,.mini) .cell:has(.cm-egg)>.pc:not(#_a):not(#_b):not(#_c):not(#_d){inset:auto!important;left:56%!important;top:54%!important;width:42%!important;height:42%!important;transform:none!important}
+html[data-theme] :is(#board,.mini) .cell:has(.cm-egg)>.pc:not(#_a):not(#_b):not(#_c):not(#_d){inset:auto!important;left:55%!important;top:56%!important;width:42%!important;height:42%!important;transform:none!important}
