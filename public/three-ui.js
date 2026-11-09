@@ -93,7 +93,7 @@ function tChips(S){let bar=$('h3bar');if(!bar){bar=document.createElement('div')
 function tPieces(S,board){const h=S.h3,me=h.mySeat;
  const badge=(c,r,mate)=>{const b=document.createElement('b');b.className='snum '+(isOs(r)?'o':'v')+(mate?' mate':'')+(r===me?' me':'');b.textContent=NUM(r);c.appendChild(b);};
  for(const q of h.pieces){if(h.birds&&h.birds[q.seat]&&h.birds[q.seat].out)continue;const c=cellAt(board,S,q.p);if(!c||q.p[0]<0)continue;const d=document.createElement('div');d.className='pc '+(q.type==='o'?'po':'pv')+' other'+(q.mate?' mate':' opp');
-  d.innerHTML=q.type==='o'?OSTI:VULI;c.appendChild(d);c.dataset.seat=q.seat;badge(c,q.seat,q.mate);
+  d.innerHTML=q.type==='o'?(q.carrying&&window.ART&&ART.ostrichCarry?ART.ostrichCarry:OSTI):VULI;if(q.carrying)d.classList.add('carrying');c.appendChild(d);c.dataset.seat=q.seat;badge(c,q.seat,q.mate);
   c.dataset.tip=(c.dataset.tip?c.dataset.tip+' · ':'')+SN[q.seat]+(q.mate?' (your teammate)':'')+(q.carrying?', carrying an egg':'');}
  const mine=me==='hunter'?null:cellAt(board,S,isOs(me)?S.ostrich:S.vulture);if(mine)badge(mine,me,false);
  const ms=h.mateSniff;if(ms){const c=cellAt(board,S,ms.p);if(c){const r=document.createElement('div');r.className='msniff '+(ms.yes?'yes':'no');r.textContent=ms.yes?'Egg near':'No egg';c.appendChild(r);
@@ -209,12 +209,12 @@ function marksAround(board,S,cx,cy,range,kind,cls){const C=S.cfg;let n=0;
  return n;}
 function pop(board,txt,cls){window.STATUS_QUEUE.add({className:'h3pop '+cls,text:txt,priority:10});}
 // Shared with sniff/fact notices: one one-second message, personal events before background facts.
-function announce(txt,priority){window.STATUS_QUEUE.add({id:'announce',className:'show'+(/you/i.test(txt)?' bad':''),text:txt,priority:priority==null?(/\byou\b/i.test(txt)?100:50):priority});}
+function announce(txt,priority,hold){window.STATUS_QUEUE.add({id:'announce',className:'show'+(/you/i.test(txt)?' bad':''),text:txt,priority:priority==null?(/\byou\b/i.test(txt)?100:50):priority,hold:hold||undefined});}
 const evSeen={kick:0,pop:0,rival:0,stone:0,dug:0,burst:0};
 function events(S,prev,board){
  if(!S)return;if(!S.three)rulesMode('2');
  const h=S.h3||{};
- for(const e of window.CatchText.newEvents(evSeen,S,prev)){announce(window.CatchText.viewerEvent(e,S));
+ for(const e of window.CatchText.newEvents(evSeen,S,prev)){const big=e.kind==='kick'||e.kind==='burst'||e.kind==='rival'||(e.kind==='stone'&&S.stoneNote&&(S.stoneNote.targets||[]).length);announce(window.CatchText.viewerEvent(e,S),null,big?2000:undefined);
   // the square highlight: the hyena's landing square for the meeting; the badger's own square for a pop-out, only if this phone can see the badger
   const sq=e.kind==='rival'||e.kind==='kick'||e.kind==='burst'?e.square:e.kind==='dug'?null:e.seen?(h.hunters?(h.hunters.find(x=>x.kind==='badger')||{}).p:h.hunter):null,c=cellAt(board,S,sq);c&&c.classList.add('h3kb');}}
 // One plain line at the start of every game: who hunts what, naming only the animals in the game (roles.js).
@@ -261,7 +261,7 @@ function after(S,prev,board){badgerLines(S,prev);chips(S);clock(S);kindPick(S);i
    if(tc)tc.classList.add('h3kb');
    // what the catch means, in words: hurt or out, and who did it (catchtext.js)
    const CT=window.CatchText,seat=h.mySeat||me,by=lc.by||k;
-   announce(CT.catchLine(lc,seat,by,CT.catchesLeft(h,lc)),seat===lc.bird?100:50);
+   announce(CT.catchLine(lc,seat,by,CT.catchesLeft(h,lc)),seat===lc.bird?100:50,2000);
    if(seat===lc.bird&&!lc.ko)announce(CT.catchLine(lc,'hunter',by,CT.catchesLeft(h,lc)),90);
    const ch=document.querySelector('#h3bar .bchip.'+lc.bird);ch&&ch.classList.add('hitnow');window.SFX&&SFX.play(me==='hunter'?'win':'warn');}}
  outBanner(S,prev);

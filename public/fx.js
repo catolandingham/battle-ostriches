@@ -81,7 +81,8 @@ window.FX={update(S,prev){const t=theme();ensure();layer.className=t||'';
  const sz=TH[t].sz;
  const onB=(p,side)=>{if(!p||p[0]<0||p[1]<0)return false;const b=S.h3&&S.h3.birds;if(!b)return true;if(S.h3.team){const me=S.h3.mySeat;if(side==='o'&&(me==='o1'||me==='o2')&&b[me]&&b[me].out)return false;if(side==='v'&&(me==='v1'||me==='v2')&&b[me]&&b[me].out)return false;return true;}if(side==='o'&&b.blue&&b.blue.out)return false;if(side==='v'&&b.red&&b.red.out)return false;return true;};
  const both=onB(S.ostrich,'o')&&onB(S.vulture,'v')&&S.ostrich+''===S.vulture+''; // share a square: shrink both and offset so neither hides the other
- if(onB(S.ostrich,'o'))sprite('o',SPR[t].o,S,S.ostrich,sz,both?1:0);else if(spr.o){spr.o.remove();delete spr.o;}
+ const oArt=S.carried&&window.ART&&ART.ostrichCarry?ART.ostrichCarry:SPR[t].o;
+ if(onB(S.ostrich,'o'))sprite('o',oArt,S,S.ostrich,S.carried?0.72:sz,both?1:0);else if(spr.o){spr.o.remove();delete spr.o;}
  if(onB(S.vulture,'v'))sprite('v',SPR[t].v,S,S.vulture,S.role==='blue'?.8:sz,both?-1:0);else if(spr.v){spr.v.remove();delete spr.v;}
  const la=S.lastAction,sig=la&&JSON.stringify([S.round,S.turn,la]);
  if(prev&&la&&sig!==last.sig&&prev.turn==='red'&&S.turn==='blue'){

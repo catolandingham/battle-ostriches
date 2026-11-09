@@ -61,10 +61,12 @@ function connect(){
   if(m.t==='joined'){pending=null;clearTimeout(pendTimer);attempts=0;status('');sniffSeen={};me={code:m.code,token:m.token,role:m.role};localStorage.setItem('bo_me',JSON.stringify(me));history.replaceState(null,'','/?room='+m.code);return;}
   if(m.t==='state'&&m.lobby){if(S&&S.phase&&S.phase!=='over')return;pending=null;clearTimeout(pendTimer);attempts=0;status('');S=null;window.LobbyUI&&LobbyUI.show(m.state);return;}
   else if(m.t==='state'&&m.pass)return passState(m);
-  else if(m.t==='state'){window.LobbyUI&&LobbyUI.hide();const prev=S;S=m.state;if(!prev||prev.turn!==S.turn||prev.phase!==S.phase)mode=null;render(prev);sounds(prev);if(!prev)maybeWalk(S.role);return;}
+  else if(m.t==='state'){window.LobbyUI&&LobbyUI.hide();if(window.CUTAWAYS&&CUTAWAYS.defer(m.state))return;acceptState(m.state);return;}
   else if(m.t==='error'&&/No game with that code/.test(m.msg)&&(S||m.gone)){gameGone();return;}
   else if(m.t==='error'){if(!S){pending=null;clearTimeout(pendTimer);attempts=0;status(m.msg,true);}else $('log').textContent=m.msg;}};
 }
+function acceptState(state){const prev=S;S=state;if(!prev||prev.turn!==S.turn||prev.phase!==S.phase)mode=null;render(prev);sounds(prev);if(!prev)maybeWalk(S.role);}
+if(window.CUTAWAYS)CUTAWAYS.bind(acceptState);
 function inRoom(){const n=document.getElementById('roomLobby');return !!(S||(n&&!n.classList.contains('hidden')));}
 function retry(){
  if(attempts>=6&&!inRoom()){pending=null;clearTimeout(pendTimer);attempts=0;status('Could not reach the game server. Check your connection and tap again.',true);return;}
@@ -352,7 +354,9 @@ function render(prev){
  const L=!S.myTurn?[]:S.role==='hunter'?(S.hmoves||[]):(blue?(M==='carry'?S.carryMoves:M==='kick'?S.kickTargets||[]:S.moves):(M==='throw'?S.throw:S.fly));
  const lk=new Set(L.map(key)),setup=blue&&(S.phase==='setupEggs'||S.phase==='setupOstrich');
  const NS=window.NextStep?NextStep.compute(S):{kind:null,targets:[],toward:[],button:null},nsT=new Set(NS.targets),nsW=new Set(NS.toward); // the next step of this animal's loop, drawn on the board (nextstep.js)
- const board=$('board');board.style.gridTemplateColumns=`repeat(${C.cols},minmax(0,1fr))`;board.style.alignContent='start';board.style.alignItems='start';board.innerHTML='';
+ const board=$('board');board.style.gridTemplateColumns=`repeat(${C.cols},minmax(0,1fr))`;board.style.alignContent='start';board.style.alignItems='start';
+ if(window.CUTAWAYS)CUTAWAYS.prepare(S,prev,board);
+ board.innerHTML='';
  const la=S.lastAction,newTurn=!!(prev&&(prev.turn!==S.turn||prev.round!==S.round));
  const lastThrow=la&&la.type==='throw'&&la.p&&newTurn?key(la.p):null;const eggAt={};(S.eggs||[]).forEach((e,i)=>{if(e.alive&&e.pos){e._i=i;eggAt[key(e.pos)]=e;}});
  const sn=S.phase==='play'&&S.sniff?S.sniff:null,snK=sn?((sn.round!=null?sn.round:'x')+'|'+sn.p+'|'+sn.yes):'';
@@ -388,8 +392,7 @@ function render(prev){
   if(k===vk&&k!==ok&&(m==='spotted'||(blue&&e)))d.classList.add('vfound'); // vulture on a found egg: both show, corner layout
   if(k===vk&&k===ok){d.classList.add('both');tip.push('Vulture and ostrich share this square');}
   if(k===vk){h+=`<div class="pc pv">${VUL}</div>`;tip.push(blue?'The vulture':'You.');tags.push(blue?'vul':'me');}
-  if(k===ok){if(blue&&e){d.classList.add('sat');}h+=`<div class="pc po">${OST}</div>`+(S.carried?'<span class="carry">'+eggIs()+'</span>':'');tip.push(blue?'You.':'The ostrich');tags.push(blue?'me':'ost');
-   if(blue&&S.carried&&S.eggs&&S.eggs[S.carrying])h+=warmRing(S.eggs[S.carrying].coldIn,C.warmth);}
+  if(k===ok){if(blue&&e){d.classList.add('sat');}h+=`<div class="pc po${S.carried?' carrying':''}">${S.carried&&ART.ostrichCarry?ART.ostrichCarry:OST}</div>`;tip.push(blue?'You.':'The ostrich');tags.push(blue?'me':'ost');}
   if(legal)tip.push(kicking?kickTip(x,y):throwing?'Throw here.':setup?(S.phase==='setupEggs'?'Hide an egg here':'Start here'):blue?'Move here':'Fly here');
   const aimCue=NS.kind==='throw'&&nsT.has(k); // a found egg in throw range: the crosshair already sits on it
   if(aimCue&&!throwing)d.classList.add('aimcue');
@@ -482,8 +485,10 @@ function render(prev){
  // cause before result (D36): stone into the count, carried egg slide, cold egg dims, badger sinks; each only on a screen that already held the facts (fx.js)
  if(window.CAUSE)CAUSE.run(S,prev,board,{stone:STONE,egg:MYEGG,ring:n=>warmRing(n,C.warmth)});
  if(window.PUSH_MOTION)PUSH_MOTION.run(S,prev,board);
+ if(window.CUTAWAYS)CUTAWAYS.play(S,prev,board);
  const o=$('over');if(S.phase==='over'){hideTip();tipBar(null);$('rules').classList.add('hidden');$('walk').classList.add('hidden');const tut=document.getElementById('tut');if(tut)tut.classList.add('hidden');
-  if(!overHold){overHold=Date.now()+1000;setTimeout(()=>{if(S&&S.phase==='over')render();},1000);}}
+  const wait=window.CUTAWAYS&&CUTAWAYS.busy()?CUTAWAYS.MS:1000;
+  if(!overHold){overHold=Date.now()+wait;setTimeout(()=>{if(S&&S.phase==='over')render();},wait);}}
  else overHold=0;
  const keyEl=$('markkey');if(keyEl){const may=!!board.querySelector('.maybird'),legal=!!board.querySelector('.cell.legal');keyEl.hidden=!(may||(legal&&S.myTurn&&S.phase==='play'));keyEl.classList.toggle('hasmaybe',may);}
  if(S.phase==='over'&&overHold&&Date.now()<overHold)o.classList.add('hidden');

@@ -57,3 +57,5 @@ html[data-theme] :is(#board,.mini) .cell:has(.cm-egg):has(.pc~.pc)>.pc.po:not(#_
 html[data-theme] :is(#board,.mini) .cell:is(:has(>.ic-food),:has(>.ic-rock)):has(.pc~.pc)>.pc:not(#_a):not(#_b):not(#_c):not(#_d){width:56%!important;height:56%!important;inset:auto!important;transform:none!important}
 html[data-theme] :is(#board,.mini) .cell:is(:has(>.ic-food),:has(>.ic-rock)):has(.pc~.pc)>.pc.pv:not(#_a):not(#_b):not(#_c):not(#_d){left:42%!important;top:4%!important;z-index:5!important}
 html[data-theme] :is(#board,.mini) .cell:is(:has(>.ic-food),:has(>.ic-rock)):has(.pc~.pc)>.pc.po:not(#_a):not(#_b):not(#_c):not(#_d){left:4%!important;top:42%!important;z-index:6!important}
+/* An ostrich carrying an egg uses the carry drawing: beak open a little, the egg lying sideways inside, medium, no number. Same in every theme. */
+html[data-theme] :is(#board,.mini) .cell>.pc.po.carrying:not(#_a):not(#_b):not(#_c):not(#_d){inset:auto!important;left:14%!important;top:14%!important;width:72%!important;height:72%!important;transform:none!important}

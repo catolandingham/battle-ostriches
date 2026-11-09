@@ -4,7 +4,7 @@
   let pending=[],active=null,timer=null,serial=0;
   function pump(){timer=null;if(active||!pending.length)return;if(blocked()){timer=schedule(pump,100);return;}
    pending.sort((a,b)=>b.priority-a.priority||a.order-b.order);active=pending.shift();show(active);
-   timer=schedule(()=>{hide(active);active=null;timer=schedule(pump,0);},hold);
+   timer=schedule(()=>{hide(active);active=null;timer=schedule(pump,0);},active.hold==null?hold:active.hold);
   }
   return {add(item){if(!item||!item.text)return;const key=item.key||item.text;
    if(active&&active.key===key||pending.some(x=>x.key===key))return;

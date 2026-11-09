@@ -56,7 +56,7 @@ const at = { state: 'attached' };
   // Both participants get the actual landing; this does not grant ongoing sight.
   const ka = await A.evaluate(() => UI._S().kick), ky = await Y.evaluate(() => UI._S().kick);
   assert.equal(ka.who, 'badger'); assert.equal(ky.who, 'badger'); assert.deepEqual(ka.to, [5, 5], 'the kicker sees the actual landing beyond ordinary sight'); assert.deepEqual(ky.to, [5, 5]);
-  assert.equal(await A.locator('.pc.ph').count(), 0, 'no hunter drawn on the ostrich\'s board'); assert.equal(await Y.locator('.pc.ph.mine').count(), 1);
+  assert.equal(await A.locator('#board .pc.ph').count(), 0, 'no hunter drawn on the ostrich\'s board'); assert.equal(await Y.locator('.pc.ph.mine').count(), 1);
   // the turn passed to the next seat, and the Kick button is gone
   await A.waitForFunction(() => !document.querySelector('#actions.mine'));
   console.log('errors', errs); assert.equal(errs.length, 0);
