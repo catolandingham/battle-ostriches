@@ -28,19 +28,31 @@ html[data-theme="bw"] :is(#board,.mini) .cell>.ic.ic-food svg path[d^="M10 30"]:
 /* Chip row: the animal on top, its hearts or claw marks underneath. Never inside a board square. */
 #h3bar .bchip:not(#_a):not(#_b):not(#_c){flex-direction:column;align-items:center;justify-content:center;gap:2px!important;padding:3px 6px!important;min-width:46px}
 #h3bar .bchip .cnum{position:absolute;left:3px;top:1px}
-#h3bar .pips:not(#_a):not(#_b):not(#_c){display:flex;gap:2px;align-items:center;justify-content:center;height:11px}
+#h3bar .pips:not(#_a):not(#_b):not(#_c){display:flex;gap:2px;align-items:center;justify-content:center;height:12px}
 #h3bar .heart{display:block;width:12px;height:11px}
 #h3bar .heart svg{display:block;width:100%;height:100%}
 html[data-theme] #h3bar .heart svg path:not(#_a):not(#_b):not(#_c):not(#_d){fill:#111!important;stroke:#111!important;stroke-width:.8px!important}
 html[data-theme] #h3bar .heart.lost svg path:not(#_a):not(#_b):not(#_c):not(#_d){fill:none!important;stroke:#b3b3b3!important;stroke-width:1.1px!important}
-#h3bar .claws{display:flex;gap:1px;align-items:center;justify-content:center;height:11px}
-#h3bar .claw{display:block;width:11px;height:11px}
+#h3bar .claws{display:flex;gap:3px;align-items:center;justify-content:center;height:12px}
+#h3bar .claw{display:block;width:11px;height:12px;flex:none}
+#h3bar .claws.many{gap:2px}#h3bar .claws.many .claw{width:9px;height:10px}
 #h3bar .claw svg{display:block;width:100%;height:100%}
-html[data-theme] #h3bar .claw svg path:not(#_a):not(#_b):not(#_c):not(#_d){fill:none!important;stroke:#b3b3b3!important;stroke-width:1.1px!important;stroke-linecap:round!important}
-html[data-theme] #h3bar .claw.on svg path:not(#_a):not(#_b):not(#_c):not(#_d){stroke:#111!important;stroke-width:1.6px!important}
+html[data-theme] #h3bar .claw svg path:not(#_a):not(#_b):not(#_c):not(#_d){fill:none!important;stroke:#999!important;stroke-width:.65px!important;stroke-linecap:round!important}
+html[data-theme] #h3bar .claw.on svg path:not(#_a):not(#_b):not(#_c):not(#_d){stroke:#111!important;stroke-width:1.4px!important}
 #h3bar .bchip .ko{font-size:9px!important;line-height:1!important;padding:1px 3px!important}
 /* Header turn button: the animal fills its box. */
 #hud #turnTag:not(#_a):not(#_b){padding:2px!important}
 #hud #turnTag>span:first-child:not(#_a):not(#_b){width:30px!important;height:30px!important}
 /* An animal sharing an egg square sits lower-right, clear of the wider egg. */
-html[data-theme] :is(#board,.mini) .cell:has(.cm-egg)>.pc:not(#_a):not(#_b):not(#_c):not(#_d){inset:auto!important;left:55%!important;top:56%!important;width:42%!important;height:42%!important;transform:none!important}
+/* Brian 2026-11-08 (PR #24 review): an animal always stays centred in its square at its normal size, egg or not.
+   The egg keeps its top-left slot and is drawn in front of the animal (white body, dark outline) so the countdown stays readable.
+   Only when two animals share the square do they move to corners; with an egg there, they stack down the right side, clear of the egg. */
+html[data-theme] :is(#board,.mini) .cell:has(.cm-egg)>.pc:not(#_a):not(#_b):not(#_c):not(#_d){inset:auto!important;left:8%!important;top:8%!important;width:84%!important;height:84%!important;transform:none!important}
+html[data-theme] :is(#board,.mini) .cell:has(.cm-egg) .ic:has(.cm-egg):not(#_a):not(#_b):not(#_c):not(#_d){z-index:46!important}
+html[data-theme] :is(#board,.mini) .cell:has(.cm-egg) .cmark.cm-egg svg .mk:not(#_a):not(#_b):not(#_c):not(#_d){paint-order:stroke}
+html[data-theme] :is(#board,.mini) .cell:has(.cm-egg):has(.pc~.pc)>.pc:not(#_a):not(#_b):not(#_c):not(#_d){left:53%!important;width:44%!important;height:44%!important}
+html[data-theme] :is(#board,.mini) .cell:has(.cm-egg):has(.pc~.pc)>.pc.pv:not(#_a):not(#_b):not(#_c):not(#_d){top:4%!important;z-index:5!important}
+html[data-theme] :is(#board,.mini) .cell:has(.cm-egg):has(.pc~.pc)>.pc.po:not(#_a):not(#_b):not(#_c):not(#_d){top:52%!important;z-index:6!important}
+/* egg in front of a centred animal: a thin white halo separates the two, and an outline-only egg gets a white body so lines don't cross it */
+html[data-theme] :is(#board,.mini) .cell:has(.pc) .cmark.cm-egg svg:not(#_a):not(#_b):not(#_c):not(#_d){filter:drop-shadow(0 0 1px #fff) drop-shadow(0 0 1px #fff)!important;overflow:visible}
+html[data-theme] :is(#board,.mini) .cell:has(.pc) .cmark.cm-egg.open svg .mk:not(#_a):not(#_b):not(#_c):not(#_d){fill:#fff!important}

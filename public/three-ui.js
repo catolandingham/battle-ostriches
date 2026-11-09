@@ -19,8 +19,10 @@ const sp=(svg,px)=>`<span class="h3i" style="width:${px}px;height:${px}px">${svg
 // Claws under a hunter: three sets of scratches; each catch it makes darkens one set. These never appear on board squares.
 const HEART='<svg viewBox="0 0 12 11" aria-hidden="true"><path d="M6 10.2C2.6 7.6 .8 5.8 .8 3.6C.8 2 2 .8 3.5 .8C4.6 .8 5.5 1.4 6 2.3C6.5 1.4 7.4 .8 8.5 .8C10 .8 11.2 2 11.2 3.6C11.2 5.8 9.4 7.6 6 10.2Z"/></svg>';
 const hearts=(n,lost)=>Array.from({length:n},(_,i)=>`<i class="heart${i>=n-lost?' lost':''}">${HEART}</i>`).join('');
-const SCRATCH='<svg viewBox="0 0 10 10" aria-hidden="true"><path d="M2.2 8.6L4.2 1.4M4.9 8.8L6.9 1.6M7.6 9L9.6 1.8"/></svg>';
-const claws=n=>`<span class="claws">${[0,1,2].map(i=>`<i class="claw${i<n?' on':''}">${SCRATCH}</i>`).join('')}</span>`;
+// One catch = three curved scratches, as in Brian's approved "Three scratches" drawing (bw/layout/claw-marks.png).
+const SCRATCH='<svg viewBox="-1 -1 11 12" aria-hidden="true"><path d="M0 9Q1 4 3 1M3 10Q4 4 6 0M6 9Q7 4 9 1"/></svg>';
+// Sets shown (Brian, 2026-11-08): 3 in 3-player games, 4 in Hunters and 5-player games; each catch past that adds one more earned set. No numbers.
+const claws=(n,base)=>{n=n|0;const k=Math.max(base,n);return `<span class="claws${k>4?' many':''}">${Array.from({length:k},(_,i)=>`<i class="claw${i<n?' on':''}">${SCRATCH}</i>`).join('')}</span>`;};
 const caught=h=>Object.values(h.birds||{}).reduce((n,b)=>n+(b.catches|0),0);
 // --- lobby: Classic 2-player by default (the old simple lobby). Bigger modes sit behind a small "More players" link:
 // 3, 4 (2 vs 2 or Hunters) and 5. Picking one routes both play buttons into a setup step (your seat, friend/computer for the rest). ---
@@ -87,7 +89,7 @@ function tChips(S){let bar=$('h3bar');if(!bar){bar=document.createElement('div')
   const tip=`${SN[r]}${r===h.mySeat?' (you)':''}: ${b.out?'out.':b.catches?'caught '+(b.catches===1?'once.':b.catches+' times.'):'not caught.'}`;
   return `<span class="bchip ${isOs(r)?'blue':'red'} s${r}${b.out?' out':''}${b.catches&&!b.out?' injured':''}${live&&S.turn===r?' now':''}${r===h.mySeat?' me':''}" data-tip="${tip}" data-b="${r}">${sp(isOs(r)?OSTI:VULI,22)}<b class="cnum">${NUM(r)}</b>${five?`<span class="pips">${pips}</span>`:''}${b.out?'<b class="ko">OUT</b>':''}</span>`;};
  const k=h.kind||'hyena';
- bar.innerHTML=h.order.filter(r=>r!=='hunter').map(bird).join('')+(five?`<span class="bchip hunter${live&&S.turn==='hunter'?' now':''}" data-tip="${KIND[k].n}: catches birds.">${sp(KIND[k].art,24)}${claws(caught(h))}</span>`:'');}
+ bar.innerHTML=h.order.filter(r=>r!=='hunter').map(bird).join('')+(five?`<span class="bchip hunter${live&&S.turn==='hunter'?' now':''}" data-tip="${KIND[k].n}: catches birds.">${sp(KIND[k].art,24)}${claws(caught(h),4)}</span>`:'');}
 function tPieces(S,board){const h=S.h3,me=h.mySeat;
  const badge=(c,r,mate)=>{const b=document.createElement('b');b.className='snum '+(isOs(r)?'o':'v')+(mate?' mate':'')+(r===me?' me':'');b.textContent=NUM(r);c.appendChild(b);};
  for(const q of h.pieces){if(h.birds&&h.birds[q.seat]&&h.birds[q.seat].out)continue;const c=cellAt(board,S,q.p);if(!c||q.p[0]<0)continue;const d=document.createElement('div');d.className='pc '+(q.type==='o'?'po':'pv')+' other'+(q.mate?' mate':' opp');
@@ -112,7 +114,7 @@ function hChips(S){let bar=$('h3bar');if(!bar){bar=document.createElement('div')
   const tip=`${BN[r]}${r===me?' (you)':''}: ${b.out?'out.':b.catches?b.catches+' of '+(h.ko.hyena===h.ko.badger?h.ko.hyena:h.ko.hyena)+' catches.':'not caught.'}`;
   return `<span class="bchip ${r}${b.out?' out':''}${b.catches&&!b.out?' injured':''}${live&&S.turn===r?' now':''}${r===me?' me':''}" data-tip="${tip}" data-b="${r}">${sp(r==='blue'?OSTI:VULI,22)}<span class="pips">${pips}</span>${b.out?'<b class="ko">OUT</b>':''}</span>`;};
  const hun=k=>{const now=live&&(S.turn===k||(S.turn==='hunter'&&me===k)),n=h.hkos[k];
-  return `<span class="bchip hunter h${k}${now?' now':''}${k===me?' me':''}" data-b="${k}" data-tip="${KIND[k].n}${k===me?' (you)':''}: ${KIND[k].pw}. ${h.ko[k]} catches knock a bird out. Knock-outs: ${n}.">${sp(KIND[k].art,24)}${claws(h.hcatches?h.hcatches[k]|0:0)}</span>`;};
+  return `<span class="bchip hunter h${k}${now?' now':''}${k===me?' me':''}" data-b="${k}" data-tip="${KIND[k].n}${k===me?' (you)':''}: ${KIND[k].pw}. ${h.ko[k]} catches knock a bird out. Knock-outs: ${n}.">${sp(KIND[k].art,24)}${claws(h.hcatches?h.hcatches[k]|0:0,4)}</span>`;};
  bar.innerHTML=bird('red')+bird('blue')+hun('hyena')+hun('badger');}
 function hPieces(S,board,prev){const h=S.h3,me=h.mySeat;
  for(const x of h.hunters||[]){const c=cellAt(board,S,x.p);if(!c)continue;const bur=x.burrowed;const pc=document.createElement('div');
@@ -155,7 +157,7 @@ function chips(S){if(S.h3.hunt)return hChips(S);if(S.h3.team)return tChips(S);le
   const tip=`${BN[r]}: ${b.out?'out.':b.catches?b.catches+' of '+ko+' catches.':'not caught.'}`;
   return `<span class="bchip ${r}${b.out?' out':''}${b.catches&&!b.out?' injured':''}${live&&S.turn===r?' now':''}" data-tip="${tip}" data-b="${r}">${sp(r==='blue'?OSTI:VULI,24)}<span class="pips">${pips}</span>${b.out?'<b class="ko">OUT</b>':''}</span>`;};
  const k=h.kind||'hyena';
- bar.innerHTML=bird('red')+bird('blue')+`<span class="bchip hunter${live&&S.turn==='hunter'?' now':''}" data-tip="${KIND[k].n}: catches birds.">${sp(KIND[k].art,26)}${claws(caught(h))}</span>`;}
+ bar.innerHTML=bird('red')+bird('blue')+`<span class="bchip hunter${live&&S.turn==='hunter'?' now':''}" data-tip="${KIND[k].n}: catches birds.">${sp(KIND[k].art,26)}${claws(caught(h),3)}</span>`;}
 function clock(S){let c=$('clock3');if(!c){c=document.createElement('div');c.id='clock3';c.innerHTML='<div class="cfill"></div><span class="ctxt"></span>';$('h3bar').after(c);}
  const on=S.phase==='play'&&S.h3.clockLeft!=null;c.classList.toggle('hidden',!on);if(!on){cancelAnimationFrame(raf);return;}
  const tk=S.round+':'+S.turn+':'+S.h3.clockLeft,local=Math.max(0,deadline-Date.now());if(tk!==lastTurnKey||Math.abs(local-S.h3.clockLeft)>1500){lastTurnKey=tk;deadline=Date.now()+S.h3.clockLeft;clockMs=S.h3.clockMs;}

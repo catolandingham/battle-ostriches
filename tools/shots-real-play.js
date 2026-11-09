@@ -229,8 +229,12 @@ const near = (a, c) => Math.max(Math.abs(a[0] - c[0]), Math.abs(a[1] - c[1]));
     await scene('2-resources', () => { g.ostrich = [0, 0]; g.vulture = [4, 0]; hs.hyena.p = [8, 6]; hs.badger.p = [4, 6]; });
     // 3: the ostrich on its egg; the hyena has caught both birds once (hearts and claws in the chip row)
     await scene('3-catches', () => { g.ostrich = [2, 5]; g.vulture = [5, 2]; hs.hyena.p = [3, 4]; hs.badger.p = [6, 4]; g.hunt.birds.blue.catches = 1; g.hunt.birds.red.catches = 1; hs.hyena.catches = 2; hs.badger.catches = 1; });
-    // 4: the same board in a sprite theme: the same drawings, upright
-    await A.evaluate(() => THEME.set('nature')); await sleep(1500); await shot(A, 'layout-4-theme-nature-ostrich'); await A.evaluate(() => THEME.set('bw'));
+    // 4: the same board in a sprite theme: the same drawings, upright (the ostrich stays centred on its egg)
+    await A.evaluate(() => THEME.set('nature')); await sleep(1500); await shot(A, 'layout-4-theme-nature-ostrich'); await A.evaluate(() => THEME.set('bw')); await sleep(800);
+    // 5: two animals share a plain square (they move to corners); the hyena has all three claw sets, the badger none
+    await scene('5-share', () => { g.ostrich = [4, 2]; g.vulture = [4, 2]; hs.hyena.p = [7, 4]; hs.badger.p = [1, 3]; hs.hyena.catches = 3; hs.badger.catches = 0; });
+    // 6: two animals share the ostrich's egg square: the egg keeps its corner, the two animals stack down the right side
+    await scene('6-share-egg', () => { g.ostrich = [2, 1]; g.vulture = [2, 1]; });
     for (const p of [A, Vp, Y, D]) await p.context().close();
   }
   await b.close(); server.close(); console.log('done'); process.exit(0);

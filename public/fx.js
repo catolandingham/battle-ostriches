@@ -141,7 +141,7 @@ function detect(S,prev,board,ic){if(!prev||S.god||!S.cfg)return;
   const f=cellAt(board,S,prev.ostrich),c=cellAt(board,S,S.ostrich);
   const a=add('carry',{at:S.ostrich.slice(),egg:!!(f&&c&&!fast)});
   if(f&&c&&!fast){const fr=f.getBoundingClientRect(),tr=c.getBoundingClientRect();
-   box(ic.egg,{...mid(fr),s:fr.width*.5},{x:tr.left+tr.width*.80,y:tr.top+tr.height*.80,s:tr.width*.36},a.d,tr.width*.5,'fxc-egg');
+   const em=c.querySelector('.cm-egg'),er=em&&em.getBoundingClientRect();box(ic.egg,{...mid(fr),s:fr.width*.5},er?{...mid(er),s:Math.max(er.width,er.height)}:{x:tr.left+tr.width*.26,y:tr.top+tr.height*.32,s:tr.width*.5},a.d,tr.width*.5,'fxc-egg');
    if(!document.querySelector('#fx .spr-o')){const po=c.querySelector('.pc.po');if(po){a.ost=true;const pr=po.getBoundingClientRect();
     box(po.innerHTML,{x:fr.left+(pr.left-tr.left)+pr.width/2,y:fr.top+(pr.top-tr.top)+pr.height/2,s:pr.width},{...mid(pr),s:pr.width},a.d,tr.width*.15,'fxc-ost');}}}}
  // 3. an egg that was on the list with a square last state and is gone now, without a smash on it, went cold
