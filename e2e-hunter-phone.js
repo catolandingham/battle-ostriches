@@ -121,7 +121,7 @@ const phone = { viewport: { width: 390, height: 844 } };
   await B.evaluate(() => UI.open({ t: 'create', solo: 1, bots: 2 }));
   await B.waitForFunction(() => LobbyUI.get() && LobbyUI.get().solo);
   await B.evaluate(() => UI.send({ t: 'lobby', a: 'role', role: 'badger', kind: 'badger' }));
-  await B.waitForFunction(() => /Honey Badger/.test(document.body.innerText));
+  await B.waitForFunction(() => /Badger/.test(document.body.innerText));
   await B.evaluate(() => UI.send({ t: 'lobby', a: 'start' }));
   await B.waitForFunction(() => { const S = UI._S(); return S && S.phase === 'play' && S.myTurn && S.h3 && S.h3.kind === 'badger'; }, null, { timeout: 20000 });
   const badger = await B.evaluate(() => ({

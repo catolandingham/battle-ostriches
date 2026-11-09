@@ -3,9 +3,9 @@ Phone screenshots stay at native size in docs/reviews; only the contact sheet is
 """
 from pathlib import Path
 from PIL import Image, ImageDraw
-import sys
+import sys, os
 src = Path(sys.argv[1])
-out = Path(__file__).resolve().parents[1] / 'docs/reviews/bw-theme-shots'
+out = Path(os.environ.get('REVIEW_OUT', str(Path(__file__).resolve().parents[1] / 'docs/reviews/bw-theme-shots')))
 out.mkdir(parents=True, exist_ok=True)
 files = sorted(f for f in src.glob('*.png') if f.name != '00-contact-sheet.png')
 w, h, cols = 260, 443, 5

@@ -34,7 +34,7 @@ Two facts about the client that affect many rows:
 | S6 | | 3P/4H/2v2/2v2+H | `h3.seats` carries 'on'/'off'/'bot' but the client only uses 'open'. Nothing says a seat is offline; that seat's turns later auto-pass after 10 s (T-rows below). In 3P the bird-to-bird "opponent" flag still prints the 2P log line only for blue/red, never for a missing hunter. | MISSING |
 | S7 | Server restarted, game lost | All | Overlay "Game was reset / The server restarted and this game could not be restored." (`gameGone`). | OK |
 | S8 | Rematch same/change | All | New state; no text beyond the board resetting. Pop-up counters in `three-ui.js` (`lastCatch`, `hPieces.rv`) persist across a rematch on the same page (see G1(a)). | OK (minor bug) |
-| S9 | Game over | Each | `#over` box: 2P "The ostrich kept N egg(s) alive for 30 rounds." / "The ostrich starved in round N." / "The last egg went cold in round N." / "The vulture smashed every egg by round N." Hunter modes: `over/tOver/hOver` in `three-ui.js` (e.g. "The hyena knocked out both birds in round N.", "Both birds were out. Knock-outs: hyena X, honey badger Y. Tie: the last knock-out wins."). Winner's side differs (e.g. winBy 'starved' means "ostrich out and no eggs left" in hunter modes). | OK |
+| S9 | Game over | Each | `#over` box: 2P "The ostrich kept N egg(s) alive for 30 rounds." / "The ostrich starved in round N." / "The last egg went cold in round N." / "The vulture smashed every egg by round N." Hunter modes: `over/tOver/hOver` in `three-ui.js` (e.g. "The hyena knocked out both birds in round N.", "Both birds were out. Knock-outs: hyena X, badger Y. Tie: the last knock-out wins."). Winner's side differs (e.g. winBy 'starved' means "ostrich out and no eggs left" in hunter modes). | OK |
 
 ### 1b. Core bird events (game.js rules, shown in every mode)
 
@@ -78,7 +78,7 @@ Two facts about the client that affect many rows:
 
 | ID | Event | Viewer | What the screen shows today | Rating |
 |---|---|---|---|---|
-| H1 | A hunter comes within 2 squares of a bird (3P `hunterSeenBy`, 4H `HU.seen`, team `hunterSeenBy`) | Bird (Sees) | Hunter piece appears; pop "HYENA NEAR" or "HONEY BADGER NEAR" for 1.8 s (`three-ui.js warnNear`, `ring.js hunterNearLabel`). Tooltip on the piece: "Hyena! It catches a bird by landing on it (or if you step onto it)". | OK |
+| H1 | A hunter comes within 2 squares of a bird (3P `hunterSeenBy`, 4H `HU.seen`, team `hunterSeenBy`) | Bird (Sees) | Hunter piece appears; pop "HYENA NEAR" or "BADGER NEAR" for 1.8 s (`three-ui.js warnNear`, `ring.js hunterNearLabel`). Tooltip on the piece: "Hyena! It catches a bird by landing on it (or if you step onto it)". | OK |
 | H1 | | Bird farther than 2 | Nothing (correct). | OK (hidden) |
 | H2 | A hunter leaves view (it moved out of range) | Bird | The piece disappears. No line. | WEAK |
 | H3 | Hunter sense (yes/no within 2) | Hunter | Rose dots on possible squares (`maybird`), pop "Bird may be here." / "Still close." / "Nothing near", sound. | OK |
@@ -89,7 +89,7 @@ Two facts about the client that affect many rows:
 | H5 | Badger burrows (stay still; 3P 15 percent / 4H 30 percent / team 40 percent of digs need a second still turn) | Badger | Mound icon, tag "BURROWED"; first dig on tough ground: tag "TOUGH GROUND" and tip "Tough ground: stay still once more to burrow"; button "Burrow"/"Finish"/"Stay". | OK |
 | H5 | | Bird/rival that saw it | The badger piece vanishes (`seen` returns false for a burrowed badger). No line, so a bird cannot tell "dug in here" from "walked off". | WEAK |
 | H6 | Burrowed badger moves and pops up | Badger | Mound turns into the animal. | OK |
-| H6 | | Bird within 2 | Badger appears; "HONEY BADGER NEAR" pop. If it lands on a bird: catch line (H8). | OK |
+| H6 | | Bird within 2 | Badger appears; "BADGER NEAR" pop. If it lands on a bird: catch line (H8). | OK |
 | H7 | Hunter moves 1 square (no catch) | Birds who see it | Piece moves. | OK |
 | H8 | **Hurt (non-lethal catch)**, hunter lands on a bird | Subject | Pop "The hyena caught you! Hurt: one more catch and you're out." (`catchtext.js catchLine`, red pop 3.4 s but see F1), claw on the square, pink pulse on the landing square (`h3kb`), permanent "HURT" tag + pink outline on the piece (`markHurt`), pip on the chip. No line says the bird was pushed. | WEAK |
 | H8 | | Cause (hunter) | Pop "Caught the ostrich! One more catch knocks it out.", claw, a ghost bird shown on the catch square (`foundnow`), sound. The hunter is not told where the bird went (`to` withheld). | OK |
@@ -121,7 +121,7 @@ Two facts about the client that affect many rows:
 | H17 | | Birds | As in H16. | WEAK |
 | H18 | Rival event is the first one this page sees | Hunters and birds | **Silent.** `hPieces` (`three-ui.js` line 117) sets `fresh = hPieces.rv !== undefined`; `hPieces.rv` is undefined until the first rival event, so the first one is treated as "already seen" and no pop, no pulse is drawn. | MISSING (bug) |
 | H19 | Rival bump near an edge or piece (push stops early; can end 1 square away, or on the badger's own square) | Hunters | Pop still says "back 2". | WEAK |
-| H20 | KO scoreboard and tie-break (4H) | All | Chips show each hunter's KO number (`hChips`); tooltip "Knock-outs: N". End text names the tie rule. Nothing says which hunter earned the KO at the time except the catch line ("The honey badger knocked out the ostrich."). | OK |
+| H20 | KO scoreboard and tie-break (4H) | All | Chips show each hunter's KO number (`hChips`); tooltip "Knock-outs: N". End text names the tie rule. Nothing says which hunter earned the KO at the time except the catch line ("The badger knocked out the ostrich."). | OK |
 | H21 | Hunters win/end variants | All | See S9. | OK |
 
 ### 1d. Clock, auto-moves, teams
@@ -154,9 +154,9 @@ Ranking basis: frequency per game in the mode (F) times how likely the player is
  (b) The sentence is a pop-up inside the board and is erased by the next state (F1), usually under 2 seconds with a computer next in turn.
  (c) The words say what moved, not that nobody is hurt or why ("Badger shoved the hyena back 2!"). The rule is only in a tooltip on the rival piece and is missing from the Hunter role cards (`roles.js hunter`).
  (d) Every bird gets the sentence, even birds who cannot see either hunter, which tells them the hunters are standing together.
- Fix: "Show it to the two hunters and to birds who can see one of them. Keep it up until the next turn starts. Say: 'The honey badger ran into the hyena. Nobody is hurt. The hyena slid back 2 squares.' Add one line about it on both hunter cards. Fix the first-time bug."
+ Fix: "Show it to the two hunters and to birds who can see one of them. Keep it up until the next turn starts. Say: 'The badger ran into the hyena. Nobody is hurt. The hyena slid back 2 squares.' Add one line about it on both hunter cards. Fix the first-time bug."
 
-**G2. Shot-clock time-outs are silent in every timed mode [F4 x C4 = 16].** Rows T1 to T4. Phones go quiet or players look away; the ostrich stays still, loses its warming, or a badger digs in on its own. Fix: "Put one line on everyone's screen: 'Time ran out, so the ostrich stayed where it was.' / 'The vulture ran out of time and passed.' / 'The honey badger ran out of time and dug in.' Say it to the player themselves in the hint too."
+**G2. Shot-clock time-outs are silent in every timed mode [F4 x C4 = 16].** Rows T1 to T4. Phones go quiet or players look away; the ostrich stays still, loses its warming, or a badger digs in on its own. Fix: "Put one line on everyone's screen: 'Time ran out, so the ostrich stayed where it was.' / 'The vulture ran out of time and passed.' / 'The badger ran out of time and dug in.' Say it to the player themselves in the hint too."
 
 **G3. Speed boost after the first knock-out is never announced [F4 x C4 = 16] (3P and 2v2+H).** Row H15. Birds watch the hunter suddenly cover 2 squares (3 with a pounce). Fix: "When the first bird goes out, tell everyone: 'A bird is out, so the hyena now moves 2 squares each turn.' Leave the ⚡2 chip."
 
@@ -164,7 +164,7 @@ Ranking basis: frequency per game in the mode (F) times how likely the player is
 
 **G5. Hyena pounce looks like two moves for no reason [F3 x C3 = 9].** Row H4. Fix: "When the hyena takes its second step, show to birds who can see it: 'The hyena smells a bird close by, so it gets one more step.'"
 
-**G6. Burrow: the badger vanishes in front of a bird [F3 x C3 = 9].** Row H5. Fix: "To birds who just saw it disappear: 'The honey badger is out of sight. It may have dug in, or it may have walked away.' (This does not give away which.)" Also tell a badger whose burrow was broken by a hyena: "The hyena bumped you out of your burrow."
+**G6. Burrow: the badger vanishes in front of a bird [F3 x C3 = 9].** Row H5. Fix: "To birds who just saw it disappear: 'The badger is out of sight. It may have dug in, or it may have walked away.' (This does not give away which.)" Also tell a badger whose burrow was broken by a hyena: "The hyena bumped you out of your burrow."
 
 **G7. Carried egg is put down by itself, and the vulture's found-egg marker disappears [F4 x C2 = 8].** Rows M3, M4. Fix: "When the vulture's turn ends: 'Your egg was set down here.' When a found egg is carried away: show to the vulture 'The ostrich moved the egg you found.'"
 

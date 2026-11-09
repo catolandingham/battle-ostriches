@@ -78,7 +78,7 @@ ok('Kick pushes a vulture 3 squares, wraps around the edge, and stops before a w
   const w = classic(); w.turn = 'blue'; w.ostrich = [6, 3]; w.vulture = [7, 3]; assert.ok(B.ostrichKick(w, [7, 3])); assert.deepEqual(w.vulture, [1, 3], 'wrapped past the edge: 8, 0, 1'); assert.equal(w.lastKick.moved, 3);
   const x = classic(); x.turn = 'blue'; x.ostrich = [4, 3]; x.vulture = [5, 3]; x.marks['7,3'] = 'stone'; assert.ok(B.ostrichKick(x, [5, 3])); assert.deepEqual(x.vulture, [6, 3]); assert.equal(x.lastKick.moved, 1);
   const d = classic(); d.turn = 'blue'; d.ostrich = [7, 5]; d.vulture = [8, 6]; assert.ok(B.ostrichKick(d, [8, 6])); assert.deepEqual(d.vulture, [2, 2], 'diagonal wraps on both axes: (0,0) then (1,1) then (2,2)... from (8,6): (0,0),(1,1),(2,2)');
-  const t = three('badger', [5, 3], [4, 3], [0, 6]); t.turn = 'blue'; assert.ok(T.ostrichKick3(t, [5, 3])); assert.deepEqual(t.three.h, [7, 3], 'the honey badger goes only 2'); });
+  const t = three('badger', [5, 3], [4, 3], [0, 6]); t.turn = 'blue'; assert.ok(T.ostrichKick3(t, [5, 3])); assert.deepEqual(t.three.h, [7, 3], 'the badger goes only 2'); });
 
 // ---- 5 and 6: catches and pushes
 ok('a caught bird scrambles exactly 2 squares in an open direction; no missed turn; the egg drops on the catch square; hunters get the scramble square only through the view rules', () => {
@@ -113,7 +113,7 @@ ok('3 players, HUNTER_GOAL "all": one knock-out does not end the game; the vultu
   g.eggs.forEach(e => { e.alive = false; }); assert.ok(T.finish(g)); assert.equal(g.winner, 'red'); assert.match(g.endWhy, /vulture/); } finally { B.CONFIG.hunterGoal['3'] = DEF3; } });
 ok('3 players, HUNTER_GOAL "first": the first knock-out wins the game for the hunter', () => {
   B.CONFIG.hunterGoal['3'] = 'first';
-  try { const g = three('badger', [5, 2], [6, 2], [0, 6]); g.three.birds.blue.catches = 1; assert.ok(T.hunterMove(g, [6, 2])); assert.equal(g.phase, 'over'); assert.equal(g.winner, 'hunter'); assert.equal(g.endWhy, 'The honey badger knocked out a bird.'); }
+  try { const g = three('badger', [5, 2], [6, 2], [0, 6]); g.three.birds.blue.catches = 1; assert.ok(T.hunterMove(g, [6, 2])); assert.equal(g.phase, 'over'); assert.equal(g.winner, 'hunter'); assert.equal(g.endWhy, 'The badger knocked out a bird.'); }
   finally { B.CONFIG.hunterGoal['3'] = DEF3; } });
 ok('3 players, HUNTER_GOAL "catches:N": N catches in total across both birds wins for the hunter', () => {
   B.CONFIG.hunterGoal['3'] = 'catches:3';
@@ -148,7 +148,7 @@ ok('views: a hunter is never told where a caught bird scrambled to; the bird is;
   assert.equal(v.red.h3.lastCatch.at, null, 'the vulture at (0,6) cannot see the hyena'); });
 ok('views: a stone line goes to every seat with no square; kick lines say how far it really went (wrapped kicks included)', () => {
   const room = room3('hyena'), g = room.g = three('hyena', [5, 2], [4, 3], [5, 3]); g.turn = 'red'; g.stones = 1; assert.ok(T.vultureThrow3(g, [4, 3]));
-  for (const s of SEATS3) { const v = S.view3(room, s); assert.equal(v.stoneNote.text, 'The ostrich kicked the stone right back!'); assert.deepEqual(Object.keys(v.stoneNote).sort(), ['seq', 'text']); }
+  for (const s of SEATS3) { const v = S.view3(room, s); assert.equal(v.stoneNote.text, 'The ostrich kicked the stone right back!'); assert.deepEqual(Object.keys(v.stoneNote).sort(), ['by', 'seq', 'targets', 'text']); }
   const r2 = room3('hyena'), k = r2.g = three('hyena', [1, 6], [6, 3], [7, 3]); k.turn = 'blue'; assert.ok(T.ostrichKick3(k, [7, 3])); assert.equal(S.view3(r2, 'blue').kick.moved, 3); assert.deepEqual(k.vulture, [1, 3]); });
 ok('views: birds (not hunters) see an ostrich that is sitting; the end screen carries one plain reason', () => {
   const room = room3('hyena'), g = room.g = three('hyena', [0, 6], [2, 1], [5, 5]); g.turn = 'blue'; assert.ok(T.ostrichAct3(g, 'sit'));
@@ -171,7 +171,7 @@ ok('3 players: digging in is announced to every seat; only a bird within 2 of th
   const v = Object.fromEntries(SEATS3.map(s => [s, S.view3(room, s)]));
   for (const s of SEATS3) assert.deepEqual(v[s].h3.dug, { seq: 1, round: g.round }, s + ' is told');
   assert.deepEqual(v.red.h3.mound, [4, 3]); assert.equal(v.blue.h3.mound, null, 'the ostrich was too far to see it dig'); assert.equal(v.hunter.h3.mound, null);
-  assert.equal(v.blue.h3.hunter, null, 'nothing else leaks to the ostrich'); assert.equal(CT.dugLine(), 'The honey badger dug in!');
+  assert.equal(v.blue.h3.hunter, null, 'nothing else leaks to the ostrich'); assert.equal(CT.dugLine(), 'The badger dug in!');
   // the badger moves: no mound left for anyone; the dig stays recorded but names no square
   g.turn = 'hunter'; assert.ok(T.hunterMove(g, [5, 3]));
   for (const s of SEATS3) { const w = S.view3(room, s); assert.equal(w.h3.mound, null, s + ' has no stale mound'); assert.equal(JSON.stringify(w.h3.dug), JSON.stringify({ seq: 1, round: g.round })); assert.ok(!hasSq(w.h3.dug, [4, 3])); }
@@ -197,10 +197,10 @@ ok('Hunters: the hyena that walks onto the buried badger shares its square; the 
   const v = { blue: S.viewH(room, 'blue'), red: S.viewH(room, 'red'), hyena: S.viewH(room, 'hyena'), badger: S.viewH(room, 'badger') };
   for (const s of Object.keys(v)) { assert.equal(v[s].h3.burst.seq, 1, s); assert.equal(v[s].h3.burst.n, 2); }
   assert.deepEqual(v.hyena.h3.burst.to, [2, 3]); assert.equal(v.red.h3.burst.to, null, 'a vulture too far to see the hyena is not told where it went');
-  assert.equal(CT.burstLine(v.blue.h3.burst), 'The honey badger burst out and shoved the hyena back 2 squares!');
+  assert.equal(CT.burstLine(v.blue.h3.burst), 'The badger burst out and shoved the hyena back 2 squares!');
   assert.equal(BLN.detect({ phase: 'play', h3: {} }, { phase: 'play', h3: { burst: { seq: 1 } }, role: 'blue' }, BLN.createPicker())[0].text, BLN.LINES.shove, 'the shove quote goes with it'); });
 ok('burst out: blocked by a wrecked square or an animal, the hyena moves less or not at all; nobody is hurt; unknown direction is random; only the badger on a shared square may burst', () => {
-  const a = hunters([3, 3], [4, 3], [8, 6], [0, 0]); a.hunt.hs.badger.burrowed = true; a.turn = 'hyena'; assert.ok(H.hunterMove(a, [4, 3])); a.marks['3,3'] = 'stone'; assert.ok(H.hunterBurst(a)); assert.deepEqual(a.hunt.hs.hyena.p, [4, 3], 'wrecked square right behind it: it cannot move'); assert.equal(a.hunt.burst.n, 0); assert.equal(CT.burstLine(a.hunt.burst), 'The honey badger burst out, but the hyena had nowhere to go!');
+  const a = hunters([3, 3], [4, 3], [8, 6], [0, 0]); a.hunt.hs.badger.burrowed = true; a.turn = 'hyena'; assert.ok(H.hunterMove(a, [4, 3])); a.marks['3,3'] = 'stone'; assert.ok(H.hunterBurst(a)); assert.deepEqual(a.hunt.hs.hyena.p, [4, 3], 'wrecked square right behind it: it cannot move'); assert.equal(a.hunt.burst.n, 0); assert.equal(CT.burstLine(a.hunt.burst), 'The badger burst out, but the hyena had nowhere to go!');
   const seen = new Set(); for (let i = 0; i < 60; i++) { const b = hunters([4, 3], [4, 3], [8, 6], [0, 0]); b.hunt.hs.badger.burrowed = true; b.turn = 'badger'; b.marks['3,3'] = 'stone'; assert.ok(H.hunterBurst(b)); const p = b.hunt.hs.hyena.p; assert.ok(B.dist(p, [4, 3]) >= 1 && !B.wrecked(b, p)); seen.add(K(p)); } assert.ok(seen.size > 2, 'random open direction');
   const c = hunters([3, 3], [4, 3], [8, 6], [0, 0]); c.hunt.hs.badger.burrowed = true; c.turn = 'badger'; assert.equal(H.canBurst(c), false, 'the hyena is not on its square'); assert.equal(H.hunterBurst(c), false);
   const d = hunters([4, 3], [4, 3], [8, 6], [0, 0]); d.turn = 'badger'; assert.equal(H.canBurst(d), false, 'not buried'); });
@@ -208,6 +208,6 @@ ok('dig and burst lines reach the page as events, once each, and a page opened m
   const seen = { pop: 0, rival: 0, kick: 0, stone: 0, dug: 0, burst: 0 }, S0 = { phase: 'play', h3: {} }, S1 = { phase: 'play', h3: { dug: { seq: 1 } } };
   assert.deepEqual(CT.newEvents(seen, S1, null), []); assert.deepEqual(CT.newEvents(seen, S1, S0), []);
   const s2 = { phase: 'play', h3: { dug: { seq: 2 }, burst: { seq: 1, n: 2, to: [2, 3] } } }, e = CT.newEvents(seen, s2, S1);
-  assert.deepEqual(e.map(x => x.text), ['The honey badger dug in!', 'The honey badger burst out and shoved the hyena back 2 squares!']); assert.deepEqual(e[1].square, [2, 3]); assert.deepEqual(CT.newEvents(seen, s2, s2), []); });
+  assert.deepEqual(e.map(x => x.text), ['The badger dug in!', 'The badger burst out and shoved the hyena back 2 squares!']); assert.deepEqual(e[1].square, [2, 3]); assert.deepEqual(CT.newEvents(seen, s2, s2), []); });
 
 console.log(`PASS testv2 (${n} groups)`); process.exit(0);

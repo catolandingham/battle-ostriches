@@ -95,7 +95,7 @@ function redView(g) {
     sniff: g.sniff, stones: g.stones, hungerLeft: g.hungerLeft, sitRun: g.sitRun, carrying: g.carrying !== null,
     fly: B.flyTargets(g), throw: B.throwTargets(g) };
 }
-// --- 3-player hunter (hyena / honey badger), ported from the sim3 prototype. Sees ONLY its hunter view: its own square,
+// --- 3-player hunter (hyena / badger), ported from the sim3 prototype. Sees ONLY its hunter view: its own square,
 // its yes/no sense (a bird within 2, no direction), its legal moves, the public marks and catch/knock-out counts. Keeps a belief
 // grid of where a bird might be: diffuses each turn (birds move), sharpens on each sense, and favours squares near new stones.
 function hunter(v, mem = {}) {

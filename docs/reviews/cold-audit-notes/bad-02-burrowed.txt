@@ -1,7 +1,7 @@
-SITUATION (not shown to reviewer): Round 1, just after the honey badger pressed Burrow (a still turn): it is burrowed (hidden from the birds). Vulture to move (held). The ostrich is 2 squares away.
+SITUATION (not shown to reviewer): Round 1, just after the badger pressed Burrow (a still turn): it is burrowed (hidden from the birds). Vulture to move (held). The ostrich is 2 squares away.
 
 HINT: Vulture's turn…
-TOAST: The honey badger dug in!
+TOAST: The badger dug in!
 
 --- TEXT INSIDE THE VISIBLE SCREEN (top to bottom) ---
 ROUNDS 29
@@ -13,8 +13,8 @@ Timer on
 1
 10s
 Vulture's turn…
-The honey badger has been referred to by the Guinness Book of World Records as the most fearless animal in all of the animal kingdom.
-The honey badger dug in!
+The badger has been referred to by the Guinness Book of World Records as the most fearless animal in all of the animal kingdom.
+The badger dug in!
 YOU
 BURROWED
 
@@ -23,7 +23,7 @@ ROUNDS 29
 EGGS 3
 14
 1/1
- HONEY BADGER
+ BADGER
 
 ?
 
@@ -33,4 +33,4 @@ Timer on
  10s
 Vulture's turn…
 BURROWEDYOU
-The honey badger dug in!The honey badger has been referred to by the Guinness Book of World Records as the most fearless animal in all of the animal kingdom.
+The badger dug in!The badger has been referred to by the Guinness Book of World Records as the most fearless animal in all of the animal kingdom.

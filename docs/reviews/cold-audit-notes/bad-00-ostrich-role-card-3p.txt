@@ -1,11 +1,11 @@
 SITUATION (not shown to reviewer): Extra: the same moment on the ostrich player's phone (3-player game, ostrich card).
 
 HINT: Vulture's turn…
-TOAST: The vulture hunts eggs. The honey badger hunts birds.
+TOAST: The vulture hunts eggs. The badger hunts birds.
 ROLE CARD: You are the Ostrich / Keep 1 egg alive. Out after 2 catches. / Move 2 squares. 1 with an egg. / Stand on each egg every 15 rounds. / Eat every 15 turns. / Got it
 
 --- TEXT INSIDE THE VISIBLE SCREEN (top to bottom) ---
-The vulture hunts eggs. The honey badger hunts birds.
+The vulture hunts eggs. The badger hunts birds.
 You are the Ostrich
 Keep 1 egg alive. Out after 2 catches.
 Move 2 squares. 1 with an egg.
@@ -38,4 +38,4 @@ Move 2 squares. 1 with an egg.
 Stand on each egg every 15 rounds.
 Eat every 15 turns.
 Got it
-The vulture hunts eggs. The honey badger hunts birds.
+The vulture hunts eggs. The badger hunts birds.

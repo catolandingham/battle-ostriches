@@ -1,0 +1,14 @@
+COMMAND: node tests/run-all.js testplay.js
+PASS  testplay.js                   0s
+
+1 of 1 suites passed.
+
+COMMAND: node tests/run-all.js testv2.js
+PASS  testv2.js                     0s
+
+1 of 1 suites passed.
+
+COMMAND: node tests/run-all.js e2e-you.js
+PASS  e2e-you.js                   34s
+
+1 of 1 suites passed.

@@ -1,7 +1,7 @@
-SITUATION (not shown to reviewer): Round 1, honey badger to move. Not burrowed. The ostrich is 2 squares away (it can see the badger) but the badger cannot see it. Extra shot.
+SITUATION (not shown to reviewer): Round 1, badger to move. Not burrowed. The ostrich is 2 squares away (it can see the badger) but the badger cannot see it. Extra shot.
 
 HINT: Tap to move, or Burrow.
-TOAST: The vulture hunts eggs. The honey badger hunts birds.
+TOAST: The vulture hunts eggs. The badger hunts birds.
 ACTION BUTTONS: Burrow
 
 --- TEXT INSIDE THE VISIBLE SCREEN (top to bottom) ---
@@ -14,7 +14,7 @@ Timer on
 1
 10s
 Tap to move, or Burrow.
-The vulture hunts eggs. The honey badger hunts birds.
+The vulture hunts eggs. The badger hunts birds.
 Bird near.
 YOU
 Burrow
@@ -24,7 +24,7 @@ ROUNDS 29
 EGGS 3
 14
 1/1
- HONEY BADGER
+ BADGER
 
 ?
 
@@ -36,4 +36,4 @@ Tap to move, or Burrow.
 YOU
 Bird near.
 Burrow
-The vulture hunts eggs. The honey badger hunts birds.
+The vulture hunts eggs. The badger hunts birds.

@@ -7,21 +7,21 @@ Source: `Multiplayer_Game_Testing_with_Animal_Characters_20261105_14477.aac` on 
 [00:00:00] At the end of the game, it's confusing. There's not a simple way to do a basically new game.
 [00:00:19] There should be a new game button.
 [00:00:22] Okay, I did four player Hunters.
-[00:00:25] I want to try honey badger this time.
+[00:00:25] I want to try badger this time.
 [00:00:29] Is that okay with both of you?
 [00:00:31] You were hyena though.
 [00:00:32] Isn't that the same thing?
 [00:00:33] No.
 [00:00:34] No, no.
 [00:00:35] Hyena, when they're close, gets a pounce.
-[00:00:40] Honey badger gets to burrow.
+[00:00:40] Badger gets to burrow.
 [00:00:42] You came up with that guy.
 [00:00:45] No, I didn't.
 [00:00:47] Oh my gosh, bud.
 [00:00:49] It's like I talked to a different kid.
 [00:00:52] You claim you didn't agree to the timer.
-[00:00:55] And you didn't come up with the fact that honey badgers should burrow.
-[00:01:05] You were the one that was like, yeah, that's what honey badgers do.
+[00:00:55] And you didn't come up with the fact that badgers should burrow.
+[00:01:05] You were the one that was like, yeah, that's what badgers do.
 [00:01:07] They burrow.
 [00:01:08] And you saw them this morning.
 [00:01:15] Oh, kid my kid.
@@ -59,14 +59,14 @@ Source: `Multiplayer_Game_Testing_with_Animal_Characters_20261105_14477.aac` on 
 [00:03:34] I think it might give you a north-south-east-west single.
 [00:03:38] It just highlights the squares around you.
 [00:03:42] Well, I thought it gave a signal as to what direction they were.
-[00:03:45] I think that's for Honey Badger.
-[00:03:49] Honey Badger don't give a shit.
+[00:03:45] I think that's for Badger.
+[00:03:49] Badger don't give a shit.
 [00:03:52] That's actually from my YouTube story.
 [00:03:56] It doesn't mean it's okay.
 [00:03:59] But I was just, it was a quote.
 [00:04:01] I was quoting something.
 [00:04:03] That didn't come from my heart, it came from YouTube.
-[00:04:05] I was thinking, okay, we do have to find some way to work Honey Badger Don't Give a Shit
+[00:04:05] I was thinking, okay, we do have to find some way to work Badger Don't Give a Shit
 [00:04:11] into the game without cussing.
 [00:04:17] So there needs to be an Easter egg about that.
 [00:04:23] So help me think about what that Easter egg could be.
@@ -162,8 +162,8 @@ Source: `Multiplayer_Game_Testing_with_Animal_Characters_20261105_14477.aac` on 
 [00:09:52] get to go?
 [00:09:54] How do I pick up
 [00:09:56] the stone's what?
-[00:09:57] I don't even see the honey badger on the screen,
-[00:10:05] even though I'm the honey badger.
+[00:09:57] I don't even see the badger on the screen,
+[00:10:05] even though I'm the badger.
 [00:10:07] Also saying burrow one out of two doesn't make sense.
 [00:10:19] I'm hiding, I'm burrowed,
 [00:10:21] and I'm really hoping one of you walks onto me.
@@ -182,7 +182,7 @@ Source: `Multiplayer_Game_Testing_with_Animal_Characters_20261105_14477.aac` on 
 [00:10:54] Just by one?
 [00:10:56] Yeah.
 [00:10:56] That's dumb.
-[00:10:57] I think when you're Honey Badger, it only takes one.
+[00:10:57] I think when you're Badger, it only takes one.
 [00:11:01] When you're the other one, it takes two.
 [00:11:03] Yeah, you got it.
 [00:11:04] Which is confusing.
@@ -219,7 +219,7 @@ Source: `Multiplayer_Game_Testing_with_Animal_Characters_20261105_14477.aac` on 
 [00:12:28] Yeah.
 [00:12:29] Oh, then I'm KCNW, you said?
 [00:12:33] Yeah.
-[00:12:35] Can I be honey badger?
+[00:12:35] Can I be badger?
 [00:12:39] It says KCNW is not a code.
 [00:12:42] KZNW.
 [00:12:44] Sorry.
@@ -228,7 +228,7 @@ Source: `Multiplayer_Game_Testing_with_Animal_Characters_20261105_14477.aac` on 
 [00:12:51] You're the vulture.
 [00:12:52] Go, Mooses, go.
 [00:12:55] Yeah, you're going to have such an excuse
-[00:13:08] when you realize Honey Badger doesn't win every time.
+[00:13:08] when you realize Badger doesn't win every time.
 [00:13:25] Can I do anything?
 [00:13:37] Vulture, you never got a stone.
 [00:13:39] Oh, you did?
@@ -246,7 +246,7 @@ Source: `Multiplayer_Game_Testing_with_Animal_Characters_20261105_14477.aac` on 
 [00:16:02] Oh, but you can travel with it.
 [00:16:06] For a little bit.
 [00:16:11] Final three rounds.
-[00:16:12] It's so unfair to the honey badger.
+[00:16:12] It's so unfair to the badger.
 [00:16:25] Yes!
 [00:16:30] So...
 [00:16:31] Do you hear this?

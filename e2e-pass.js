@@ -42,6 +42,8 @@ const OUT = 'shots/pass/'; fs.mkdirSync(OUT, { recursive: true });
     const bnText = await P.textContent('#banner');
     assert.ok(!/egg nearby|found egg/i.test(bnText), 'sniff banner is vulture-only: ostrich banner says "' + bnText + '"');
   };
+  await P.waitForFunction(()=>UI._locked()&&document.getElementById('handoff').classList.contains('hidden'));
+  server.broadcast([...server.rooms.values()].find(r=>r.pass)); // duplicate while the cover timer is pending must not cancel handoff
   await vultureTurn(true);
   await P.click('#actions button:has-text("Throw")', { force: true }); await cell(3, 4).click(); if (await P.evaluate(() => !!document.querySelector('#board .cell.confirm'))) await cell(3, 4).click(); // smash (the only stone at an unfound egg asks once more)
   await P.waitForTimeout(500); await P.screenshot({ path: OUT + 'vulture-smash.jpg', type: 'jpeg', quality: 85 });

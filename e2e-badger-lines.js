@@ -1,4 +1,4 @@
-// The honey badger's quotes on WebKit iPhone 13s (Hunters mode, host is the badger, a friend is the hyena, two computer birds):
+// The badger's quotes on WebKit iPhone 13s (Hunters mode, host is the badger, a friend is the hyena, two computer birds):
 // the burrow line shows only on the badger's phone; the shove line (badger moves onto the hyena) shows on both hunters' phones.
 process.env.PORT = 3993; process.env.BO_H4START = '2,3,4,3'; process.env.BO_BOTMS = '200'; process.env.BO_CLOCKMS = '8000';
 const { webkit, devices } = require('playwright-core'); const assert = require('assert'), fs = require('fs');

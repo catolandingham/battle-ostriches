@@ -1,4 +1,4 @@
-// 3-player mode: ostrich (blue) + vulture (red) + a hunter (hyena or honey badger). Wraps the 2-player rules in game.js
+// 3-player mode: ostrich (blue) + vulture (red) + a hunter (hyena or badger). Wraps the 2-player rules in game.js
 // without changing them. Turn order each round: vulture, ostrich, hunter. All tuning lives in T3.
 const B = require('./game.js'), K = B.key, D = B.dist;
 const T3 = { sense: 2, see: 2, walk: 2, pounce: 1, knock: 2, clockMs: 10000, ko: { hyena: 2, badger: 2 }, starts: [[0, 3], [8, 3]] };
@@ -21,7 +21,7 @@ const ambushSight = g => { const t = g.three; if (t.kind !== 'badger' || !t.burr
   return BIRDS.filter(b => !isOut(g, b) && pos(g, b) && pos(g, b)[0] >= 0 && D(pos(g, b), t.h) === 1).map(b => ({ seat: b, type: b === 'blue' ? 'o' : 'v', p: pos(g, b).slice() })); };
 // a bird sees the hunter only within 2 squares of itself, and never a burrowed badger
 const hunterSeenBy = (g, b) => !!(BIRDS.includes(b) && !isOut(g, b) && pos(g, b) && !g.three.burrowed && D(pos(g, b), g.three.h) <= T3.see);
-const hunterName = g => (g.three.kind === 'badger' ? 'honey badger' : 'hyena');
+const hunterName = g => (g.three.kind === 'badger' ? 'badger' : 'hyena');
 // Endings (rules 9). Called when the classic rules ended the game (smashed, cold, survived) or after a knock-out. Returns true when the game is over.
 // A side is out when all its birds are knocked out or it can no longer meet its goal; a side that meets its goal wins; the last side in wins; time with no goal met is a draw.
 function settle(g) {
@@ -93,7 +93,7 @@ function vultureFly3(g, p) {
 // The stone resolver's view of this mode: the hunter is pushed 2 away from the vulture and a buried badger comes up.
 const stoneW3 = g => { const t = g.three; return { thrower: () => g.vulture.slice(), setThrower: q => { g.vulture = q.slice(); },
   ostrichAt: p => liveAt(g, 'blue') && K(p) === K(g.ostrich), eggAt: p => B.eggAt(g, p),
-  pushAt: (p, dir, n) => { if (K(t.h) !== K(p)) return []; const from = t.h.slice(); t.burrowed = false; t.dig = 0; t.popout = { seq: t.popSeq = (t.popSeq || 0) + 1, round: g.round };
+  pushAt: (p, dir, n) => { if (K(t.h) !== K(p)) return []; const from = t.h.slice(), wasBur = t.burrowed; t.burrowed = false; t.dig = 0; if (wasBur && t.kind === 'badger') t.popout = { seq: t.popSeq = (t.popSeq || 0) + 1, round: g.round };
     t.h = B.slide(g.cfg, from, dir, n, m => (liveAt(g, 'blue') && K(m) === K(g.ostrich)) || (liveAt(g, 'red') && K(m) === K(g.vulture)), g.marks); return [{ kind: t.kind || 'hyena', from, to: t.h.slice() }]; },
   open: q => !B.wrecked(g, q) && !(liveAt(g, 'blue') && K(q) === K(g.ostrich)) && !(K(q) === K(t.h) && !(t.kind === 'badger' && t.burrowed)), ostrichPos: () => g.ostrich }; };
 function vultureThrow3(g, p) { const r = B.vultureThrow(g, p, stoneW3); if (!r) return false; if (!finish(g)) advance(g); return r; }

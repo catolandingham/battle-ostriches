@@ -18,7 +18,7 @@ Every animal has one speed, one skill and its own way of seeing, the same in eve
 
 1. **Moving.** Any direction, diagonals included. Every animal moves up to [2] squares a turn. The one exception is the ostrich carrying an egg, which moves [1]. Anyone may pass over anything on a 2-square move (an animal, an egg, a wrecked square); only the landing square counts.
 2. **Wrecked squares.** Every stone the vulture throws wrecks the square it lands on. Nobody can stop on a wrecked square, but anyone can pass over one. Leaf squares and rock piles can never be wrecked: a stone thrown at an empty one is used up harmlessly ("The stone landed softly in the leaves." / "The stone clattered back onto the rock pile."). A stone thrown at the ostrich is kicked straight back and wrecks the vulture's own square.
-3. **Catching.** A hunter landing on a bird, or a bird landing on a hunter, is a catch. A caught bird is pushed back [2] squares and plays its next turn as normal (Brian, 2026-11-07: missing a turn let the hunter catch it again at once). The [2nd] catch knocks it out of the game. This is the same for the hyena and the honey badger.
+3. **Catching.** A hunter landing on a bird, or a bird landing on a hunter, is a catch. A caught bird is pushed back [2] squares and plays its next turn as normal (Brian, 2026-11-07: missing a turn let the hunter catch it again at once). The [2nd] catch knocks it out of the game. This is the same for the hyena and the badger.
 4. **Pushes.** Every push is [2] squares straight away from whoever caused it (a catch, two hunters meeting, a stone wrecking the square someone stands on), except the ostrich's Kick, which pushes [3] because it is the ostrich's skill. Any push brings a buried badger up. A push stops early at a wrecked square, the edge of the board or another animal, and the line on screen says so.
 5. **Being pushed is not a move.** Nothing that happens on arrival happens (eating, finding an egg, refilling a stone, sniffing, catching). Where you end up still counts for where you are: an ostrich pushed onto its own egg is standing on it, so the egg is warmed and guarded. A buried badger does not stop a push; the pushed animal ends on top of it and nothing happens.
 6. **Your square works first.** When you land by your own move, the square acts first (eat, refill, find an egg), then any catch.
@@ -34,10 +34,10 @@ Every animal has one speed, one skill and its own way of seeing, the same in eve
 
 | | Speed | Skill | Sees | Wins when | Loses when |
 |---|---|---|---|---|---|
-| **Ostrich** | Walks [2], carries an egg [1] | **Kick:** instead of moving, push an animal next to you that you can see [3] squares away ([2] for the honey badger: it's tough); you stay put. A kick always buys you one turn. A kick that would leave the board wraps around to the opposite side (only kicks wrap); the landing square is shown before you kick | Both birds; hunters within [2] | Any egg is alive after round [30] | All eggs are smashed or cold, or it is knocked out or starves |
+| **Ostrich** | Walks [2], carries an egg [1] | **Kick:** instead of moving, push an animal next to you that you can see [3] squares away ([2] for the badger: it's tough); you stay put. A kick always buys you one turn. A kick that would leave the board wraps around to the opposite side (only kicks wrap); the landing square is shown before you kick | Both birds; hunters within [2] | Any egg is alive after round [30] | All eggs are smashed or cold, or it is knocked out or starves |
 | **Vulture** | Flies [2] | **Stone:** throw at your square or one next to you; hold [1], refill by landing on a rock pile | Both birds; hunters within [2]; on landing, sniffs for an egg within [1] | No egg is left | An egg survives round [30], or it is knocked out |
 | **Hyena** | Walks [2] | **Pounce:** if a bird was near at the start of your turn and your move did not catch it, one more square; the dots update first and the most likely squares glow brightest | Rose dots: a bird is within [2] somewhere | Both birds are knocked out (Hunters mode: more knock-outs than the badger) | A bird wins first |
-| **Honey badger** | Walks [2] | **Burrow:** stay still one turn to dig in, anywhere it can stand, even under a leaf or rock pile (Brian, 2026-11-07: a sneaky bonus; being simulated for fairness). Buried, you are invisible and see any bird next to you; a bird that steps on you is caught. Moving brings you up. | Rose dots, plus birds next to you while buried | Same as the hyena | Same as the hyena |
+| **Badger** | Walks [2] | **Burrow:** stay still one turn to dig in, anywhere it can stand, even under a leaf or rock pile (Brian, 2026-11-07: a sneaky bonus; being simulated for fairness). Buried, you are invisible and see any bird next to you; a bird that steps on you is caught. Moving brings you up. | Rose dots, plus birds next to you while buried | Same as the hyena | Same as the hyena |
 
 ### Ostrich needs
 
@@ -48,7 +48,7 @@ Every animal has one speed, one skill and its own way of seeing, the same in eve
 
 ## Fixes already decided that make the rules understandable
 
-- "The ostrich kicked the stone right back!", "The honey badger dug in!", "The honey badger came out of its burrow!", the hunters-meeting lines, "who hunts what" at the start.
+- "The ostrich kicked the stone right back!", "The badger dug in!", "The badger came out of its burrow!", the hunters-meeting lines, "who hunts what" at the start.
 - A caught bird is told "Pushed back 2 squares." The hidden lost turn is removed.
 - Badger quotes as approved (the "give a sh*t" line only when it shoves the hyena).
 - Carrying: a cooling ring on the egg in the beak and a "cooling" tag.

@@ -141,7 +141,7 @@ fs.mkdirSync(OUT, { recursive: true });
   }));
   assert.equal(both.text, "Start · you'll be the Ostrich");
   assert.equal(both.setup, '2');
-  // Two people can also pick a hunter, so the Hyena and Honey Badger cards sit after the two ostrich seats.
+  // Two people can also pick a hunter, so the Hyena and Badger cards sit after the two ostrich seats.
   assert.deepEqual(both.roles, ['blue', 'red', 'hyena', 'badger']);
   assert.equal(errs.length, 0, errs.join('\n'));
   await browser.close();

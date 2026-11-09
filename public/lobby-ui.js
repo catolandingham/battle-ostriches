@@ -15,8 +15,8 @@
   };
   const label = (role, kind) => {
     if (!role) return 'Choosing';
-    if (role === 'hunter') return kind === 'badger' ? 'Honey Badger' : kind === 'hyena' ? 'Hyena' : 'Hunter';
-    const r = { blue: 'Ostrich', red: 'Vulture', o1: 'Ostrich 1', o2: 'Ostrich 2', v1: 'Vulture 1', v2: 'Vulture 2', hyena: 'Hyena', badger: 'Honey Badger' };
+    if (role === 'hunter') return kind === 'badger' ? 'Badger' : kind === 'hyena' ? 'Hyena' : 'Hunter';
+    const r = { blue: 'Ostrich', red: 'Vulture', o1: 'Ostrich 1', o2: 'Ostrich 2', v1: 'Vulture 1', v2: 'Vulture 2', hyena: 'Hyena', badger: 'Badger' };
     return r[role] || role;
   };
   let gear = false, botsOpen = false, kindOpen = false, st = null;
@@ -89,7 +89,7 @@
       ${recover}
       ${roles ? `<div class="roles" aria-label="Roles">${roles}</div>` : ''}
       ${s.computers ? `<p class="statusline">Computers: ${esc(s.computers)}</p>` : ''}
-      ${s.showHunterKind ? `<p class="statusline">Computer hunter, if nobody claims it</p><div class="row hunterkind"><button type="button" data-hkind="hyena" class="${s.hunterKind === 'badger' ? '' : 'on'}" aria-pressed="${s.hunterKind === 'badger' ? 'false' : 'true'}">Hyena</button><button type="button" data-hkind="badger" class="${s.hunterKind === 'badger' ? 'on' : ''}" aria-pressed="${s.hunterKind === 'badger' ? 'true' : 'false'}">Honey Badger</button></div>` : ''}
+      ${s.showHunterKind ? `<p class="statusline">Computer hunter, if nobody claims it</p><div class="row hunterkind"><button type="button" data-hkind="hyena" class="${s.hunterKind === 'badger' ? '' : 'on'}" aria-pressed="${s.hunterKind === 'badger' ? 'false' : 'true'}">Hyena</button><button type="button" data-hkind="badger" class="${s.hunterKind === 'badger' ? 'on' : ''}" aria-pressed="${s.hunterKind === 'badger' ? 'true' : 'false'}">Badger</button></div>` : ''}
       ${bots}
       ${s.host ? `<button type="button" class="big" id="startGame"${s.canStart ? '' : ' disabled'}>${esc(s.startLabel || 'Start game')}</button>` : '<p class="footnote">Waiting for the host to start.</p>'}`;
   }

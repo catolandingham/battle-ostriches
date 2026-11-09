@@ -1,11 +1,11 @@
 // Four Hunters phones (WebKit iPhone 13): the start-of-game line, then the first hunters meeting, on every phone.
-// Every phone gets the one-line announcement and it stays up about 3 seconds even though the board is redrawn under it.
+// Every phone gets the one-line announcement and it stays up about 1 second even though the board is redrawn under it.
 // Only the two hunters (who can see the hyena) get the square highlighted; the two far birds get the line and no location.
 process.env.PORT = 3960; process.env.BO_NOSTORE = '1'; process.env.BO_CLOCKMS = '600000'; process.env.BO_BOTMS = '600000';
 const { webkit, devices } = require('playwright-core'); const assert = require('assert'), fs = require('fs');
 const server = require('./server.js'), H = require('./hunt.js'), HA = require('./huntai.js');
 const U = 'http://localhost:3960/', OUT = 'shots/announce/'; fs.mkdirSync(OUT, { recursive: true });
-const START = 'The vulture hunts eggs. The hyena and honey badger hunt birds.';
+const START = 'The vulture hunts eggs. The hyena and badger hunt birds.';
 const MEET = 'Badger shoved the hyena.';
 (async () => {
   const b = await webkit.launch(), errs = [];
@@ -47,8 +47,8 @@ const MEET = 'Badger shoved the hyena.';
   for (const p of ALL) await p.waitForFunction(() => window.__ann[1] && window.__ann[1].end, null, { timeout: 8000 });
   for (const p of ALL) {
     const a = await p.evaluate(() => window.__ann.slice()), m = a[1];
-    assert.equal(a.length, 2, p.name + ' exactly one meeting line: ' + JSON.stringify(a)); assert.equal(m.text, MEET, p.name + ' reads the same line'); assert.equal(m.inBoard, false, 'the line lives outside the board');
-    const secs = (m.end - m.start) / 1000; assert.ok(secs >= 2.7 && secs <= 3.7, `${p.name}: the line stayed up ${secs.toFixed(2)} s`);
+    assert.equal(a.length, 2, p.name + ' exactly one meeting line: ' + JSON.stringify(a)); assert.equal(m.text, p.name==='badger'?'You, the badger, shoved the hyena.':p.name==='hyena'?'The badger shoved you, the hyena.':MEET, p.name + ' reads its viewer-specific line'); assert.equal(m.inBoard, false, 'the line lives outside the board');
+    const secs = (m.end - m.start) / 1000; assert.ok(secs >= .85 && secs <= 1.4, `${p.name}: the line stayed up ${secs.toFixed(2)} s`);
     console.log(p.name.padEnd(8), 'meeting line up', secs.toFixed(2), 's, highlight', kbNow[p.name]);
   }
   // the square: only the hunters (who can see the hyena) get it; the far birds get the line and no location

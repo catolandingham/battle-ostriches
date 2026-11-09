@@ -7,6 +7,6 @@ All shots: phone size 390x664, classic theme, real play (each state was reached 
 05-vulture-b2-later-turn-found-egg-throw-target.png: Next vulture turn: the found egg still shows as the filled corner egg, and the orange crosshair on the square means a throw can hit it.
 06-ostrich-a-standing-on-its-egg.png: The ostrich stands on its own egg; the filled corner egg is that egg and the number in the bottom-right corner is its warmth countdown.
 07-ostrich-b-walked-away-eggs-with-numbers.png: The ostrich walked away; each of its eggs is a small filled egg in the corner with its countdown number beside it.
-08-bird-after-badger-dug-in.png: A bird saw the honey badger dig in; the small filled mound in the corner of that square means the badger is buried there.
+08-bird-after-badger-dug-in.png: A bird saw the badger dig in; the small filled mound in the corner of that square means the badger is buried there.
 09-howto-a-pictures.png: How to play, the four pictures: lit squares and your own egg with its number, dashed eggs for may be here, a filled egg you can throw at, a wrecked square.
 10-howto-b-marks-legend.png: How to play, the Marks list: the last two rows are the dashed egg (May be here) and the filled egg (Is here).

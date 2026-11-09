@@ -1,4 +1,4 @@
-// Bots for the 4-player Hunters mode (ostrich + vulture + hyena + honey badger). Each bot sees only what its seat may see.
+// Bots for the 4-player Hunters mode (ostrich + vulture + hyena + badger). Each bot sees only what its seat may see.
 const B = require('./game.js'), AI = require('./ai.js'), H = require('./hunt.js');
 function hunterView(g, h) { const x = g.hunt.hs[h];
   return { cfg: g.cfg, round: g.round, hunter: x.p, kind: h, sense: g.turn === h ? x.sense : null, senseSeq: x.senseSeq, senseRange: H.TH.sense, pounce: x.pounce,

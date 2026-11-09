@@ -52,7 +52,7 @@ const at = { state: 'attached' };
   assert.equal(sees, T.hunterSeenBy(room5.g, 'o1') ? 1 : 0, 'ostrich sees the hunter only within 2 (never burrowed)');
   await O.waitForTimeout(300); await shot(O, '5p-3-ostrich-view');
   T.knockout(room5.g, 'o2', 'caught'); T.knockout(room5.g, 'v1', 'caught'); server.broadcast(room5);
-  await O.waitForSelector('#over:not(.hidden)'); assert.ok(/Honey badger wins/.test(await O.textContent('#over'))); await shot(O, '5p-4-over');
+  await O.waitForSelector('#over:not(.hidden)'); assert.ok(/Badger wins/.test(await O.textContent('#over'))); await shot(O, '5p-4-over');
   console.log('errors', errs); assert.equal(errs.length, 0);
   await b.close(); server.close(); console.log('PASS e2e-team'); process.exit(0);
 })().catch(e => { console.error(e); process.exit(1); });

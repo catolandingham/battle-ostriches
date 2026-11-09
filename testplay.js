@@ -1,4 +1,4 @@
-// Action ring choices, god-view visibility, and the default-on turn timer. node testplay.js
+// Action ring choices, knockout/end visibility, and the default-on turn timer. node testplay.js
 process.env.PORT = process.env.PORT || '3971';
 const assert = require('assert');
 const B = require('./game.js'), T = require('./three.js'), HU = require('./hunt.js'), TT = require('./team.js');
@@ -38,7 +38,7 @@ function setup3(kind = 'hyena', h = [8, 3]) {
   assert(T.placeOstrich3(g, [6, 5])); return g;
 }
 
-ok('3p: eliminated bird gets a read-only god view; living seats do not', () => {
+ok('3p: eliminated bird remains read-only without gaining hidden sight', () => {
   const { room } = S.create3({ role: 'blue', bots: ['red', 'hunter'], kind: 'hyena' }, null);
   room.g = setup3('hyena', [0, 3]);
   assert.equal(S.view3(room, 'blue').showTimers, true);
@@ -53,10 +53,10 @@ ok('3p: eliminated bird gets a read-only god view; living seats do not', () => {
   assert(T.isOut(room.g, 'blue')); assert.equal(room.g.phase, 'play');
   room.g.three.burrowed = true; room.g.three.h = [0, 3];
   const dead = S.view3(room, 'blue');
-  assert.equal(dead.god, true); assert.equal(dead.myTurn, false);
+  assert.equal(dead.god, undefined); assert.equal(dead.myTurn, false);
   assert.deepEqual(dead.moves, []); assert.deepEqual(dead.carryMoves, []);
   assert.deepEqual(dead.can, { sit: false, carry: false, kick: false });
-  assert.deepEqual(dead.h3.hunter, [0, 3]); assert.equal(dead.h3.burrowed, true);
+  assert.equal(dead.h3.hunter, null); assert.equal(dead.h3.burrowed, false);
   assert.ok(dead.eggs.some(e => e.pos[0] === 2 && e.pos[1] === 1));
   assert.equal(S.act3(room, 'blue', { a: 'step', p: [5, 4] }), false);
   const red = S.view3(room, 'red');
@@ -77,7 +77,7 @@ ok('3p: a living ostrich can still act', () => {
   assert.equal(room.g.turn, 'hunter');
 });
 
-ok('5p: eliminated ostrich sees the burrowed hunter and the eggs; the living vulture does not', () => {
+ok('5p: eliminated ostrich keeps team egg knowledge but cannot see the hidden hunter', () => {
   const { room } = S.createT({ team: 5, role: 'o1', bots: ['v1', 'v2', 'o2', 'hunter'], kind: 'hyena' }, null);
   const g = room.g; g.phase = 'play'; g.turn = 'v1';
   g.b.o1.pos = [0, 0]; g.b.o2.pos = [2, 2]; g.b.v1.pos = [4, 2]; g.b.v2.pos = [4, 4];
@@ -87,8 +87,8 @@ ok('5p: eliminated ostrich sees the burrowed hunter and the eggs; the living vul
   assert.ok(!before.god); assert.equal(before.h3.hunter, null); assert.equal(before.showTimers, true);
   g.b.o1.out = true; g.b.o1.why = 'caught'; g.b.o1.pos = TT.OFF.slice();
   const dead = S.viewT(room, 'o1');
-  assert.equal(dead.god, true); assert.equal(dead.myTurn, false); assert.deepEqual(dead.moves, []);
-  assert.deepEqual(dead.h3.hunter, [8, 6]); assert.equal(dead.h3.burrowed, true);
+  assert.equal(dead.god, undefined); assert.equal(dead.myTurn, false); assert.deepEqual(dead.moves, []);
+  assert.equal(dead.h3.hunter, null); assert.equal(dead.h3.burrowed, false);
   assert.ok(dead.eggs.some(e => e.pos && e.pos[0] === 3 && e.pos[1] === 3));
   assert.equal(S.actT(room, 'o1', { a: 'step', p: [1, 0] }), false);
   const v = S.viewT(room, 'v1');

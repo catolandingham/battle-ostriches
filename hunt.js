@@ -1,4 +1,4 @@
-// 4-player "Hunters" mode: ostrich (blue) + vulture (red) + hyena + honey badger, one seat each. Wraps the 2-player rules in
+// 4-player "Hunters" mode: ostrich (blue) + vulture (red) + hyena + badger, one seat each. Wraps the 2-player rules in
 // game.js without changing them (like three.js). Turn order each round: vulture, ostrich, hyena, badger. 10s shot clock.
 // Hyena: Pounce, 2 catches knock a bird out. Badger: Burrow, 1 catch knocks a bird out.
 // Fearless rivalry: badger moves onto the hyena -> the hyena is knocked back 2; hyena moves onto the badger -> the hyena
@@ -33,7 +33,7 @@ function winHunters(g, by, why) {
   const [a, b] = HUNTERS.map(h => g.hunt.hs[h]);
   const w = a.kos !== b.kos ? (a.kos > b.kos ? a : b) : a.catches !== b.catches ? (a.catches > b.catches ? a : b) : null;
   g.phase = 'over'; g.winner = w ? w.kind : 'none'; g.winBy = by; g.hunt.final = true;
-  const nm = h => h === 'badger' ? 'honey badger' : 'hyena';
+  const nm = h => h === 'badger' ? 'badger' : 'hyena';
   g.endWhy = (why || 'Both birds are out.') + (w ? ` The ${nm(w.kind)} wins with ${w.kos > (w === a ? b : a).kos ? 'more knock-outs' : 'more catches'}.` : ' The hunters tie: same knock-outs and same catches.');
 }
 // Endings (rules 9). A side is out when all its birds are knocked out or it can no longer meet its goal; the hunters are never out.
@@ -109,7 +109,7 @@ const stoneWH = g => { const t = g.hunt; return { thrower: () => g.vulture.slice
       x.p = B.slide(g.cfg, from, dir, n, m => upAt(g, m, h), g.marks); moved.push({ kind: h, from, to: x.p.slice() }); } return moved; },
   open: q => !B.wrecked(g, q) && !upAt(g, q), ostrichPos: () => g.ostrich }; };
 function vultureThrowH(g, p) { const r = B.vultureThrow(g, p, stoneWH); if (!r) return false; if (!finish(g)) advance(g); return r; }
-// --- Kick (rules in game.js): the ostrich may kick the vulture, the hyena or the honey badger next to it (never a burrowed badger).
+// --- Kick (rules in game.js): the ostrich may kick the vulture, the hyena or the badger next to it (never a burrowed badger).
 function kickableH(g) {
   const r = [];
   if (isOut(g, 'blue')) return r;

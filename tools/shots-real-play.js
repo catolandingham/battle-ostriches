@@ -1,5 +1,5 @@
 // Real-play phone screenshots (390x664, default theme), in the order a player meets them.
-// Usage: node tools/shots-real-play.js <outdir> [start,lobby,vulture,ostrich,hyena,badger,howto,howfound,over]
+// Usage: node tools/shots-real-play.js <outdir> [start,lobby,vulture,ostrich,hyena,badger,howto,howfound,carry,catch,over]
 // It starts the game server on port 4172 and plays real turns; BO_* settings slow the computers and fix the hunters' start squares,
 // and the localStorage keys below skip the tutorial, role card and tips so the board is clear. Run `npm run setup:e2e` once first.
 process.env.PORT = 4172; process.env.BO_NOSTORE = '1'; process.env.BO_BOTMS = '4000'; process.env.BO_CLOCKMS = '900000'; process.env.BO_H3START = '8,3'; process.env.BO_H4START = '2,3,4,3';
@@ -62,13 +62,25 @@ const near = (a, c) => Math.max(Math.abs(a[0] - c[0]), Math.abs(a[1] - c[1]));
     // ostrich (computer) steps somewhere that is not the egg's square, then the vulture finds an egg
     const ost = () => { const m = B.ostrichMoves(g).filter(q => !B.eggAt(g, q)).sort((a, c) => near(c, g.vulture) - near(a, g.vulture)); B.ostrichStep(g, m[0]); };
     ost(); await push(); await myTurn(V); await quiet(V);
-    const e2 = B.flyTargets(g).filter(q => B.eggAt(g, q) && !B.isFood(g, q) && q[0] >= 2 && q[0] <= 6 && near(q, g.ostrich) > 2)[0]; console.log('vulture lands on egg', e2); fs.writeFileSync(OUT + '/found.json', JSON.stringify(e2));
+    const e2 = B.flyTargets(g).filter(q => B.eggAt(g, q) && !B.isFood(g, q) && q[0] >= 2 && q[0] <= 6 && q[1]>=1 && q[1]<=5 && near(q, g.ostrich) > 2)[0]; console.log('vulture lands on egg', e2); fs.writeFileSync(OUT + '/found.json', JSON.stringify(e2));
     if (!e2) { console.log('RETRY: no central egg in reach'); await b.close(); server.close(); process.exit(3); }
     await cell(V, ...e2).click(); await V.waitForFunction(() => !UI._S().myTurn, null, { timeout: 5000 }); await sleep(1800); await quiet(V);
     await sleep(1400); await shot(V, 'vulture-b0-just-found'); await howCrop(V, 2, e2); await V.evaluate(() => UI.rules()); await sleep(1800); await shot(V, 'howto-vulture-approved'); await V.evaluate(() => UI.closeRules());
     ost(); await push(); await myTurn(V); await quiet(V);
     await shot(V, 'vulture-b-later-turn-found-egg');
+    const away=B.flyTargets(g).find(q=>!B.eggAt(g,q)&&!B.isRock(g,q)&&!B.isFood(g,q));
+    await cell(V,...away).click();await quiet(V);await shot(V,'vulture-c-lone-found-egg');
+    const lone=await V.evaluate(()=>{const m=document.querySelector('#board .cell.spotted:not(:has(.pc)) .ic-spot .cm-egg');if(!m)return false;const a=m.getBoundingClientRect(),b=m.closest('.cell').getBoundingClientRect();return a.width/b.width<.42&&(a.left-b.left)/b.width<.07&&(a.top-b.top)/b.height<.1;});if(!lone)throw new Error('lone found egg must keep small upper-left slot');
     await V.evaluate(() => UI.card()); await sleep(400); await shot(V,'rolecard-vulture'); await V.context().close();
+  }
+  if (want('carry')) {
+    const O=await solo2(b,'blue');
+    for(const [x,y] of [[2,1],[6,2],[3,5]]){await cell(O,x,y).click();await sleep(150);}
+    await O.waitForFunction(()=>UI._S().phase==='setupOstrich'); await cell(O,3,5).click();
+    await O.waitForFunction(()=>UI._S().phase==='play');room2().aiT=1;const g=room2().g;
+    if(g.turn==='red'){B.vultureFly(g,B.flyTargets(g).find(q=>!B.eggAt(g,q)&&near(q,g.ostrich)>1));await push();}
+    await myTurn(O);const q=B.ostrichMoves(g,true)[0];await O.evaluate(()=>UI.setMode('carry'));await cell(O,...q).click();
+    await O.waitForFunction(()=>UI._S().carried);await quiet(O);await shot(O,'ostrich-d-carried-egg');await O.context().close();
   }
   if (want('howfound')) { // ostrich's view: never label the other player's vulture YOU in its found-egg picture
     const O = await solo2(b, 'blue');
@@ -105,12 +117,12 @@ const near = (a, c) => Math.max(Math.abs(a[0] - c[0]), Math.abs(a[1] - c[1]));
     await shot(O, 'ostrich-b-walked-away'); await O.evaluate(() => UI.card()); await sleep(400); await shot(O,'rolecard-ostrich');
     await O.context().close();
   }
-  if (want('hyena') || want('badger')) {
+  if (want('hyena') || want('badger') || want('catch')) {
     const lobby = async kind => {
       const A = await phone(b), Vp = await phone(b), H = await phone(b);
       await A.goto(U); await A.click('#playFriend'); await A.waitForSelector('#lobbyCode:not(:empty)'); const link = (await A.inputValue('#lobbyLink')).replace(/^http:\/\/[^/]+/, 'http://localhost:4172');
       await Vp.goto(link); await H.goto(link); await A.waitForFunction(() => { const s = LobbyUI.get(); return s && s.setup === '3'; });
-      await A.click('[data-role="blue"]'); await Vp.click('[data-role="red"]'); await H.click('[data-role="' + kind + '"]'); await H.waitForFunction(k => new RegExp('YOU ARE ' + (k === 'badger' ? 'Honey badger' : 'Hyena'), 'i').test(document.body.innerText), kind);
+      await A.click('[data-role="blue"]'); await Vp.click('[data-role="red"]'); await H.click('[data-role="' + kind + '"]'); await H.waitForFunction(k => new RegExp('YOU ARE ' + (k === 'badger' ? 'Badger' : 'Hyena'), 'i').test(document.body.innerText), kind);
       await A.click('#startGame'); await H.waitForSelector('#board .cell'); await A.waitForSelector('#board .cell');
       for (const [x, y] of [[2, 1], [6, 1], [2, 5], [7, 6]]) { await cell(A, x, y).click(); await sleep(120); }
       await Vp.waitForSelector('#actions.mine', { state: 'attached' });
@@ -118,6 +130,25 @@ const near = (a, c) => Math.max(Math.abs(a[0] - c[0]), Math.abs(a[1] - c[1]));
       const act = (role, m) => { if (!server.act3(r3, role, m)) throw new Error('illegal ' + role + JSON.stringify(m)); bc(); };
       return { A, Vp, H, r3, g3, bc, act };
     };
+    if (want('catch')) {
+      const { A, Vp, H, g3, bc, act } = await lobby('hyena');
+      const g=g3();g.turn='hunter';g.three.h=[3,3];g.three.pounce=false;g.vulture=[4,3];g.ostrich=[6,1];bc();await sleep(3400);
+      await shot(Vp,'catch-scramble-0-before');act('hunter',{a:'hmove',p:[4,3]});
+      await Vp.waitForSelector('.push-actor',{timeout:3000});
+      const durations=await Vp.locator('.push-actor').first().evaluate(e=>e.getAnimations().map(a=>a.effect.getTiming().duration));
+      if(!durations.includes(1000))throw new Error('scramble motion must total one second');
+      if(await H.locator('.push-actor').count())throw new Error('hunter saw hidden scramble animation');
+      const lc=await Vp.evaluate(()=>UI._S().h3.lastCatch),n=Math.max(Math.abs(lc.to[0]-lc.at[0]),Math.abs(lc.to[1]-lc.at[1]));
+      if(await Vp.locator('#announce').textContent()!==`You were caught! You fled ${n} square${n===1?'':'s'}.`)throw new Error('caught bird notice');
+      if(await H.locator('#announce').textContent()!=='The hyena caught the vulture!')throw new Error('hunter notice');
+      await shot(Vp,'catch-scramble-1-start');bc();await sleep(300);if(!await Vp.locator('.push-actor').count())throw new Error('duplicate packet interrupted one-second motion');await shot(Vp,'catch-scramble-2-mid');await sleep(650);await shot(Vp,'catch-scramble-3-after');
+      await Vp.emulateMedia({reducedMotion:'reduce'});
+      const prev=await Vp.evaluate(()=>UI._S());g.three.birds.red.catches=0;g.turn='hunter';g.three.pounce=false;g.three.h=[3,3];g.vulture=[4,3];bc();await sleep(100);
+      act('hunter',{a:'hmove',p:[4,3]});await Vp.waitForSelector('.push-motion',{timeout:3000});
+      if(await Vp.locator('.push-actor').count())throw new Error('reduced motion must use static trail');
+      await shot(Vp,'catch-scramble-reduced-motion');
+      for(const p of [A,Vp,H])await p.context().close();
+    }
     if (want('hyena')) {
       const { A, Vp, H, g3, bc, act } = await lobby('hyena');
       g3().ostrich = [7, 1]; g3().vulture = [3, 2]; bc();
@@ -125,7 +156,7 @@ const near = (a, c) => Math.max(Math.abs(a[0] - c[0]), Math.abs(a[1] - c[1]));
       await myTurn(H); await sleep(1500); await quiet(H);
       await shot(H, 'hyena-a-start-of-turn-bird-sensed');
       await cell(H, 6, 3).click(); await sleep(900); await quiet(H); await shot(H, 'hyena-b-after-2-squares-pounce');
-      await H.evaluate(() => UI.card()); await sleep(400); await shot(H,'rolecard-hyena');
+      await H.evaluate(() => UI.card()); await sleep(400); await shot(H,'rolecard-hyena'); await H.click('#rolecard .rok'); await H.evaluate(()=>UI.rules()); await sleep(1800); if(await H.locator('#howPics figcaption').nth(2).textContent()!=='Filled egg: a vulture found an egg.')throw new Error('hunter caption'); await shot(H,'howto-hyena-approved');
       for (const p of [H, Vp, A]) await p.context().close();
     }
     if (want('badger')) {
@@ -138,7 +169,9 @@ const near = (a, c) => Math.max(Math.abs(a[0] - c[0]), Math.abs(a[1] - c[1]));
       await myTurn(Vp); await sleep(300); act('red', { a: 'fly', p: B.flyTargets(g3()).filter(c => !B.isRock(g3(), c) && !B.isFood(g3(), c))[0] });
       await A.waitForFunction(() => { const s = UI._S(); return s && s.phase === 'play' && s.myTurn && !UI._locked(); }, null, { timeout: 20000 }).catch(e => console.log('ostrich turn wait', e.message)); await sleep(400);
       await quiet(A); await shot(A, 'bird-after-badger-dug-in');
-      await H.evaluate(() => UI.card()); await sleep(400); await shot(H,'rolecard-badger');
+      await H.evaluate(()=>{document.querySelectorAll('#msgslot>.h3pop,#snpop').forEach(e=>e.remove());const f=document.createElement('div');f.id='badgerline';f.className='h3pop';f.textContent=BadgerLines.LINES.firstBurrow;document.querySelector('#msgslot').appendChild(f);});await sleep(100);await shot(H,'status-long-fact');
+      await H.evaluate(()=>document.querySelector('#badgerline').remove());
+      await H.evaluate(() => UI.card()); await sleep(400); await shot(H,'rolecard-badger'); await H.click('#rolecard .rok'); await H.evaluate(()=>UI.rules()); await sleep(1800); if(await H.locator('#howPics figcaption').nth(2).textContent()!=='Filled egg: a vulture found an egg.')throw new Error('hunter caption'); await shot(H,'howto-badger-approved');
       for (const p of [H, Vp, A]) await p.context().close();
     }
   }

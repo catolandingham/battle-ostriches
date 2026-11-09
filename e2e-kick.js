@@ -1,4 +1,4 @@
-// Kick on WebKit iPhone 13s (Hunters mode: the host is the ostrich, a friend is the honey badger, two computer seats): the Kick button shows only with an
+// Kick on WebKit iPhone 13s (Hunters mode: the host is the ostrich, a friend is the badger, two computer seats): the Kick button shows only with an
 // animal next to the ostrich, is disabled while Carry is selected, pushes the badger 2 squares, says one line on both phones, shows the badger quote,
 // and tells only the badger's phone which square it landed on. Pictures -> shots/kick/.
 process.env.PORT = 3975; process.env.BO_H4START = '0,0,8,0'; process.env.BO_BOTMS = '200'; process.env.BO_CLOCKMS = '20000';
@@ -20,7 +20,7 @@ const at = { state: 'attached' };
   await A.click('#startGame'); await A.waitForSelector('#board .cell'); await Y.waitForSelector('#board .cell');
   for (const [x, y] of [[2, 1], [6, 1], [2, 5], [1, 4]]) { await cell(A, x, y).click(); await A.waitForTimeout(150); }
   // the start-of-game line reaches every phone, naming only the animals in this game
-  const hunts = 'The vulture hunts eggs. The hyena and honey badger hunt birds.';
+  const hunts = 'The vulture hunts eggs. The hyena and badger hunt birds.';
   for (const [P, name] of [[A, 'ostrich'], [Y, 'badger']]) await P.waitForFunction(t => (document.getElementById('announce') || {}).textContent === t, hunts, { timeout: 15000 }).catch(e => { throw new Error(name + ' phone never showed the start line: ' + e.message); });
   await A.waitForSelector('#actions.mine', { ...at, timeout: 25000 });
   const room = [...server.rooms.values()].find(r => r.hunt), g = room.g;
@@ -48,10 +48,10 @@ const at = { state: 'attached' };
   assert.equal(await A.locator('.cell.legal').count(), 1, 'only the badger glows'); await cell(A, 3, 5).click(); await A.waitForSelector('.kpath'); assert.ok(await A.locator('.karrow').count() === 1 && await A.locator('.kghost').count() === 1, 'the preview shows an arrow, dots and a ghost'); await cell(A, 3, 5).click(); // tap again to kick
   for (let i = 0; i < 100 && !g.lastKick; i++) await A.waitForTimeout(50);
   assert.deepEqual(g.hunt.hs.badger.p, [5, 5], 'pushed 2 squares straight away: ' + JSON.stringify([g.hunt.hs.badger.p, g.hunt.hs.hyena.p, g.vulture, g.ostrich])); assert.deepEqual(g.ostrich, [2, 5], 'the ostrich stays'); assert.equal(g.lastKick.who, 'badger');
-  const line = 'Ostrich kicked the honey badger 2 squares away.';
-  for (const [P, name] of [[A, 'ostrich'], [Y, 'badger']]) await P.waitForFunction(t => (document.getElementById('announce') || {}).textContent === t, line, { timeout: 6000 }).catch(e => { throw new Error(name + ' phone never showed the kick line: ' + e.message); });
+  const line = 'Ostrich kicked the badger 2 squares away.';
+  for (const [P, name] of [[A, 'ostrich'], [Y, 'badger']]) await P.waitForFunction(t => (document.getElementById('announce') || {}).textContent === t, name==='ostrich'?'You, the ostrich, kicked the badger 2 squares away.':'The ostrich kicked you, the badger, 2 squares away.', { timeout: 6000 }).catch(e => { throw new Error(name + ' phone never showed the kick line: ' + e.message); });
   for (const P of [A, Y]) await P.waitForFunction(t => (document.getElementById('badgerline') || {}).textContent === t, BL.LINES.kicked, { timeout: 8000 });
-  assert.equal(BL.LINES.kicked, "Ouch. I mean... honey badger don't care.");
+  assert.equal(BL.LINES.kicked, "Ouch. I mean... badger doesn't care.");
   await shot(A, '3-kick-ostrich'); await shot(Y, '4-kick-badger');
   // everyone is told; only the badger's phone is told the square
   const ka = await A.evaluate(() => UI._S().kick), ky = await Y.evaluate(() => UI._S().kick);

@@ -126,8 +126,12 @@ html #board .cell.sat .youring,html #board .cell.vfound .youring{display:none}
 /* the vulture stands over the crosshair on the egg it found, so it stays visible; the ring still shows around it */
 html #board .cell.vfound>.aim{z-index:3}
 /* a newly found egg pulses twice (found-pulse.js); with reduced motion it only shows */
-@keyframes foundpulse{0%,100%{transform:scale(1)}40%{transform:scale(1.35)}}
+@keyframes foundpulse{0%,100%{opacity:1}40%{opacity:.35}}
 :is(#board,.mini,#howPics) .justfound{animation:foundpulse .55s ease-in-out 2;transform-origin:50% 60%}
-@keyframes foundpulse2{0%,100%{transform:scale(1)}40%{transform:scale(1.06)}}
+@keyframes foundpulse2{0%,100%{opacity:1}40%{opacity:.55}}
 #howPics .realpic.found img{animation:foundpulse2 .55s ease-in-out 2 .3s}
 @media (prefers-reduced-motion:reduce){:is(#board,.mini,#howPics) .justfound,#howPics .realpic.found img{animation:none}}
+
+/* The shared status queue owns the slot while a message is held. Never paint a second line underneath. */
+#app #msgslot[data-status-active]>:not(.status-active):not(#_a):not(#_b){visibility:hidden!important}
+#app #msgslot[data-status-active]>.status-active:not(#_a):not(#_b){visibility:visible!important;animation:none!important;opacity:1!important}
