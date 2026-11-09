@@ -96,3 +96,5 @@
 - 2026-11-08 11:06 PM PT: PR #24 (board look) merged as 3a07f6a.
 - 2026-11-08 11:07 PM PT: Kick is shown as a full-screen cartoon cutaway, version 1 (card slides up like the reminder card), 2 seconds: wind-up, kick, hyena flies off, then back to the board slide. Foot must be seen hitting; target drawn smaller than the ostrich. Replaces the parked kick-foot idea.
 - 2026-11-09 12:05 AM PT: Catch is shown as a full-screen cartoon cutaway (same slide-up card as the kick, 2 seconds): the hunter bites a tail feather as the bird runs, feathers fly, then back to the board with a new claw mark. No pose may read as one animal on top of or behind another. Mockup: catch-cutaway-2b.
+- 2026-11-09 12:08 AM PT: The vulture's stone is a full-screen cutaway: the vulture drops a stone that bonks the target, then back to the board.
+- 2026-11-09 12:12 AM PT: The knock-out is one 2-second cutaway: the feather-bite catch, then the bird gets dizzy and flops over, then back to the board with the bird out. It plays only for players allowed to see that catch.
