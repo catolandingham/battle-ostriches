@@ -15,10 +15,10 @@ Based on `origin/main` at `559a847`, on the new `egg-fixes` branch. Nothing in t
 
 - Hunter server packets previously reused vulture `spotted` egg marks, including shared 5-player marks. Hunters now receive only public hit/stone wreckage, never found-egg coordinates or egg arrays during play; client rendering is defensive too. Actual legal-find tests cover 3p, Hunters and 5p.
 - B&W’s transparent reset hid `.pip.on`. A catch now visibly fills its marker; knockout has a high-contrast OUT state. Tests cover all viewers in all three multiplayer modes and assert a screenshot-visible change, not only a particular marker design.
-- Pushes use an approximately one-second, square-by-square motion with trails, regardless of distance. Reduced motion uses static trails. Only viewer-permitted squares are sent or drawn. A hunter leaving the ostrich’s sight fades at the last visible square; the hunter sees its own whole slide, with no hidden bird square revealed. Never draw a hidden scramble destination; hunters never get the caught bird’s scramble animation. Duplicate packets preserve the animation clock. FX sprite themes use the same separated animal box.
+- Pushes use an approximately one-second, square-by-square motion with trails, regardless of distance. Reduced motion uses static trails. Only viewer-permitted squares are sent or drawn. Brian’s updated rule: the kicking ostrich sees the full actual kick slide and landing beyond normal sight, including an early stop. This event-only exception does not grant ongoing sight or reveal the blocker. The kicked hunter sees its own whole slide, with no hidden bird square revealed; other watchers keep normal sight filtering. Never draw a hidden scramble destination; hunters never get the caught bird’s scramble animation. Duplicate packets preserve the animation clock. FX sprite themes use the same separated animal box.
 - Approved catch notices use the real distance and singular/plural: “You were caught! You fled 2 squares.” Other viewers see “The <hunter> caught the <bird>!” without the destination.
 - Long facts wrap cleanly with padding and an opaque backing at iPhone 13 width. A shared queue holds one status for about a second, prioritizing personal events; no sniff or fact paints over it.
-- Brian’s corrected decision: knocked-out birds have a read-only full-board god view while the game continues, including all eggs and hidden/buried hunters. Living seats keep their normal sight. Hidden kick landings are removed from move notes too; hunter wreckage packets cannot distinguish smashed eggs from empty wrecks. Finished games deliberately reveal all eggs/animals to everyone. Team egg/found-egg sharing is retained and RULEBOOK-v2 now says so.
+- Brian’s corrected decision: knocked-out birds have a read-only full-board god view while the game continues, including all eggs and hidden/buried hunters. Living seats keep their normal sight. Non-kickers’ hidden kick landings are removed from move notes too; hunter wreckage packets cannot distinguish smashed eggs from empty wrecks. Finished games deliberately reveal all eggs/animals to everyone. Team egg/found-egg sharing is retained and RULEBOOK-v2 now says so.
 - The 3p stone adapter incorrectly emitted a badger-pop event when pushing any hunter; it now emits that event only for a genuinely buried badger. Named stone-hit events identify the actual hunter.
 - Delayed taps cannot execute or replace hints in a later game state; duplicate pass-and-play packets no longer cancel the pending handoff timer.
 - Player-facing naming is now **badger / Badger**, including notices, quotes, roles, end screens and rulebook documents.
@@ -27,7 +27,7 @@ Based on `origin/main` at `559a847`, on the new `egg-fixes` branch. Nothing in t
 
 - [Kick on both phones: before / start / mid / after](kick-both-phones.png) · [ostrich strip](kick-ostrich-strip.png) · [hyena strip](kick-hyena-strip.png)
 - [Reduced-motion kick — ostrich](kick-ostrich-reduced.png) · [hyena](kick-hyena-reduced.png)
-- [Contact sheet — 46 phone screenshots (36 prior review states + 10 new kick views)](00-contact-sheet.png)
+- [Contact sheet — 58 phone screenshots (36 prior review states + 22 updated full/early-stop kick views)](00-contact-sheet.png)
 - [Real YOU + egg + bird + 14, plus egg states](eggs-closeup.png)
 - [Enlarged real square with YOU + egg + bird + 14](you-egg-bird-14-closeup.png)
 - [All egg states at real size, 1/14 countdowns, plain/lit squares](eggs-real-size.png) — WebKit at 3× phone pixel density; contact-sheet/combined-sheet copies are scaled.
@@ -54,7 +54,7 @@ Image composition needs Pillow. The game has no runtime dependency on Python or 
 
 ## Wording / test review
 
-[Approved wording and remaining DRAFT proposals](WORDS-FOR-APPROVAL.md). [Complete runs and isolated reruns](TEST-RESULTS.md). The approved two-ostrich reminder is saved there for mockup-first work after icon selection, not newly built here.
+[Approved personal/watcher/team wording and remaining DRAFT extensions](WORDS-FOR-APPROVAL.md). [Complete runs and isolated reruns](TEST-RESULTS.md). The approved two-ostrich reminder is saved there for mockup-first work after icon selection, not newly built here.
 
 ## Merge gate
 

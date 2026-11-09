@@ -6,11 +6,17 @@ Checked by playing each mode on this computer and reading the message the server
 
 The animal is called the badger. A few of the pictures still show the old two-word name, because that rename is a separate change.
 
-## Leaks, worst first
+## Decision updates — Brian, 2026-11-08
+
+The original audit below predates Brian's decisions. Full read-only god view for knocked-out birds, team egg/found-egg sharing and finished-game full reveal are intentional, not current leaks. Found-egg hunter packets and revealing wreckage taps are fixed in PR #23.
+
+**Kick correction:** the kicker must see the full slide and actual landing, even beyond normal sight or when an obstruction stops it early. Only that kicker gets this exception. The kicked hunter sees its own slide; other watchers retain their ordinary sight filtering. An early stop can let the kicker infer a blockage; Brian accepts that trade-off. No extra obstruction coordinate or identity is added. The earlier kick-landing privacy fix is reversed for the kicker only; tests cover normal travel, wrecked-square stops and animal stops in 3p, Hunters and 5p. RULEBOOK 5.2, 7.1 and the sight table now match.
+
+## Original audit observations (superseded where noted)
 
 1. A hunter can see a found egg. In 3 players, Hunters, and 5 players, the phone is sent the square and draws a filled egg. Tapping it says "Found egg". The hunter still cannot see the birds. This matches what Brian reported. Picture: `busy-2026-11-08/3p-hunter-sees-found-egg.jpg`.
 2. A knocked-out bird, while everyone else is still playing, is sent the whole board: every egg, and the hunter's square even if that hunter is buried or far away. The code does this on purpose for a player who is out. The rulebook does not allow it.
-3. When the ostrich kicks a hunter a long way, the board hides the landing, but the ostrich's message still contains that square.
+3. **Accepted kicker-only exception:** after a kick, the ostrich is explicitly allowed the actual landing and full slide, even outside its ordinary sight. Other watchers do not gain it.
 4. In 2 vs 2 and in 5 players, each ostrich is shown the other ostrich's eggs, warmth number and all. The rulebook says an ostrich sees its own eggs. The How to play page says either ostrich can warm any egg, so Brian may want the rulebook changed instead of the code.
 5. In those same modes, the vulture who did not find an egg is still sent the exact square the other vulture found. The How to play page says they share a sniff (yes or no), not the exact egg.
 6. A wrecked square looks the same to everyone, which is right, because nobody can land there. If the wreck used to be an egg, a tap says "Smashed" rather than "Wrecked", so a hunter can learn an egg was there.
@@ -61,7 +67,7 @@ The found-egg mark is the hole. `game.js` line 270 treats a found egg as one of 
 | Hunters | Birds far away | Hunters meet | The words, not the square | "Hyena shoved the badger." No square. Neither hunter drawn. | Pass | `server.js:315` |
 | Hunters | Hyena and badger | Hunters meet | They can see each other | The landing square is sent, and both are drawn. | Pass | `server.js:315` |
 | Hunters | Vulture who cannot see the hyena | Badger bursts and shoves the hyena | Words, not the landing | Landing left out. | Pass | `server.js` burst filter in `stamp` |
-| 3 players | Ostrich | Kicks the hyena 3 squares, landing too far to see | Not the landing square | The board hides it. The message still includes the landing inside the move note. | LEAK, sent, not drawn | `server.js:45` and `server.js:140` |
+| 3 players, Hunters, 5 players | Kicking ostrich only | Kick travels beyond ordinary sight or stops early | Full actual slide and landing, by Brian’s decision | Explicit kick trail, kick landing and move-note landing sent to the kicker; animation follows every step. Other watchers stay filtered. | Intentional exception; tested | `server.js` kicker override in `stamp`; `testviewprivacy.js`; `e2e-motion-views.js` |
 | 3 players | Hyena | Same kick | Its own new square | It has its own square. It does not gain a hidden egg. | Pass | `server.js:120` |
 | All hunter modes | Hunter | Game over | Rules never give eggs | Every egg square, both birds, and the scramble landing are in the message. | LEAK, low, game is over | `server.js:124`, `server.js:112` |
 | All | Everyone | How many eggs are left | A count is not a square | The header shows the count on every phone. | Pass | `public/ui.js` header |

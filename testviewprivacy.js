@@ -14,10 +14,15 @@ for(const mode of ['3p','Hunters','5p']){
  g.phase='over';for(const r of f.roles){const v=f.view(r);A(v.god);A.equal(v.eggs.length,g.eggs.length,mode+' end reveal '+r);}
  console.log('PASS full knockout god view, indistinguishable live hunter wreckage and end reveal '+mode);
  const o=make(S,mode);if(mode==='3p')T.knockout(o.g,o.blue,'caught');else if(mode==='Hunters')H.knockout(o.g,o.blue,'caught','hyena');else TT.knockout(o.g,o.blue,'caught');A.equal(o.g.phase,'play');assertFull(o,o.blue,mode+' out ostrich');
- const k=make(S,mode),q=k.g;q.marks={};q.turn=k.blue;
- if(mode==='5p'){q.b.o1.pos=[3,3];q.b.o2.pos=[0,0];q.b.v1.pos=[8,6];q.b.v2.pos=[0,6];q.h.p=[4,3];A(TT.ostrichKick(q,k.blue,[4,3]));}
- else{q.ostrich=[3,3];q.vulture=[8,6];if(mode==='3p'){q.three.h=[4,3];A(T.ostrichKick3(q,[4,3]));}else{q.hunt.hs.hyena.p=[4,3];q.hunt.hs.badger.p=[8,0];A(H.ostrichKickH(q,[4,3]));}}
- const v=k.view(k.blue);A.equal(v.kick.to,null,mode+' kick landing hidden');A.equal(v.lastAction.to,null,mode+' move note landing hidden');A.equal(v.lastAction.type,'kick');A.deepEqual(v.kick.trail,[[4,3],[5,3],null,null],mode+' only visible kick squares');A.deepEqual(k.view(mode==='Hunters'?'hyena':'hunter').kick.trail,[[4,3],[5,3],[6,3],[7,3]],mode+' kicked hunter sees own complete slide');
+ for(const blocker of ['none','wreck','animal']){const k=make(S,mode),q=k.g;q.marks=blocker==='wreck'?{'7,3':'stone'}:{};q.turn=k.blue;
+ if(mode==='5p'){q.b.o1.pos=[3,3];q.b.o2.pos=[0,0];q.b.v1.pos=[8,6];q.b.v2.pos=blocker==='animal'?[7,3]:[0,6];q.h.p=[4,3];A(TT.ostrichKick(q,k.blue,[4,3]));}
+ else{q.ostrich=[3,3];q.vulture=blocker==='animal'&&mode!=='Hunters'?[7,3]:[8,6];if(mode==='3p'){q.three.h=[4,3];A(T.ostrichKick3(q,[4,3]));}else{q.hunt.hs.hyena.p=[4,3];q.hunt.hs.badger.p=blocker==='animal'?[7,3]:[8,0];A(H.ostrichKickH(q,[4,3]));}}
+ const v=k.view(k.blue),end=blocker==='none'?[7,3]:[6,3],trail=blocker==='none'?[[4,3],[5,3],[6,3],[7,3]]:[[4,3],[5,3],[6,3]];
+ A.deepEqual(v.kick.to,end,mode+' kicker actual landing '+blocker);A.deepEqual(v.lastAction.to,end,mode+' kicker move note actual landing');A.equal(v.kick.moved,trail.length-1);A.deepEqual(v.kick.trail,trail,mode+' kicker full slide');A.deepEqual(k.view(mode==='Hunters'?'hyena':'hunter').kick.trail,trail,mode+' kicked hunter sees own complete slide');
+ if(blocker!=='animal'){const other=k.view(k.red);A.equal(other.kick.to,null,mode+' watching vulture has normal sight');A.equal(other.lastAction?.to,null);A(other.kick.trail.every(p=>p===null));}
+ if(mode==='5p'){A.equal(k.view('o2').kick.to,null,'other ostrich gets no kicker exception');A(k.view('o2').kick.trail.every(p=>p===null));}
+ }
+
 }
 for(const n of [4,5]){const f=make(S,'5p');if(n===4){f.g.n=4;f.g.h=null;f.g.order=f.g.order.filter(r=>r!=='hunter');}A(f.fly());A.equal(f.view('v2').marks['2,1'],'spotted','vulture team shares exact found egg');for(const r of ['o1','o2'])A.equal(f.view(r).eggs.length,2,'ostrich team shares both nests');}
 for(const r of ['o1','v1']){const f=make(S,'5p');f.g.n=4;f.g.h=null;f.g.order=f.g.order.filter(x=>x!=='hunter');TT.knockout(f.g,r,'caught');A.equal(f.g.phase,'play');assertFull(f,r,'2v2 '+r);}

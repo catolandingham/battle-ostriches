@@ -394,7 +394,9 @@ function trailView(room,v,seat,key,from,to,wrap=false,n=3){
 function stamp(room, v, seat) {
   if (v && room && room.g) {
     if (room.g.phase === 'over') v.god = true; // Brian: finished-game full reveal for everyone.
-    // The public kick pin is already viewer-filtered. Never leak its hidden landing in the move note.
+    // Brian: only the kicker may follow the entire kick to its actual landing. Other living seats keep normal sight.
+    if(v.kick&&room.g.lastKick&&seat===(v.kick.by||'blue')){v.kick.to=room.g.lastKick.to.slice();if(v.lastAction&&v.lastAction.type==='kick')v.lastAction={...v.lastAction,to:v.kick.to.slice()};}
+    // Non-kickers must not receive a hidden landing through the move note.
     if (room.g.phase !== 'over' && v.kick && !v.kick.to && v.lastAction && v.lastAction.type === 'kick')
       v.lastAction = { ...v.lastAction, to: null };
   }
@@ -404,8 +406,8 @@ function stamp(room, v, seat) {
       v.h3.dug = t.dug ? { seq: t.dug.seq, round: t.dug.round } : null; v.h3.mound = !over && bur && m && (m.seenBy || []).includes(seat) ? m.at.slice() : null;
       const bs = g.hunt && g.hunt.burst; v.h3.burst = bs ? { seq: bs.seq, round: bs.round, n: bs.n, to: over || v.god || ['hyena', 'badger'].includes(seat) || HU.seen(g, seat, 'hyena') ? bs.to : null } : null; } }
   if (v && room && room.g) { const g = room.g; v.endWhy = g.phase === 'over' ? g.endWhy || null : null; v.stoneNote = g.lastStone ? { seq: g.lastStone.seq, text: g.lastStone.text, by: g.lastStone.by, targets: g.lastStone.targets || [], kicker:g.lastStone.kicker||null } : null;
-    v.smashNote = g.lastSmash ? {seq:g.lastSmash.seq,by:g.lastSmash.by,owner:v.role==='blue'||v.god?g.lastSmash.owner:null} : null;
-    if(v.kick&&g.lastKick){const k=g.lastKick,key=g.team?(k.seat==='hunter'?g.h.kind:k.seat):k.who==='vulture'?'red':k.who;v.kick.trail=trailView(room,v,seat,key,k.from,k.to,true,k.moved||3);v.kick.key=key;}
+    v.smashNote = g.lastSmash ? {seq:g.lastSmash.seq,by:g.lastSmash.by,owner:g.team||v.role==='blue'||v.god?g.lastSmash.owner:null} : null;
+    if(v.kick&&g.lastKick){const k=g.lastKick,key=g.team?(k.seat==='hunter'?g.h.kind:k.seat):k.who==='vulture'?'red':k.who;v.kick.trail=seat===(v.kick.by||'blue')?motionPath(g.cfg,k.from,k.to,true,k.moved||3):trailView(room,v,seat,key,k.from,k.to,true,k.moved||3);v.kick.key=key;}
     if(v.stoneNote)v.stoneNote.trails=(g.lastStone.trails||[]).map(t=>({key:t.key,points:trailView(room,v,seat,t.key,t.from,t.to,false,2)}));
     if(v.h3&&g.hunt){const rv=g.hunt.rival,bs=g.hunt.burst;if(v.h3.rival&&rv)v.h3.rival.trail=trailView(room,v,seat,rv.by==='hyena'?'badger':'hyena',rv.at,rv.to,false,2);if(v.h3.burst&&bs)v.h3.burst.trail=trailView(room,v,seat,'hyena',bs.at,bs.to,false,2);}
 

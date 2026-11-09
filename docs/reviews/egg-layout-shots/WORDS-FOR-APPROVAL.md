@@ -8,28 +8,32 @@
 - Hunter hit by a stone: “A stone hit you!”
 - Egg-smashing vulture: “You smashed an egg!”
 - Ostrich whose egg was smashed: “The vulture smashed your egg!”
-- Hunter watching a smash: “The vulture smashed an egg.”
+- Hunter watching a smash (non-team; team line below): “The vulture smashed an egg.”
 - Hunter that shoves: “You shoved the badger!”
 - Shoved hunter: “The hyena shoved you!”
 
 Use actual hunter names and actual distances, with “1 square” for one. In team modes, references to an ostrich in another player's line use “Ostrich 1” / “Ostrich 2”. Previously approved filled-egg captions and catch/flee notices stay exact except that numbered ostrich identity is now explicit in team bystander lines.
 
+## Additional APPROVED lines, implemented
+
+- Numbered partner find: “Vulture 1 found an egg.” / “Vulture 2 found an egg.” — APPROVED, implemented.
+- Watcher hunter-target kick: “The ostrich kicked the hyena 3 squares!” (or “Ostrich 1 …” / “Ostrich 2 …”).
+- Watcher stone hit: “The vulture's stone hit the hyena!” / “Vulture 1's stone hit the hyena!” / “Vulture 2's stone hit the hyena!”
+- Watcher meeting: “The hyena shoved the badger!” / “The badger shoved the hyena!”
+- Personal burst: “You burst out and shoved the hyena 2 squares!” / “The badger burst out and shoved you 2 squares!”
+- Watcher burst: “The badger burst out and shoved the hyena 2 squares!”
+- Team-smash watcher: “The vulture smashed Ostrich 1's egg!” / “… Ostrich 2's egg!”
+Use the real mover, target and distance, with “1 square” for one; numbered Ostrich 1 / Ostrich 2 and Vulture 1 / Vulture 2 in team references. Team smash uses the named egg owner for watching team seats, while the smasher and egg owner keep their approved personal lines. Partner-find notices name the actual finder, never “teammate”.
+
 ## DRAFT, still needs approval
 
-- “Your teammate found an egg.”
-- Third-person kick: “The ostrich kicked the hyena 3 squares!” (or “Ostrich 1 …” / “Ostrich 2 …”).
 - Numbered stone-kickback watcher: “Ostrich 1 kicked the stone right back!” / “… Ostrich 2 …”.
-- Third-person stone hit: “The vulture's stone hit the hyena.”
-- Third-person meeting: “Hyena shoved the badger.” / “Badger shoved the hyena.”
-- Personal burst: “You, the badger, burst out and shoved the hyena 2 squares.” / “The badger burst out and shoved you, the hyena, 2 squares.”
-- Third-person burst: “The badger burst out and shoved the hyena back 2 squares!”
-- Teammate's smashed egg: “The vulture smashed Ostrich 1's egg!” / “… Ostrich 2's egg!”
 - Kick variants when the target is the vulture, and a stone hitting both hunters together, remain draft extensions.
 
-Third-person catch keeps the already approved “The <hunter> caught the <bird>!” template, using numbered ostrich names in team games. Other watcher lines remain drafts even when earlier code used similar words.
+Third-person catch keeps the already approved “The <hunter> caught the <bird>!” template, using numbered ostrich names in team games. Other watcher extensions not explicitly listed above remain drafts.
 
 ## Approved but deferred
 
 “Help warm your teammate's eggs, but eat for yourself.” — ostriches in 2v2 / 5p; mockup first when reminder work resumes.
 
-Big scenes are NOT built or timed by this PR. Brian wants to see examples first, leaning toward about two seconds; no duration or tap-to-skip design is locked in. Ordinary board motion is about one second, with reduced-motion static trails and viewer-filtered squares only.
+Big scenes are NOT built or timed by this PR. Brian wants to see examples first, leaning toward about two seconds; no duration or tap-to-skip design is locked in. Ordinary board motion is about one second, with reduced-motion static trails and viewer-permitted squares only, including the kicker-only full-slide/actual-landing exception.

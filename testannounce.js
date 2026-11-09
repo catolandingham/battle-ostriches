@@ -23,8 +23,8 @@ const lineFor = (v, seat) => { const lc = v.h3.lastCatch; return CT.catchLine(lc
 
 // ---- the words
 ok('the lines: hunters meeting (both ways) and the badger coming out of its burrow', () => {
-  assert.equal(CT.rivalLine({ by: 'badger', n: 2 }), 'Badger shoved the hyena.');
-  assert.equal(CT.rivalLine({ by: 'hyena', n: 2 }), 'Hyena shoved the badger.');
+  assert.equal(CT.rivalLine({ by: 'badger', n: 2 }), 'The badger shoved the hyena!');
+  assert.equal(CT.rivalLine({ by: 'hyena', n: 2 }), 'The hyena shoved the badger!');
   assert.equal(CT.popOutLine(), 'Badger popped up!'); });
 ok('the start-of-game line names only the animals in that game, in every mode', () => {
   assert.equal(R.huntLine('2'), 'The vulture hunts eggs.');
@@ -76,9 +76,9 @@ ok('the first hunters meeting on a page is announced; a page opened mid-game say
   const mk = (rv, ph = 'play') => ({ phase: ph, h3: { rival: rv || null } }), seen = { pop: 0, rival: 0 };
   assert.deepEqual(CT.newEvents(seen, mk(null), {}), []);
   const first = CT.newEvents(seen, mk({ by: 'badger', seq: 3, n: 2, to: null }), mk(null));
-  assert.equal(first.length, 1, 'the first meeting this page sees'); assert.equal(first[0].text, 'Badger shoved the hyena.'); assert.equal(first[0].square, null, 'a blind bird: line, no square');
+  assert.equal(first.length, 1, 'the first meeting this page sees'); assert.equal(first[0].text, 'The badger shoved the hyena!'); assert.equal(first[0].square, null, 'a blind bird: line, no square');
   assert.deepEqual(CT.newEvents(seen, mk({ by: 'badger', seq: 3, n: 2, to: null }), mk(null)), [], 'the same meeting is not announced twice');
-  const second = CT.newEvents(seen, mk({ by: 'hyena', seq: 5, n: 2, to: [2, 3] }), mk(null)); assert.equal(second.length, 1); assert.deepEqual(second[0].square, [2, 3]); assert.match(second[0].text, /^Hyena shoved/);
+  const second = CT.newEvents(seen, mk({ by: 'hyena', seq: 5, n: 2, to: [2, 3] }), mk(null)); assert.equal(second.length, 1); assert.deepEqual(second[0].square, [2, 3]); assert.match(second[0].text, /^The hyena shoved/);
   const mid = { pop: 0, rival: 0 }; assert.deepEqual(CT.newEvents(mid, mk({ by: 'badger', seq: 2, n: 2 }), null), [], 'opened mid-game: no replay'); assert.equal(mid.rival, 2);
   CT.newEvents(seen, mk(null, 'setupEggs'), mk(null)); assert.equal(seen.rival, 0, 'a new game resets the counters');
   assert.equal(CT.newEvents(seen, mk({ by: 'badger', seq: 1, n: 2 }), mk(null)).length, 1, 'meeting number 1 of the next game shows even though the last game ended on a higher number');

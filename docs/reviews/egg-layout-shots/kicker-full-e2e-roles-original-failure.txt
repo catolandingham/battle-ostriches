@@ -1,0 +1,7 @@
+Battle Ostriches on http://localhost:3980
+ok 3 phones: own card only, tap closes, once, How to play reopens
+ok solo pick: no "We picked" line; Start-chosen animal: the line shows
+page.waitForFunction: Timeout 30000ms exceeded.
+    at /workspace/bo-lobby/e2e-roles.js:106:13 {
+  name: 'TimeoutError'
+}

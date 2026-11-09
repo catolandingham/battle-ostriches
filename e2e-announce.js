@@ -6,7 +6,7 @@ const { webkit, devices } = require('playwright-core'); const assert = require('
 const server = require('./server.js'), H = require('./hunt.js'), HA = require('./huntai.js');
 const U = 'http://localhost:3960/', OUT = 'shots/announce/'; fs.mkdirSync(OUT, { recursive: true });
 const START = 'The vulture hunts eggs. The hyena and badger hunt birds.';
-const MEET = 'Badger shoved the hyena.';
+const MEET = 'The badger shoved the hyena!';
 (async () => {
   const b = await webkit.launch(), errs = [];
   const mk = async name => { const c = await b.newContext({ ...devices['iPhone 13'] }); const p = await c.newPage();

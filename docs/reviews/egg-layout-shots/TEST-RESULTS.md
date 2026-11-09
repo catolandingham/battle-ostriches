@@ -1,4 +1,25 @@
-# Current correction: knocked-out birds KEEP god view
+# Current correction: kicker sees the full actual slide
+
+Brian's 2026-11-08 decision reverses kick-landing filtering for the kicker only. Full travel and stopped-early kicks animate every actual square in about one second; non-kickers retain normal sight. Explicit server event trails do not expose unrelated obstruction positions or grant ongoing hunter sight. Knocked-out full god views remain unchanged.
+
+Numbered partner finds, named team-smash messages, watcher kick/stone/meeting and all three burst perspectives are approved and implemented. Numbered kickback watcher and vulture-target kick extensions remain DRAFT.
+
+Verified 2026-11-08 17:29 PST; suites ran sequentially.
+
+- **Complete `npm test`: 54/55 suites PASS.** [Full summary](kicker-full-npm-test.txt), source log `/workspace/bw/kicker-full-npm-test.log`. The only failure was `e2e-roles.js`, a 30-second wait for a 2v2 setup state acknowledgement at line 106. [Original diagnostic](kicker-full-e2e-roles-original-failure.txt) retained.
+- The failed `e2e-roles.js` was rerun **ALONE, unchanged: 1/1 PASS** (30 seconds). No production or test changes were made for this rerun. Thus all 55 suites have passing results across the complete run plus isolated rerun; this is **not** represented as a clean 55/55 complete run. [Exact reruns](kicker-full-isolated-reruns.txt).
+- Initial focused preflight: **4/5**. `testannounce.js` retained a legacy `/^Hyena shoved/` assertion; updated to the approved “The hyena shoved…” wording, then reran **ALONE: 1/1 PASS**. Follow-up approved-message/rules preflight **4/4**; badger kick E2E **1/1**. The complete run also passes these suites.
+- All 13 consistency walks / **366 checks, no browser errors** (652 seconds). Pulse/reduced motion, catch markers, team sharing, full knocked-out god views, hunter egg privacy, hidden catch-scramble locations, status queue and prior input fixes still pass.
+- Kicker gets the complete explicit server kick trail and actual landing, including early stops before a wreck or an animal (hidden badger obstruction included), in **3p, Hunters and 5p**. Far watching vultures and the other ostrich retain normal filtering. The kicked hunter sees its own full path. The event grants no ongoing hunter sight or separately transmitted blocker coordinate/identity; an inference from an early stop is an accepted trade-off.
+- `e2e-motion-views.js` passes with **22 freshly generated phone captures**: full three-square and stopped-early two-square kicks, five frames per sequence per phone, plus static reduced-motion trails. Duplicate packets preserve the full slide. The capture fixture now clears stale prior action notices before the second sequence. Frame strips show the current complete-run images, not stale earlier captures.
+- [Ostrich strip](kick-ostrich-strip.png), [hyena strip](kick-hyena-strip.png), [both](kick-both-phones.png); 58-screen contact sheet (36 prior review states + 22 updated kick views). Runtime code stayed unchanged after the complete run began.
+- Exact approved numbered partner-find/team-smash and watcher kick/stone/meeting/burst wording is implemented. Numbered kickback watcher, vulture-target kick and multi-hunter stone extensions remain drafts. Big-scene duration/skip design remains unapproved and unbuilt; ordinary board movement is about one second.
+
+
+---
+Earlier completed results follow; their kicker-fade assertions/frames are superseded by the current full-slide decision above.
+
+# Previous completed correction: knocked-out birds KEEP god view (28de96c)
 
 Brian corrected the earlier interpretation on 2026-11-08. The filtering discussed in the historical results below is removed. Current tests require full read-only knockout views in 3p, Hunters, 2v2 and 5p, plus Classic full reveal when its knockout ends the game. Living hunter egg privacy and living-player kick/scramble filtering remain. Exact approved interaction lines and viewer-filtered, one-second board movement are also included.
 

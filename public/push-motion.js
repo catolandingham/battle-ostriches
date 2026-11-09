@@ -38,7 +38,7 @@
   // Duplicate state packets may redraw the board during a push. Keep the original
   // one-second clock and bind the newly drawn destination piece, rather than jumping.
   stage.querySelectorAll('.push-motion').forEach(layer=>{
-   if(pending.length||!same(current[layer._key],layer._to)){layer._finish();return;}
+   if(pending.length||layer._stamp!==JSON.stringify([s.turn,s.round,s.lastAction,current])){layer._finish();return;}
    const c=board.children[layer._to[1]*s.cfg.cols+layer._to[0]],a=c&&c.querySelector(layer._selector);
    if(a&&layer._moving){a.style.visibility='hidden';layer._hidden.push(a);}
   });
@@ -46,13 +46,17 @@
    if(ev.points.some(p=>!valid(p))){partial(ev,s,board,stage,current);continue;}
    const last=ev.points[ev.points.length-1],cell=board.children[last[1]*s.cfg.cols+last[0]];if(!cell)continue;
    const cls=ev.key==='blue'||/^o\d/.test(ev.key)?'.po':ev.key==='red'||/^v\d/.test(ev.key)?'.pv':'.ph.h'+ev.key;
-   const actor=cell.querySelector('.pc'+cls);if(!actor)continue;
+   let actor=cell.querySelector('.pc'+cls),temporary=false;
+   // A kicker receives an explicit full server trail even beyond ordinary sight; draw only that event, never infer positions.
+   if(!actor&&s.kick&&ev.key===s.kick.key&&s.kick.trail&&s.kick.trail.every(valid)&&(ev.key==='hyena'||ev.key==='badger')){actor=document.createElement('div');actor.className='pc ph h'+ev.key;actor.innerHTML=window.T3UI.KIND[ev.key].art;cell.appendChild(actor);temporary=true;}
+   if(!actor)continue;
    const sr=stage.getBoundingClientRect(),ar=actor.getBoundingClientRect();
+   if(temporary)actor.remove();
    const points=ev.points.map(p=>{const c=board.children[p[1]*s.cfg.cols+p[0]],r=c.getBoundingClientRect();return {x:r.left-sr.left+r.width/2,y:r.top-sr.top+r.height/2};});
    const layer=document.createElement('div');layer.className='push-motion';layer.setAttribute('aria-hidden','true');Object.assign(layer.style,{position:'absolute',inset:'0',pointerEvents:'none',zIndex:'190'});
    const NS='http://www.w3.org/2000/svg',svg=document.createElementNS(NS,'svg');svg.setAttribute('width',stage.clientWidth);svg.setAttribute('height',stage.clientHeight);svg.style.cssText='position:absolute;inset:0;overflow:visible;pointer-events:none';
    for(let i=1;i<points.length;i++){const p=points[i-1],q=points[i];if(Math.abs(p.x-q.x)>board.clientWidth/2||Math.abs(p.y-q.y)>board.clientHeight/2)continue;const line=document.createElementNS(NS,'line');for(const [k,v] of Object.entries({x1:p.x,y1:p.y,x2:q.x,y2:q.y,stroke:'currentColor','stroke-width':2,'stroke-dasharray':'3 3'}))line.setAttribute(k,v);svg.appendChild(line);}
-   layer.dataset.sprite=ev.key==='blue'||/^o\d/.test(ev.key)?'o':ev.key==='red'||/^v\d/.test(ev.key)?'v':'h';layer._key=ev.key;layer._to=last;layer._selector='.pc'+cls;layer._hidden=[actor];
+   layer.dataset.sprite=ev.key==='blue'||/^o\d/.test(ev.key)?'o':ev.key==='red'||/^v\d/.test(ev.key)?'v':'h';layer._stamp=JSON.stringify([s.turn,s.round,s.lastAction,current]);layer._key=ev.key;layer._to=last;layer._selector='.pc'+cls;layer._hidden=[actor];
    layer._finish=()=>{if(layer._done)return;layer._done=true;layer._hidden.forEach(a=>a.style.visibility='');layer.remove();};
    layer.appendChild(svg);stage.appendChild(layer);
    const reduced=matchMedia('(prefers-reduced-motion:reduce)').matches;layer._moving=!reduced;layer.dataset.moving=reduced?'0':'1';

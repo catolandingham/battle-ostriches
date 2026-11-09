@@ -1,5 +1,10 @@
 # Busy screen, 2026-11-08
 
+## Decision update — Brian, 2026-11-08
+
+The original screenshots/observations below are historical. PR #23 now uses the approved personal and watcher kick/stone/meeting/burst lines, numbered partner-find and team-smash messages (see `egg-layout-shots/WORDS-FOR-APPROVAL.md`). The kicker sees the full actual kick slide/landing, including early stops outside normal sight; other watchers keep their normal rules. Ordinary movement stays about one second. Big-scene samples are still required: no duration or tap-to-skip design is approved or built here.
+
+
 The start of a game puts too many things in front of the player at once. When a bird is caught, that player often cannot tell it was them. The same problem shows up in the other two-animal moments: a kick, a stone, the hunters meeting, the badger bursting out, and a stone kicked back.
 
 Pictures are iPhone size (390 by 664), from real games, the same setup as `tools/shots-real-play.js`. The tutorial, the role card and the tips were left off, so these are the boards a returning player gets. Every picture is in `docs/reviews/busy-2026-11-08/`. The clock in the pictures says 120 seconds because the test slowed it down so a turn would not expire. A real game uses that same bar with a 10-second clock.

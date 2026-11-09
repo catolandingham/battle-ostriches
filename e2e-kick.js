@@ -1,6 +1,6 @@
 // Kick on WebKit iPhone 13s (Hunters mode: the host is the ostrich, a friend is the badger, two computer seats): the Kick button shows only with an
 // animal next to the ostrich, is disabled while Carry is selected, pushes the badger 2 squares, says one line on both phones, shows the badger quote,
-// and tells only the badger's phone which square it landed on. Pictures -> shots/kick/.
+// and tells both the kicker and kicked badger the actual landing, without changing ordinary ongoing sight. Pictures -> shots/kick/.
 process.env.PORT = 3975; process.env.BO_H4START = '0,0,8,0'; process.env.BO_BOTMS = '200'; process.env.BO_CLOCKMS = '20000';
 const { webkit, devices } = require('playwright-core'); const assert = require('assert'), fs = require('fs');
 const server = require('./server.js'), BL = require('./public/badgerlines.js'); const U = 'http://localhost:3975/', OUT = 'shots/kick/'; fs.mkdirSync(OUT, { recursive: true });
@@ -53,9 +53,9 @@ const at = { state: 'attached' };
   for (const P of [A, Y]) await P.waitForFunction(t => (document.getElementById('badgerline') || {}).textContent === t, BL.LINES.kicked, { timeout: 8000 });
   assert.equal(BL.LINES.kicked, "Ouch. I mean... badger doesn't care.");
   await shot(A, '3-kick-ostrich'); await shot(Y, '4-kick-badger');
-  // everyone is told; only the badger's phone is told the square
+  // Both participants get the actual landing; this does not grant ongoing sight.
   const ka = await A.evaluate(() => UI._S().kick), ky = await Y.evaluate(() => UI._S().kick);
-  assert.equal(ka.who, 'badger'); assert.equal(ky.who, 'badger'); assert.equal(ka.to, null, 'the ostrich is 3 squares away: it cannot see where the badger landed'); assert.deepEqual(ky.to, [5, 5]);
+  assert.equal(ka.who, 'badger'); assert.equal(ky.who, 'badger'); assert.deepEqual(ka.to, [5, 5], 'the kicker sees the actual landing beyond ordinary sight'); assert.deepEqual(ky.to, [5, 5]);
   assert.equal(await A.locator('.pc.ph').count(), 0, 'no hunter drawn on the ostrich\'s board'); assert.equal(await Y.locator('.pc.ph.mine').count(), 1);
   // the turn passed to the next seat, and the Kick button is gone
   await A.waitForFunction(() => !document.querySelector('#actions.mine'));

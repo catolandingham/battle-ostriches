@@ -55,8 +55,8 @@ ok('the words: one line every phone gets, the Brian wording, and the badger quot
   assert.equal(CT.kickLine('badger', 2, 2), 'Ostrich kicked the badger 2 squares away.'); assert.equal(CT.kickLine('hyena', 1, 2), 'Ostrich kicked the hyena 1 square away.');
   assert.equal(CT.kickLine('hyena', 0, 2), 'Kick blocked.');
   assert.equal(CT.popOutLine(), 'Badger popped up!');
-  assert.equal(CT.rivalLine({ by: 'badger', n: 2 }), 'Badger shoved the hyena.');
-  assert.equal(CT.rivalLine({ by: 'hyena', n: 2 }), 'Hyena shoved the badger.');
+  assert.equal(CT.rivalLine({ by: 'badger', n: 2 }), 'The badger shoved the hyena!');
+  assert.equal(CT.rivalLine({ by: 'hyena', n: 2 }), 'The hyena shoved the badger!');
   assert.equal(BL.LINES.kicked, "Ouch. I mean... badger doesn't care."); assert.equal(BL.WHO.kicked, 'all');
   const mk = (k, who = 'blue') => ({ role: who, phase: 'play', turn: 'hunter', h3: { kind: 'badger' }, kick: k });
   for (const who of ['blue', 'red', 'hunter']) assert.deepEqual(BL.detect(mk(null, who), mk({ who: 'badger', seq: 1 }, who), BL.createPicker()).map(e => e.event), ['kicked'], who + ' sees the badger quote for a kicked badger');

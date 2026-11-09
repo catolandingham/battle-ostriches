@@ -11,6 +11,8 @@ The animal is called the badger.
 - 2026-11-08: Same-size top-left eggs; countdown inside square; lone egg small in top-left.
 - 2026-11-08: Hunters caption: “Filled egg: a vulture found an egg.”; fun-fact box fits its text.
 - 2026-11-08: Fix hunter found-egg leak server-side (another worker); catch pips visibly change, with tests.
+- 2026-11-08: Kicker sees the entire actual kick slide/landing, including early stops outside ordinary sight; other watchers keep normal sight.
+- 2026-11-08: Numbered partner-find/team-smash and watcher kick/stone/meeting/burst lines approved; see `reviews/egg-layout-shots/WORDS-FOR-APPROVAL.md`.
 - 2026-11-08: Push slide square by square with trail, about 1 second total; respect reduced motion and hide scramble destinations.
 - 2026-11-08: Approved notices: “You were caught! You fled 2 squares.” / “The hyena caught the vulture!” with actual animals and no scramble location.
 - 2026-11-08: Who-sees-what audit across every mode and role.

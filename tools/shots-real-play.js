@@ -133,19 +133,22 @@ const near = (a, c) => Math.max(Math.abs(a[0] - c[0]), Math.abs(a[1] - c[1]));
     if (want('kick')) {
       const {A,Vp,H,g3,bc,act}=await lobby('hyena'),g=g3();g.turn='blue';g.ostrich=[3,3];g.vulture=[8,6];g.three.h=[4,3];g.three.pounce=false;bc();await sleep(3400);
       await shot(A,'kick-ostrich-0-before');await shot(H,'kick-hyena-0-before');act('blue',{a:'kick',p:[4,3]});
-      await A.waitForSelector('.partial-motion .push-actor');await H.waitForSelector('.push-motion .push-actor');
-      const fade=await A.locator('.partial-motion .push-actor').evaluate(e=>e.getAnimations()[0].effect.getKeyframes().some(f=>f.opacity===0||f.opacity==='0'));if(!fade)throw new Error('missing sight-edge fade');
+      await A.waitForSelector('.push-motion .push-actor');await H.waitForSelector('.push-motion .push-actor');
       const ka=await A.evaluate(()=>UI._S().kick),kh=await H.evaluate(()=>UI._S().kick);
-      if(ka.to!==null||ka.trail.some(p=>p&&Math.max(Math.abs(p[0]-3),Math.abs(p[1]-3))>2))throw new Error('kick leaked a hidden landing/path square');
-      if(ka.trail.filter(Boolean).length!==2||kh.trail.filter(Boolean).length!==4)throw new Error('kick must fade at sight edge, while own phone sees all three steps');
+      if(JSON.stringify(ka.to)!=='[7,3]'||ka.trail.filter(Boolean).length!==4||kh.trail.filter(Boolean).length!==4)throw new Error('kicker and kicked hunter must see all three steps and actual landing');
       if(await H.locator('#board .pc.po').count())throw new Error('hunter learned a hidden ostrich position');
       if(!await A.locator('#board .pc.po .kick-leg').count()||!await H.locator('#h3bar [data-b="blue"] .kick-leg').count())throw new Error('missing viewer-correct kick cause');
       await shot(A,'kick-ostrich-1-start');await shot(H,'kick-hyena-1-start');bc();await sleep(300);
-      if(!await A.locator('.partial-motion .push-actor').count())throw new Error('duplicate packet interrupted partial slide');
-      await shot(A,'kick-ostrich-2-mid');await shot(H,'kick-hyena-2-mid');await sleep(750);await shot(A,'kick-ostrich-3-after');await shot(H,'kick-hyena-3-after');
-      await A.emulateMedia({reducedMotion:'reduce'});await H.emulateMedia({reducedMotion:'reduce'});g.turn='blue';g.three.h=[4,3];bc();await sleep(100);act('blue',{a:'kick',p:[4,3]});await A.waitForSelector('.partial-motion');
+      if(!await A.locator('.push-motion .push-actor').count())throw new Error('duplicate packet interrupted full kicker slide');
+      await shot(A,'kick-ostrich-2-mid');await shot(H,'kick-hyena-2-mid');await sleep(350);await shot(A,'kick-ostrich-2b-landing');await shot(H,'kick-hyena-2b-landing');await sleep(400);await shot(A,'kick-ostrich-3-after');await shot(H,'kick-hyena-3-after');
+      await A.emulateMedia({reducedMotion:'reduce'});await H.emulateMedia({reducedMotion:'reduce'});g.turn='blue';g.three.h=[4,3];bc();await sleep(100);act('blue',{a:'kick',p:[4,3]});await A.waitForSelector('.push-motion');
       if(await A.locator('.push-actor').count()||await H.locator('.push-actor').count())throw new Error('reduced-motion kick must have static trails only');
-      await shot(A,'kick-ostrich-reduced');await shot(H,'kick-hyena-reduced');for(const p of [A,Vp,H])await p.context().close();
+      await shot(A,'kick-ostrich-reduced');await shot(H,'kick-hyena-reduced');
+      await A.emulateMedia({reducedMotion:'no-preference'});await H.emulateMedia({reducedMotion:'no-preference'});g.turn='blue';g.three.h=[4,3];g.marks['7,3']='stone';g.lastAction=null;g.lastKick=null;bc();await sleep(3400);
+      await shot(A,'kick-stopped-ostrich-0-before');await shot(H,'kick-stopped-hyena-0-before');act('blue',{a:'kick',p:[4,3]});await A.waitForSelector('.push-motion .push-actor');await H.waitForSelector('.push-motion .push-actor');
+      for(const page of [A,H]){const k=await page.evaluate(()=>UI._S().kick);if(k.moved!==2||JSON.stringify(k.to)!=='[6,3]'||k.trail.filter(Boolean).length!==3)throw new Error('stopped kick must show actual two-step landing');}
+      await shot(A,'kick-stopped-ostrich-1-start');await shot(H,'kick-stopped-hyena-1-start');await sleep(350);await shot(A,'kick-stopped-ostrich-2-mid');await shot(H,'kick-stopped-hyena-2-mid');await sleep(350);await shot(A,'kick-stopped-ostrich-2b-landing');await shot(H,'kick-stopped-hyena-2b-landing');await sleep(400);await shot(A,'kick-stopped-ostrich-3-after');await shot(H,'kick-stopped-hyena-3-after');
+      for(const p of [A,Vp,H])await p.context().close();
     }
     if (want('catch')) {
       const { A, Vp, H, g3, bc, act } = await lobby('hyena');
