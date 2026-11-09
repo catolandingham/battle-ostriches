@@ -4,21 +4,20 @@
 const $=id=>document.getElementById(id),key=p=>p[0]+','+p[1],D=(a,b)=>Math.max(Math.abs(a[0]-b[0]),Math.abs(a[1]-b[1]));
 // --- marks: bold, one per square, distinct by SHAPE and colour, same in every theme ---
 const HYENA='<svg viewBox="0 0 40 40" aria-hidden="true"><path d="M4 30 L8 17 L14 13 L27 13 L31 9 L33 3 L36 9 L38 17 L32 21 L30 30 L26 30 L25 23 L14 23 L12 30 Z" fill="#e0a34a" stroke="#1d1206" stroke-width="2.6" stroke-linejoin="round"/><path d="M8 17 L4 9 L12 14" fill="#e0a34a" stroke="#1d1206" stroke-width="2.4" stroke-linejoin="round"/><circle cx="15" cy="17" r="2.2" fill="#3b2410"/><circle cx="21" cy="19" r="2" fill="#3b2410"/><circle cx="26" cy="16" r="1.8" fill="#3b2410"/><path d="M8 13 L22 10" stroke="#3b2410" stroke-width="3" stroke-linecap="round"/><circle cx="33" cy="12" r="1.8" fill="#000"/><path d="M36 17 L32 18" stroke="#1d1206" stroke-width="2"/></svg>';
-// The honey badger, face on: a white face with two dark stripes and angry brows (Brian, 2026-11-08).
+// The badger, face on: a white face with two dark stripes and angry brows (Brian, 2026-11-08).
 const BADGER='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" aria-hidden="true"><circle cx="8.5" cy="11" r="4.2" fill="#1a1512" stroke="#1a120c" stroke-width="2.4" stroke-linejoin="round"/><circle cx="31.5" cy="11" r="4.2" fill="#1a1512" stroke="#1a120c" stroke-width="2.4" stroke-linejoin="round"/><path d="M4 17C4 9 11 4 20 4C29 4 36 9 36 17C36 27 27 38 20 38C13 38 4 27 4 17Z" fill="#f4f1ea" stroke="#1a120c" stroke-width="2.4" stroke-linejoin="round"/><path d="M9 8C11 16 14 25 17.5 34L13.5 33C10 26 6.5 18 6 11Z" fill="#1a1512"/><path d="M31 8C29 16 26 25 22.5 34L26.5 33C30 26 33.5 18 34 11Z" fill="#1a1512"/><path d="M8.5 17.5L15.5 20M31.5 17.5L24.5 20" stroke="#1a1512" stroke-width="2.6" stroke-linecap="round"/><circle cx="12.6" cy="21.4" r="2.1" fill="#fff"/><circle cx="27.4" cy="21.4" r="2.1" fill="#fff"/><circle cx="12.9" cy="21.6" r="1" fill="#111"/><circle cx="27.1" cy="21.6" r="1" fill="#111"/><ellipse cx="20" cy="34" rx="3.6" ry="2.6" fill="#111"/></svg>';
 const MOUND='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" aria-hidden="true"><path d="M2 36 Q8 8 20 6 Q32 8 38 36 Z" fill="#f6e2a8" stroke="#1a1008" stroke-width="3.2" stroke-linejoin="round"/><path d="M10 26 q3-2 6 0M24 22 q3-2 6 0M16 32 q3-2 6 0" stroke="#6b4420" stroke-width="2.2" fill="none" stroke-linecap="round"/><circle cx="17" cy="20" r="2.6" fill="#fff" stroke="#111" stroke-width="1"/><circle cx="23" cy="20" r="2.6" fill="#fff" stroke="#111" stroke-width="1"/><circle cx="17" cy="20.6" r="1.2" fill="#111"/><circle cx="23" cy="20.6" r="1.2" fill="#111"/></svg>';
-const CLAW='<svg viewBox="0 0 40 40" aria-hidden="true"><path d="M10 6 L18 34 M19 4 L25 34 M28 6 L32 32" stroke="#000" stroke-width="8" stroke-linecap="round"/><path d="M10 6 L18 34 M19 4 L25 34 M28 6 L32 32" stroke="#ff2a6d" stroke-width="4.5" stroke-linecap="round"/></svg>';
 const OSTI='<svg viewBox="0 0 40 40"><path d="M6 26 L18 18 L30 22 L24 32 L10 32 Z" fill="#38d6f0" stroke="#000" stroke-width="3" stroke-linejoin="round"/><path d="M26 22 L28 6 L34 7" fill="none" stroke="#000" stroke-width="4" stroke-linecap="round"/></svg>';
 const VULI='<svg viewBox="0 0 40 40"><path d="M4 18 L20 12 L36 18 L26 22 L20 32 L14 22 Z" fill="#2b3245" stroke="#000" stroke-width="3" stroke-linejoin="round"/><circle cx="20" cy="11" r="5" fill="#f3dfae" stroke="#000" stroke-width="2.5"/></svg>';
 const KIND={hyena:{n:'Hyena',art:HYENA,pw:'Pounce',pwTxt:'Pounce: missed? Move 1 more.'},
- badger:{n:'Honey badger',art:BADGER,pw:'Burrow',pwTxt:'Burrow: stay still to hide.'}};
+ badger:{n:'Badger',art:BADGER,pw:'Burrow',pwTxt:'Burrow: stay still to hide.'}};
 const BN={blue:'Ostrich',red:'Vulture',hunter:'Hunter'};
 const hName=S=>S.h3&&S.h3.kind?KIND[S.h3.kind].n:'Hunter';
 const tname=(S,r)=>r==='hunter'?hName(S):r==='hyena'||r==='badger'?KIND[r].n:(S&&S.h3&&S.h3.team?{o1:'Ostrich 1',o2:'Ostrich 2',v1:'Vulture 1',v2:'Vulture 2'}[r]:0)||BN[r];
 const sp=(svg,px)=>`<span class="h3i" style="width:${px}px;height:${px}px">${svg}</span>`;
 // --- lobby: Classic 2-player by default (the old simple lobby). Bigger modes sit behind a small "More players" link:
 // 3, 4 (2 vs 2 or Hunters) and 5. Picking one routes both play buttons into a setup step (your seat, friend/computer for the rest). ---
-const SN={o1:'Ostrich 1',o2:'Ostrich 2',v1:'Vulture 1',v2:'Vulture 2',blue:'Ostrich',red:'Vulture',hunter:'Hunter',hyena:'Hyena',badger:'Honey badger'};
+const SN={o1:'Ostrich 1',o2:'Ostrich 2',v1:'Vulture 1',v2:'Vulture 2',blue:'Ostrich',red:'Vulture',hunter:'Hunter',hyena:'Hyena',badger:'Badger'};
 const SEATS={'3':['blue','red','hunter'],'4':['o1','v1','o2','v2'],'4h':['blue','red','hyena','badger'],'5':['o1','v1','o2','v2','hunter']};
 const MODES=[['2','Classic','2 players'],['3','3','+ hunter'],['4','4','2 vs 2'],['4h','4','Hunters'],['5','5','2v2 + hunter']];
 const TITLE={'3':'3 players · + hunter','4':'4 players · 2 vs 2','4h':'4 players · Hunters','5':'5 players · 2 vs 2 + hunter'};
@@ -60,10 +59,10 @@ function draw3(){const S3=SEATS[mode],np=S3.length;
  const rr=$('t3roles');rr.className='rolerow r3'+(S3.length>3?' r5':'');
  rr.innerHTML=S3.map(r=>`<button class="rolebtn${r===myRole?' on':''}" data-r="${r}"><span class="ra">${seatArt(r,kind)}${/\d/.test(r)?`<b class="snum">${r[1]}</b>`:''}</span>${SN[r]}<small>${SUB[r]}</small></button>`).join('');
  const others=S3.filter(r=>r!==myRole);
- const note=mode==='4'||mode==='5'?'<p class="t3note">Ostriches 1 + 2 team up (each has its own 2-egg nest, either can warm any egg). Vultures 1 + 2 share every sniff.</p>':mode==='4h'?'<p class="t3note">Hyena and honey badger are rivals: both hunt the birds. Most knock-outs wins once both birds are out.</p>':'';
+ const note=mode==='4'||mode==='5'?'<p class="t3note">Ostriches 1 + 2 team up (each has its own 2-egg nest, either can warm any egg). Vultures 1 + 2 share every sniff.</p>':mode==='4h'?'<p class="t3note">Hyena and badger are rivals: both hunt the birds. Most knock-outs wins once both birds are out.</p>':'';
  $('t3seats').innerHTML=note+others.map(r=>`<div class="t3row"><span class="t3who">${sp(seatArt(r,kind),26)} ${SN[r]}</span><span class="seg"><button data-seat="${r}" data-v="friend" class="${seat[r]==='friend'?'on':''}">👤 Friend</button><button data-seat="${r}" data-v="bot" class="${seat[r]==='bot'?'on':''}">🤖 Computer</button></span></div>`).join('');
  const hasH=S3.includes('hunter'),pick=hasH&&(myRole==='hunter'||seat.hunter==='bot');
- $('t3kind').innerHTML=!hasH?'':pick?`<div class="t3lbl">${myRole==='hunter'?'Your hunter':'Computer hunter'}</div><div class="kindrow">${['hyena','badger'].map(k=>`<button class="kindbtn${kind===k?' on':''}" data-k="${k}"><span class="ka">${KIND[k].art}</span><b>${KIND[k].n}</b><small>${KIND[k].pw}: ${KIND[k].pwTxt}</small></button>`).join('')}</div>`:'<p class="t3note">The hunter player picks hyena or honey badger when they join.</p>';}
+ $('t3kind').innerHTML=!hasH?'':pick?`<div class="t3lbl">${myRole==='hunter'?'Your hunter':'Computer hunter'}</div><div class="kindrow">${['hyena','badger'].map(k=>`<button class="kindbtn${kind===k?' on':''}" data-k="${k}"><span class="ka">${KIND[k].art}</span><b>${KIND[k].n}</b><small>${KIND[k].pw}: ${KIND[k].pwTxt}</small></button>`).join('')}</div>`:'<p class="t3note">The hunter player picks hyena or badger when they join.</p>';}
 // --- 4/5 players (2v2, + hunter): numbered birds, teammates, shared sniffs ---
 const NUM=r=>/\d/.test(r)?r[1]:'';
 function tTag(S){const r=S.h3.mySeat;if(r==='hunter')return tag(S);return `<span style="display:inline-block;width:26px;height:26px;vertical-align:middle">${isOs(r)?OSTI:VULI}</span> ${SN[r].toUpperCase()}`;}
@@ -98,7 +97,7 @@ function tOver(S){const h=S.h3,w=S.winner,me=h.mySeat,C=S.cfg,mySide=me==='hunte
   :w==='red'?(S.winBy==='cold'?`The last egg went cold in round ${S.round}.`:S.winBy==='ostriches-out'?'Both ostriches were out.':`The vultures smashed every egg by round ${S.round}.`)
   :'Every bird that could win was out.';
  return `<div class="lobbybox"><div class="bigost">${art}</div><h1>${title}</h1><p>${S.endWhy||why}</p>${winNote(S)}${endBits(S)}</div>`;}
-// --- 4 players "Hunters": ostrich + vulture + hyena + honey badger (rival hunters) ---
+// --- 4 players "Hunters": ostrich + vulture + hyena + badger (rival hunters) ---
 function hChips(S){let bar=$('h3bar');if(!bar){bar=document.createElement('div');bar.id='h3bar';$('hud').after(bar);
   bar.addEventListener('click',e=>{const c=e.target.closest('[data-tip]');if(c&&UI._tip)UI._tip(c.dataset.tip);});}
  const h=S.h3,live=S.phase==='play',me=h.mySeat;bar.classList.add('team');
@@ -118,7 +117,7 @@ function hPieces(S,board,prev){const h=S.h3,me=h.mySeat;
 function hOver(S){const h=S.h3,w=S.winner,me=h.mySeat,C=S.cfg;
  const art=w==='hyena'||w==='badger'?KIND[w].art:w==='blue'?OSTI:w==='red'?VULI:'🤝';
  const title=w==='none'?'No winner':w===me?'You win!':`${tname(S,w)} wins!`;
- const ko=`Knock-outs: hyena ${h.hkos.hyena}, honey badger ${h.hkos.badger}.`;
+ const ko=`Knock-outs: hyena ${h.hkos.hyena}, badger ${h.hkos.badger}.`;
  const why=w==='hyena'||w==='badger'?`Both birds were out. ${ko}${h.hkos.hyena===h.hkos.badger?' Tie: the last knock-out wins.':''}`:w==='blue'?`The ostrich kept ${S.eggsLeft} egg(s) alive for ${C.rounds} rounds.`
   :w==='red'?(S.winBy==='cold'?`The last egg went cold in round ${S.round}.`:S.winBy==='starved'?'The ostrich was out and no eggs were left.':`The vulture smashed every egg by round ${S.round}.`):`No hunter got a knock-out. ${ko}`;
  return `<div class="lobbybox"><div class="bigost">${art}</div><h1>${title}</h1><p>${S.endWhy||why}</p>${winNote(S)}${endBits(S)}</div>`;}
@@ -159,12 +158,6 @@ function clock(S){let c=$('clock3');if(!c){c=document.createElement('div');c.id=
  cancelAnimationFrame(raf);tick();}
 function cellAt(board,S,p){return p&&p[0]>=0?board.children[p[1]*S.cfg.cols+p[0]]:null;}
 function noteBanner(cls,txt,force){const bn=$('banner');if(!bn)return;if(!force&&bn.textContent&&!bn.classList.contains('hidden'))return;bn.textContent=txt;bn.className=cls;}
-function markHurt(S,board){const birds=S.h3&&S.h3.birds;if(!birds)return;
- const tag=(cell,b)=>{if(!cell||!b||b.out||!b.catches)return;cell.classList.add('injured');const pc=cell.querySelector('.pc');if(pc)pc.classList.add('injured');
-  if(!cell.querySelector('.hurtag')){const l=document.createElement('span');l.className='hurtag';l.textContent='\u2665';cell.appendChild(l);}
-  cell.dataset.tip=(cell.dataset.tip?cell.dataset.tip+' · ':'')+'Caught '+(b.catches===1?'once.':b.catches+' times.');};
- if(S.h3.team){for(const [r,b] of Object.entries(birds)){let cell=board.querySelector('.cell[data-seat="'+r+'"]');if(!cell&&r===S.h3.mySeat)cell=board.querySelector('.cell[data-tags~="me"]');tag(cell,b);}}
- else{const po=board.querySelector('.pc.po'),pv=board.querySelector('.pc.pv');tag(po&&po.closest('.cell'),birds.blue);tag(pv&&pv.closest('.cell'),birds.red);}}
 // "The ostrich is out." once per elimination, for everyone still playing. outSeen remembers which birds were already out (a re-render, or opening
 // the page mid-game, never repeats it; a new game clears it). The line stays up a few seconds and is re-applied if the next state redraws the banner.
 const outSeen={};let outNote=null;
@@ -176,15 +169,11 @@ function outBanner(S,prev){const birds=S.h3.birds;if(!birds)return;
   const mine=r===(S.h3.mySeat||S.role);
   if(!first&&!mine&&S.phase==='play'){const txt=window.CatchText.outLine(r);outNote={txt,until:Date.now()+4000};noteBanner('no',txt,true);setTimeout(()=>{const bn=$('banner');if(bn&&bn.textContent===txt){bn.textContent='';bn.className='hidden';}},4000);}}
  if(outNote&&Date.now()<outNote.until)noteBanner('no',outNote.txt);}
-// The honey badger's quotes (public/badgerlines.js): one line at a time near the badger's square, about 3 seconds each. They sit in their own
+// The badger's quotes (public/badgerlines.js): one line at a time near the badger's square, about 1 second each. They sit in their own
 // element, not in the board, so the next state redrawing the board does not wipe them. The words and who may see them live in badgerlines.js.
-const BL=window.BadgerLines;let bPicker=BL.createPicker(),bLastS=null,bBusy=false;const bQ=[];
+const BL=window.BadgerLines;let bPicker=BL.createPicker(),bLastS=null;
 const winNote=S=>{const t=BL.winLine(S);return t?`<p class="badgerwin">${t}</p>`:'';};
-function badgerSay(text){if(bQ.length<4)bQ.push(text);setTimeout(()=>bPump(0),60);} // after this state's board is drawn, so the badger's square is there to point at
-function bPump(tries){if(bBusy||!bQ.length)return;
- if((document.querySelector('#msgslot .h3pop')||document.getElementById('announce')&&document.getElementById('announce').classList.contains('show'))&&tries<10){setTimeout(()=>bPump(tries+1),400);return;}
- bBusy=true;const o=document.createElement('div');o.id='badgerline';o.className='h3pop badger';o.textContent=bQ.shift();document.getElementById('msgslot').appendChild(o); // the badger's quote goes in the message slot, not over the board
- setTimeout(()=>{o.remove();bBusy=false;bPump(0);},3000);}
+function badgerSay(text){window.STATUS_QUEUE.add({id:'badgerline',className:'h3pop badger',text,priority:0});}
 function badgerLines(S,prev){if(S===bLastS)return;bLastS=S;if(!prev||(prev.round!=null&&S.round<prev.round))bPicker=BL.createPicker();
  for(const e of BL.detect(prev,S,bPicker))badgerSay(e.text);}
 // One look per meaning, in one corner of the square (never over its middle). "May be here" is the animal's small outline, dashed and unfilled. "Is here" (known to be there) is the same small shape filled white with a dark edge. Animals themselves stay full size.
@@ -209,24 +198,14 @@ const noEgg=(S,x,y)=>{const C=S.cfg,m=(S.marks||{})[x+','+y];return (C.rocks||[]
 function marksAround(board,S,cx,cy,range,kind,cls){const C=S.cfg;let n=0;
  for(let y=Math.max(0,cy-range);y<=Math.min(C.rows-1,cy+range);y++)for(let x=Math.max(0,cx-range);x<=Math.min(C.cols-1,cx+range);x++){if(x===cx&&y===cy)continue;if(kind==='egg'&&S.cfg&&noEgg(S,x,y))continue;const c=board.children[y*C.cols+x];if(c&&c.classList&&c.classList.contains('cell')&&mark(c,kind,cls))n++;}
  return n;}
-function pop(board,txt,cls){const o=document.createElement('div');o.className='h3pop '+cls;o.textContent=txt;const slot=document.getElementById('msgslot');slot.querySelectorAll('.h3pop:not(#badgerline)').forEach(x=>x.remove());slot.appendChild(o);setTimeout(()=>o.remove(),cls==='catch'?3400:1800);} // in the message slot above the board, never over it
-// --- Announcements: one plain line for a big event (catch, knock-out, the hunters meeting, the badger coming out, the start-of-game line) on every phone.
-// The line lives in #announce, outside #board, so a board redraw never erases it. Each line stays up about 3 seconds, one at a time, in order.
-// Where the event happened (a square highlight) is drawn on the board only when the view carries that square, and the server sends it only to a player who can see it. ---
-const ANN_MS=3000,annQ=[];let annBusy=false;
-function announce(txt){if(!txt)return;annQ.push(txt);if(annQ.length>4)annQ.shift();annPump();}
-function annPump(){if(annBusy||!annQ.length)return;
- const rc=document.getElementById('rolecard');if(rc&&!rc.classList.contains('hidden')){setTimeout(annPump,400);return;} // the start line waits until the role card is closed, so it never sits on the card
- annBusy=true;
- let o=$('announce');if(!o){o=document.createElement('div');o.id='announce';o.setAttribute('role','status');o.setAttribute('aria-live','polite');}
- if(o.parentNode!==$('msgslot'))$('msgslot').appendChild(o);
- const t=annQ.shift();o.textContent=t;o.className='show'+(/^Caught!|^A hidden|knocked you out/.test(t)?' bad':''); // a one-line toast in the message slot above the board; red only for bad news to this phone
- setTimeout(()=>{o.className='';o.textContent='';setTimeout(()=>{annBusy=false;annPump();},120);},ANN_MS);}
+function pop(board,txt,cls){window.STATUS_QUEUE.add({className:'h3pop '+cls,text:txt,priority:10});}
+// Shared with sniff/fact notices: one one-second message, personal events before background facts.
+function announce(txt,priority){window.STATUS_QUEUE.add({id:'announce',className:'show'+(/you/i.test(txt)?' bad':''),text:txt,priority:priority==null?(/\byou\b/i.test(txt)?100:50):priority});}
 const evSeen={kick:0,pop:0,rival:0,stone:0,dug:0,burst:0};
 function events(S,prev,board){
  if(!S)return;if(!S.three)rulesMode('2');
  const h=S.h3||{};
- for(const e of window.CatchText.newEvents(evSeen,S,prev)){announce(e.text);
+ for(const e of window.CatchText.newEvents(evSeen,S,prev)){announce(window.CatchText.viewerEvent(e,S));
   // the square highlight: the hyena's landing square for the meeting; the badger's own square for a pop-out, only if this phone can see the badger
   const sq=e.kind==='rival'||e.kind==='kick'||e.kind==='burst'?e.square:e.kind==='dug'?null:e.seen?(h.hunters?(h.hunters.find(x=>x.kind==='badger')||{}).p:h.hunter):null,c=cellAt(board,S,sq);c&&c.classList.add('h3kb');}}
 // One plain line at the start of every game: who hunts what, naming only the animals in the game (roles.js).
@@ -235,14 +214,14 @@ function startLine(S,prev,mode){
  if(!S||S.phase!=='play'){startDone=false;return;}
  const h=S.h3;if(startDone||(h&&(h.ready===false||h.needKind||(h.team&&h.teamSetup&&h.teamSetup!=='done'))))return;
  startDone=true;if(!prev&&S.round>1)return;
- announce(window.Roles.huntLine(mode,S.role==='hunter'?(S.kind||(h&&h.kind)):(h&&h.kind)));}
+ announce(window.Roles.huntLine(mode,S.role==='hunter'?(S.kind||(h&&h.kind)):(h&&h.kind)),20);}
 function after(S,prev,board){badgerLines(S,prev);chips(S);clock(S);kindPick(S);if(S.h3.team)tPieces(S,board);if(S.h3.hunt)hPieces(S,board,prev);
  rulesMode(S.h3.hunt?'4h':S.h3.team?String(S.h3.n):'3');
  const h=S.h3,k=h.kind||'hyena',me=S.role;
  // hunter piece: the hunter always sees itself; a bird only sees it within 2 squares (never a burrowed badger)
  const hp=h.hunter,hc=cellAt(board,S,hp);
  // a mound where the badger dug in, only for a bird that saw it dig and only while it stays buried (the server sends h.mound to nobody else)
- if(h.mound){const mc=cellAt(board,S,h.mound);if(mc&&!mc.querySelector('.cmark.cm-badger')){mark(mc,'badger','is');mc.dataset.tip=(mc.dataset.tip?mc.dataset.tip+' · ':'')+'The honey badger dug in here';mc.setAttribute('aria-label',(mc.getAttribute('aria-label')?mc.getAttribute('aria-label')+'. ':'')+'Honey badger dug in here');}}
+ if(h.mound){const mc=cellAt(board,S,h.mound);if(mc&&!mc.querySelector('.cmark.cm-badger')){mark(mc,'badger','is');mc.dataset.tip=(mc.dataset.tip?mc.dataset.tip+' · ':'')+'The badger dug in here';mc.setAttribute('aria-label',(mc.getAttribute('aria-label')?mc.getAttribute('aria-label')+'. ':'')+'Badger dug in here');}}
  if(hc){const bur=me==='hunter'&&S.burrowed;const pc=document.createElement('div');pc.className='pc ph h'+k+(bur?' bur':'')+(me==='hunter'?' mine':'');pc.innerHTML=bur?MOUND:KIND[k].art;hc.appendChild(pc);hc.classList.add('hcell');if(me==='hunter'){const old=document.getElementById('current');if(old&&old!==hc)old.removeAttribute('id');hc.id='current';}
   hc.dataset.tip=(hc.dataset.tip?hc.dataset.tip+' · ':'')+(me==='hunter'?(bur?'You, hidden.':'You.'):KIND[k].n+'. Don\'t let it land on you.');
 }
@@ -270,14 +249,14 @@ function after(S,prev,board){badgerLines(S,prev);chips(S);clock(S);kindPick(S);i
   if(fresh){const ac=cellAt(board,S,lc.at),tc=cellAt(board,S,lc.to);
    const word=lc.bird==='red'||lc.bird==='v1'||lc.bird==='v2'?'vulture':'ostrich';
    if(ac&&me==='hunter'&&!ac.querySelector('.pc.po,.pc.pv')){const disc=document.createElement('div');disc.className='pc '+(word==='ostrich'?'po':'pv')+' foundnow';disc.innerHTML=word==='ostrich'?OSTI:VULI;ac.appendChild(disc);}
-   if(ac){const m=document.createElement('div');m.className='h3claw';m.innerHTML=CLAW;ac.appendChild(m);}
    if(tc)tc.classList.add('h3kb');
    // what the catch means, in words: hurt or out, and who did it (catchtext.js)
    const CT=window.CatchText,seat=h.mySeat||me,by=lc.by||k;
-   announce(CT.catchLine(lc,seat,by,CT.catchesLeft(h,lc)));
+   announce(CT.catchLine(lc,seat,by,CT.catchesLeft(h,lc)),seat===lc.bird?100:50);
+   if(seat===lc.bird&&!lc.ko)announce(CT.catchLine(lc,'hunter',by,CT.catchesLeft(h,lc)),90);
    const ch=document.querySelector('#h3bar .bchip.'+lc.bird);ch&&ch.classList.add('hitnow');window.SFX&&SFX.play(me==='hunter'?'win':'warn');}}
  outBanner(S,prev);
- markHurt(S,board); warnNear(S,board);
+ warnNear(S,board);
  // waiting panel text: which seats are still open
  if(!S.joined){const w=$('wait');const open=Object.entries(h.seats).filter(([,v])=>v==='open').map(([r])=>SN[r]);if(w)w.firstElementChild.nextElementSibling.textContent=`Waiting for: ${open.join(', ')}. Send them this link:`;}}
 function kindPick(S){let k=$('kindPick');if(!S.h3.needKind){k&&k.classList.add('hidden');return;}

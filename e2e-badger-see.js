@@ -1,6 +1,6 @@
-// Honey badger player's own board: the graphic is on screen before burrow and while burrowed.
-// Repro: Play with friends, three computers, sit as Honey badger (4-player Hunters). Separately,
-// Play a game yourself, two computers, Hunter, then Honey badger (3-player). State position is not enough.
+// Badger player's own board: the graphic is on screen before burrow and while burrowed.
+// Repro: Play with friends, three computers, sit as Badger (4-player Hunters). Separately,
+// Play a game yourself, two computers, Hunter, then Badger (3-player). State position is not enough.
 process.env.PORT = '3977';
 process.env.BO_CLOCKMS = '120000';
 process.env.BO_BOTMS = '60000';

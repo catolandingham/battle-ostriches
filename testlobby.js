@@ -32,7 +32,7 @@ t('one friend previews 2p roles and cannot start', () => {
   assert.equal(switched.roles.find(x => x.id === 'red').mine, true);
   assert.equal(switched.roles.find(x => x.id === 'blue').mine, false);
 });
-t('two computers replace the nested hunter card with Hyena and Honey Badger', () => {
+t('two computers replace the nested hunter card with Hyena and Badger', () => {
   const r = humans(1);
   LB.setBots(r, 2, 'h0');
   const ids = LB.view(r, 'h0').roles.map(x => x.id);
@@ -41,8 +41,8 @@ t('two computers replace the nested hunter card with Hyena and Honey Badger', ()
   assert.equal(LB.view(r, 'h0').youAre, 'YOU ARE Hyena');
   assert.equal(LB.claim(r, 'h0', 'badger').ok, true);
   const now = LB.view(r, 'h0');
-  assert.equal(now.youAre, 'YOU ARE Honey Badger');
-  assert.equal(now.humans[0].shown, 'Honey Badger');
+  assert.equal(now.youAre, 'YOU ARE Badger');
+  assert.equal(now.humans[0].shown, 'Badger');
   assert.equal(now.roles.find(x => x.id === 'badger').mine, true);
   assert.equal(now.roles.find(x => x.id === 'hyena').mine, false);
   assert.equal(now.canStart, true);
@@ -236,11 +236,11 @@ t('solo with one computer and no pick is also held until a pick', () => {
   const v = LB.view(r, 'h0');
   assert.equal(v.canStart, true); assert.notEqual(v.hint, PICK); assert.notEqual(v.setupLabel, PICK);
 });
-t('solo, Honey Badger and two computers: the host plays the badger and picked is false', () => {
+t('solo, Badger and two computers: the host plays the badger and picked is false', () => {
   const r = humans(1, { solo: true, botsWanted: 2 }); LB.clampBots(r); LB.reconcile(r);
   assert.equal(LB.claim(r, 'h0', 'badger').ok, true);
   const v = LB.view(r, 'h0');
-  assert.equal(v.canStart, true); assert.equal(v.youAre, 'YOU ARE Honey Badger');
+  assert.equal(v.canStart, true); assert.equal(v.youAre, 'YOU ARE Badger');
   assert.notEqual(v.hint, PICK);
   const p = LB.plan(r);
   assert.equal(p.ok, true); assert.equal(p.setup, '3'); assert.equal(p.kind, 'badger');
@@ -367,7 +367,7 @@ const roomOf = code => server.rooms.get(code);
   const back = await wait(A, m => m.t === 'state' && m.lobby && m.state.humanCount === 3 && !m.state.roles.some(r => r.mine));
   assert.equal(back.state.setup, '3');
   A.send({ t: 'lobby', a: 'role', role: 'hunter', kind: 'badger' });
-  await wait(A, m => m.t === 'state' && m.lobby && m.state.roles.some(r => r.id === 'badger' && r.mine) && /YOU ARE Honey Badger/.test(m.state.youAre));
+  await wait(A, m => m.t === 'state' && m.lobby && m.state.roles.some(r => r.id === 'badger' && r.mine) && /YOU ARE Badger/.test(m.state.youAre));
   from(A);
   A.send({ t: 'lobby', a: 'start' });
   const again = await wait(A, m => m.t === 'state' && !m.lobby && m.state.role === 'hunter');

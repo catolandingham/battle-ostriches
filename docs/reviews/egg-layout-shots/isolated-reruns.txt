@@ -1,0 +1,16 @@
+Battle Ostriches on http://localhost:3992
+ok pass classic
+ok ai-red nature
+ok ai-blue notes
+ok pass golden
+ok ai-red paper
+ok ai-blue arcade
+ok pass toybox
+ok ai-red tactical
+ok ai-blue storm
+ok pass volcano
+ok ai-red comic
+ok ai-blue pharaoh
+ok pass neon
+checks 366 errors []
+PASS e2e-consistency

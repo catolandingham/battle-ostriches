@@ -1,5 +1,5 @@
 // "YOU" tag on your own piece (Nov 4 playtest: "I don't see where I am"), on WebKit iPhone 13s.
-// Covers: exactly one visible tag per phone for ostrich, vulture, hyena and honey badger (3-player and Hunters games), all 13 themes
+// Covers: exactly one visible tag per phone for ostrich, vulture, hyena and badger (3-player and Hunters games), all 13 themes
 // (inside its square, readable, takes no taps), a one-time 0.6 s pulse when a turn starts, no tag on an eliminated bird,
 // and pass & play (the tag follows whoever holds the phone). JPEGs -> shots/you/.
 process.env.PORT = 3965; process.env.BO_H3START = '8,3'; process.env.BO_H4START = '2,3,4,3'; process.env.BO_BOTMS = '200'; process.env.BO_CLOCKMS = '60000'; process.env.BO_TOUGH = '0';
@@ -79,7 +79,7 @@ const PIECE = { ostrich: '.pc.po', vulture: '.pc.pv', hyena: '.pc.ph.mine', badg
   assert.ok((await pulses(H)).adds >= 1, 'hunter: pulse at the start of its turn'); await H.waitForTimeout(900); const ph = await pulses(H); assert.equal(ph.live, 0); assert.ok(ph.lastRem - ph.first <= 1000);
   await check(H, 'hyena', 'hyena turn'); await check(A, 'ostrich', 'after move'); await check(V, 'vulture', 'after move');
   // eliminated bird: off the board, so no tag; the others keep theirs
-  T3.knockout(room3.g, 'red', 'caught'); server.broadcast(room3); await V.waitForFunction(() => document.body.classList.contains('godview'));
+  T3.knockout(room3.g, 'red', 'caught'); server.broadcast(room3); await V.waitForFunction(() => UI._S().h3.birds.red.out && UI._S().god); // out bird gets the approved full-board spectator view
   assert.equal(await V.locator('.youtag').count(), 0, 'eliminated vulture: no YOU tag'); await check(A, 'ostrich', 'vulture out'); await check(H, 'hyena', 'vulture out');
   await Promise.all([A.context().close(), V.context().close(), H.context().close()]);
 

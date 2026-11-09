@@ -102,7 +102,7 @@ Reviewed from the rulebook text only (no code, no other notes). Rule numbers ref
 
 ### 14. Hyena knowledge of the badger's dig-in spot
 - **Rules:** 7.4 ("birds that could see it when it dug in see the spot"), 10 (hyena sees a buried badger "never").
-- **Situation:** the hyena saw the badger within 2, then hears "The honey badger dug in!". It knows the spot anyway. The table says it doesn't.
+- **Situation:** the hyena saw the badger within 2, then hears "The badger dug in!". It knows the spot anyway. The table says it doesn't.
 - **Fix:** "Anyone who could see the badger when it dug in sees the spot." Same rule for every viewer.
 
 ### 15. 2 vs 2 wording assumes one ostrich and one vulture

@@ -14,7 +14,7 @@
   }
 
   const PICKED = 'We picked this animal for you.';
-  const HUNTERS = { hyena: 'hyena', badger: 'honey badger' };
+  const HUNTERS = { hyena: 'hyena', badger: 'badger' };
   const BIRD_SEAT = { blue: 'ostrich', o1: 'ostrich', o2: 'ostrich', red: 'vulture', v1: 'vulture', v2: 'vulture' };
 
   // 'hyena' or 'badger' when the card is a hunter's, 'ostrich' or 'vulture' when it is a bird's, else null
@@ -32,26 +32,26 @@
     const ko = R.modes[mode] && R.modes[mode].ko;
     if (!ko) return [];
     if ((mode === '4h' || !HUNTERS[kind]) && ko.hyena === ko.badger) return [`a hunter catches you ${times(ko.hyena)}`];
-    if (mode === '4h' || !HUNTERS[kind]) return [`the hyena catches you ${times(ko.hyena)}`, `the honey badger catches you ${times(ko.badger)}`];
+    if (mode === '4h' || !HUNTERS[kind]) return [`the hyena catches you ${times(ko.hyena)}`, `the badger catches you ${times(ko.badger)}`];
     return [`the ${HUNTERS[kind]} catches you ${times(ko[kind])}`];
   }
   // "You lose if A, B, or C."
   const loseList = (lead, items) => `${lead} if ${items.length < 2 ? items[0] : items.length === 2 && !/ or /.test(items.join('|')) ? items.join(' or ') : items.slice(0, -1).join(', ') + ', or ' + items[items.length - 1]}.`;
 
-  // The animals an ostrich can kick in this mode, named only if they are in the game: "a vulture", "a vulture or hyena", "a vulture, hyena or honey badger"
+  // The animals an ostrich can kick in this mode, named only if they are in the game: "a vulture", "a vulture or hyena", "a vulture, hyena or badger"
   function kickList(mode, kind) {
     const m = String(mode || '2'), names = ['vulture'];
-    if (m === '4h') names.push('hyena', 'honey badger'); else if ((m === '3' || m === '5')) names.push(HUNTERS[kind] || 'hunter');
+    if (m === '4h') names.push('hyena', 'badger'); else if ((m === '3' || m === '5')) names.push(HUNTERS[kind] || 'hunter');
     return 'a ' + (names.length < 2 ? names[0] : names.slice(0, -1).join(', ') + ' or ' + names[names.length - 1]);
   }
-  const kickLine = (mode, kind, c) => `Kick: push ${kickList(mode, kind)} next to you away ${c.kick} squares${/honey badger/.test(kickList(mode, kind)) ? ` (${c.kickBadger} for a badger)` : ''}. Not while carrying.`;
+  const kickLine = (mode, kind, c) => `Kick: push ${kickList(mode, kind)} next to you away ${c.kick} squares${/badger/.test(kickList(mode, kind)) ? ` (${c.kickBadger} for a badger)` : ''}. Not while carrying.`;
   // One line for the start of a game and for How to play: who hunts what, naming only the animals in the game.
   function huntLine(mode, kind) {
     const m = String(mode || '2');
     if (m === '2') return 'The vulture hunts eggs.';
     if (m === '4') return 'The vultures hunt eggs.';
-    if (m === '4h') return 'The vulture hunts eggs. The hyena and honey badger hunt birds.';
-    return `The ${m === '5' ? 'vultures hunt' : 'vulture hunts'} eggs. The ${HUNTERS[kind] || 'hyena or honey badger'} hunts birds.`;
+    if (m === '4h') return 'The vulture hunts eggs. The hyena and badger hunt birds.';
+    return `The ${m === '5' ? 'vultures hunt' : 'vulture hunts'} eggs. The ${HUNTERS[kind] || 'hyena or badger'} hunts birds.`;
   }
   // Every card is a title and 4 short lines (goal first), no "lose" line: the goal's opposite is the way to lose, and How to play says the rest.
   // Kick, Carry and the stone bounce are taught the first time each becomes possible. Numbers come from the rules; no word names a color or a look.
@@ -82,11 +82,11 @@
     return g.kind === 'first' ? 'Knock out one bird.' : 'Knock out both birds.';
   }
   function hunter(who, mode, R) {
-    const m = R.modes[mode] || R.modes['3'], other = who === 'hyena' ? 'honey badger' : 'hyena';
+    const m = R.modes[mode] || R.modes['3'], other = who === 'hyena' ? 'badger' : 'hyena';
     const goal = mode === '4h' ? `Knock out more birds than the ${other}.` : hunterGoal(mode, m, R.cfg);
     const outline = 'The outline shows where a bird may be.';
     if (who === 'hyena') return { title: 'You are the Hyena', goal, moves: [`Move ${m.walk} squares.`, outline, `Missed? Move ${m.pounce} more.`], lose: '', picture: 'hyena' };
-    return { title: 'You are the Honey Badger', goal, moves: [`Move ${m.walk} squares.`, outline, 'Stay still to hide underground.'], lose: '', picture: 'badger' };
+    return { title: 'You are the Badger', goal, moves: [`Move ${m.walk} squares.`, outline, 'Stay still to hide underground.'], lose: '', picture: 'badger' };
   }
 
   // role: 'blue' 'red' 'hunter' (the phone's role), or a seat ('o1' 'v2' 'hyena' 'badger'). kind: the hunter's animal ('hyena' or 'badger'),

@@ -8,7 +8,7 @@ Games live in memory: a restart or free-tier sleep ends games in progress.
 
 ## Balance (sim.js)
 `node sim.js 6000` pits an ostrich bot (coldest-egg routing, guards when the vulture is near, carries spotted eggs away, obeys the sit cap) against a vulture bot (hunts footprints, uses smell history to rule squares in/out, throws at guarded/spotted squares).
-CONFIG in `game.js`: rounds 30, warmth 15, no sit limit, ostrich walk 2 (carryWalk 1), kickPush 3 (honey badger 2, wraps at the edge), fly 2, throw adjacent, 1 stone (refill at a rock pile), smell 1, food every 15 turns, `hunterGoal` per one-hunter mode. `node ai-test.js` on 2026-11-06 (older rules): vulture bot wins about 48% on Normal and 43% on Easy. Stone throws animate via public/smash.js.
+CONFIG in `game.js`: rounds 30, warmth 15, no sit limit, ostrich walk 2 (carryWalk 1), kickPush 3 (badger 2, wraps at the edge), fly 2, throw adjacent, 1 stone (refill at a rock pile), smell 1, food every 15 turns, `hunterGoal` per one-hunter mode. `node ai-test.js` on 2026-11-06 (older rules): vulture bot wins about 48% on Normal and 43% on Easy. Stone throws animate via public/smash.js.
 
 ## Rules that are the same in every game type (rulebook v2, 2026-11-07)
 The source of truth is `RULEBOOK-v2-2026-11-07.md` in the Battle Ostriches Drive folder. Numbers live in `CONFIG` (game.js), `T3` (three.js), `TH` (hunt.js) and `TM` (team.js) and reach the role cards through `Roles.rulesFromModules()`. Tests: `node testv2.js` covers each section in all four engines.
@@ -23,7 +23,7 @@ The source of truth is `RULEBOOK-v2-2026-11-07.md` in the Battle Ostriches Drive
 ## Gameplay UI
 Actions (Carry, Sit, Kick, Throw, Stay, Burrow) are buttons under the board. Walking and flying are taps on the squares you can reach. The hint says why an action is unavailable. There is no separate Vulture's Eye Island screen in this repo. The ostrich does not get a "Vulture smells nothing" popup. The vulture still sees its own sniff.
 
-Hyena sense is still only yes or no inside a 2-square box, diagonals included. The hunter sees where a bird may be. Nothing points at a bird. When a living bird first sees a hunter, the board says "Hyena near!" or "Badger near!" once. A burrowed badger does not trigger it and stays hidden from the birds. The player who is the honey badger still gets their own graphic on the board before burrow and while burrowed, on every theme.
+Hyena sense is still only yes or no inside a 2-square box, diagonals included. The hunter sees where a bird may be. Nothing points at a bird. When a living bird first sees a hunter, the board says "Hyena near!" or "Badger near!" once. A burrowed badger does not trigger it and stays hidden from the birds. The player who is the badger still gets their own graphic on the board before burrow and while burrowed, on every theme.
 
 An eliminated bird is off the board. A stone on the egg it was covering smashes that egg. A stone thrown at a living ostrich is kicked back.
 

@@ -1,5 +1,5 @@
 // Role cards on real phones. 3 players: each of the three phones sees its own card and only its own, a tap closes it, it does not come back,
-// and How to play reopens it. Then a solo game where the player picked the honey badger (no "We picked" line) and a friends game where Start
+// and How to play reopens it. Then a solo game where the player picked the badger (no "We picked" line) and a friends game where Start
 // chose the ostrich (the line shows). Also: the card fits a 390 x 664 phone without scrolling in every theme. Card photos -> shots/role-cards/.
 process.env.PORT = 3980; process.env.BO_H3START = '8,3'; process.env.BO_NOSTORE = '1';
 const { webkit, devices } = require('playwright-core'); const assert = require('assert'), fs = require('fs');
@@ -41,8 +41,8 @@ const R = require('./public/roles.js'), THEMES = fs.readFileSync('./public/theme
   has(ta, want('blue', 'hyena', '3')); has(tv, want('red', 'hyena', '3')); has(th, want('hunter', 'hyena', '3'));
   assert.ok(th.includes('Missed? Move 1 more.'), 'the hyena card says what a miss gives');
   // only its own: no other animal's title, and nobody was told "We picked" (all three chose)
-  assert.ok(/You are the Ostrich/.test(ta) && !/You are the (Vulture|Hyena|Honey)/.test(ta), 'ostrich card is the ostrich card');
-  assert.ok(/You are the Vulture/.test(tv) && !/You are the (Ostrich|Hyena|Honey)/.test(tv)); assert.ok(/You are the Hyena/.test(th) && !/You are the (Ostrich|Vulture|Honey)/.test(th));
+  assert.ok(/You are the Ostrich/.test(ta) && !/You are the (Vulture|Hyena|Badger)/.test(ta), 'ostrich card is the ostrich card');
+  assert.ok(/You are the Vulture/.test(tv) && !/You are the (Ostrich|Hyena|Badger)/.test(tv)); assert.ok(/You are the Hyena/.test(th) && !/You are the (Ostrich|Vulture|Badger)/.test(th));
   for (const t of [ta, tv, th]) assert.ok(!/We picked/.test(t), 'a chosen animal gets no "We picked" line');
   assert.equal(await A.locator('#rolecard .rc').count(), 1);
   for (const [p, n] of [[A, 'ostrich'], [V, 'vulture'], [H, 'hyena']]) { await fits(p, n); }
@@ -67,11 +67,11 @@ const R = require('./public/roles.js'), THEMES = fs.readFileSync('./public/theme
   await H.click('#rolecard'); assert.equal(await shown(H).count(), 0);
   console.log('ok 3 phones: own card only, tap closes, once, How to play reopens');
 
-  // 1 human honey badger (picked it) vs 2 computer birds: the badger card, no "We picked" line
+  // 1 human badger (picked it) vs 2 computer birds: the badger card, no "We picked" line
   const P = await mk(); await P.goto(U); await P.click('#playSolo'); await P.click('[data-bots="2"]'); await P.click('#soloGo'); await P.click('[data-role="badger"]'); await P.click('#startGame');
   await P.waitForSelector('#rolecard:not(.hidden)', { timeout: 15000 });
-  const tp = await cardText(P); has(tp, want('hunter', 'badger', '3')); assert.ok(/You are the Honey Badger/.test(tp)); assert.ok(!/We picked/.test(tp), 'the player picked: no "We picked" line');
-  assert.ok(!/Missed/.test(tp), 'no hyena words on the badger card'); assert.ok(tp.includes('Stay still to hide underground.'), 'badger card: what staying still does'); assert.ok(!/tough ground|usually|one more still turn/i.test(tp), 'no tough-ground wording'); await fits(P, 'badger'); await P.screenshot({ path: OUT + '4-honey-badger.png' });
+  const tp = await cardText(P); has(tp, want('hunter', 'badger', '3')); assert.ok(/You are the Badger/.test(tp)); assert.ok(!/We picked/.test(tp), 'the player picked: no "We picked" line');
+  assert.ok(!/Missed/.test(tp), 'no hyena words on the badger card'); assert.ok(tp.includes('Stay still to hide underground.'), 'badger card: what staying still does'); assert.ok(!/tough ground|usually|one more still turn/i.test(tp), 'no tough-ground wording'); await fits(P, 'badger'); await P.screenshot({ path: OUT + '4-badger.png' });
   await P.click('#rolecard'); assert.equal(await shown(P).count(), 0);
 
   // Start chose the animal: friends room, host never picked, one computer -> the ostrich, and the card says so
@@ -85,10 +85,10 @@ const R = require('./public/roles.js'), THEMES = fs.readFileSync('./public/theme
   await F.click('#rolecard'); assert.equal(await shown(F).count(), 0);
   console.log('ok solo pick: no "We picked" line; Start-chosen animal: the line shows');
 
-  // Hunters mode (solo, hyena + honey badger rivals + two computer birds): the Hyena card, with the other hunter named in the goal
+  // Hunters mode (solo, hyena + badger rivals + two computer birds): the Hyena card, with the other hunter named in the goal
   const K = await mk(); await K.goto(U); await K.click('#playSolo'); await K.click('[data-bots="3"]'); await K.click('#soloGo'); await K.click('[data-role="hyena"]'); await K.click('#startGame');
   await K.waitForSelector('#rolecard:not(.hidden)', { timeout: 15000 });
-  const tk = await cardText(K); has(tk, want('hyena', null, '4h')); assert.ok(/more birds than the honey badger/.test(tk) && !/We picked/.test(tk)); await fits(K, 'hunters hyena');
+  const tk = await cardText(K); has(tk, want('hyena', null, '4h')); assert.ok(/more birds than the badger/.test(tk) && !/We picked/.test(tk)); await fits(K, 'hunters hyena');
   await K.click('#rolecard'); assert.equal(await shown(K).count(), 0);
   // 2 vs 2 (friends: Ostrich 1 on one phone, Vulture 1 on another, computers for the rest): the team cards
   const O = await mk(), W = await mk(); await O.goto(U); await O.click('#playFriend'); await O.waitForSelector('#lobbyCode:not(:empty)');
@@ -98,7 +98,13 @@ const R = require('./public/roles.js'), THEMES = fs.readFileSync('./public/theme
   await W.waitForFunction(() => { const s = LobbyUI.get(); return s && s.roles.some(r => r.id === 'vulture' && r.mine); });
   await O.click('#startGame'); await O.waitForSelector('#board .cell'); await W.waitForSelector('#board .cell');
   assert.equal(await shown(W).count(), 0, 'no team card during setup');
-  for (const [x, y] of [[2, 1], [2, 4], [1, 2]]) { await cell(O, x, y).click(); await O.waitForTimeout(150); }
+  // Computer nests are randomized: choose currently legal hide/start squares, not fixed coordinates that can belong to the other ostrich.
+  for (let i=0;i<3;i++) {
+    await O.waitForFunction(()=>UI._legal().length>0);
+    const before=await O.evaluate(()=>JSON.stringify([UI._S().phase,UI._S().eggs.filter(e=>e.mine!==false),UI._S().ostrich,UI._S().h3.teamSetup]));
+    const p=await O.evaluate(()=>UI._legal()[0]);await cell(O,...p).click();
+    await O.waitForFunction(old=>JSON.stringify([UI._S().phase,UI._S().eggs.filter(e=>e.mine!==false),UI._S().ostrich,UI._S().h3.teamSetup])!==old,before);await O.waitForTimeout(150);
+  }
   await O.waitForSelector('#rolecard:not(.hidden)', { timeout: 15000 }); await W.waitForSelector('#rolecard:not(.hidden)', { timeout: 15000 });
   const [to, tw] = [await cardText(O), await cardText(W)];
   has(to, want('o1', null, '4')); has(tw, want('v1', null, '4')); assert.ok(/You are an Ostrich/.test(to) && /team/.test(to) && /You are a Vulture/.test(tw) && /partner/.test(tw));

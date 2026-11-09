@@ -50,14 +50,14 @@ ok('2 player view: a kick reaches both players with its square; the ostrich is o
   const b = S.view(room, 'blue'); assert.deepEqual(b.kickTargets, [[5, 3]]); assert.equal(b.kickNear, true); assert.equal(b.can.kick, true);
   assert.ok(B.ostrichKick(room.g, [5, 3])); for (const r of ['blue', 'red']) { const v = S.view(room, r); assert.equal(v.kick.who, 'vulture'); assert.deepEqual(v.kick.to, [7, 5]); assert.equal(v.kick.moved, 2); } });
 
-ok('the words: one line every phone gets, the Brian wording, and the honey badger quote', () => {
+ok('the words: one line every phone gets, the Brian wording, and the badger quote', () => {
   assert.equal(CT.kickLine('hyena', 2, 2), 'Ostrich kicked the hyena 2 squares away.'); assert.equal(CT.kickLine('vulture', 2, 2), 'Ostrich kicked the vulture 2 squares away.');
-  assert.equal(CT.kickLine('badger', 2, 2), 'Ostrich kicked the honey badger 2 squares away.'); assert.equal(CT.kickLine('hyena', 1, 2), 'Ostrich kicked the hyena 1 square away.');
+  assert.equal(CT.kickLine('badger', 2, 2), 'Ostrich kicked the badger 2 squares away.'); assert.equal(CT.kickLine('hyena', 1, 2), 'Ostrich kicked the hyena 1 square away.');
   assert.equal(CT.kickLine('hyena', 0, 2), 'Kick blocked.');
   assert.equal(CT.popOutLine(), 'Badger popped up!');
-  assert.equal(CT.rivalLine({ by: 'badger', n: 2 }), 'Badger shoved the hyena.');
-  assert.equal(CT.rivalLine({ by: 'hyena', n: 2 }), 'Hyena shoved the badger.');
-  assert.equal(BL.LINES.kicked, "Ouch. I mean... honey badger don't care."); assert.equal(BL.WHO.kicked, 'all');
+  assert.equal(CT.rivalLine({ by: 'badger', n: 2 }), 'The badger shoved the hyena!');
+  assert.equal(CT.rivalLine({ by: 'hyena', n: 2 }), 'The hyena shoved the badger!');
+  assert.equal(BL.LINES.kicked, "Ouch. I mean... badger doesn't care."); assert.equal(BL.WHO.kicked, 'all');
   const mk = (k, who = 'blue') => ({ role: who, phase: 'play', turn: 'hunter', h3: { kind: 'badger' }, kick: k });
   for (const who of ['blue', 'red', 'hunter']) assert.deepEqual(BL.detect(mk(null, who), mk({ who: 'badger', seq: 1 }, who), BL.createPicker()).map(e => e.event), ['kicked'], who + ' sees the badger quote for a kicked badger');
   assert.deepEqual(BL.detect(mk({ who: 'badger', seq: 1 }), mk({ who: 'badger', seq: 1 }), BL.createPicker()), [], 'once only');

@@ -10,13 +10,13 @@ const SETUPS = {
 const META = {
   blue: { name: 'Ostrich', sub: 'hide eggs' },
   red: { name: 'Vulture', sub: 'hunt eggs' },
-  hunter: { name: 'Hunter', sub: 'Hyena or Honey Badger' },
+  hunter: { name: 'Hunter', sub: 'Hyena or Badger' },
   o1: { name: 'Ostrich 1', sub: 'team ostrich' },
   o2: { name: 'Ostrich 2', sub: 'team ostrich' },
   v1: { name: 'Vulture 1', sub: 'team vulture' },
   v2: { name: 'Vulture 2', sub: 'team vulture' },
   hyena: { name: 'Hyena', sub: 'Pounce · 2 catches' },
-  badger: { name: 'Honey Badger', sub: 'Burrow · 2 catches' },
+  badger: { name: 'Badger', sub: 'Burrow · 2 catches' },
 };
 const PREFER = {
   blue: ['blue', 'o1', 'o2'], o1: ['o1', 'blue', 'o2'], o2: ['o2', 'blue', 'o1'],
@@ -27,15 +27,15 @@ function prefer(role, kind) {
   if (role === 'hunter') return kind === 'badger' ? ['hunter', 'badger', 'hyena'] : ['hunter', 'hyena', 'badger'];
   return PREFER[role] || [];
 }
-// Four players: no separate setup step. Nobody on Hyena or Honey Badger means 2 vs 2.
-// Anyone on Hyena or Honey Badger means Hunters. Empty seats fill in seat order at Start
-// (Ostrich 1, Vulture 1, Ostrich 2, Vulture 2, or Ostrich, Vulture, Hyena, Honey Badger).
-// A computer hunter in a 3- or 5-player game is a Hyena unless the host picked Honey Badger.
+// Four players: no separate setup step. Nobody on Hyena or Badger means 2 vs 2.
+// Anyone on Hyena or Badger means Hunters. Empty seats fill in seat order at Start
+// (Ostrich 1, Vulture 1, Ostrich 2, Vulture 2, or Ostrich, Vulture, Hyena, Badger).
+// A computer hunter in a 3- or 5-player game is a Hyena unless the host picked Badger.
 const ANIMAL = {
   ostrich: { name: 'Ostrich', sub: 'hide eggs', seats4: ['o1', 'o2'], seats4h: ['blue'] },
   vulture: { name: 'Vulture', sub: 'hunt eggs', seats4: ['v1', 'v2'], seats4h: ['red'] },
   hyena: { name: 'Hyena', sub: 'Pounce · 2 catches', seats4: [], seats4h: ['hyena'] },
-  badger: { name: 'Honey Badger', sub: 'Burrow · 2 catches', seats4: [], seats4h: ['badger'] },
+  badger: { name: 'Badger', sub: 'Burrow · 2 catches', seats4: [], seats4h: ['badger'] },
 };
 function animalOf(h) {
   if (!h) return null;
@@ -48,7 +48,7 @@ function animalOf(h) {
 }
 function shownAnimal(h) {
   const a = animalOf(h);
-  return a === 'ostrich' ? 'Ostrich' : a === 'vulture' ? 'Vulture' : a === 'hyena' ? 'Hyena' : a === 'badger' ? 'Honey Badger' : 'Choosing';
+  return a === 'ostrich' ? 'Ostrich' : a === 'vulture' ? 'Vulture' : a === 'hyena' ? 'Hyena' : a === 'badger' ? 'Badger' : 'Choosing';
 }
 function countAnimals(humans) {
   const c = { ostrich: [], vulture: [], hyena: [], badger: [] };
@@ -71,13 +71,13 @@ function fourMode(humans) {
   for (const h of humans || []) { const a = animalOf(h); if (a) counts[a]++; }
   const hunters = counts.hyena + counts.badger > 0;
   if (hunters) {
-    if (counts.hyena > 1 || counts.badger > 1) return { ok: false, setup: '4h', counts, hint: 'Only one Hyena and one Honey Badger. Switch the extra player.' };
-    if (counts.ostrich > 1) return { ok: false, setup: '4h', counts, hint: 'Hunters has one ostrich. Switch the extra player, or leave Hyena and Honey Badger to play 2 vs 2.' };
-    if (counts.vulture > 1) return { ok: false, setup: '4h', counts, hint: 'Hunters has one vulture. Switch the extra player, or leave Hyena and Honey Badger to play 2 vs 2.' };
+    if (counts.hyena > 1 || counts.badger > 1) return { ok: false, setup: '4h', counts, hint: 'Only one Hyena and one Badger. Switch the extra player.' };
+    if (counts.ostrich > 1) return { ok: false, setup: '4h', counts, hint: 'Hunters has one ostrich. Switch the extra player, or leave Hyena and Badger to play 2 vs 2.' };
+    if (counts.vulture > 1) return { ok: false, setup: '4h', counts, hint: 'Hunters has one vulture. Switch the extra player, or leave Hyena and Badger to play 2 vs 2.' };
     return { ok: true, setup: '4h', counts, hint: 'Hunters' };
   }
-  if (counts.ostrich > 2) return { ok: false, setup: '4', counts, hint: '2 vs 2 has two ostriches. Switch one to Vulture, or pick Hyena or Honey Badger for Hunters.' };
-  if (counts.vulture > 2) return { ok: false, setup: '4', counts, hint: '2 vs 2 has two vultures. Switch one to Ostrich, or pick Hyena or Honey Badger for Hunters.' };
+  if (counts.ostrich > 2) return { ok: false, setup: '4', counts, hint: '2 vs 2 has two ostriches. Switch one to Vulture, or pick Hyena or Badger for Hunters.' };
+  if (counts.vulture > 2) return { ok: false, setup: '4', counts, hint: '2 vs 2 has two vultures. Switch one to Ostrich, or pick Hyena or Badger for Hunters.' };
   return { ok: true, setup: '4', counts, hint: '2 vs 2' };
 }
 function infer(total, humans) {
@@ -131,7 +131,7 @@ function effective(room) {
   }
   if ((counted.hyena.length && counted.badger.length) && total === 5) {
     return { humans: room.humans, bench: [], bots, total, ok: false, reason: 'mix', preview: '5',
-      hint: 'Five players have one hunter. One player keeps Hyena or Honey Badger.' };
+      hint: 'Five players have one hunter. One player keeps Hyena or Badger.' };
   }
   if (!inf.ok && inf.reason === 'need' && !room.solo) inf.preview = '2';
   return { humans: room.humans, bench: [], bots, total, ...inf };
@@ -249,7 +249,7 @@ function setBots(room, n, hid) {
   room.botsWanted = Math.max(0, n | 0); clampBots(room); reconcile(room); return { ok: true };
 }
 function setChoice() {
-  return { error: 'Pick a role. Hyena or Honey Badger plays Hunters. Ostriches and vultures alone play 2 vs 2.' };
+  return { error: 'Pick a role. Hyena or Badger plays Hunters. Ostriches and vultures alone play 2 vs 2.' };
 }
 function setRecovery(room, mode, hid) {
   const e = hostOnly(room, hid); if (e) return e;
@@ -266,7 +266,7 @@ function setLevel(room, level, hid) {
 }
 function setHunterKind(room, kind, hid) {
   const e = hostOnly(room, hid); if (e) return e;
-  if (kind !== 'hyena' && kind !== 'badger') return { error: 'Pick hyena or honey badger.' };
+  if (kind !== 'hyena' && kind !== 'badger') return { error: 'Pick hyena or badger.' };
   room.hunterKind = kind;
   const h = room.humans.find(x => x.id === hid && x.role === 'hunter');
   if (h) h.kind = kind;
@@ -290,7 +290,7 @@ function plan(room, opts) {
   const playing = room.humans.filter(h => !bench.has(h.id)), taken = {};
   for (const h of playing) {
     if (h.role && seats.includes(h.role) && !taken[h.role]) {
-      if (h.role === 'hunter' && h.kind !== 'hyena' && h.kind !== 'badger') return { error: 'Pick hyena or honey badger for the hunter.' };
+      if (h.role === 'hunter' && h.kind !== 'hyena' && h.kind !== 'badger') return { error: 'Pick hyena or badger for the hunter.' };
       taken[h.role] = h;
     }
   }
@@ -349,11 +349,11 @@ function previewPlan(room, fn) {
 function computerSeatNames(room) {
   return previewPlan(room, planned => {
     if (!planned) return [];
-    const label = { blue: 'Ostrich', red: 'Vulture', o1: 'Ostrich', o2: 'Ostrich', v1: 'Vulture', v2: 'Vulture', hyena: 'Hyena', badger: 'Honey Badger' };
-    return planned.botSeats.map(s => s === 'hunter' ? (planned.kind === 'badger' ? 'Honey Badger' : 'Hyena') : (label[s] || s));
+    const label = { blue: 'Ostrich', red: 'Vulture', o1: 'Ostrich', o2: 'Ostrich', v1: 'Vulture', v2: 'Vulture', hyena: 'Hyena', badger: 'Badger' };
+    return planned.botSeats.map(s => s === 'hunter' ? (planned.kind === 'badger' ? 'Badger' : 'Hyena') : (label[s] || s));
   });
 }
-// The animal Start would give this player if they pick nothing ('Ostrich', 'Vulture', 'Hyena' or 'Honey Badger'), or ''.
+// The animal Start would give this player if they pick nothing ('Ostrich', 'Vulture', 'Hyena' or 'Badger'), or ''.
 function animalStartGives(room, me) {
   return previewPlan(room, planned => {
     if (!planned || !planned.assignments.some(a => a.human === me)) return '';
@@ -381,7 +381,7 @@ function view(room, hid) {
       const mine = !!(holder && holder.id === hid && kind === id);
       const blocked = !!(holder && holder.id !== hid && (kind === id || singleSeat));
       const takenBy = blocked ? 'Taken by ' + holder.name : '';
-      return { id, name: id === 'badger' ? 'Honey Badger' : 'Hyena', kind: id,
+      return { id, name: id === 'badger' ? 'Badger' : 'Hyena', kind: id,
         mine, taken: blocked, takenBy, who: '', sub: mine ? 'YOU' : (takenBy || 'Open') };
     });
   };
@@ -454,7 +454,7 @@ function sameOrAdapt(state) {
     return { type: 'lobby', reason: inf.reason, humans: all, note };
   }
   if (inf.setup === '5' && all.filter(h => { const a = animalOf(h); return a === 'hyena' || a === 'badger'; }).length > 1) {
-    return { type: 'lobby', reason: 'mix', humans: all, note: 'Five players have one hunter. Pick who keeps Hyena or Honey Badger.' };
+    return { type: 'lobby', reason: 'mix', humans: all, note: 'Five players have one hunter. Pick who keeps Hyena or Badger.' };
   }
   const fake = { solo: false, humans: all, botsWanted: 0, setupChoice: null, recovery: null, hunterKind: state.hunterKind || null, clock: true, level: 'normal' };
   reconcile(fake);

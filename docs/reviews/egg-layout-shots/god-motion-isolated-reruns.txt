@@ -1,0 +1,23 @@
+COMMAND: node tests/run-all.js testannounce.js
+PASS  testannounce.js               0s
+
+1 of 1 suites passed.
+EXIT CODE: 0
+
+COMMAND: node tests/run-all.js testcatch.js
+PASS  testcatch.js                  0s
+
+1 of 1 suites passed.
+EXIT CODE: 0
+
+COMMAND: node tests/run-all.js testviewprivacy.js
+PASS  testviewprivacy.js            0s
+
+1 of 1 suites passed.
+EXIT CODE: 0
+
+COMMAND: node tests/run-all.js testinteractiontext.js
+PASS  testinteractiontext.js        0s
+
+1 of 1 suites passed.
+EXIT CODE: 0

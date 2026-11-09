@@ -9,7 +9,7 @@
 
 ## What to review
 
-L2 waits for a second seat before the role choice. The all-white B&W look is now the default; all 13 other themes remain selectable. A returning player starts in it once, then their next selection sticks. No invented theme name: the unnamed look has no theme tooltip, rather than “undefined”. Hyena and Honey Badger lobby art uses thin lines.
+L2 waits for a second seat before the role choice. The all-white B&W look is now the default; all 13 other themes remain selectable. A returning player starts in it once, then their next selection sticks. No invented theme name: the unnamed look has no theme tooltip, rather than “undefined”. Hyena and Badger lobby art uses thin lines.
 
 Carry is Brian's selected option 4 (egg on a lifting curve). Eggs have narrow tops and broad, round bottoms. A bird and egg share a square side by side; the countdown sits beneath the egg. YOU is above the square, not on the bird/egg, and is confined below modal screens. Wrecked squares have a clean X without debris in this look.
 

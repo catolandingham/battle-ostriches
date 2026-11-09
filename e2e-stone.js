@@ -54,7 +54,9 @@ const THEMES = ['classic', 'nature', 'notes', 'golden', 'paper', 'arcade', 'toyb
     const legal = await P.evaluate(() => UI._legal()), g = game();
     const eggs = new Set(B.aliveEggs(g).filter(e => e.pos).map(e => key(e.pos)));
     const pick = legal.filter(p => !eggs.has(key(p))).sort((a, c) => dist(a, target) - dist(c, target))[0];
-    await cellAt(S, pick).click(); return pick;
+    const before=await P.evaluate(()=>UI._S().vulture.join(','));await cellAt(S, pick).click();
+    // A tap queues a socket action; do not reuse the still-my-turn pre-ack state.
+    await P.waitForFunction(old=>UI._S().vulture.join(',')!==old,before);return pick;
   };
 
   // 1) turn 1: the vulture has its stone. No glow, "Throw stone · 1/1".

@@ -1,4 +1,4 @@
-// Unit tests: 4-player Hunters mode (ostrich + vulture + hyena + honey badger). node testhunt.js
+// Unit tests: 4-player Hunters mode (ostrich + vulture + hyena + badger). node testhunt.js
 process.env.PORT = 0;
 const assert = require('assert'), H = require('./hunt.js'), HA = require('./huntai.js'), SIM = require('./simhunt.js'), B = require('./game.js');
 let n = 0; const ok = (name, f) => { f(); n++; console.log('ok', name); };

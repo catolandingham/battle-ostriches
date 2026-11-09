@@ -1,4 +1,4 @@
-SITUATION (not shown to reviewer): Round 2, honey badger to move, still burrowed, a moment after its turn began (honey badger quotes from earlier events may be overlapping the board). The ostrich really stands right next to it (column 8, row 3, diagonal). A burrowed badger can see the exact square of any bird next to it.
+SITUATION (not shown to reviewer): Round 2, badger to move, still burrowed, a moment after its turn began (badger quotes from earlier events may be overlapping the board). The ostrich really stands right next to it (column 8, row 3, diagonal). A burrowed badger can see the exact square of any bird next to it.
 
 HINT: Your turn. Tap to move.
 TIP BAR: Hover or tap a square to see what it is. / Turn off tips
@@ -26,7 +26,7 @@ ROUNDS 28
 EGGS 3
 13
 1/1
- HONEY BADGER
+ BADGER
 
 ?
 

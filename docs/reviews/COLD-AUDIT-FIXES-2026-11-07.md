@@ -55,7 +55,7 @@ Read correctly: vul-02b, vul-04a (apart from "I can't tell what the ostrich does
 
 Read correctly: ost-02b, ost-06 (the carry itself was shown out of order, an *artifact*).
 
-### 1.3 Hyena and honey badger
+### 1.3 Hyena and badger
 
 | Shot | True situation | What the reviewer took from it | Mismatch | Cause |
 |---|---|---|---|---|
@@ -83,7 +83,7 @@ Read correctly: hye-02b.
 |---|---|---|---|---|
 | misc-00 | One welcome card. | "Skip and Back with only one page are odd"; rules reachable only by a small link. | No picture of the game before play. | R12 |
 | misc-01, 02 | Home and menu. | "Outwit the hunters" vs "vulture": same thing? Play modes unexplained. | Naming drift. | R11 |
-| how-01 to 03 | How to play opens centered and its top is cut off and cannot be scrolled to. | Started mid-page; never saw the heading or first Ostrich lines. All words, no board picture; honey badger and "teammate" never introduced. "Both birds always see each other" vs "a sitting ostrich is seen". | Page cut off; reference is a wall of rules. how-02 and how-03 are the same capture (*artifact*). | R12, R11 |
+| how-01 to 03 | How to play opens centered and its top is cut off and cannot be scrolled to. | Started mid-page; never saw the heading or first Ostrich lines. All words, no board picture; badger and "teammate" never introduced. "Both birds always see each other" vs "a sitting ostrich is seen". | Page cut off; reference is a wall of rules. how-02 and how-03 are the same capture (*artifact*). | R12, R11 |
 
 ---
 
@@ -139,7 +139,7 @@ This is the core of the fix list. Each step should have exactly one look that ap
 | | 2. Step in | Move dots, coinciding with the area | Move dots on squares; the area as one outline, visibly separate (fix 5) |
 | | 3. Pounce | Two outlines | One area; overlap filled; one extra dot ring (fix 5) |
 | | 4. Catch | Toast, bird vanishes | Bird drawn bursting off in a puff, direction hidden; your catch pip fills (fixes 8, 10) |
-| **Honey badger** | 1. Sense | As hyena | As hyena |
+| **Badger** | 1. Sense | As hyena | As hyena |
 | | 2. Burrow | Burrow button | Burrow button shows the mound shape; your piece sinks into a mound |
 | | 3. Ambush | Small bird under a move dot | Ring around the adjacent bird (the act-on ring the Kick uses) (fix 1) |
 | | 4. Pop up | "Badger popped up!" | Mound bursts as you move; hint "You came up." on your own phone |
@@ -244,7 +244,7 @@ Each fix lists the root cause, the evidence, what the player sees after the chan
 ### Fix 14. Open How to play at the top and turn its marks list into pictures
 
 - **Cause:** R12, R11. **Evidence:** how-01 to 03.
-- **What the player sees:** the page opens scrolled to the top with nothing cut off. Each animal's section starts with its loop drawn as the same pictures the walkthrough uses. The marks list shows each mark exactly as the board draws it, with two to four words of meaning. Honey badger and teammates get one line each before they are mentioned.
+- **What the player sees:** the page opens scrolled to the top with nothing cut off. Each animal's section starts with its loop drawn as the same pictures the walkthrough uses. The marks list shows each mark exactly as the board draws it, with two to four words of meaning. Badger and teammates get one line each before they are mentioned.
 - **Verify:** re-shoot how-01 at the top and at two real scroll positions (the audit captured how-02 and how-03 at the same spot). Pass: the reviewer can say what each animal does from the pictures alone.
 
 ### Fix 15. Identify every piece the first time it appears
@@ -268,7 +268,7 @@ Each fix lists the root cause, the evidence, what the player sees after the chan
 | Vulture | Land to sniff for eggs. (lands, area outline appears) | Land on the egg to find it. (egg pops up solid) | Throw your stone at it. (arc, egg smashes) | Fetch a new stone. (flies to rocks, pebble appears in claws) |
 | Ostrich | Hide your 3 eggs. | Stand on eggs to keep them warm. (ring refills) | Eat at a leaf. (hunger bar refills) | Kick pests away. (kick slides off one edge, in the other) |
 | Hyena | Sense birds nearby. (range outline fills) | Step in to catch. | Missed? Pounce once more. | Catch 3 times to win. (pips fill) |
-| Honey badger | Sense birds nearby. | Stay still to burrow. (sinks into mound) | Catch birds that come close. (ring on a bird next to it) | Catch 3 times to win. |
+| Badger | Sense birds nearby. | Stay still to burrow. (sinks into mound) | Catch birds that come close. (ring on a bird next to it) | Catch 3 times to win. |
 
 **Order of work.** Build fixes 1 to 5 first. The walkthrough only teaches if the board then shows the same cues, so it should be made from the finished board art, not before it.
 
@@ -276,7 +276,7 @@ Each fix lists the root cause, the evidence, what the player sees after the chan
 
 ## 6. Also noticed
 
-- The honey badger trivia box and the "dug in" toast overlap each other (bad-02); the BURROWED label is clipped to "URROWE".
+- The badger trivia box and the "dug in" toast overlap each other (bad-02); the BURROWED label is clipped to "URROWE".
 - The ROUNDS number is clipped on 3-player headers (hye and bad shots show "ROUNDS 2" for 29).
 - The red "NO EGG" tag on the ostrich's phone is clipped off the left edge (ost-10), and no reviewer could say what it meant.
 - The "Timer on" chip and "900s" on the role card suggest 15-minute turns while the bar shows 10 seconds (hye-01).

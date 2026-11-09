@@ -1,0 +1,4 @@
+const {spawnSync}=require('child_process'),A=require('assert'),fs=require('fs'),started=Date.now();
+const r=spawnSync(process.execPath,['tools/shots-real-play.js','shots/kick-views','kick'],{encoding:'utf8',timeout:90000});process.stdout.write(r.stdout||'');process.stderr.write(r.stderr||'');A.equal(r.status,0,r.error?.message||'full kicker slide frames failed');
+for(const role of ['ostrich','hyena']){for(const prefix of ['kick','kick-stopped'])for(const frame of ['0-before','1-start','2-mid','2b-landing','3-after'])A(fs.statSync(`shots/kick-views/${prefix}-${role}-${frame}.png`).mtimeMs>=started-1000,'actual fresh kick sequence must execute');A(fs.statSync(`shots/kick-views/kick-${role}-reduced.png`).mtimeMs>=started-1000);}
+console.log('PASS kick: full kicker/own slides, actual early stops, unchanged watcher privacy, cause, duplicate packets, reduced motion, 22 fresh frames');

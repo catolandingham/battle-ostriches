@@ -16,7 +16,7 @@ Source: `Game_Interface_and_Multiplayer_Setup_Feedback_20261105_13306.aac` on Br
 [00:00:53] Oh, it looks like I'm already ostrich.
 [00:00:54] I'll be right
 [00:00:58] I'm already
-[00:00:59] Honey Badger
+[00:00:59] Badger
 [00:01:01] but I can switch
 [00:01:03] wait what I'm confused
 [00:01:05] you should be able to switch Em

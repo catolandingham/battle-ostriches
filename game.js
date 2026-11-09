@@ -8,7 +8,7 @@ const CONFIG = {
   ostrichWalk: 2,      // the ostrich walks up to N squares (king-move distance; a 2-square walk needs a middle square that is not smashed)...
   carryWalk: 1,        // ...but only 1 square while it carries an egg
   kickPush: 3,         // Kick: the ostrich pushes an animal next to it this many squares straight away (wraps around the board edge; stops before a wrecked square or an animal that is up)
-  kickPushBadger: 2,   // ...but the honey badger only this many
+  kickPushBadger: 2,   // ...but the badger only this many
   vultureFly: 2,       // vulture flies up to N squares (king-move distance)
   throwRange: 1,       // vulture throws at its own square or one next to it...
   vultureStart: [4, 3],
@@ -214,7 +214,7 @@ function resolveThrow(g, W, target) {
     const t = W.thrower();
     if (W.ostrichAt(p)) {
       if (kicked) { out.used = true; out.result = 'bounce'; return out; } // a stone is never kicked back twice
-      out.kickedBack = true; out.result = 'bounce'; kicked = true; out.line = 'The ostrich kicked the stone right back!';
+      out.kicker = W.ostrichSeatAt ? W.ostrichSeatAt(p) : 'blue'; out.kickedBack = true; out.result = 'bounce'; kicked = true; out.line = 'The ostrich kicked the stone right back!';
       if (isFood(g, t) || isRock(g, t)) { // the vulture stands where a stone cannot land: it bounces off and goes one square on, straight past the vulture
         out.line = isFood(g, t) ? 'Boing! The stone bounced off the leaf.' : 'Clang! The vulture batted it away with a rock.';
         const n = [t[0] + sgn(t[0] - p[0]), t[1] + sgn(t[1] - p[1])];
@@ -229,6 +229,7 @@ function resolveThrow(g, W, target) {
     if (e) { e.alive = false; out.smashed = e.id; out.result = 'hit'; }
     const dir = [sgn(p[0] - t[0]), sgn(p[1] - t[1])];
     if (dir[0] || dir[1]) out.pushed = W.pushAt(p, dir, 2); // any animal on the square is pushed 2 away from the vulture; a buried badger comes up
+    if (out.pushed.length) out.line = "The vulture's stone hit the " + out.pushed.map(x => x.kind).join(' and the ') + '.';
     if (!special) g.marks[key(p)] = e ? 'hit' : 'stone';
     else if (!out.kickedBack && !e) out.result = 'soft';
     if (!special && key(p) === key(t)) { // the stone landed on the vulture's own square: it is set down on the nearest open square (ties: farthest from the ostrich)
@@ -251,7 +252,8 @@ function vultureThrow(g, p, mkW) {
   const from = g.vulture.slice(), r = resolveThrow(g, (mkW || classicW)(g), p);
   g.lastAction = { type: 'throw', from, p: p.slice(), result: r.result, line: r.line, kickedBack: r.kickedBack, hop: r.hop, used: r.used };
   if (r.result === 'bounce') g.lastAction.egg = !!(g.carrying !== null || eggAt(g, p)); // a kicked stone does not say what the ostrich guards
-  if (r.line) g.lastStone = { seq: ++g.stoneSeq, text: r.line, round: g.round };
+  if (r.result === 'hit') g.lastSmash = {seq:g.smashSeq=(g.smashSeq||0)+1,by:'red',owner:'blue'};
+  if (r.line) g.lastStone = { seq: ++g.stoneSeq, text: r.line, by: 'red', targets: r.pushed.map(x => x.kind), kicker:r.kicker||null, trails: r.pushed.map(x=>({key:x.kind,from:x.from,to:x.to})), round: g.round };
   if (!aliveEggs(g).length) { g.winner = 'red'; g.winBy = 'smashed'; g.phase = 'over'; } else { g.turn = 'blue'; dropCarried(g); }
   return r.result;
 }

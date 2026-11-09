@@ -156,7 +156,7 @@ const COLS = 9;
   await gone(A, 'A second carry');
   await A.evaluate(() => document.documentElement.setAttribute('data-theme', 'classic'));
 
-  // ---------------------------------------------------------------- 2) Hunters: the honey badger's own burrow, badger A, hyena Y
+  // ---------------------------------------------------------------- 2) Hunters: the badger's own burrow, badger A, hyena Y
   const A4 = await mk(), Y = await mk();
   await A4.goto(U); await A4.click('#playFriend'); await A4.waitForSelector('#lobbyCode:not(:empty)');
   await Y.goto((await A4.inputValue('#lobbyLink')).replace(/^http:\/\/[^/]+/, 'http://localhost:3966')); await Y.waitForSelector('#roomLobby');

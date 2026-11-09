@@ -1,5 +1,10 @@
 # Busy screen, 2026-11-08
 
+## Decision update — Brian, 2026-11-08
+
+The original screenshots/observations below are historical. PR #23 now uses the approved personal and watcher kick/stone/meeting/burst lines, numbered partner-find and team-smash messages (see `egg-layout-shots/WORDS-FOR-APPROVAL.md`). The kicker sees the full actual kick slide/landing, including early stops outside normal sight; other watchers keep their normal rules. Ordinary movement stays about one second. Big-scene samples are still required: no duration or tap-to-skip design is approved or built here.
+
+
 The start of a game puts too many things in front of the player at once. When a bird is caught, that player often cannot tell it was them. The same problem shows up in the other two-animal moments: a kick, a stone, the hunters meeting, the badger bursting out, and a stone kicked back.
 
 Pictures are iPhone size (390 by 664), from real games, the same setup as `tools/shots-real-play.js`. The tutorial, the role card and the tips were left off, so these are the boards a returning player gets. Every picture is in `docs/reviews/busy-2026-11-08/`. The clock in the pictures says 120 seconds because the test slowed it down so a turn would not expire. A real game uses that same bar with a 10-second clock.
@@ -139,3 +144,6 @@ At the start, show the mode line by itself for about 2 seconds, then remove it s
 For a catch, kick, stone, meeting or burst: one sentence, about a second, naming both animals and saying "you" on the phone it happened to. Then, if this phone may see both squares, a short highlight between them. If it may not see a square, leave that square off and do not say where it is. The planned cut-scenes (1.5 to 2 seconds, tap to skip) fit the catch, the knock-out, the smash, the burst and the kicked-back stone. Ordinary steps stay about 1 second.
 
 Do not play a second pop ("Bird near", "Hyena near") in the same bar during that second. One sound, not a stack. The caught bird should get the warn sound with the "you were caught" line, and nothing else until that line has been up long enough to read.
+
+## Update 2026-11-08
+Brian decided: a caught bird's square gets no mark on the board. Catches show only as lost hearts in the animal chip row above the board. Earlier notes in this audit that put claws or a pink box on a square are superseded.

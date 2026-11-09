@@ -2,7 +2,7 @@
 
 Bot-versus-bot win rates from the game's own simulators (`sim.js`, `sim3.js`, `simhunt.js`, `simteam.js`), run on Brian's MacBook on 2026-11-07 by a Claude Code subagent. 2000 games per cell, 1000 for 5-player games, so about ±2 points (±3 for 5-player). Bots are weak at the hyena's guessing game and at avoiding a hidden badger, so treat these as rough. Code for every variant is on branch `rules-consistent` or in the session scratchpad; nothing here is live.
 
-Key: o = ostrich, v = vulture, h = hyena, b = honey badger. Bold = under 20% or over 55%.
+Key: o = ostrich, v = vulture, h = hyena, b = badger. Bold = under 20% or over 55%.
 
 ## What each idea did
 
@@ -64,7 +64,7 @@ R = today's rules plus: every thrown stone wrecks its square (leaves and rock pi
 
 ## Rule set R2 and the badger "dug in" announcement (2026-11-07, later afternoon)
 
-R2 = R with a carried egg not warmed but cooling at normal speed. R2a = R2 plus "The honey badger dug in!" to everyone, with the square shown to birds within 2 (bird bots avoid it). R2b = R2a plus ambush sight only on the first turn after digging in.
+R2 = R with a carried egg not warmed but cooling at normal speed. R2a = R2 plus "The badger dug in!" to everyone, with the square shown to birds within 2 (bird bots avoid it). R2b = R2a plus ambush sight only on the first turn after digging in.
 
 | Mode | today | R2 | R2a | R2b |
 |---|---|---|---|---|
@@ -152,11 +152,11 @@ Base: everyone moves 2 + Kick + no missed turn + universal rules; Kick pushes 3 
 
 - Fairest: normal play at N=15. Left over: the 3-player badger (13%, the 3-square kick puts it out of reach), the Hunters ostrich (15%) and vulture (17%).
 - Turtling beats a lone vulture (classic 62 to 72%) but is crushed by a hyena (5 to 7%); not too strong overall.
-- Next to test: the honey badger is pushed only 1 by a kick; hunters cannot see each other; a side wins when its goal is met even if knocked out.
+- Next to test: the badger is pushed only 1 by a kick; hunters cannot see each other; a side wins when its goal is met even if knocked out.
 
 ## Badger kick 2, goals count when out, leaf and rock camping, ties (2026-11-07, night)
 
-Base: normal play at N=15 (everyone moves 2, Kick, no missed turn, universal rules, pass over wrecked squares, no sit limit, hunters see each other within 2), plus: Kick pushes hyena and vulture 3, honey badger 2; a side wins when its goal is met even if knocked out; stones on an empty leaf or rock pile are used up harmlessly; in Hunters a 1-1 knock-out split is a tie. L-NO = badger cannot dig in on a leaf or rock pile; L-YES = it can.
+Base: normal play at N=15 (everyone moves 2, Kick, no missed turn, universal rules, pass over wrecked squares, no sit limit, hunters see each other within 2), plus: Kick pushes hyena and vulture 3, badger 2; a side wins when its goal is met even if knocked out; stones on an empty leaf or rock pile are used up harmlessly; in Hunters a 1-1 knock-out split is a tie. L-NO = badger cannot dig in on a leaf or rock pile; L-YES = it can.
 
 | Mode | L-NO | L-YES |
 |---|---|---|

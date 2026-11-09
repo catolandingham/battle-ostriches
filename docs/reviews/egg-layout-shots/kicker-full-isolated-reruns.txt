@@ -1,0 +1,9 @@
+COMMAND: node tests/run-all.js testannounce.js
+PASS  testannounce.js               0s
+
+1 of 1 suites passed.
+
+COMMAND: node tests/run-all.js e2e-roles.js
+PASS  e2e-roles.js                 30s
+
+1 of 1 suites passed.

@@ -1,4 +1,4 @@
-SITUATION (not shown to reviewer): Round 2, just after the honey badger moved out of its burrow without a catch (it moved to column 9, row 5; the ostrich is at column 8, row 3 and was not caught). Vulture to move (held).
+SITUATION (not shown to reviewer): Round 2, just after the badger moved out of its burrow without a catch (it moved to column 9, row 5; the ostrich is at column 8, row 3 and was not caught). Vulture to move (held).
 
 HINT: Vulture's turn…
 TOAST: Badger popped up!
@@ -21,7 +21,7 @@ ROUNDS 28
 EGGS 3
 13
 1/1
- HONEY BADGER
+ BADGER
 
 ?
 

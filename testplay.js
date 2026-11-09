@@ -1,4 +1,4 @@
-// Action ring choices, god-view visibility, and the default-on turn timer. node testplay.js
+// Action ring choices, knockout/end visibility, and the default-on turn timer. node testplay.js
 process.env.PORT = process.env.PORT || '3971';
 const assert = require('assert');
 const B = require('./game.js'), T = require('./three.js'), HU = require('./hunt.js'), TT = require('./team.js');
@@ -77,7 +77,7 @@ ok('3p: a living ostrich can still act', () => {
   assert.equal(room.g.turn, 'hunter');
 });
 
-ok('5p: eliminated ostrich sees the burrowed hunter and the eggs; the living vulture does not', () => {
+ok('5p: eliminated ostrich sees the burrowed hunter and all eggs; living seats do not', () => {
   const { room } = S.createT({ team: 5, role: 'o1', bots: ['v1', 'v2', 'o2', 'hunter'], kind: 'hyena' }, null);
   const g = room.g; g.phase = 'play'; g.turn = 'v1';
   g.b.o1.pos = [0, 0]; g.b.o2.pos = [2, 2]; g.b.v1.pos = [4, 2]; g.b.v2.pos = [4, 4];

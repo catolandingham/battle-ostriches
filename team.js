@@ -1,5 +1,5 @@
 // 4-player (2v2) and 5-player (2v2 + hunter) modes. Two ostriches (o1, o2), each with its own 2-egg nest, against two
-// vultures (v1, v2); in 5 players a hunter (hyena / honey badger) moves last. Turn order: V1, O1, V2, O2 (, hunter).
+// vultures (v1, v2); in 5 players a hunter (hyena / badger) moves last. Turn order: V1, O1, V2, O2 (, hunter).
 // Reuses the 2-player CONFIG and the 3-player hunter rules (sense, pounce, burrow, catches, knock-back).
 const B = require('./game.js'), K = B.key, D = B.dist;
 const TM = { eggs: 2, vStarts: [[4, 2], [4, 4]], sense: 2, see: 2, walk: 2, pounce: 1, knock: 2, clockMs: 10000, ko: { hyena: 2, badger: 2 }, hStarts: [[0, 3], [8, 3]] };
@@ -88,7 +88,7 @@ function ostrichKick(g, s, p) {
   const kr = B.slideN(g.cfg, from, B.awayFrom(b.pos, from), n, m => (g.h && K(g.h.p) === K(m) && !g.h.burrowed && !hunter) || birdsIn(g).some(o => o !== v && K(g.b[o].pos) === K(m)), g.marks, true), to = kr.to;
   if (hunter) g.h.p = to; else g.b[v].pos = to;
   const who = hunter ? (g.h.kind || 'hyena') : 'vulture';
-  g.lastKick = { seq: ++g.kickSeq, who, seat: hunter ? 'hunter' : v, from, to: to.slice(), round: g.round, moved: kr.moved };
+  g.lastKick = { seq: ++g.kickSeq, who, by: s, seat: hunter ? 'hunter' : v, from, to: to.slice(), round: g.round, moved: kr.moved };
   g.lastAction = { seat: s, type: 'kick', who };
   const e = eggAt(g, b.pos); if (e) e.lastWarm = g.round; // an egg under the ostrich is warmed, as when it sits
   feed(g, s); next(g); return true;
@@ -127,6 +127,7 @@ function vultureFly(g, s, p) { clearOut(g);
 }
 // The stone resolver's view of this mode: either ostrich kicks it back, the hunter is pushed 2 away from the vulture and a buried badger comes up.
 const stoneW = (g, s) => { const b = g.b[s]; return { thrower: () => b.pos.slice(), setThrower: q => { b.pos = q.slice(); },
+  ostrichSeatAt: p => OS.find(o=>live(g,o)&&K(g.b[o].pos)===K(p)),
   ostrichAt: p => OS.some(o => live(g, o) && K(g.b[o].pos) === K(p)), eggAt: p => eggAt(g, p),
   pushAt: (p, dir, n) => { if (!g.h || K(g.h.p) !== K(p)) return []; const from = g.h.p.slice(), wasBur = g.h.burrowed; g.h.burrowed = false; g.h.dig = 0; if (wasBur) g.popout = { seq: g.popSeq = (g.popSeq || 0) + 1, round: g.round };
     g.h.p = B.slide(g.cfg, from, dir, n, m => birdsIn(g).some(o => K(g.b[o].pos) === K(m)), g.marks); return [{ kind: g.h.kind, from, to: g.h.p.slice() }]; },
@@ -137,7 +138,8 @@ function vultureThrow(g, s, p) { clearOut(g);
   const from = b.pos.slice(), r = B.resolveThrow(g, stoneW(g, s), p);
   g.lastAction = { seat: s, type: 'throw', from, p: p.slice(), result: r.result, line: r.line, kickedBack: r.kickedBack, hop: r.hop, used: r.used };
   if (r.result === 'bounce') g.lastAction.egg = !!(eggAt(g, p) || OS.some(o => live(g, o) && K(g.b[o].pos) === K(p) && g.b[o].carrying !== null));
-  if (r.line) g.lastStone = { seq: ++g.stoneSeq, text: r.line, round: g.round };
+  if (r.result === 'hit') g.lastSmash = {seq:g.smashSeq=(g.smashSeq||0)+1,by:s,owner:OS[(g.eggs.find(e=>e.id===r.smashed)||{}).nest]||null};
+  if (r.line) g.lastStone = { seq: ++g.stoneSeq, text: r.line, by: s, targets: r.pushed.map(x => x.kind), kicker:r.kicker||null, trails: r.pushed.map(x=>({key:x.kind,from:x.from,to:x.to})), round: g.round };
   dropAll(g); next(g); return r.result;
 }
 // --- hunter (5 players) ---
@@ -198,7 +200,7 @@ function catchBird(g, s, back) {
 function end(g, w, by, why) { if (g.phase === 'over') return; g.phase = 'over'; g.winner = w; g.winBy = by; g.endWhy = why; }
 function checkEnd(g, timeUp) {
   if (g.phase === 'over') return true;
-  const vIn = VS.some(s => !g.b[s].out), eggs = alive(g).length, oIn = OS.some(s => !g.b[s].out) && eggs > 0, nm = g.h && g.h.kind === 'badger' ? 'honey badger' : 'hyena';
+  const vIn = VS.some(s => !g.b[s].out), eggs = alive(g).length, oIn = OS.some(s => !g.b[s].out) && eggs > 0, nm = g.h && g.h.kind === 'badger' ? 'badger' : 'hyena';
   const allOut = OS.concat(VS).every(s => g.b[s].out), firstGoal = g.h && g.h.kos.o >= 1 && g.h.kos.v >= 1;
   if (g.h && (allOut || (B.HUNTER_GOAL('5', g.cfg).kind === 'first' && firstGoal))) end(g, 'hunter', 'ko', allOut ? `The ${nm} knocked out every bird.` : `The ${nm} knocked out an ostrich and a vulture.`);
   else if (eggs === 0 && vIn) end(g, 'red', g.lastAction && g.lastAction.type === 'throw' ? 'smashed' : 'cold', g.lastAction && g.lastAction.type === 'throw' ? 'The vultures smashed every egg.' : 'The last egg went cold, so the vultures win.');

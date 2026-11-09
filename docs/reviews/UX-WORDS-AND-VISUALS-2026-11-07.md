@@ -82,7 +82,7 @@ Rule for every theme: themes restyle the floor tiles, the frame and the animal a
 
 ### The Kick, shown instead of told
 
-Today: the player taps Kick, the hint says "Tap the glowing animal to kick it.", and on long-press a tooltip says "Kick it up and left, up to 3 squares (2 for a honey badger). It may stop early." (18 words). The screen never shows where the animal goes.
+Today: the player taps Kick, the hint says "Tap the glowing animal to kick it.", and on long-press a tooltip says "Kick it up and left, up to 3 squares (2 for a badger). It may stop early." (18 words). The screen never shows where the animal goes.
 
 Proposed, with no sentence at all:
 
@@ -92,7 +92,7 @@ Proposed, with no sentence at all:
 4. **What "may stop early" becomes.** Squares the ostrich can see are shown as solid dots, and the ghost stops before any blocker the ostrich can see. Squares beyond the ostrich's sight (more than 2 away) get hollow dots. A hollow dot quietly says "can't see there" without revealing anything, which is what rule 5.2 needs. No words.
 5. **Tap the animal again, or the ghost, to kick.** Tap anywhere else to cancel. This is the chess-app pattern: select, see the destination, confirm.
 6. **Feedback.** The animal slides along the arrow. If it stops early, it stops with a small bump on the square before the blocker, so the cause is visible. The toast says "Kicked the hyena 3 squares." (5 words) to everyone.
-7. **Honey badger distance.** The arrow simply has 2 dots instead of 3. No "(2 for a honey badger)" anywhere on screen; the role card and How to play can say it once.
+7. **Badger distance.** The arrow simply has 2 dots instead of 3. No "(2 for a badger)" anywhere on screen; the role card and How to play can say it once.
 
 ---
 
@@ -156,7 +156,7 @@ Zoomed shots (`zoom-own-square.png`): the YOU tag, the egg's warmth number and t
 - Kick on the card says "back 3 squares"; "back" reads as "toward me". The push goes away from the ostrich.
 - How to play, 3 players: "North is the top of the board." Nothing else in the game uses compass directions.
 - Visual names in rules and cards: "rose dots" (hunter cards, hints, How to play, and rulebook 7.3, 7.4, 10), "gray rock pile", "green leaf", "gray stone or red X", "big yellow egg", "glowing yellow square", "red-orange glow", "Red X =", "Gray stone =", "Green ? =", "possible squares turn green". Each should name the meaning instead.
-- Family audience: two honey badger quotes show on every bird player's phone and are coarse for a family game: "Thanks for the treat, stupid birds!" and "...it doesn't give a sh*t, it just takes what it wants." Brian's call; flagged only.
+- Family audience: two badger quotes show on every bird player's phone and are coarse for a family game: "Thanks for the treat, stupid birds!" and "...it doesn't give a sh*t, it just takes what it wants." Brian's call; flagged only.
 
 ---
 
@@ -177,8 +177,8 @@ Proposal for every card: title, then 4 lines, each led by a small icon (the game
 | Vulture (3 players) | 89 words | Same, line 1: Break every egg. Don't get caught twice. |
 | Vulture (2 vs 2) | 91 words; adds "Your teammate sees your sniffs." | Same 4 lines; line 2: Fly 2. You share sniffs with your partner. |
 | Hyena (3 players) | 59 words. "Move up to 2 squares a turn. Birds see you within 2. You smell birds (rose dots)." / "Pounce: If you smell a bird and do not catch it, you smell again and may move 1 square more." / "A bird is out after 2 catches." | [catch ring] Make 3 catches. (goal from config) / [move dot] Move 2 squares. / [dashed area] The outline shows where a bird may be. / [move dot +1] Missed? Move 1 more. |
-| Honey badger (3 players) | 72 words. "Burrow: Stay still to dig in, on any square. Birds cannot see you, and you see any bird next to you. Moving pops you up." | [catch ring] Make 3 catches. / [move dot] Move 2 squares. / [dashed area] The outline shows where a bird may be. / [mound] Stay still to hide underground. |
-| Hyena (Hunters) | 75 words; "Goal: Knock out more birds than the honey badger." and a 18-word lose line | [catch ring] Knock out more birds than the honey badger. / then the 3 hyena lines above |
+| Badger (3 players) | 72 words. "Burrow: Stay still to dig in, on any square. Birds cannot see you, and you see any bird next to you. Moving pops you up." | [catch ring] Make 3 catches. / [move dot] Move 2 squares. / [dashed area] The outline shows where a bird may be. / [mound] Stay still to hide underground. |
+| Hyena (Hunters) | 75 words; "Goal: Knock out more birds than the badger." and a 18-word lose line | [catch ring] Knock out more birds than the badger. / then the 3 hyena lines above |
 | Card subline | "We picked this animal for you." (6) | Keep (6). |
 | Card button | "Got it" (2) | Keep. |
 
@@ -259,7 +259,7 @@ Proposal: one line, 3 to 7 words, verb first. "Your turn" is shown by the pulse 
 | Hunter sense | "Bird may be here." / "Still close." / "Nothing near" | 4 / 2 / 2 | "Bird near." / "Still near." / "Nothing near." | Area outline appears |
 | Pounce | "Pounce!" | 1 | Keep | |
 | Pounce tag on hunter square | "CAN CATCH" | 2 | Remove | Overlap area is the cue |
-| Hunter seen by a bird | "HYENA NEAR" / "HONEY BADGER NEAR" | 2 / 3 | "Hyena near!" | Hunter appears with a ping ring |
+| Hunter seen by a bird | "HYENA NEAR" / "BADGER NEAR" | 2 / 3 | "Hyena near!" | Hunter appears with a ping ring |
 | Ostrich result of a throw | "Bounced! Egg under ostrich." / "Bounced! No egg." / "The stone missed." / "💥 An egg was smashed!" | 4 / 3 / 3 / 4 | "Kicked it back!" / "Missed." / "Egg smashed." | Stone flies back (fx) |
 | Vulture result | "Bounced! ..." / "Miss." / "Picked up a stone." | 1 to 4 | Keep short ones | |
 | Ostrich: egg found | "The vulture found an egg! Move it or sit on it." | 11 | "Egg found! Move or sit on it." | |
@@ -272,18 +272,18 @@ Proposal: a toast at the top edge of the board, one line, neutral color unless i
 
 | When | Current | Words | Proposed |
 |---|---|---|---|
-| Start line | "The vulture hunts eggs. The hyena and honey badger hunt birds." | 11 | Remove the toast; show it on the role card's first line instead, or keep as "Vulture hunts eggs. Hunters hunt birds." (7) |
+| Start line | "The vulture hunts eggs. The hyena and badger hunt birds." | 11 | Remove the toast; show it on the role card's first line instead, or keep as "Vulture hunts eggs. Hunters hunt birds." (7) |
 | Caught, to the bird | "The hyena caught you! Hurt: one more catch and you're out." | 11 | "Caught! One more and you're out." (6), pips fill |
-| Walked into the badger | "You walked into the hidden honey badger! The honey badger caught you! Hurt: one more catch and you're out." (+ quote) | 19 + quote | "A hidden badger caught you!" (5), pips fill |
+| Walked into the badger | "You walked into the hidden badger! The badger caught you! Hurt: one more catch and you're out." (+ quote) | 19 + quote | "A hidden badger caught you!" (5), pips fill |
 | Knocked out, to the bird | "The hyena knocked you out." | 5 | Keep |
 | Catch, to the hunter | "Caught the ostrich! One more catch knocks it out." | 9 | "Caught the ostrich!" (3), pip fills on its chip |
 | KO, to the hunter | "Ostrich knocked out!" | 3 | Keep |
 | Catch, to others | "The hyena caught the ostrich." | 5 | Keep |
 | Bird out | "The ostrich is out." / "Ostrich 1 is out." | 4 | Keep |
-| Kick | "The ostrich kicked the honey badger back 2 squares." | 9 | "Ostrich kicked the badger 2 squares." (6) |
+| Kick | "The ostrich kicked the badger back 2 squares." | 9 | "Ostrich kicked the badger 2 squares." (6) |
 | Kick blocked | "The ostrich kicked the vulture, but it had nowhere to go." | 11 | "Kick blocked." (2) |
-| Badger pops out | "The honey badger came out of its burrow!" | 8 | "Badger popped up!" (3) |
-| Hunters meet | "The honey badger ran into the hyena. Nobody is hurt. The hyena slid back 2 squares." | 16 | "Badger shoved the hyena." (4) |
+| Badger pops out | "The badger came out of its burrow!" | 8 | "Badger popped up!" (3) |
+| Hunters meet | "The badger ran into the hyena. Nobody is hurt. The hyena slid back 2 squares." | 16 | "Badger shoved the hyena." (4) |
 | Stone kicked back | "The ostrich kicked the stone right back!" | 7 | "Kicked it back!" (3) |
 | Stone on leaf / rocks | "Boing! The stone bounced off the leaf." / "Clang! The vulture batted it away with a rock." / "The stone landed softly in the leaves." / "The stone clattered back onto the rock pile." | 7 to 9 | "Stone wasted." (2), or no toast; the stone simply vanishes with a puff |
 | Badger quotes (`badgerlines.js`) | 6 to 25 words each; the "first burrow" line is 25 | | Keep as flavor only on the badger's own phone, max 8 words; cut the 25-word fact and the "sh*t" line for a family game (Brian's call) |
@@ -294,7 +294,7 @@ Tooltips are the "details on request" layer, so they may run longer than hints, 
 
 | Mark | Current | Words | Proposed |
 |---|---|---|---|
-| Kick target | "Kick it up and left, up to 3 squares (2 for a honey badger). It may stop early." | 18 | Remove. The arrow and ghost show it. If kept: "Kick here." |
+| Kick target | "Kick it up and left, up to 3 squares (2 for a badger). It may stop early." | 18 | Remove. The arrow and ghost show it. If kept: "Kick here." |
 | Throw target | "Throw a stone here" | 4 | "Throw here." |
 | Move target | "Move here" / "Fly here" | 2 | Keep |
 | Setup | "Hide an egg here" / "Start here" | 4 / 2 | Keep |
@@ -310,7 +310,7 @@ Tooltips are the "details on request" layer, so they may run longer than hints, 
 | Shared square | "Vulture and ostrich share this square" | 6 | Keep |
 | Hunter, to a bird | "Hyena! It catches a bird by landing on it (or if you step onto it)" | 14 | "Hyena. Don't let it land on you." (7) |
 | Hunter itself | "You, burrowed: the birds can't see you" | 7 | "You, hidden." |
-| Rival hunter | "Your rival, the honey badger. If it moves onto you, you are knocked back 2. If you move onto it, you bounce back 2." | 24 | "Rival. Landing on it shoves it." (check against rule 8.1) |
+| Rival hunter | "Your rival, the badger. If it moves onto you, you are knocked back 2. If you move onto it, you bounce back 2." | 24 | "Rival. Landing on it shoves it." (check against rule 8.1) |
 | Ambush sight | "A bird is next to you. You can see it from your burrow." | 13 | "Bird next to you." |
 | Hurt | "Hurt: caught 1 time. Still in the game." / "Hurt: caught, and loses its next turn." | 8 / 7 | "Caught once." |
 | Teammate sniff | "Your teammate sniffed here: an egg is on or next to this square" | 12 | "Partner: egg near." |
@@ -348,7 +348,7 @@ Tooltips are the "details on request" layer, so they may run longer than hints, 
 | Walkthrough, vulture | 14 / 25 / 46 words | 85 | Remove |
 | Hunter picker (`KIND.pwTxt`) | Hyena: "If your sense says a bird is within 2, you get one extra 1-square move that turn. A bird is out after 2 catches." (24). Badger: "Stay still to burrow. Birds cannot see you then. Moving pops you up, and you can catch on that move. A bird is out after 2 catches." (27) | 24 / 27 | Hyena: "Pounce: missed? Move 1 more." Badger: "Burrow: stay still to hide." |
 | Lobby subtitles | "hide eggs", "hunt eggs", "catch birds", "Pounce · 2 catches" | 2 to 3 | Keep the first three; hunters: "Pounce", "Burrow" |
-| Lobby notes | 2 vs 2: 24 words. Hunters: 18 words. "The hunter player picks hyena or honey badger when they join." (11) | | "Ostriches team up. Vultures share sniffs." (5) / "Two hunters race for knock-outs." (5) / "Hunter picks their animal on joining." (6) |
+| Lobby notes | 2 vs 2: 24 words. Hunters: 18 words. "The hunter player picks hyena or badger when they join." (11) | | "Ostriches team up. Vultures share sniffs." (5) / "Two hunters race for knock-outs." (5) / "Hunter picks their animal on joining." (6) |
 | Pass & Play | "One phone. Hand it over between turns. This stays a small extra way to play — friends use their own phones." | 21 | "One phone. Pass it between turns." (6) |
 | Pass cover | "Pass to the Vulture 🦅" / "The Ostrich goes first and hides the eggs. Vulture, look away!" / "I'm the Vulture — tap to start" | 4 / 11 / 6 | "Pass to the Vulture" with the vulture art / "Vulture, look away!" / "I'm the Vulture" |
 | How to play, ostrich section | 5 bullets, about 190 words, names "green leaf", "gray stone or red X" | ~190 | Keep as the reference page (it is the "details on request" layer), but rewrite each bullet to one or two short sentences, remove color names, fix "others can see you sitting", and lead each bullet with the same icon the board uses |

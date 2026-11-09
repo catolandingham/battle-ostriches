@@ -28,7 +28,7 @@ ok('every card is a title and 4 short lines: a goal, 3 moves, no lose line, no d
   for (const [role, kind, mode] of ALL) {
     const c = R.roleCard(role, kind, mode), at = `${role}/${kind}/${mode}`;
     assert.ok(c, 'card for ' + at);
-    assert.ok(/^You are (the|an?) (Ostrich|Vulture|Hyena|Honey Badger)$/.test(c.title), at + ' title: ' + c.title);
+    assert.ok(/^You are (the|an?) (Ostrich|Vulture|Hyena|Badger)$/.test(c.title), at + ' title: ' + c.title);
     assert.ok(/^[A-Z].+\.$/.test(c.goal), at + ' goal is a sentence: ' + c.goal);
     assert.equal(c.moves.length, 3, at + ' has the goal plus 3 lines');
     assert.equal(c.lose, '', at + ' has no lose line');
@@ -43,10 +43,10 @@ ok('every card is a title and 4 short lines: a goal, 3 moves, no lose line, no d
   assert.equal(R.roleCard('nobody', null, '2'), null);
 });
 
-ok('the cards: ostrich, vulture, hyena, honey badger, 2 vs 2 ostrich, 2 vs 2 vulture', () => {
+ok('the cards: ostrich, vulture, hyena, badger, 2 vs 2 ostrich, 2 vs 2 vulture', () => {
   const t = (r, k, m) => R.roleCard(r, k, m).title;
   assert.equal(t('blue', null, '2'), 'You are the Ostrich'); assert.equal(t('red', null, '2'), 'You are the Vulture');
-  assert.equal(t('hunter', 'hyena', '3'), 'You are the Hyena'); assert.equal(t('hunter', 'badger', '3'), 'You are the Honey Badger');
+  assert.equal(t('hunter', 'hyena', '3'), 'You are the Hyena'); assert.equal(t('hunter', 'badger', '3'), 'You are the Badger');
   assert.equal(t('o1', null, '4'), 'You are an Ostrich'); assert.equal(t('v2', null, '4'), 'You are a Vulture');
   assert.ok(/team/i.test(R.roleCard('o1', null, '4').goal), 'the 2 vs 2 ostrich card states the team goal');
   assert.equal(R.roleCard('hyena', null, '4h').picture, 'hyena'); assert.equal(R.roleCard('badger', null, '4h').picture, 'badger');
@@ -77,7 +77,7 @@ ok('change every constant: every number on every card follows, and no other numb
   assert.equal(R.roleCard('hunter', 'hyena', '5', X).goal, 'Knock out an ostrich and a vulture.');
 });
 
-ok('the hyena card says Pounce plainly and the honey badger card says Burrow, never the other', () => {
+ok('the hyena card says Pounce plainly and the badger card says Burrow, never the other', () => {
   for (const [role, kind, mode] of [['hunter', 'hyena', '3'], ['hyena', null, '4h'], ['hunter', 'hyena', '5']]) {
     const c = R.roleCard(role, kind, mode); assert.ok(/^Missed\? Move \d+ more\.$/.test(c.moves[2]), mode + ' hyena: ' + c.moves.join(' | ')); assert.ok(!/hide|underground/i.test(text(c)));
   }
@@ -89,10 +89,10 @@ ok('the hyena card says Pounce plainly and the honey badger card says Burrow, ne
 ok('the start-of-game line names only the animals in the game', () => {
   assert.equal(R.huntLine('2'), 'The vulture hunts eggs.');
   assert.equal(R.huntLine('3', 'hyena'), 'The vulture hunts eggs. The hyena hunts birds.');
-  assert.equal(R.huntLine('3', 'badger'), 'The vulture hunts eggs. The honey badger hunts birds.');
-  assert.equal(R.huntLine('4h'), 'The vulture hunts eggs. The hyena and honey badger hunt birds.');
+  assert.equal(R.huntLine('3', 'badger'), 'The vulture hunts eggs. The badger hunts birds.');
+  assert.equal(R.huntLine('4h'), 'The vulture hunts eggs. The hyena and badger hunt birds.');
   assert.equal(R.huntLine('4'), 'The vultures hunt eggs.');
-  assert.equal(R.huntLine('5', 'badger'), 'The vultures hunt eggs. The honey badger hunts birds.');
+  assert.equal(R.huntLine('5', 'badger'), 'The vultures hunt eggs. The badger hunts birds.');
   assert.ok(!/hyena|badger/.test(R.huntLine('2') + R.huntLine('4')));
 });
 
@@ -111,7 +111,7 @@ ok('hunter cards state the goal from HUNTER_GOAL, per mode', () => {
   assert.equal(g('hunter', 'hyena', '3'), 'Make 3 catches.');
   assert.equal(g('hunter', 'hyena', '3', { kind: 'all', n: 0 }), 'Knock out both birds.'); assert.equal(g('hunter', 'badger', '3', { kind: 'first', n: 0 }), 'Knock out one bird.'); assert.equal(g('hunter', 'badger', '3', { kind: 'catches', n: 4 }), 'Make 4 catches.');
   assert.equal(g('hunter', 'hyena', '5'), 'Knock out an ostrich and a vulture.'); assert.equal(g('hunter', 'hyena', '5', { kind: 'all', n: 0 }), 'Knock out every bird.');
-  assert.equal(R.roleCard('hyena', null, '4h').goal, 'Knock out more birds than the honey badger.');
+  assert.equal(R.roleCard('hyena', null, '4h').goal, 'Knock out more birds than the badger.');
 });
 
 console.log(`PASS testroles (${n} groups)`); process.exit(0);

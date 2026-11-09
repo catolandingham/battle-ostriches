@@ -18,9 +18,6 @@ body.three #hud #timerToggle.on{background:#ffd21f;color:#111}
 #banner.sensekey,#banner.pounce{font-size:12px!important;line-height:32px!important;padding:0 8px!important;white-space:nowrap;overflow:hidden;text-overflow:clip}
 #banner.sensekey,html[data-theme] #banner.sensekey{background:#1d3557!important;color:#fff!important}
 #banner.pounce,html[data-theme] #banner.pounce{background:#ffb000!important;color:#111!important}
-.cell.injured .pc{box-shadow:0 0 0 3px #ff2a6d}
-.hurtag{position:absolute;bottom:-1px;left:50%;transform:translateX(-50%);z-index:6;font:900 9px/1.1 system-ui,sans-serif;letter-spacing:.4px;
- background:#ff2a6d;color:#fff;border:2px solid #111;border-radius:4px;padding:1px 3px;pointer-events:none;white-space:nowrap}
 .bchip.injured{box-shadow:inset 0 0 0 3px #ff2a6d}
 .bchip.out{background:#ffd0d4!important;filter:none;opacity:1}
 .bchip.out .ko{font-size:11px}

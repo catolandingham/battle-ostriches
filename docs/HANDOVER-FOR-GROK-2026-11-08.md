@@ -19,7 +19,7 @@ Brian Howe is the designer and playtester, not a programmer. He plays with his f
     - `ui.js`: the board, buttons, the How to play pictures
     - `three-ui.js`: the corner marks, animal art, announcements
     - `nextstep.js`: the next-step cue
-    - `badgerlines.js`: the honey badger quotes
+    - `badgerlines.js`: the badger quotes
     - `catchtext.js`: the catch and knock-out lines
     - `roles.js`: the role cards
     - `part1.css`, `signals.css`: the marks and lit squares
@@ -81,7 +81,7 @@ The full text is `docs/reviews/RULEBOOK-v2-2026-11-07.md`, with tuning numbers i
 - The game lasts 30 rounds.
 - Game types:
   - Classic: vulture vs ostrich
-  - 3 players: adds one hunter (hyena or honey badger)
+  - 3 players: adds one hunter (hyena or badger)
   - Hunters: 4 players, both hunters
   - 2 vs 2: two vultures, two ostriches
   - 2 vs 2 + hunter: 5 players
@@ -128,12 +128,12 @@ The full text is `docs/reviews/RULEBOOK-v2-2026-11-07.md`, with tuning numbers i
   - **Sense:** at the start of its turn, whether any bird is within 2. If yes, every square where a bird could be is marked.
   - **Pounce:** if it sensed a bird and its move did not catch, it senses again and may move 1 more. Only squares inside both readings are marked.
   - Sees birds only through its sense, and the other hunter within 2.
-- **Honey badger:**
+- **Badger:**
   - Walk 2. Same sense.
   - **Burrow:** stay still one turn to bury, on any square it can stand on, including a leaf or rock pile (Brian: "a nice bonus power"). While buried:
     - no bird can see it
     - it sees birds next to it exactly (ambush sight)
-    - everyone is told "The honey badger dug in!"
+    - everyone is told "The badger dug in!"
     - birds that saw it dig see the spot
   - A bird landing on it is caught. A hyena landing on it shares the square. The badger may burst out under a hyena, pushing it 2.
 
@@ -185,7 +185,7 @@ The Nov 6 plan (`docs/PLAN-2026-11-06.md` section 4a) lists all 56 issues with t
 
 - **Done on the live site:**
   - **Home screen and setup:** play with friends or solo; no phone count; computers added on the room screen; theme in the gear; one gear menu; friends get the code at once and whoever joins sets the count; rematch with same or changed roles; late joiners added between games; host is no longer limited to ostrich or vulture; the first to pick a role gets it; the busy count screen is gone; the code comes first; the joiner seat picker is gone; the Timer on/off button. (M1 to M8, R1, R2, I1, I3 to I6, A1, A3, A4, A9, A17)
-  - **During a game:** the read-only view after elimination; the HYENA NEAR and HONEY BADGER NEAR alerts; a dead ostrich no longer blocks a smash; the badger player can see its badger; "Burrow 1 out of 2" removed; computers fill open roles. (R6, R9, I13, I14, A7, A13, A14, A16)
+  - **During a game:** the read-only view after elimination; the HYENA NEAR and BADGER NEAR alerts; a dead ostrich no longer blocks a smash; the badger player can see its badger; "Burrow 1 out of 2" removed; computers fill open roles. (R6, R9, I13, I14, A7, A13, A14, A16)
 - **Done through the Nov 7 tasks T0 to T7 (all merged):**
   - the game says when it picks your animal (P1, T7)
   - a role card for every animal (R4, A2, A5, I9, T1)
@@ -223,7 +223,7 @@ Plan section 4b maps all 38. The ones that still matter:
 
 ### 4.3 From the "Grok games code review" chat (2026-11-07), about this game
 
-- "It's so bad. I just sent to start a game against computer, said I wanted to be honey badger and play 2 computers, and it immediately started game as ostrich." Fixed (T7 and the lobby fixes in PR #5).
+- "It's so bad. I just sent to start a game against computer, said I wanted to be badger and play 2 computers, and it immediately started game as ostrich." Fixed (T7 and the lobby fixes in PR #5).
 - He asked for Battle Ostriches work to live in its own session and not the shared one. Done.
 - Credit rules:
   - Stop launching new work when the weekly all-models pool passes 75%. Brian raised this to **80%** on 2026-11-08 for finishing this handover.
@@ -237,22 +237,22 @@ Plan section 4b maps all 38. The ones that still matter:
 
 All of these are in rulebook v2 and live, unless marked otherwise.
 
-- **Honey badger boosts:**
+- **Badger boosts:**
   - Brian rejected a call that lures players ("would mess with the free will of the other players").
   - He chose **ambush sight only**: while buried, it sees anyone next to it and can leap out. "Just ambush sight." The leap is its normal move.
   - Done.
 - **Badger quotes** (done, `badgerlines.js`). Brian picked these lines, to play whenever the badger does anything other than a basic move:
-  - "Honey badger don't care."
+  - "Badger doesn't care."
   - "Look at it run in slow-motion, it's pretty badass."
   - "Eww, it's eating a snake? Oh, it's disgusting."
-  - "Nothing can stop the honey badger when it's hungry."
+  - "Nothing can stop the badger when it's hungry."
   - the Guinness "most fearless animal" line
   - "Look at this nasty badass."
   - "Thanks for the treat, stupid birds!" (when a bird walks onto the burrow)
 
   Special cases:
   - The jackal line followed by "doesn't give a #$%!" plays only when the badger gets the jackal, which in the game is moving onto the hyena.
-  - When the ostrich kicks the badger: "Ouch. I mean... honey badger don't care."
+  - When the ostrich kicks the badger: "Ouch. I mean... badger doesn't care."
   - The swear became a grawlix ("#$%!"). "Stupid birds" stays.
 - **Hunters hunting each other:** no catches between hunters. They meet and push, which is consistent for both. Brian wanted the hyena-and-badger interaction made more obvious ("it's confusing when something happens, we don't really know that it happened or why"). This led to the cause audit (done).
 - **Hunters getting eggs** (Michelle's idea): not adopted. Elliot's point was that hunters smashing eggs would help the vulture. Teams were "too complicated". The ostrich got a kick instead.
