@@ -2,16 +2,16 @@
 // Saves JPEG iPhone screenshots to shots/hardstop/.
 const { webkit, devices } = require('playwright-core');
 const assert = require('assert'), fs = require('fs');
-process.env.PORT = 3998; const server = require('./server.js');
+process.env.PORT = 4011; const server = require('./server.js');
 const OUT = 'shots/hardstop/'; fs.mkdirSync(OUT, { recursive: true });
 (async () => {
   const b = await webkit.launch(); const errs = [];
   const mk = async () => { const c = await b.newContext({ ...devices['iPhone 13'] }); const p = await c.newPage(); await p.addInitScript(() => { localStorage.setItem('bo_tut_seen', '1'); localStorage.setItem('bo_walk_blue','1'); localStorage.setItem('bo_walk_red','1'); localStorage.setItem('bo_tips_off','1'); localStorage.setItem('bo_card_off', '1'); ['blue', 'red'].forEach(r => localStorage.setItem('bo_cs_' + r, '9')); }); p.on('pageerror', e => errs.push(e.message)); return p; };
-  const A = await mk(), V = await mk(); const U = 'http://localhost:3998/';
+  const A = await mk(), V = await mk(); const U = 'http://localhost:4011/';
   const cell = (p, x, y) => p.locator('.cell').nth(y * 9 + x);
   await A.goto(U); await A.click('#playFriend'); await A.waitForSelector('#lobbyCode:not(:empty)');
   const link = await A.inputValue('#lobbyLink');
-  await V.goto(link.replace(/^http:\/\/[^/]+/, 'http://localhost:3998')); await V.waitForSelector('#roomLobby');
+  await V.goto(link.replace(/^http:\/\/[^/]+/, 'http://localhost:4011')); await V.waitForSelector('#roomLobby');
   await A.click('#startGame'); await A.waitForSelector('#board .cell'); await V.waitForSelector('#board .cell');
   await A.waitForFunction(() => document.getElementById('wait').classList.contains('hidden'));
   const gd = (a, b) => Math.max(Math.abs(a[0] - b[0]), Math.abs(a[1] - b[1]));

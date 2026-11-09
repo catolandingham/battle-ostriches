@@ -1,8 +1,8 @@
 // 4 players (2v2) and 5 players (2v2 + hunter) on WebKit iPhone 13s. Covers the lobby, seats by link, own-nest setup,
 // turn order, teammates and numbers, shared sniffs, shot clock, the hunter's view, birds seeing a near hunter, game over.
-process.env.PORT = 3996; process.env.BO_H3START = '8,3'; process.env.BO_BOTMS = '200'; process.env.BO_CLOCKMS = '6000';
+process.env.PORT = 4014; process.env.BO_H3START = '8,3'; process.env.BO_BOTMS = '200'; process.env.BO_CLOCKMS = '6000';
 const { webkit, devices } = require('playwright-core'); const assert = require('assert'), fs = require('fs');
-const server = require('./server.js'), T = require('./team.js'); const U = 'http://localhost:3996/', OUT = 'shots/team/'; fs.mkdirSync(OUT, { recursive: true });
+const server = require('./server.js'), T = require('./team.js'); const U = 'http://localhost:4014/', OUT = 'shots/team/'; fs.mkdirSync(OUT, { recursive: true });
 const shot = (p, n) => p.screenshot({ path: OUT + n + '.jpg', type: 'jpeg', quality: 85 });
 const at = { state: 'attached' };
 (async () => {
@@ -13,7 +13,7 @@ const at = { state: 'attached' };
   // ---- 4 players: me = Ostrich 1, a friend = Vulture 1, computers = Ostrich 2 + Vulture 2 ----
   const A = await mk(), V = await mk();
   await A.goto(U); await A.click('#playFriend'); await A.waitForSelector('#lobbyCode:not(:empty)');
-  const link = (await A.inputValue('#lobbyLink')).replace(/^http:\/\/[^/]+/, 'http://localhost:3996');
+  const link = (await A.inputValue('#lobbyLink')).replace(/^http:\/\/[^/]+/, 'http://localhost:4014');
   await V.goto(link); await V.waitForSelector('#roomLobby');
   await A.click('#botPlus'); await A.click('#botPlus');
   await A.waitForSelector('[data-role="ostrich"]'); await A.click('[data-role="ostrich"]'); await V.click('[data-role="vulture"]');

@@ -1,8 +1,8 @@
 // A real engine catch updates each seat's header; its visible marker must change in any future design.
-process.env.PORT='3977';process.env.BO_NOSTORE='1';process.env.BO_BOTMS='900000';
+process.env.PORT='4015';process.env.BO_NOSTORE='1';process.env.BO_BOTMS='900000';
 const assert=require('assert'),{webkit}=require('playwright-core'),S=require('./server'),{make}=require('./tests/hunter-fixtures');
 (async()=>{
- const browser=await webkit.launch(),page=await browser.newPage({viewport:{width:390,height:664}});await page.addInitScript(()=>{for(const k of ['bo_tut_seen','bo_card_off','bo_tips_off','bo_muted'])localStorage.setItem(k,'1');});await page.goto('http://localhost:3977/');
+ const browser=await webkit.launch(),page=await browser.newPage({viewport:{width:390,height:664}});await page.addInitScript(()=>{for(const k of ['bo_tut_seen','bo_card_off','bo_tips_off','bo_muted'])localStorage.setItem(k,'1');});await page.goto('http://localhost:4015/');
  await page.evaluate(()=>document.querySelectorAll('.screen').forEach(e=>e.classList.add('hidden')));
  const draw=async(view,bird)=>{
   await page.evaluate(v=>{document.querySelector('#board').innerHTML='';T3UI.after(v,null,document.querySelector('#board'));},view);

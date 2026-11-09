@@ -16,9 +16,21 @@ const { webkit } = require('playwright-core');
     for(const row of rows){
       for(const key of ['x','y','w','h'])assert.ok(Math.abs(ref[key]-row.egg[key])<.1,theme+' '+row.name+' same egg '+key+': '+JSON.stringify(row));
       assert.ok(row.egg.x<row.cell.w*.1&&row.egg.y<row.cell.h*.1,theme+' upper-left');
-      if(row.bird){const b=row.bird,e=row.egg,cx=b.x+b.w/2,cy=b.y+b.h/2;assert.ok(Math.abs(cx-row.cell.w/2)<1&&Math.abs(cy-row.cell.h/2)<1&&b.w/row.cell.w>=.3,theme+' '+row.name+' bird a little smaller and centred '+JSON.stringify(row));assert.ok(e.right<=b.x||e.bottom<=b.y,theme+' '+row.name+' egg and bird do not overlap '+JSON.stringify(row));}
+      if(row.bird){const b=row.bird,cx=b.x+b.w/2,cy=b.y+b.h/2;assert.ok(Math.abs(cx-row.cell.w/2)<1&&Math.abs(cy-row.cell.h/2)<1&&b.w/row.cell.w>=.55,theme+' '+row.name+' bird centred and about half the square with an egg '+JSON.stringify(row));}
       if(row.number){const n=row.number,cx=n.x+n.w/2,cy=n.y+n.h/2;assert.ok(cx>row.egg.x&&cx<row.egg.right&&cy>row.egg.y+row.egg.h*.3&&cy<row.egg.bottom-row.egg.h*.15,theme+' '+row.name+' number inside the egg (Brian, 2026-11-08) '+JSON.stringify(row));}
     }
+  }
+  // Ink (drawn lines) of bird and egg must not touch; empty box corners may overlap (Brian, approved look).
+  await page.evaluate(t=>document.documentElement.dataset.theme=t,'bw');
+  { const { SQUARE_CHECK } = require('./tools/square-overlap');
+    // SQUARE_CHECK walks #board .cell; eggs.html already uses #board. Inject data URLs so file:// imgs rasterize.
+    const fs = require('fs'); const ost = 'data:image/svg+xml;base64,' + fs.readFileSync('public/art/ostrich.svg').toString('base64');
+    await page.evaluate(u => { document.querySelectorAll('img.aimg').forEach(img => { img.src = u; }); }, ost);
+    await new Promise(r => setTimeout(r, 100));
+    const r = await page.evaluate(SQUARE_CHECK);
+    assert.deepEqual(r.bad, [], 'egg fixture ink: no overlap ' + JSON.stringify(r));
+    assert.ok(r.seen.some(x => x.includes('animal') && x.includes('egg')), 'egg fixture checked animal+egg ' + JSON.stringify(r.seen));
+    assert.ok(r.sizes.every(s => s >= 0.55), 'egg fixture animal size ' + JSON.stringify(r.sizes));
   }
   // Twelve themes draw an FX sprite instead of the hidden .pc SVG. Check the real
   // sprite too, so it sits in the same smaller centred slot as the board piece.

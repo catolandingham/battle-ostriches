@@ -1,7 +1,7 @@
 // Badger player's own board: the graphic is on screen before burrow and while burrowed.
 // Repro: Play with friends, three computers, sit as Badger (4-player Hunters). Separately,
 // Play a game yourself, two computers, Hunter, then Badger (3-player). State position is not enough.
-process.env.PORT = '3977';
+process.env.PORT = '4016';
 process.env.BO_CLOCKMS = '120000';
 process.env.BO_BOTMS = '60000';
 process.env.BO_H4START = '4,3,5,3';
@@ -106,7 +106,7 @@ function contrast(a, b) {
   // The mound fades in over 0.8 s when the badger burrows. Wait for that to finish, then measure.
   const settled = (page, sel) => page.waitForFunction(s => { const e = document.querySelector(s); return !!e && e.getAnimations().length === 0 && parseFloat(getComputedStyle(e).opacity) >= 0.9; }, sel, { timeout: 5000 });
   const A = await open();
-  await A.goto('http://127.0.0.1:3977/');
+  await A.goto('http://127.0.0.1:4016/');
   await A.click('#playFriend');
   await A.waitForSelector('#roomLobby:not(.hidden)');
   for (let i = 0; i < 3; i++) { const plus = A.locator('#botPlus'); if (await plus.isEnabled()) await plus.click(); }
@@ -145,7 +145,7 @@ function contrast(a, b) {
   }
 
   const B = await open();
-  await B.goto('http://127.0.0.1:3977/');
+  await B.goto('http://127.0.0.1:4016/');
   await B.click('#playSolo');
   await B.click('[data-bots="2"]');
   await B.click('#soloGo');

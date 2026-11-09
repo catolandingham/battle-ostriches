@@ -19,6 +19,7 @@
   - vulture: `vulture/three-quarter.svg`
   - hyena: `hyena/gen3-tone-4.svg`, tight crop
 - The header turn icon uses the same art.
+- Ostrich carrying an egg: the carry v4 option 2 icon (beak open a little, egg lying sideways inside).
 
 ## Log
 
@@ -87,5 +88,8 @@
 - 2026-11-08 (Brian, PR #24 review): the animal stays in the centre of its square. With an egg or a leaf or rock in the square, it shrinks a little so the egg (top-left) and the mark (bottom-right) fit around it with no overlap, as in the approved full-board layout. The mockup's egg + leaf square and its number beside the egg were errors. An animal moves to a corner only when another animal shares the square.
 - 2026-11-08 (Brian): merged PR #23 (egg fixes, catch markers removed from board squares) to main.
 - 2026-11-08 (Brian): the start-of-game reminder is look A: a card with the mode name and short key rules, no "what changed" box. Words approved, including "Claws: one per catch."
-- 2026-11-08 (Brian): the kick scene lasts 2 seconds; during a scene the other squares stay exactly as they were when it started (no shading changes); a big ostrich foot swinging out to kick is being designed (4 versions to pick from).
+- 2026-11-08 (Brian): the kick scene lasts 2 seconds; during a scene the other squares stay exactly as they were when it started (no shading changes); a big ostrich foot swinging out to kick is parked for later.
 - 2026-11-08 (Brian): every big scene lasts 2 seconds (kicks, catches, knock-outs and the rest).
+- 2026-11-08 (Brian): the big ostrich kick-foot animation is parked for later (4 versions made, v2). Kicks keep the 2-second scene with the other squares frozen as they were.
+- 2026-11-08 (Brian, PR #24): with an egg the centred animal is about 58% of the square (egg B same size, tucked into the empty corner of its box); on a leaf or rock it is about 70%. Overlap is checked by drawn ink, not by the boxes, with a small gap.
+- 2026-11-08 (Brian): an ostrich carrying an egg is drawn with its beak open a little and egg B lying sideways inside, medium size (art: bw/carry/v4/v2/ostrich-carry.svg). Not built into the game yet.
