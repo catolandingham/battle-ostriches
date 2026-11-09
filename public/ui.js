@@ -1,7 +1,7 @@
 (function(){
 const $=id=>document.getElementById(id);
-const OST='<svg viewBox="0 0 40 40" width="100%" height="100%"><path d="M6 26 L18 18 L30 22 L24 32 L10 32 Z" fill="#38d6f0" stroke="#000" stroke-width="2.5" stroke-linejoin="round"/><path d="M26 22 L28 6 L34 7" fill="none" stroke="#000" stroke-width="4" stroke-linecap="round"/><path d="M26 22 L28 6 L34 7" fill="none" stroke="#38d6f0" stroke-width="2" stroke-linecap="round"/><path d="M14 32 L12 38 M20 32 L22 38" stroke="#000" stroke-width="2.5"/></svg>';
-const VUL='<svg viewBox="0 0 40 40" width="100%" height="100%"><path d="M4 18 L20 12 L36 18 L26 22 L20 32 L14 22 Z" fill="#2b3245" stroke="#000" stroke-width="2.5" stroke-linejoin="round"/><circle cx="20" cy="11" r="5" fill="#f3dfae" stroke="#000" stroke-width="2.5"/><path d="M23 11 L28 13 L23 14Z" fill="#ffb347" stroke="#000" stroke-width="1.5"/></svg>';
+const OST=ART.ostrich;
+const VUL=ART.vulture;
 $('lobbyArt').innerHTML=OST;
 let ws,S=null,mode=null,me=JSON.parse(localStorage.getItem('bo_me')||'{}');
 const key=p=>p[0]+','+p[1];
@@ -15,9 +15,9 @@ const LEAF='<svg viewBox="0 0 40 40" aria-hidden="true"><path d="M8 32C8 14 20 6
 const ROCKS='<svg viewBox="0 0 40 40" aria-hidden="true"><path d="M5 33l4-10 9-3 6 5-2 8z" fill="#9aa1ab" stroke="#1d2128" stroke-width="2.5" stroke-linejoin="round"/><path d="M19 33l3-12 9-4 5 9-3 7z" fill="#7d858f" stroke="#1d2128" stroke-width="2.5" stroke-linejoin="round"/><path d="M12 21l4-10 8 1 2 8-8 3z" fill="#b8bec6" stroke="#1d2128" stroke-width="2.5" stroke-linejoin="round"/></svg>';
 const STONE='<svg viewBox="0 0 40 40" aria-hidden="true"><path d="M7 27l5-13 13-4 9 9-4 12-17 2z" fill="#9aa1ab" stroke="#1d2128" stroke-width="3" stroke-linejoin="round"/></svg>';
 const XMARK='<svg viewBox="0 0 40 40" aria-hidden="true"><path d="M9 9L31 31M31 9L9 31" stroke="#1a0000" stroke-width="11" stroke-linecap="round"/><path d="M9 9L31 31M31 9L9 31" stroke="#ff2a1f" stroke-width="7" stroke-linecap="round"/></svg>';
-const EGG='<svg viewBox="0 0 40 40" aria-hidden="true"><path d="M20 3C14.5 3 8 16 8 25.5C8 32.5 13.4 37.5 20 37.5C26.6 37.5 32 32.5 32 25.5C32 16 25.5 3 20 3Z" fill="#ffd21f" stroke="#3a2a00" stroke-width="3"/><ellipse cx="15" cy="15" rx="3" ry="5" fill="#fff6c0"/></svg>';
-const MYEGG='<svg viewBox="0 0 40 40" aria-hidden="true"><path d="M20 3C14.5 3 8 16 8 25.5C8 32.5 13.4 37.5 20 37.5C26.6 37.5 32 32.5 32 25.5C32 16 25.5 3 20 3Z" fill="#fffaf0" stroke="#2a2418" stroke-width="2.5"/></svg>';
-const MAYBE='<svg viewBox="0 0 40 40" aria-hidden="true"><path d="M20 3C14.5 3 8 16 8 25.5C8 32.5 13.4 37.5 20 37.5C26.6 37.5 32 32.5 32 25.5C32 16 25.5 3 20 3Z" fill="none" stroke="#111" stroke-width="6"/><path d="M20 3C14.5 3 8 16 8 25.5C8 32.5 13.4 37.5 20 37.5C26.6 37.5 32 32.5 32 25.5C32 16 25.5 3 20 3Z" fill="none" stroke="#fff" stroke-width="3" stroke-dasharray="5 3"/></svg>'; // a dashed egg outline: an egg may be here
+const EGG='<svg viewBox="0 0 36 44" aria-hidden="true"><path d="M18 2C9.4 2 2 15.4 2 26C2 36 8.4 42 18 42C27.6 42 34 36 34 26C34 15.4 26.6 2 18 2Z" fill="#ffd21f" stroke="#3a2a00" stroke-width="3"/><ellipse cx="13" cy="14" rx="3" ry="5" fill="#fff6c0"/></svg>';
+const MYEGG='<svg viewBox="0 0 36 44" aria-hidden="true"><path d="M18 2C9.4 2 2 15.4 2 26C2 36 8.4 42 18 42C27.6 42 34 36 34 26C34 15.4 26.6 2 18 2Z" fill="#fffaf0" stroke="#2a2418" stroke-width="2.5"/></svg>';
+const MAYBE='<svg viewBox="0 0 36 44" aria-hidden="true"><path d="M18 2C9.4 2 2 15.4 2 26C2 36 8.4 42 18 42C27.6 42 34 36 34 26C34 15.4 26.6 2 18 2Z" fill="none" stroke="#111" stroke-width="6"/><path d="M18 2C9.4 2 2 15.4 2 26C2 36 8.4 42 18 42C27.6 42 34 36 34 26C34 15.4 26.6 2 18 2Z" fill="none" stroke="#fff" stroke-width="3" stroke-dasharray="5 3"/></svg>'; // a dashed egg outline: an egg may be here
 let sniffSeen={},sniffUntil=0,overHold=0,kickPick=null,throwPick=null; // kickPick: the animal chosen to kick (tap it again to kick)
 const VOCAB={maybe:[MAYBE,'Egg may be here.'],legal:['','Move here.'],target:['','Throw here.'],stone:[STONE,'Wrecked. Can\'t land.'],food:[LEAF,'Food.'],
  rock:[ROCKS,'Rocks: get a stone.'],hit:[XMARK,'Smashed. Can\'t land.'],spot:[EGG,'Found egg.'],

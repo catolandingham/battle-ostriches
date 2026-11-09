@@ -1,7 +1,7 @@
 // Badger player's own board: the graphic is on screen before burrow and while burrowed.
 // Repro: Play with friends, three computers, sit as Badger (4-player Hunters). Separately,
 // Play a game yourself, two computers, Hunter, then Badger (3-player). State position is not enough.
-process.env.PORT = '3977';
+process.env.PORT = '4016';
 process.env.BO_CLOCKMS = '120000';
 process.env.BO_BOTMS = '60000';
 process.env.BO_H4START = '4,3,5,3';
@@ -43,8 +43,8 @@ function contrast(a, b) {
       const r = el.getBoundingClientRect();
       const cell = el.closest('.cell');
       const bg = getComputedStyle(cell).backgroundColor;
-      const path = el.querySelector('svg path');
-      const fill = path ? (document.documentElement.getAttribute('data-theme') === 'bw' ? getComputedStyle(path).stroke : getComputedStyle(path).fill) : ''; // the black-and-white theme draws the body as a line
+      const path = el.querySelector('svg path'), art = el.querySelector('img.aimg'); // the locked animal drawings are images with black lines
+      const fill = art ? 'rgb(0, 0, 0)' : path ? (document.documentElement.getAttribute('data-theme') === 'bw' ? getComputedStyle(path).stroke : getComputedStyle(path).fill) : ''; // the black-and-white theme draws the body as a line
       const hits = [];
       for (const [dx, dy] of [[0.5, 0.35], [0.3, 0.55], [0.7, 0.6], [0.5, 0.75]]) {
         const x = r.left + r.width * dx, y = r.top + r.height * dy;
@@ -56,10 +56,12 @@ function contrast(a, b) {
       }
       let ink = null;
       try {
-        const svg = el.querySelector('svg').cloneNode(true);
+        let url;
+        if (art) url = art.src;
+        else { const svg = el.querySelector('svg').cloneNode(true);
         if (!svg.getAttribute('xmlns')) svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
         const xml = new XMLSerializer().serializeToString(svg);
-        const url = URL.createObjectURL(new Blob([xml], { type: 'image/svg+xml' }));
+        url = URL.createObjectURL(new Blob([xml], { type: 'image/svg+xml' })); }
         const img = new Image();
         await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = url; });
         const c = document.createElement('canvas'); c.width = 40; c.height = 40;
@@ -68,7 +70,7 @@ function contrast(a, b) {
         const base = g.getImageData(0, 0, 40, 40).data;
         g.drawImage(img, 0, 0, 40, 40);
         const data = g.getImageData(0, 0, 40, 40).data;
-        URL.revokeObjectURL(url);
+        if (!art) URL.revokeObjectURL(url);
         const rel = (v) => { v /= 255; return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
         let strong = 0, seen = 0;
         for (let i = 0; i < data.length; i += 4) {
@@ -104,7 +106,7 @@ function contrast(a, b) {
   // The mound fades in over 0.8 s when the badger burrows. Wait for that to finish, then measure.
   const settled = (page, sel) => page.waitForFunction(s => { const e = document.querySelector(s); return !!e && e.getAnimations().length === 0 && parseFloat(getComputedStyle(e).opacity) >= 0.9; }, sel, { timeout: 5000 });
   const A = await open();
-  await A.goto('http://127.0.0.1:3977/');
+  await A.goto('http://127.0.0.1:4016/');
   await A.click('#playFriend');
   await A.waitForSelector('#roomLobby:not(.hidden)');
   for (let i = 0; i < 3; i++) { const plus = A.locator('#botPlus'); if (await plus.isEnabled()) await plus.click(); }
@@ -143,7 +145,7 @@ function contrast(a, b) {
   }
 
   const B = await open();
-  await B.goto('http://127.0.0.1:3977/');
+  await B.goto('http://127.0.0.1:4016/');
   await B.click('#playSolo');
   await B.click('[data-bots="2"]');
   await B.click('#soloGo');

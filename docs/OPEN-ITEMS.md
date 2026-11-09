@@ -16,12 +16,13 @@ The animal is called the badger.
 - 2026-11-08: Push slide square by square with trail, about 1 second total; respect reduced motion and hide scramble destinations.
 - 2026-11-08: Approved notices: “You were caught! You fled 2 squares.” / “The hyena caught the vulture!” with actual animals and no scramble location.
 - 2026-11-08: Who-sees-what audit across every mode and role.
-- 2026-11-08: Kick cut-scene mockup. Catch-marker mockups decided: no on-square mark; header hearts only (in PR #23).
+- 2026-11-08: Kick cut-scene: 2-second scene with other squares frozen (done). Big ostrich kick-foot animation parked for later (4 versions, v2). Catch-marker mockups decided: no on-square mark; header hearts only (in PR #23).
 - 2026-11-08: Corner mockups: eggs top-left, rocks top-right, food bottom-right, number bottom-left.
 - 2026-11-08: Egg countdown mockups: inside egg, beside egg, or no-number visuals.
 - 2026-11-08: Timer-bar mockups: filling or shrinking.
 - 2026-11-08: Mode-differences list and start-of-game reminder mockups.
-- 2026-11-08: Hunter claw-mark counter under icon; 3 catches win 3-player mode.
+- 2026-11-08: Hunter claw-mark counter under icon (PR #24): curved three-scratch sets, 3 in 3-player games, 4 in Hunters and 5-player games, one more per extra catch; no numbers. 3 catches win 3-player mode.
+- 2026-11-08: Animals stay centred; with an egg about 58%, on a leaf/rock about 70%; ink (not boxes) must not overlap; corners only when two animals share (PR #24).
 - 2026-11-08: Three or four hyena icon mockups at real size; animal stays hyena.
 - 2026-11-08: Animal commentary lines: draft lines for the hyena, the vulture and the ostrich, needing Brian's approval.
 
@@ -35,6 +36,8 @@ The animal is called the badger.
 
 ## Later
 
+- 2026-11-08: Wire the approved ostrich-carry icon (carry v4 option 2: beak open a little, egg B sideways inside) into the game; art at public/art/ostrich-carry.svg.
+- 2026-11-08: Big ostrich kick-foot animation (4 versions made, v2); kicks keep the 2-second scene with other squares frozen.
 - 2026-11-08: Other cut-scenes: catch, knock-out, egg smash, badger burst, stone hits egg.
 - 2026-11-08: Section 7.4: vulture marks hidden from ostrich; birds seeing dig blocked from burrow; badger warning lines.
 - 2026-11-08: Practice round where players make actual moves; approve words first.

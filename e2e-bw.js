@@ -1,5 +1,5 @@
 // Default theme, real how-to crops/approved role captions, finite found-egg pulse and reduced motion.
-process.env.PORT = '3978'; process.env.BO_NOSTORE = '1'; process.env.BO_BOTMS = '900000';
+process.env.PORT = '4017'; process.env.BO_NOSTORE = '1'; process.env.BO_BOTMS = '900000';
 const assert = require('assert');
 const { webkit } = require('playwright-core');
 const server = require('./server');
@@ -7,7 +7,7 @@ const server = require('./server');
   const browser = await webkit.launch();
   const context = await browser.newContext({ viewport: { width: 390, height: 664 } });
   const page = await context.newPage();
-  await page.goto('http://localhost:3978/');
+  await page.goto('http://localhost:4017/');
   assert.equal(await page.getAttribute('html', 'data-theme'), 'bw');
   await page.evaluate(() => UI.rules());
   await page.waitForFunction(() => [...document.querySelectorAll('#howPics img')].length === 4 && [...document.querySelectorAll('#howPics img')].every(im => im.complete && im.naturalWidth > 0));
@@ -53,7 +53,7 @@ const server = require('./server');
   for (const [role, caption] of [['blue','Filled egg: a vulture found your egg.'],['red','Filled egg: you found it. Throw a stone at it.']]) {
     const p = await context.newPage();
     await p.addInitScript(() => { for(const k of ['bo_hs_off','bo_tut_seen','bo_card_off','bo_tips_off'])localStorage.setItem(k,'1'); });
-    await p.goto('http://localhost:3978/'); await p.click('#playSolo'); await p.click('[data-bots="1"]'); await p.click('#soloGo'); await p.click('[data-role="'+role+'"]'); await p.click('#startGame');
+    await p.goto('http://localhost:4017/'); await p.click('#playSolo'); await p.click('[data-bots="1"]'); await p.click('#soloGo'); await p.click('[data-role="'+role+'"]'); await p.click('#startGame');
     await p.waitForFunction(() => UI._S() && UI._S().phase !== 'lobby');
     await p.evaluate(() => UI.rules());
     assert.equal(await p.locator('#howPics figcaption').nth(2).textContent(), caption);

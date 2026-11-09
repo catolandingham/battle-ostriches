@@ -3,18 +3,27 @@
 (function(){
 const $=id=>document.getElementById(id),key=p=>p[0]+','+p[1],D=(a,b)=>Math.max(Math.abs(a[0]-b[0]),Math.abs(a[1]-b[1]));
 // --- marks: bold, one per square, distinct by SHAPE and colour, same in every theme ---
-const HYENA='<svg viewBox="0 0 40 40" aria-hidden="true"><path d="M4 30 L8 17 L14 13 L27 13 L31 9 L33 3 L36 9 L38 17 L32 21 L30 30 L26 30 L25 23 L14 23 L12 30 Z" fill="#e0a34a" stroke="#1d1206" stroke-width="2.6" stroke-linejoin="round"/><path d="M8 17 L4 9 L12 14" fill="#e0a34a" stroke="#1d1206" stroke-width="2.4" stroke-linejoin="round"/><circle cx="15" cy="17" r="2.2" fill="#3b2410"/><circle cx="21" cy="19" r="2" fill="#3b2410"/><circle cx="26" cy="16" r="1.8" fill="#3b2410"/><path d="M8 13 L22 10" stroke="#3b2410" stroke-width="3" stroke-linecap="round"/><circle cx="33" cy="12" r="1.8" fill="#000"/><path d="M36 17 L32 18" stroke="#1d1206" stroke-width="2"/></svg>';
+const HYENA=ART.hyena;
 // The badger, face on: a white face with two dark stripes and angry brows (Brian, 2026-11-08).
-const BADGER='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" aria-hidden="true"><circle cx="8.5" cy="11" r="4.2" fill="#1a1512" stroke="#1a120c" stroke-width="2.4" stroke-linejoin="round"/><circle cx="31.5" cy="11" r="4.2" fill="#1a1512" stroke="#1a120c" stroke-width="2.4" stroke-linejoin="round"/><path d="M4 17C4 9 11 4 20 4C29 4 36 9 36 17C36 27 27 38 20 38C13 38 4 27 4 17Z" fill="#f4f1ea" stroke="#1a120c" stroke-width="2.4" stroke-linejoin="round"/><path d="M9 8C11 16 14 25 17.5 34L13.5 33C10 26 6.5 18 6 11Z" fill="#1a1512"/><path d="M31 8C29 16 26 25 22.5 34L26.5 33C30 26 33.5 18 34 11Z" fill="#1a1512"/><path d="M8.5 17.5L15.5 20M31.5 17.5L24.5 20" stroke="#1a1512" stroke-width="2.6" stroke-linecap="round"/><circle cx="12.6" cy="21.4" r="2.1" fill="#fff"/><circle cx="27.4" cy="21.4" r="2.1" fill="#fff"/><circle cx="12.9" cy="21.6" r="1" fill="#111"/><circle cx="27.1" cy="21.6" r="1" fill="#111"/><ellipse cx="20" cy="34" rx="3.6" ry="2.6" fill="#111"/></svg>';
+const BADGER=ART.badger;
 const MOUND='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" aria-hidden="true"><path d="M2 36 Q8 8 20 6 Q32 8 38 36 Z" fill="#f6e2a8" stroke="#1a1008" stroke-width="3.2" stroke-linejoin="round"/><path d="M10 26 q3-2 6 0M24 22 q3-2 6 0M16 32 q3-2 6 0" stroke="#6b4420" stroke-width="2.2" fill="none" stroke-linecap="round"/><circle cx="17" cy="20" r="2.6" fill="#fff" stroke="#111" stroke-width="1"/><circle cx="23" cy="20" r="2.6" fill="#fff" stroke="#111" stroke-width="1"/><circle cx="17" cy="20.6" r="1.2" fill="#111"/><circle cx="23" cy="20.6" r="1.2" fill="#111"/></svg>';
-const OSTI='<svg viewBox="0 0 40 40"><path d="M6 26 L18 18 L30 22 L24 32 L10 32 Z" fill="#38d6f0" stroke="#000" stroke-width="3" stroke-linejoin="round"/><path d="M26 22 L28 6 L34 7" fill="none" stroke="#000" stroke-width="4" stroke-linecap="round"/></svg>';
-const VULI='<svg viewBox="0 0 40 40"><path d="M4 18 L20 12 L36 18 L26 22 L20 32 L14 22 Z" fill="#2b3245" stroke="#000" stroke-width="3" stroke-linejoin="round"/><circle cx="20" cy="11" r="5" fill="#f3dfae" stroke="#000" stroke-width="2.5"/></svg>';
+const OSTI=ART.ostrich;
+const VULI=ART.vulture;
 const KIND={hyena:{n:'Hyena',art:HYENA,pw:'Pounce',pwTxt:'Pounce: missed? Move 1 more.'},
  badger:{n:'Badger',art:BADGER,pw:'Burrow',pwTxt:'Burrow: stay still to hide.'}};
 const BN={blue:'Ostrich',red:'Vulture',hunter:'Hunter'};
 const hName=S=>S.h3&&S.h3.kind?KIND[S.h3.kind].n:'Hunter';
 const tname=(S,r)=>r==='hunter'?hName(S):r==='hyena'||r==='badger'?KIND[r].n:(S&&S.h3&&S.h3.team?{o1:'Ostrich 1',o2:'Ostrich 2',v1:'Vulture 1',v2:'Vulture 2'}[r]:0)||BN[r];
 const sp=(svg,px)=>`<span class="h3i" style="width:${px}px;height:${px}px">${svg}</span>`;
+// Chip row marks (Brian, 2026-11-08). Hearts under a bird: one per catch it can take; a catch empties one, from the right.
+// Claws under a hunter: three sets of scratches; each catch it makes darkens one set. These never appear on board squares.
+const HEART='<svg viewBox="0 0 12 11" aria-hidden="true"><path d="M6 10.2C2.6 7.6 .8 5.8 .8 3.6C.8 2 2 .8 3.5 .8C4.6 .8 5.5 1.4 6 2.3C6.5 1.4 7.4 .8 8.5 .8C10 .8 11.2 2 11.2 3.6C11.2 5.8 9.4 7.6 6 10.2Z"/></svg>';
+const hearts=(n,lost)=>Array.from({length:n},(_,i)=>`<i class="heart${i>=n-lost?' lost':''}">${HEART}</i>`).join('');
+// One catch = three curved scratches, as in Brian's approved "Three scratches" drawing (bw/layout/claw-marks.png).
+const SCRATCH='<svg viewBox="-1 -1 11 12" aria-hidden="true"><path d="M0 9Q1 4 3 1M3 10Q4 4 6 0M6 9Q7 4 9 1"/></svg>';
+// Sets shown (Brian, 2026-11-08): 3 in 3-player games, 4 in Hunters and 5-player games; each catch past that adds one more earned set. No numbers.
+const claws=(n,base)=>{n=n|0;const k=Math.max(base,n);return `<span class="claws${k>4?' many':''}">${Array.from({length:k},(_,i)=>`<i class="claw${i<n?' on':''}">${SCRATCH}</i>`).join('')}</span>`;};
+const caught=h=>Object.values(h.birds||{}).reduce((n,b)=>n+(b.catches|0),0);
 // --- lobby: Classic 2-player by default (the old simple lobby). Bigger modes sit behind a small "More players" link:
 // 3, 4 (2 vs 2 or Hunters) and 5. Picking one routes both play buttons into a setup step (your seat, friend/computer for the rest). ---
 const SN={o1:'Ostrich 1',o2:'Ostrich 2',v1:'Vulture 1',v2:'Vulture 2',blue:'Ostrich',red:'Vulture',hunter:'Hunter',hyena:'Hyena',badger:'Badger'};
@@ -76,11 +85,11 @@ function tHint(S,a){const r=S.h3.mySeat,t=S.turn,h=S.h3;
 function tChips(S){let bar=$('h3bar');if(!bar){bar=document.createElement('div');bar.id='h3bar';$('hud').after(bar);
   bar.addEventListener('click',e=>{const c=e.target.closest('[data-tip]');if(c&&UI._tip)UI._tip(c.dataset.tip);});}
  const h=S.h3,live=S.phase==='play',five=h.n===5,ko=h.ko;bar.classList.add('team');
- const bird=r=>{const b=h.birds[r],pips=five?Array.from({length:ko},(_,i)=>`<i class="pip${i<b.catches?' on':''}"></i>`).join(''):'';
+ const bird=r=>{const b=h.birds[r],pips=five?hearts(ko,b.catches):'';
   const tip=`${SN[r]}${r===h.mySeat?' (you)':''}: ${b.out?'out.':b.catches?'caught '+(b.catches===1?'once.':b.catches+' times.'):'not caught.'}`;
   return `<span class="bchip ${isOs(r)?'blue':'red'} s${r}${b.out?' out':''}${b.catches&&!b.out?' injured':''}${live&&S.turn===r?' now':''}${r===h.mySeat?' me':''}" data-tip="${tip}" data-b="${r}">${sp(isOs(r)?OSTI:VULI,22)}<b class="cnum">${NUM(r)}</b>${five?`<span class="pips">${pips}</span>`:''}${b.out?'<b class="ko">OUT</b>':''}</span>`;};
  const k=h.kind||'hyena';
- bar.innerHTML=h.order.filter(r=>r!=='hunter').map(bird).join('')+(five?`<span class="bchip hunter${live&&S.turn==='hunter'?' now':''}" data-tip="${KIND[k].n}: catches birds.">${sp(KIND[k].art,24)}<b>1</b></span>`:'');}
+ bar.innerHTML=h.order.filter(r=>r!=='hunter').map(bird).join('')+(five?`<span class="bchip hunter${live&&S.turn==='hunter'?' now':''}" data-tip="${KIND[k].n}: catches birds.">${sp(KIND[k].art,24)}${claws(caught(h),4)}</span>`:'');}
 function tPieces(S,board){const h=S.h3,me=h.mySeat;
  const badge=(c,r,mate)=>{const b=document.createElement('b');b.className='snum '+(isOs(r)?'o':'v')+(mate?' mate':'')+(r===me?' me':'');b.textContent=NUM(r);c.appendChild(b);};
  for(const q of h.pieces){if(h.birds&&h.birds[q.seat]&&h.birds[q.seat].out)continue;const c=cellAt(board,S,q.p);if(!c||q.p[0]<0)continue;const d=document.createElement('div');d.className='pc '+(q.type==='o'?'po':'pv')+' other'+(q.mate?' mate':' opp');
@@ -101,11 +110,11 @@ function tOver(S){const h=S.h3,w=S.winner,me=h.mySeat,C=S.cfg,mySide=me==='hunte
 function hChips(S){let bar=$('h3bar');if(!bar){bar=document.createElement('div');bar.id='h3bar';$('hud').after(bar);
   bar.addEventListener('click',e=>{const c=e.target.closest('[data-tip]');if(c&&UI._tip)UI._tip(c.dataset.tip);});}
  const h=S.h3,live=S.phase==='play',me=h.mySeat;bar.classList.add('team');
- const bird=r=>{const b=h.birds[r],pips=Array.from({length:2},(_,i)=>`<i class="pip${i<b.catches?' on':''}"></i>`).join('');
+ const bird=r=>{const b=h.birds[r],pips=hearts(2,b.catches);
   const tip=`${BN[r]}${r===me?' (you)':''}: ${b.out?'out.':b.catches?b.catches+' of '+(h.ko.hyena===h.ko.badger?h.ko.hyena:h.ko.hyena)+' catches.':'not caught.'}`;
   return `<span class="bchip ${r}${b.out?' out':''}${b.catches&&!b.out?' injured':''}${live&&S.turn===r?' now':''}${r===me?' me':''}" data-tip="${tip}" data-b="${r}">${sp(r==='blue'?OSTI:VULI,22)}<span class="pips">${pips}</span>${b.out?'<b class="ko">OUT</b>':''}</span>`;};
  const hun=k=>{const now=live&&(S.turn===k||(S.turn==='hunter'&&me===k)),n=h.hkos[k];
-  return `<span class="bchip hunter h${k}${now?' now':''}${k===me?' me':''}" data-b="${k}" data-tip="${KIND[k].n}${k===me?' (you)':''}: ${KIND[k].pw}. ${h.ko[k]} catches knock a bird out. Knock-outs: ${n}.">${sp(KIND[k].art,24)}<b>${n}</b></span>`;};
+  return `<span class="bchip hunter h${k}${now?' now':''}${k===me?' me':''}" data-b="${k}" data-tip="${KIND[k].n}${k===me?' (you)':''}: ${KIND[k].pw}. ${h.ko[k]} catches knock a bird out. Knock-outs: ${n}.">${sp(KIND[k].art,24)}${claws(h.hcatches?h.hcatches[k]|0:0,4)}</span>`;};
  bar.innerHTML=bird('red')+bird('blue')+hun('hyena')+hun('badger');}
 function hPieces(S,board,prev){const h=S.h3,me=h.mySeat;
  for(const x of h.hunters||[]){const c=cellAt(board,S,x.p);if(!c)continue;const bur=x.burrowed;const pc=document.createElement('div');
@@ -144,11 +153,11 @@ function hint(S,a){if(S.h3.team&&!hint.in){hint.in=1;try{return tHint(S,a);}fina
 function chips(S){if(S.h3.hunt)return hChips(S);if(S.h3.team)return tChips(S);let bar=$('h3bar');if(!bar){bar=document.createElement('div');bar.id='h3bar';$('hud').after(bar);
   bar.addEventListener('click',e=>{const c=e.target.closest('[data-tip]');if(c&&UI._tip)UI._tip(c.dataset.tip);});}
  const h=S.h3,ko=h.ko,live=S.phase==='play';
- const bird=r=>{const b=h.birds[r],pips=Array.from({length:ko},(_,i)=>`<i class="pip${i<b.catches?' on':''}"></i>`).join('');
+ const bird=r=>{const b=h.birds[r],pips=hearts(ko,b.catches);
   const tip=`${BN[r]}: ${b.out?'out.':b.catches?b.catches+' of '+ko+' catches.':'not caught.'}`;
   return `<span class="bchip ${r}${b.out?' out':''}${b.catches&&!b.out?' injured':''}${live&&S.turn===r?' now':''}" data-tip="${tip}" data-b="${r}">${sp(r==='blue'?OSTI:VULI,24)}<span class="pips">${pips}</span>${b.out?'<b class="ko">OUT</b>':''}</span>`;};
  const k=h.kind||'hyena';
- bar.innerHTML=bird('red')+bird('blue')+`<span class="bchip hunter${live&&S.turn==='hunter'?' now':''}" data-tip="${KIND[k].n}: catches birds.">${sp(KIND[k].art,26)}<b>1</b></span>`;}
+ bar.innerHTML=bird('red')+bird('blue')+`<span class="bchip hunter${live&&S.turn==='hunter'?' now':''}" data-tip="${KIND[k].n}: catches birds.">${sp(KIND[k].art,26)}${claws(caught(h),3)}</span>`;}
 function clock(S){let c=$('clock3');if(!c){c=document.createElement('div');c.id='clock3';c.innerHTML='<div class="cfill"></div><span class="ctxt"></span>';$('h3bar').after(c);}
  const on=S.phase==='play'&&S.h3.clockLeft!=null;c.classList.toggle('hidden',!on);if(!on){cancelAnimationFrame(raf);return;}
  const tk=S.round+':'+S.turn+':'+S.h3.clockLeft,local=Math.max(0,deadline-Date.now());if(tk!==lastTurnKey||Math.abs(local-S.h3.clockLeft)>1500){lastTurnKey=tk;deadline=Date.now()+S.h3.clockLeft;clockMs=S.h3.clockMs;}
@@ -180,11 +189,11 @@ function badgerLines(S,prev){if(S===bLastS)return;bLastS=S;if(!prev||(prev.round
 // The shapes: an egg for the vulture's sniff and for eggs you know, a bird for the hunters' sense, a badger for a burrow a bird saw being dug. Style (dashed or filled) lives in part1.css.
 // The bird is a plain (not dashed) side-view line: dashes break a small detailed shape apart, and a hunter only ever sees "may be here" birds, so there is no filled bird to mix it up with.
 // The badger's dig-in spot is a pile of dirt, filled white like every other "is here" mark.
-const EGGD='M20 3C14.5 3 8 16 8 25.5C8 32.5 13.4 37.5 20 37.5C26.6 37.5 32 32.5 32 25.5C32 16 25.5 3 20 3Z',BIRDD='M3 15L12 21C11 30 18 36 26 33C32 31 35 26 33 20L39 17L32 15C31 9 25 7 21 11C19 13 19 16 20 19C15 18 9 16 3 15Z',MOUNDD='M2 34C6 26 10 25 13 21C16 15 24 15 27 21C30 25 34 26 38 34Z';
+const EGGD='M18 2C9.4 2 2 15.4 2 26C2 36 8.4 42 18 42C27.6 42 34 36 34 26C34 15.4 26.6 2 18 2Z',BIRDD='M3 15L12 21C11 30 18 36 26 33C32 31 35 26 33 20L39 17L32 15C31 9 25 7 21 11C19 13 19 16 20 19C15 18 9 16 3 15Z',MOUNDD='M2 34C6 26 10 25 13 21C16 15 24 15 27 21C30 25 34 26 38 34Z';
 // each outline is drawn twice: a wider dark line underneath (mk-d) and the white line on top (mk), so it stays crisp on any tile
 const two=d=>'<path class="mk-d" pathLength="100" d="'+d+'"/><path class="mk" pathLength="100" d="'+d+'"/>';
 const CM={
- egg:'<svg viewBox="0 0 40 40" aria-hidden="true">'+two(EGGD)+'</svg>',
+ egg:'<svg viewBox="0 0 36 44" aria-hidden="true">'+two(EGGD)+'</svg>', // egg shape B (Brian, 2026-11-08)
  bird:'<svg viewBox="0 0 40 40" aria-hidden="true">'+two(BIRDD)+'<circle class="mk-eye" cx="27" cy="13.5" r="2.2"/></svg>',
  badger:'<svg viewBox="0 0 40 40" aria-hidden="true">'+two(MOUNDD)+'<circle class="mk-eye" cx="15" cy="28" r="1.8"/><circle class="mk-eye" cx="24" cy="25" r="1.8"/><circle class="mk-eye" cx="29" cy="30" r="1.8"/></svg>'};
 function markHTML(kind,cls){return CM[kind]?'<i class="cmark cm-'+kind+(cls?' '+cls:'')+'" aria-hidden="true">'+CM[kind]+'</i>':'';}

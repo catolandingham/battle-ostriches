@@ -1,7 +1,7 @@
 // Pass & play on ONE WebKit iPhone 13: full game, handoff cover between turns, and no egg positions in the vulture's DOM.
 const { webkit, devices } = require('playwright-core');
 const assert = require('assert'), fs = require('fs');
-process.env.PORT = 3997; const server = require('./server.js');
+process.env.PORT = 4010; const server = require('./server.js');
 const OUT = 'shots/pass/'; fs.mkdirSync(OUT, { recursive: true });
 (async () => {
   const b = await webkit.launch(), errs = [];
@@ -9,7 +9,7 @@ const OUT = 'shots/pass/'; fs.mkdirSync(OUT, { recursive: true });
   await P.addInitScript(() => { localStorage.setItem('bo_hs_off','1'); localStorage.setItem('bo_tut_seen', '1'); localStorage.setItem('bo_walk_blue','1'); localStorage.setItem('bo_walk_red','1'); localStorage.setItem('bo_tips_off','1'); localStorage.setItem('bo_card_off', '1'); ['blue', 'red'].forEach(r => localStorage.setItem('bo_cs_' + r, '9')); });
   P.on('pageerror', e => errs.push(e.message));
   const cell = (x, y) => P.locator('.cell').nth(y * 9 + x);
-  await P.goto('http://localhost:3997/');
+  await P.goto('http://localhost:4010/');
   assert.ok(await P.isVisible('#playFriend') && await P.isVisible('#playSolo'), 'two primary choices');
   assert.ok(await P.isVisible('#playPass'), 'pass stays available');
   assert.equal(await P.locator('#playPass.big').count(), 0, 'pass is not a third primary button');

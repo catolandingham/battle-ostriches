@@ -1,7 +1,7 @@
 // Home and friends lobby: the room code is on the screen, not inside Settings or Theme.
 const { webkit, devices } = require('playwright-core');
 const assert = require('assert'), fs = require('fs');
-process.env.PORT = '3994';
+process.env.PORT = '4012';
 process.env.BO_NOSTORE = '1';
 const server = require('./server.js');
 const OUT = require('path').join(__dirname, 'shots', 'e2e');
@@ -11,7 +11,7 @@ fs.mkdirSync(OUT, { recursive: true });
   const page = await (await browser.newContext(devices['iPhone 13'])).newPage();
   page.on('pageerror', e => errs.push(e.message));
   await page.addInitScript(() => localStorage.setItem('bo_tut_seen', '1'));
-  await page.goto('http://127.0.0.1:3994/', { timeout: 20000 });
+  await page.goto('http://127.0.0.1:4012/', { timeout: 20000 });
   await page.waitForSelector('#codeIn', { timeout: 10000 });
   const home = await page.evaluate(() => {
     const input = document.getElementById('codeIn');
@@ -127,7 +127,7 @@ fs.mkdirSync(OUT, { recursive: true });
   join.on('pageerror', e => errs.push(e.message));
   await join.addInitScript(() => localStorage.setItem('bo_tut_seen', '1'));
   const code = (await page.textContent('#lobbyCode')).trim();
-  await join.goto('http://127.0.0.1:3994/');
+  await join.goto('http://127.0.0.1:4012/');
   await join.fill('#codeIn', code);
   await join.evaluate(c => UI.open({ t: 'join', code: c }), code);
   await join.waitForSelector('#roomLobby:not(.hidden)');

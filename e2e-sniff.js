@@ -2,7 +2,7 @@
 // The stored clue stays on the board as green squares, and is not spoken again as a live banner.
 const { webkit, chromium, devices } = require('playwright-core');
 const assert = require('assert'), fs = require('fs');
-process.env.PORT = process.env.PORT || 3994;
+process.env.PORT = process.env.PORT || 4013;
 process.env.BO_NOSTORE = '1';
 const server = require('./server.js');
 const OUT = require('path').join(__dirname, 'shots', 'e2e');

@@ -190,6 +190,6 @@ function timeout(g) {
   ostrichStay(g); if (g.lastAction) g.lastAction.timeout = true; afterOstrich(g); return true;
 }
 function statusH(g) { const t = g.hunt;
-  return { hunt: true, ko: TH.ko, birds: JSON.parse(JSON.stringify(t.birds)), order: ORDER, hkos: { hyena: t.hs.hyena.kos, badger: t.hs.badger.kos } }; }
+  return { hunt: true, ko: TH.ko, birds: JSON.parse(JSON.stringify(t.birds)), order: ORDER, hkos: { hyena: t.hs.hyena.kos, badger: t.hs.badger.kos }, hcatches: { hyena: t.hs.hyena.catches, badger: t.hs.badger.catches } }; } // catches are announced to every seat, so the counts are public
 module.exports = { TH, OFF, BIRDS, HUNTERS, ORDER, isH, newHunt, senses, seen, ambushSight, hunterMoves, hunterMove, hunterStay, hunterBurst, canBurst, hunterRange, moveDir, upAt, placeOstrichH, vultureFlyH,
   vultureThrowH, ostrichActH, finish, kickableH, kickTargetsH, ostrichKickH, timeout, statusH, isOut, pos, advance, catchBird, knockout, hunterAt };
