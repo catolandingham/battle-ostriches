@@ -169,7 +169,7 @@ const near = (a, c) => Math.max(Math.abs(a[0] - c[0]), Math.abs(a[1] - c[1]));
           claw: !!document.querySelector('.h3claw'),
           cellInjured: !!document.querySelector('#board .cell.injured'),
           pcInjured: !!document.querySelector('#board .pc.injured'),
-          pips: document.querySelectorAll('#h3bar .bchip .pip.on').length
+          pips: document.querySelectorAll('#h3bar .bchip .heart.lost, #h3bar .bchip .claw.on').length
         }));
         if (marks.hurtag || marks.claw || marks.cellInjured || marks.pcInjured) throw new Error(who + ' phone still shows an on-square catch mark');
         if (marks.pips < 1) throw new Error(who + ' phone header must show a filled catch pip');
