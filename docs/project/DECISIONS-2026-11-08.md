@@ -93,3 +93,10 @@
 - 2026-11-08 (Brian): the big ostrich kick-foot animation is parked for later (4 versions made, v2). Kicks keep the 2-second scene with the other squares frozen as they were.
 - 2026-11-08 (Brian, PR #24): with an egg the centred animal is about 58% of the square (egg B same size, tucked into the empty corner of its box); on a leaf or rock it is about 70%. Overlap is checked by drawn ink, not by the boxes, with a small gap.
 - 2026-11-08 (Brian): an ostrich carrying an egg is drawn with its beak open a little and egg B lying sideways inside, medium size (art: bw/carry/v4/v2/ostrich-carry.svg). Not built into the game yet.
+- 2026-11-08 11:06 PM PT: PR #24 (board look) merged as 3a07f6a.
+- 2026-11-08 11:07 PM PT: Kick is shown as a full-screen cartoon cutaway, version 1 (card slides up like the reminder card), 2 seconds: wind-up, kick, hyena flies off, then back to the board slide. Foot must be seen hitting; target drawn smaller than the ostrich. Replaces the parked kick-foot idea.
+- 2026-11-09 12:05 AM PT: Catch is shown as a full-screen cartoon cutaway (same slide-up card as the kick, 2 seconds): the hunter bites a tail feather as the bird runs, feathers fly, then back to the board with a new claw mark. No pose may read as one animal on top of or behind another. Mockup: catch-cutaway-2b.
+- 2026-11-09 12:08 AM PT: The vulture's stone is a full-screen cutaway: the vulture drops a stone that bonks the target, then back to the board.
+- 2026-11-09 12:12 AM PT: The knock-out is one 2-second cutaway: the feather-bite catch, then the bird gets dizzy and flops over, then back to the board with the bird out. It plays only for players allowed to see that catch.
+- 2026-11-09 12:17 AM PT: Knock-out cutaway art approved (knockout-cutaway-2).
+- 2026-11-09 6:59 AM PT: The badger burst is a full-screen cutaway: a mound tunnels toward the target, the badger's eyes peek out, it bursts up from the same hole and shoves the target 2 squares while staying put, then back to the board. Animals slide smoothly between beats, with no sudden jumps. Mockup: burst-cutaway-4.
