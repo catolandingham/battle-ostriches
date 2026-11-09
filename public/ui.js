@@ -115,6 +115,8 @@ const outside=e=>{if(sheetOpen&&!e.target.closest('#wait,#inviteBtn')){sheetOpen
 document.addEventListener('touchstart',outside,{passive:true,capture:true});document.addEventListener('mousedown',outside,true);tapper($('howBtn'),()=>UI.rules());tapper($('helpBtn'),()=>UI.rules());
 function muteLabel(){const t=SFX.muted?'Sound off':'Sound on';$('muteBtn').innerHTML=SFX.muted?'<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M3 9v6h4l5 4V5L7 9H3z" fill="#fff" stroke="#111" stroke-width="1.5" stroke-linejoin="round"/><path d="M16 9l5 6M21 9l-5 6" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>':'<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M3 9v6h4l5 4V5L7 9H3z" fill="#fff" stroke="#111" stroke-width="1.5" stroke-linejoin="round"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>';$('muteBtn').setAttribute('aria-label',t);if($('muteBtn2')){$('muteBtn2').textContent=t;$('muteBtn2').setAttribute('aria-label',t);}}
 muteLabel();tapper($('muteBtn'),()=>{SFX.toggle();muteLabel();});tapper($('muteBtn2'),()=>{SFX.toggle();muteLabel();});
+// The throw just made pushed an animal (its stone note is new this update, or the action carries the push line): that is a hit on the animal, not a miss.
+function stoneHitAnimal(S,prev,la){if(!la||la.type!=='throw'||la.result==='hit'||la.result==='bounce')return false;if(la.line)return true;const n=S&&S.stoneNote;return !!(n&&(n.targets||[]).length&&(!prev||!prev.stoneNote||prev.stoneNote.seq!==n.seq));}
 function sounds(prev){if(!prev)return;const blue=S.role==='blue';
  if(S.phase==='over'&&prev.phase!=='over')return SFX.play(S.winner===S.role?'win':'lose');
  if(prev.phase.startsWith('setup')&&S.phase===prev.phase&&blue)SFX.play('place');
@@ -434,13 +436,13 @@ function render(prev){
  // ONE message per turn: the most important event wins
  let ev='';const myNew=newTurn&&S.myTurn;
  if(myNew&&la){
-  if(blue&&la.type==='throw')ev=la.result==='bounce'?'Kicked it back!':la.result==='hit'?'Egg smashed.':'Missed.';
+  if(blue&&la.type==='throw')ev=la.result==='bounce'?'Kicked it back!':la.result==='hit'?'Egg smashed.':stoneHitAnimal(S,prev,la)?'':'Missed.'; // a stone that pushed the badger or hyena is not a miss
   if(blue&&!ev&&la.spotted)ev='The vulture found an egg! Move it or sit on it.';
   if(!blue&&la.type==='fly'&&la.spotted)ev='Found an egg. Throw on it.';
   if(S.lastCold&&!ev&&!smashed)ev='An egg went cold.';
  }
  if(smashed)ev='Smashed!';
- else if(!blue&&prev&&prev.turn==='red'&&la&&la.type==='throw'&&S.turn==='blue')ev=la.result==='bounce'?(la.egg?'Bounced! Egg under ostrich.':'Bounced! No egg.'):'Miss.';
+ else if(!blue&&prev&&prev.turn==='red'&&la&&la.type==='throw'&&S.turn==='blue')ev=la.result==='bounce'?(la.egg?'Bounced! Egg under ostrich.':'Bounced! No egg.'):stoneHitAnimal(S,prev,la)?'':'Miss.';
  else if(!blue&&S.role==='red'&&S.phase==='play'&&!S.myTurn&&la&&la.type==='fly'){ // the vulture's own landing, shown while the ostrich takes its turn
   if(la.spotted&&S.stones<1)ev=NOSTONE_FOUND;else if(la.refill)ev='Picked up a stone.';}
  if(ev)h=ev+(h?' '+h:'');

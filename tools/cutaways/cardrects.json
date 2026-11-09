@@ -1,0 +1,104 @@
+{
+ "burst": [
+  24,
+  174,
+  341,
+  426
+ ],
+ "catch": [
+  23,
+  173,
+  344,
+  429
+ ],
+ "catch-badger-ostrich": [
+  25,
+  175,
+  339,
+  424
+ ],
+ "catch-badger-vulture": [
+  25,
+  175,
+  339,
+  424
+ ],
+ "catch-hyena-vulture": [
+  25,
+  175,
+  339,
+  424
+ ],
+ "kick": [
+  22,
+  168,
+  346,
+  442
+ ],
+ "kick-badger": [
+  25,
+  175,
+  339,
+  424
+ ],
+ "kick-vulture": [
+  25,
+  175,
+  339,
+  424
+ ],
+ "kick-wrap": [
+  25,
+  175,
+  339,
+  424
+ ],
+ "knockout": [
+  23,
+  173,
+  344,
+  429
+ ],
+ "knockout-badger-ostrich": [
+  25,
+  175,
+  339,
+  424
+ ],
+ "knockout-badger-vulture": [
+  25,
+  175,
+  339,
+  424
+ ],
+ "knockout-hyena-vulture": [
+  25,
+  175,
+  339,
+  424
+ ],
+ "shove-badger-hyena": [
+  25,
+  175,
+  339,
+  424
+ ],
+ "shove-hyena-badger": [
+  25,
+  175,
+  339,
+  424
+ ],
+ "stone": [
+  24,
+  174,
+  341,
+  426
+ ],
+ "stone-badger": [
+  25,
+  175,
+  339,
+  424
+ ]
+}
