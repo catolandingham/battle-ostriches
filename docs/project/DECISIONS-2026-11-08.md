@@ -100,3 +100,10 @@
 - 2026-11-09 12:12 AM PT: The knock-out is one 2-second cutaway: the feather-bite catch, then the bird gets dizzy and flops over, then back to the board with the bird out. It plays only for players allowed to see that catch.
 - 2026-11-09 12:17 AM PT: Knock-out cutaway art approved (knockout-cutaway-2).
 - 2026-11-09 6:59 AM PT: The badger burst is a full-screen cutaway: a mound tunnels toward the target, the badger's eyes peek out, it bursts up from the same hole and shoves the target 2 squares while staying put, then back to the board. Animals slide smoothly between beats, with no sudden jumps. Mockup: burst-cutaway-4.
+- 2026-11-09: Docs PR #25 merged. Started the build PR for the 5 approved scenes (only the animal pairs drawn so far; other pairs keep the old animation for now), 2-second scenes, and the carry icon.
+- 2026-11-09: The ostrich can still kick the vulture in every mode. Kicks aren't limited to hunters.
+- 2026-11-09: The hunter shove gets its own scene. The hyena and badger push back and forth, then the winner shoves the other away.
+- 2026-11-09: A kick that goes off the edge uses scene C2. The kick fades softly into the board, then the animal slides off one side and comes back on the other.
+- 2026-11-09: Approved the 11 new combo scenes: ostrich kicks the badger and the vulture; hyena catches the vulture; badger catches the ostrich and the vulture; knock-outs for those same three pairs; vulture stone bonks the badger; hunter shoves both ways (back and forth, then the winner shoves).
+- 2026-11-09: Cartoon scenes keep their own tall shape (never squashed into the board) and are drawn sharp for the phone; the hyena has no forehead eye.
+- 2026-11-09: Egg smash scene is 5a (vulture flies in with a stone, flicks it, egg breaks in two). When the vulture's stone hits an animal, it no longer says Missed.
