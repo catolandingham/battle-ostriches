@@ -1,3 +1,28 @@
+# Test results — remove on-square catch markers (2026-11-08)
+
+## Full `npm test`
+- **54 of 55** suites passed on the first full run.
+- **PASS** includes `e2e-catch-markers.js` (header pips still fill) and `e2e-hunter-phone.js` (asserts no on-square hurtag/claw/injured; header pip + chip injured).
+- **FAIL** `e2e-consistency.js` (0s): `EADDRINUSE` on port 3992 from a leftover process. Not a product failure.
+
+## Isolated rerun
+- Freed port 3992, set `PLAYWRIGHT_BROWSERS_PATH` to `node_modules/.pw-browsers`.
+- `e2e-consistency.js`: **PASS** — 13 theme/mode walks, **366 checks**, no browser errors (~667s). Log: `isolated-reruns.txt`.
+
+## Real-play captures
+- `node tools/shots-real-play.js docs/reviews/egg-layout-shots catch`
+- New: `catch-bird-after-no-square-mark.png`, `catch-hunter-after-no-square-mark.png`
+- Viewed both: bird phone shows one filled pip on the vulture chip and a clean board square (YOU only); hunter phone shows the same filled pip and no bird/claw/heart on the board (scramble destination correctly hidden).
+- Contact sheet rebuilt: 67 screens → `00-contact-sheet.png`.
+
+## Change under test
+- Removed `markHurt` (board `.injured` / `.hurtag` hearts), board claw burst (`h3claw`), and board injured CSS.
+- Header chip pips / `.bchip.injured` / OUT unchanged.
+- Docs: RULEBOOK-v2 4.6, egg-layout README, OPEN-ITEMS, DECISIONS/STATE dated lines, audit supersession notes.
+
+
+---
+
 # Current correction: kicker sees the full actual slide
 
 Brian's 2026-11-08 decision reverses kick-landing filtering for the kicker only. Full travel and stopped-early kicks animate every actual square in about one second; non-kickers retain normal sight. Explicit server event trails do not expose unrelated obstruction positions or grant ongoing hunter sight. Knocked-out full god views remain unchanged.

@@ -16,7 +16,7 @@ The animal is called the badger.
 - 2026-11-08: Push slide square by square with trail, about 1 second total; respect reduced motion and hide scramble destinations.
 - 2026-11-08: Approved notices: “You were caught! You fled 2 squares.” / “The hyena caught the vulture!” with actual animals and no scramble location.
 - 2026-11-08: Who-sees-what audit across every mode and role.
-- 2026-11-08: Kick cut-scene mockup; catch-marker mockups.
+- 2026-11-08: Kick cut-scene mockup. Catch-marker mockups decided: no on-square mark; header hearts only (in PR #23).
 - 2026-11-08: Corner mockups: eggs top-left, rocks top-right, food bottom-right, number bottom-left.
 - 2026-11-08: Egg countdown mockups: inside egg, beside egg, or no-number visuals.
 - 2026-11-08: Timer-bar mockups: filling or shrinking.

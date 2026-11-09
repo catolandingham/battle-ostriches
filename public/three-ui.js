@@ -7,7 +7,6 @@ const HYENA='<svg viewBox="0 0 40 40" aria-hidden="true"><path d="M4 30 L8 17 L1
 // The badger, face on: a white face with two dark stripes and angry brows (Brian, 2026-11-08).
 const BADGER='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" aria-hidden="true"><circle cx="8.5" cy="11" r="4.2" fill="#1a1512" stroke="#1a120c" stroke-width="2.4" stroke-linejoin="round"/><circle cx="31.5" cy="11" r="4.2" fill="#1a1512" stroke="#1a120c" stroke-width="2.4" stroke-linejoin="round"/><path d="M4 17C4 9 11 4 20 4C29 4 36 9 36 17C36 27 27 38 20 38C13 38 4 27 4 17Z" fill="#f4f1ea" stroke="#1a120c" stroke-width="2.4" stroke-linejoin="round"/><path d="M9 8C11 16 14 25 17.5 34L13.5 33C10 26 6.5 18 6 11Z" fill="#1a1512"/><path d="M31 8C29 16 26 25 22.5 34L26.5 33C30 26 33.5 18 34 11Z" fill="#1a1512"/><path d="M8.5 17.5L15.5 20M31.5 17.5L24.5 20" stroke="#1a1512" stroke-width="2.6" stroke-linecap="round"/><circle cx="12.6" cy="21.4" r="2.1" fill="#fff"/><circle cx="27.4" cy="21.4" r="2.1" fill="#fff"/><circle cx="12.9" cy="21.6" r="1" fill="#111"/><circle cx="27.1" cy="21.6" r="1" fill="#111"/><ellipse cx="20" cy="34" rx="3.6" ry="2.6" fill="#111"/></svg>';
 const MOUND='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" aria-hidden="true"><path d="M2 36 Q8 8 20 6 Q32 8 38 36 Z" fill="#f6e2a8" stroke="#1a1008" stroke-width="3.2" stroke-linejoin="round"/><path d="M10 26 q3-2 6 0M24 22 q3-2 6 0M16 32 q3-2 6 0" stroke="#6b4420" stroke-width="2.2" fill="none" stroke-linecap="round"/><circle cx="17" cy="20" r="2.6" fill="#fff" stroke="#111" stroke-width="1"/><circle cx="23" cy="20" r="2.6" fill="#fff" stroke="#111" stroke-width="1"/><circle cx="17" cy="20.6" r="1.2" fill="#111"/><circle cx="23" cy="20.6" r="1.2" fill="#111"/></svg>';
-const CLAW='<svg viewBox="0 0 40 40" aria-hidden="true"><path d="M10 6 L18 34 M19 4 L25 34 M28 6 L32 32" stroke="#000" stroke-width="8" stroke-linecap="round"/><path d="M10 6 L18 34 M19 4 L25 34 M28 6 L32 32" stroke="#ff2a6d" stroke-width="4.5" stroke-linecap="round"/></svg>';
 const OSTI='<svg viewBox="0 0 40 40"><path d="M6 26 L18 18 L30 22 L24 32 L10 32 Z" fill="#38d6f0" stroke="#000" stroke-width="3" stroke-linejoin="round"/><path d="M26 22 L28 6 L34 7" fill="none" stroke="#000" stroke-width="4" stroke-linecap="round"/></svg>';
 const VULI='<svg viewBox="0 0 40 40"><path d="M4 18 L20 12 L36 18 L26 22 L20 32 L14 22 Z" fill="#2b3245" stroke="#000" stroke-width="3" stroke-linejoin="round"/><circle cx="20" cy="11" r="5" fill="#f3dfae" stroke="#000" stroke-width="2.5"/></svg>';
 const KIND={hyena:{n:'Hyena',art:HYENA,pw:'Pounce',pwTxt:'Pounce: missed? Move 1 more.'},
@@ -159,12 +158,6 @@ function clock(S){let c=$('clock3');if(!c){c=document.createElement('div');c.id=
  cancelAnimationFrame(raf);tick();}
 function cellAt(board,S,p){return p&&p[0]>=0?board.children[p[1]*S.cfg.cols+p[0]]:null;}
 function noteBanner(cls,txt,force){const bn=$('banner');if(!bn)return;if(!force&&bn.textContent&&!bn.classList.contains('hidden'))return;bn.textContent=txt;bn.className=cls;}
-function markHurt(S,board){const birds=S.h3&&S.h3.birds;if(!birds)return;
- const tag=(cell,b)=>{if(!cell||!b||b.out||!b.catches)return;cell.classList.add('injured');const pc=cell.querySelector('.pc');if(pc)pc.classList.add('injured');
-  if(!cell.querySelector('.hurtag')){const l=document.createElement('span');l.className='hurtag';l.textContent='\u2665';cell.appendChild(l);}
-  cell.dataset.tip=(cell.dataset.tip?cell.dataset.tip+' · ':'')+'Caught '+(b.catches===1?'once.':b.catches+' times.');};
- if(S.h3.team){for(const [r,b] of Object.entries(birds)){let cell=board.querySelector('.cell[data-seat="'+r+'"]');if(!cell&&r===S.h3.mySeat)cell=board.querySelector('.cell[data-tags~="me"]');tag(cell,b);}}
- else{const po=board.querySelector('.pc.po'),pv=board.querySelector('.pc.pv');tag(po&&po.closest('.cell'),birds.blue);tag(pv&&pv.closest('.cell'),birds.red);}}
 // "The ostrich is out." once per elimination, for everyone still playing. outSeen remembers which birds were already out (a re-render, or opening
 // the page mid-game, never repeats it; a new game clears it). The line stays up a few seconds and is re-applied if the next state redraws the banner.
 const outSeen={};let outNote=null;
@@ -256,7 +249,6 @@ function after(S,prev,board){badgerLines(S,prev);chips(S);clock(S);kindPick(S);i
   if(fresh){const ac=cellAt(board,S,lc.at),tc=cellAt(board,S,lc.to);
    const word=lc.bird==='red'||lc.bird==='v1'||lc.bird==='v2'?'vulture':'ostrich';
    if(ac&&me==='hunter'&&!ac.querySelector('.pc.po,.pc.pv')){const disc=document.createElement('div');disc.className='pc '+(word==='ostrich'?'po':'pv')+' foundnow';disc.innerHTML=word==='ostrich'?OSTI:VULI;ac.appendChild(disc);}
-   const clawCell=(h.mySeat||me)===lc.bird&&tc?tc:ac;if(clawCell){const m=document.createElement('div');m.className='h3claw';m.innerHTML=CLAW;clawCell.appendChild(m);}
    if(tc)tc.classList.add('h3kb');
    // what the catch means, in words: hurt or out, and who did it (catchtext.js)
    const CT=window.CatchText,seat=h.mySeat||me,by=lc.by||k;
@@ -264,7 +256,7 @@ function after(S,prev,board){badgerLines(S,prev);chips(S);clock(S);kindPick(S);i
    if(seat===lc.bird&&!lc.ko)announce(CT.catchLine(lc,'hunter',by,CT.catchesLeft(h,lc)),90);
    const ch=document.querySelector('#h3bar .bchip.'+lc.bird);ch&&ch.classList.add('hitnow');window.SFX&&SFX.play(me==='hunter'?'win':'warn');}}
  outBanner(S,prev);
- markHurt(S,board); warnNear(S,board);
+ warnNear(S,board);
  // waiting panel text: which seats are still open
  if(!S.joined){const w=$('wait');const open=Object.entries(h.seats).filter(([,v])=>v==='open').map(([r])=>SN[r]);if(w)w.firstElementChild.nextElementSibling.textContent=`Waiting for: ${open.join(', ')}. Send them this link:`;}}
 function kindPick(S){let k=$('kindPick');if(!S.h3.needKind){k&&k.classList.add('hidden');return;}

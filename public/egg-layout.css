@@ -8,6 +8,6 @@ html[data-theme] :is(#board,.mini) .cell:has(.cm-egg)>.pc:not(#_a):not(#_b):not(
 /* One- and two-digit countdowns sit beside the egg, with a real 4px inset. */
 html[data-theme] :is(#board,.mini) .cell .wnum:not(#_a):not(#_b):not(#_c){position:absolute!important;inset:auto!important;left:auto!important;right:4px!important;top:4px!important;bottom:auto!important;width:auto!important;height:11px!important;max-width:calc(50% - 4px)!important;transform:none!important;margin:0!important;padding:0!important;border:0!important;line-height:11px!important;font-size:10px!important;text-align:right!important;z-index:48!important}
 /* Reduced motion: retain the static path / destination cue, never the legacy bounce or claw burst. */
-@media (prefers-reduced-motion:reduce){html[data-theme] .cell.h3kb,html[data-theme] .cell.h3kb::after,html[data-theme] .bchip.hitnow{animation:none!important;transform:none!important}html[data-theme] .h3claw{display:none!important}}
+@media (prefers-reduced-motion:reduce){html[data-theme] .cell.h3kb,html[data-theme] .cell.h3kb::after,html[data-theme] .bchip.hitnow{animation:none!important;transform:none!important}}
 /* The moving copy is the only animal shown during a push, including sprite themes. */
 body:has(.push-motion[data-sprite="o"][data-moving="1"]) #fx .spr-o,body:has(.push-motion[data-sprite="v"][data-moving="1"]) #fx .spr-v{visibility:hidden!important}

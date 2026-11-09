@@ -80,3 +80,6 @@ The found-egg mark is the hole. `game.js` line 270 treats a found egg as one of 
 Hunters do not learn where a caught bird scrambled, while the game is going. The other hunter does not even learn the catch square. A buried badger stays hidden from a bird who did not see it dig. Ambush sight stays on the badger's phone. The classic vulture does not receive eggs it has not found.
 
 The found-egg leak is the one Brian already saw. Leave the fix to the other pull request.
+
+## Update 2026-11-08
+Brian decided catches show only in the animal chip row above the board. No claw or heart mark is drawn on a caught bird's square for any viewer.
