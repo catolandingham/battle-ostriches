@@ -93,3 +93,5 @@
 - 2026-11-08 (Brian): the big ostrich kick-foot animation is parked for later (4 versions made, v2). Kicks keep the 2-second scene with the other squares frozen as they were.
 - 2026-11-08 (Brian, PR #24): with an egg the centred animal is about 58% of the square (egg B same size, tucked into the empty corner of its box); on a leaf or rock it is about 70%. Overlap is checked by drawn ink, not by the boxes, with a small gap.
 - 2026-11-08 (Brian): an ostrich carrying an egg is drawn with its beak open a little and egg B lying sideways inside, medium size (art: bw/carry/v4/v2/ostrich-carry.svg). Not built into the game yet.
+- 2026-11-08 11:06 PM PT: PR #24 (board look) merged as 3a07f6a.
+- 2026-11-08 11:07 PM PT: Kick is shown as a full-screen cartoon cutaway, version 1 (card slides up like the reminder card), 2 seconds: wind-up, kick, hyena flies off, then back to the board slide. Foot must be seen hitting; target drawn smaller than the ostrich. Replaces the parked kick-foot idea.
