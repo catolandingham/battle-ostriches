@@ -95,3 +95,4 @@
 - 2026-11-08 (Brian): an ostrich carrying an egg is drawn with its beak open a little and egg B lying sideways inside, medium size (art: bw/carry/v4/v2/ostrich-carry.svg). Not built into the game yet.
 - 2026-11-08 11:06 PM PT: PR #24 (board look) merged as 3a07f6a.
 - 2026-11-08 11:07 PM PT: Kick is shown as a full-screen cartoon cutaway, version 1 (card slides up like the reminder card), 2 seconds: wind-up, kick, hyena flies off, then back to the board slide. Foot must be seen hitting; target drawn smaller than the ostrich. Replaces the parked kick-foot idea.
+- 2026-11-09 12:05 AM PT: Catch is shown as a full-screen cartoon cutaway (same slide-up card as the kick, 2 seconds): the hunter bites a tail feather as the bird runs, feathers fly, then back to the board with a new claw mark. No pose may read as one animal on top of or behind another. Mockup: catch-cutaway-2b.
