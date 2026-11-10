@@ -76,4 +76,78 @@ t('badger is not burrowed before it stays still', () => {
   assert.equal(g.three.dig, 0);
 });
 t('2-player games carry no 3-player state', () => { const g = B.newGame(); assert(!('three' in g)); });
+
+function atHunter(g, h, o, v) {
+  g.phase = 'play'; g.turn = 'hunter'; g.three.h = h.slice(); g.ostrich = o.slice(); g.vulture = v.slice();
+  g.three.pounce = false; g.three.sense = false; g.three.extra = false;
+}
+t('3 catches do not win; 4 catches do', () => {
+  const g = setup('hyena', [5, 2]); atHunter(g, [5, 2], [6, 2], [0, 6]);
+  g.three.birds.red.catches = 1; g.three.birds.blue.catches = 1;
+  assert(T.hunterMove(g, [6, 2])); assert.equal(g.phase, 'play', '3 catches are not a win');
+  assert.equal(g.three.birds.blue.catches, 2); assert.equal(g.three.birds.blue.out, true);
+  assert.equal(g.turn, 'hunter'); assert.equal(g.three.extra, true, 'the knock-out starts the extra turn');
+  g.vulture = [5, 3]; g.three.h = [5, 2]; g.three.pounce = false;
+  assert(T.hunterMove(g, [5, 3]));
+  assert.equal(g.phase, 'over'); assert.equal(g.winner, 'hunter');
+  // With 2 catches per bird, 4 catches also knocks out both birds, so finish prefers that reason.
+  assert.ok(/made 4 catches|knocked out both birds/.test(g.endWhy), g.endWhy);
+  assert.equal(g.three.extra, true); // the game ended on the extra turn; endHunter did not run
+});
+t('a starved bird does not give the hunter a double turn', () => {
+  const g = setup('hyena', [0, 3]); g.hungerLeft = 1; T.vultureFly3(g, [4, 1]); T.ostrichAct3(g, 'step', [5, 5]);
+  assert.equal(g.three.birds.blue.why, 'starved'); assert.equal(g.turn, 'hunter');
+  assert(T.hunterStay(g)); assert.equal(g.turn, 'red'); assert.equal(!!g.three.extra, false);
+});
+t('after the first credited knock-out the hunter always takes 2 full turns, with a fresh sense and pounce reset', () => {
+  const g = setup('hyena', [5, 2]); atHunter(g, [5, 2], [6, 2], [0, 6]);
+  g.three.birds.blue.catches = 1; g.three.sense = true; const seq = g.three.senseSeq;
+  assert(T.hunterMove(g, [6, 2]));
+  assert.equal(g.phase, 'play'); assert.equal(g.turn, 'hunter'); assert.equal(g.three.extra, true);
+  assert.equal(g.three.pounce, false, 'pounce resets on the second turn');
+  assert.ok(g.three.senseSeq > seq, 'sense is taken again');
+  assert.equal(T.status3(g).extra, true);
+  const seq2 = g.three.senseSeq; assert(T.hunterStay(g));
+  assert.equal(g.three.extra, false); assert.equal(g.turn, 'red');
+  // the next hunter visit is also a double, even if this visit does not catch
+  assert(T.vultureFly3(g, [1, 6]));
+  assert.equal(g.turn, 'hunter', 'the out ostrich is skipped'); assert.equal(g.three.extra, false);
+  assert(T.hunterStay(g));
+  assert.equal(g.turn, 'hunter'); assert.equal(g.three.extra, true); assert.equal(g.three.pounce, false);
+  assert.ok(g.three.senseSeq >= seq2);
+  assert(T.hunterStay(g)); assert.equal(g.turn, 'red'); assert.equal(g.three.extra, false);
+});
+t('a knock-out on the pounce finishes this turn, then the extra turn starts', () => {
+  const g = setup('hyena', [5, 2]); atHunter(g, [5, 2], [6, 2], [4, 4]);
+  g.three.birds.blue.catches = 1; g.three.sense = true;
+  assert(T.hunterMove(g, [5, 3])); assert.equal(g.three.pounce, true); assert.equal(g.three.extra, false); assert.equal(g.turn, 'hunter');
+  assert(T.hunterMove(g, [6, 2]));
+  assert.equal(g.three.birds.blue.out, true); assert.equal(g.turn, 'hunter'); assert.equal(g.three.extra, true); assert.equal(g.three.pounce, false);
+});
+t('a game-ending catch does not start an extra turn', () => {
+  const g = setup('hyena', [5, 2]); atHunter(g, [5, 2], [6, 2], [0, 6]);
+  g.three.birds.red.catches = 2; g.three.birds.blue.catches = 1;
+  assert(T.hunterMove(g, [6, 2])); assert.equal(g.phase, 'over'); assert.equal(g.winner, 'hunter');
+  assert.equal(g.turn, 'hunter'); // endHunter did not run, so extra stays off
+  assert.equal(!!g.three.extra, false);
+});
+t('the second hunter turn gets a new 10s clock', () => {
+  const S = require('./server.js');
+  const { room } = S.create3({ role: 'hunter', bots: ['red', 'blue'], kind: 'hyena' }, null);
+  room.clock = undefined; room.settings = { showTimers: true };
+  room.g = setup('hyena', [5, 2]); atHunter(room.g, [5, 2], [6, 2], [0, 6]);
+  room.g.three.birds.blue.catches = 1;
+  S.broadcast(room);
+  const key1 = room.clockKey, d1 = room.deadline;
+  assert.ok(key1 && key1.endsWith(':1'), 'first hunter visit keys the clock as turn 1: ' + key1);
+  assert.ok(d1 && d1 > Date.now());
+  assert(T.hunterMove(room.g, [6, 2]));
+  S.broadcast(room);
+  assert.equal(room.g.three.extra, true);
+  assert.ok(room.clockKey && room.clockKey.endsWith(':2'), 'the extra turn keys a new clock: ' + room.clockKey);
+  assert.ok(room.deadline && room.deadline >= d1, 'the extra turn starts a fresh deadline');
+  assert.equal(S.view3(room, 'hunter').h3.extra, true);
+  assert.equal(S.view3(room, 'red').h3.extra, true);
+  clearTimeout(room.clockT); clearTimeout(room.aiT);
+});
 console.log(n + ' 3-player tests passed'); process.exit(0);

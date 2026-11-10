@@ -27,6 +27,20 @@ ok('rivalry: badger moves onto the hyena -> hyena knocked back 2; nobody hurt', 
   assert.equal(g.phase, 'play'); assert.equal(g.turn, 'red'); });
 ok('both birds out: more KOs wins', () => { const g = ready(); H.knockout(g, 'red', 'caught', 'hyena'); assert.equal(g.phase, 'play'); g.hunt.hs.badger.kos = 0;
   H.knockout(g, 'blue', 'caught', 'hyena'); assert.equal(g.winner, 'hyena'); assert.equal(g.winBy, 'ko'); });
+
+ok('both birds caught: endWhy says the hunters knocked out both birds; a starved bird uses Both birds are out.', () => {
+  const g = ready(); H.knockout(g, 'red', 'caught', 'hyena'); H.knockout(g, 'blue', 'caught', 'hyena');
+  assert.equal(g.winner, 'hyena'); assert.match(g.endWhy, /^The hunters knocked out both birds\./);
+  const s = ready(); H.knockout(g, 'red', 'caught', 'hyena'); // already over from above, use s
+  H.knockout(s, 'red', 'starved'); H.knockout(s, 'blue', 'caught', 'badger');
+  assert.equal(s.winner, 'badger'); assert.match(s.endWhy, /^Both birds are out\./); assert.ok(!/knocked out both/.test(s.endWhy));
+});
+ok('hunters tie endWhy is the approved sentence', () => {
+  const g = ready(); H.knockout(g, 'red', 'caught', 'hyena'); g.hunt.hs.badger.kos = 0; g.hunt.hs.hyena.catches = 1; g.hunt.hs.badger.catches = 1;
+  H.knockout(g, 'blue', 'caught', 'badger');
+  assert.equal(g.winner, 'none');
+  assert.equal(g.endWhy, 'Both birds are out. The hunters tie: you have the same number of knock-outs, and the same number of catches.');
+});
 ok('birds win by their own goals: vulture smashes every egg', () => { const g = ready(); g.eggs.forEach((e, i) => { if (i) e.alive = false; }); toTurn(g, 'red');
   g.vulture = B.key(g.eggs[0].pos) === '4,1' ? [4, 2] : g.eggs[0].pos.map((v, i) => i ? v : v); g.stones = 1;
   const r = H.vultureThrowH(g, g.eggs[0].pos); assert.ok(r); if (r === 'hit') { assert.equal(g.winner, 'red'); } });

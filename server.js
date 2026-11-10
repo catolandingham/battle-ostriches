@@ -183,7 +183,7 @@ function sched3(room) {
 // 10-second shot clock on every play turn (3 players only); runs once all seats are filled and the hunter is picked
 function clock3(room) {
   if (room.clock === false) { clearTimeout(room.clockT); room.clockKey = null; room.deadline = null; return; }
-  const g = room.g, k = g.phase === 'play' && ready3(room) ? g.round + ':' + g.turn : null;
+  const g = room.g, k = g.phase === 'play' && ready3(room) ? g.round + ':' + g.turn + ':' + (g.three && g.three.extra ? '2' : '1') : null;
   if (k === room.clockKey) return;
   clearTimeout(room.clockT); room.clockKey = k; room.deadline = null; if (!k) return;
   const ms = +process.env.BO_CLOCKMS || T.T3.clockMs;

@@ -1,8 +1,8 @@
 // 4-player "Hunters" mode: ostrich (blue) + vulture (red) + hyena + badger, one seat each. Wraps the 2-player rules in
 // game.js without changing them (like three.js). Turn order each round: vulture, ostrich, hyena, badger. 10s shot clock.
-// Hyena: Pounce, 2 catches knock a bird out. Badger: Burrow, 1 catch knocks a bird out.
+// Hyena: Pounce, 2 catches knock a bird out. Badger: Burrow, 2 catches knock a bird out.
 // Fearless rivalry: badger moves onto the hyena -> the hyena is knocked back 2; hyena moves onto the badger -> the hyena
-// bounces back 2. Nobody is hurt. Hunters win when both birds are out (more KOs wins, a tie goes to the last KO).
+// bounces back 2. Nobody is hurt. Hunters win when both birds are out (more knock-outs wins; if even, more catches; if both even, a tie).
 const B = require('./game.js'), K = B.key, D = B.dist;
 const TH = { sense: 2, see: 2, walk: 2, pounce: 1, knock: 2, rivalKnock: 2, clockMs: 10000, ko: { hyena: 2, badger: 2 }, starts: [[0, 3], [8, 3]] };
 const OFF = [-99, -99], BIRDS = ['red', 'blue'], HUNTERS = ['hyena', 'badger'], ORDER = ['red', 'blue', 'hyena', 'badger'], sgn = Math.sign;
@@ -34,13 +34,15 @@ function winHunters(g, by, why) {
   const w = a.kos !== b.kos ? (a.kos > b.kos ? a : b) : a.catches !== b.catches ? (a.catches > b.catches ? a : b) : null;
   g.phase = 'over'; g.winner = w ? w.kind : 'none'; g.winBy = by; g.hunt.final = true;
   const nm = h => h === 'badger' ? 'badger' : 'hyena';
-  g.endWhy = (why || 'Both birds are out.') + (w ? ` The ${nm(w.kind)} wins with ${w.kos > (w === a ? b : a).kos ? 'more knock-outs' : 'more catches'}.` : ' The hunters tie: same knock-outs and same catches.');
+  g.endWhy = w
+    ? (why || 'Both birds are out.') + ` The ${nm(w.kind)} wins with ${w.kos > (w === a ? b : a).kos ? 'more knock-outs' : 'more catches'}.`
+    : 'Both birds are out. The hunters tie: you have the same number of knock-outs, and the same number of catches.';
 }
 // Endings (rules 9). A side is out when all its birds are knocked out or it can no longer meet its goal; the hunters are never out.
 function settle(g) {
   const t = g.hunt; if (t.final && g.phase === 'over') return true;
   const timeUp = g.phase === 'over' && g.winBy === 'survived', eggs = B.aliveEggs(g).length, vIn = !isOut(g, 'red'), oIn = !isOut(g, 'blue') && eggs > 0;
-  if (BIRDS.every(b => isOut(g, b))) { winHunters(g, 'ko', 'The hunters knocked out both birds.'); return true; }
+  if (BIRDS.every(b => isOut(g, b))) { winHunters(g, 'ko', BIRDS.every(b => t.birds[b].why === 'caught') ? 'The hunters knocked out both birds.' : 'Both birds are out.'); return true; }
   let w = null, by = null, why = null;
   if (eggs === 0 && vIn) { w = 'red'; by = g.winBy === 'cold' ? 'cold' : 'smashed'; why = g.winBy === 'cold' ? 'The last egg went cold, so the vulture wins.' : 'The vulture smashed every egg.'; }
   else if (timeUp && oIn) { w = 'blue'; by = 'survived'; why = `An egg was still alive after round ${g.cfg.rounds}, so the ostrich wins.`; }

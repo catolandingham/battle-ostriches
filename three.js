@@ -1,7 +1,7 @@
 // 3-player mode: ostrich (blue) + vulture (red) + a hunter (hyena or badger). Wraps the 2-player rules in game.js
 // without changing them. Turn order each round: vulture, ostrich, hunter. All tuning lives in T3.
 const B = require('./game.js'), K = B.key, D = B.dist;
-const T3 = { sense: 2, see: 2, walk: 2, pounce: 1, knock: 2, clockMs: 10000, ko: { hyena: 2, badger: 2 }, starts: [[0, 3], [8, 3]] };
+const T3 = { sense: 2, see: 2, walk: 2, pounce: 1, knock: 2, clockMs: 10000, ko: { hyena: 2, badger: 2 }, double: 2, starts: [[0, 3], [8, 3]] };
 const OFF = [-99, -99], BIRDS = ['red', 'blue'], NAME = { red: 'vulture', blue: 'ostrich', hunter: 'hunter' };
 const sgn = Math.sign;
 function newGame3(kind, cfg = B.CONFIG, start) {
@@ -81,8 +81,14 @@ function advance(g) {
     return; // the hunter never loses a turn
   }
 }
+function firstCaughtKo(g) { return BIRDS.some(b => g.three.birds[b].why === 'caught'); }
+// After the first credited catch knock-out, the hunter always takes 2 full turns in a row (fresh sense, pounce reset, new shot clock).
 function startHunter(g) { const t = g.three; t.pounce = false; t.first = null; t.sense = senses(g); t.senseSeq++; t.senseAt = t.h.slice(); }
-function endHunter(g) { const t = g.three; t.pounce = false; g.turn = 'red'; advance(g); }
+function endHunter(g) {
+  const t = g.three; t.pounce = false;
+  if (g.phase === 'play' && firstCaughtKo(g) && !t.extra) { t.extra = true; startHunter(g); return; }
+  t.extra = false; g.turn = 'red'; advance(g);
+}
 // --- actions ---
 function placeOstrich3(g, p) { if (p && K(p) === K(g.three.h)) return false; return B.placeOstrich(g, p); }
 function vultureFly3(g, p) {
@@ -164,6 +170,6 @@ function timeout(g) {
 }
 // Public 3-player status every seat may see (no positions).
 function status3(g) { const t = g.three;
-  return { kind: t.kind, ko: koAt(g), birds: JSON.parse(JSON.stringify(t.birds)), order: ['red', 'blue', 'hunter'] }; }
+  return { kind: t.kind, ko: koAt(g), birds: JSON.parse(JSON.stringify(t.birds)), order: ['red', 'blue', 'hunter'], extra: !!t.extra }; }
 module.exports = { T3, OFF, NAME, newGame3, senses, hunterSeenBy, ambushSight, hunterMoves, hunterMove, hunterStay, hunterRange, hunterReach, kickable3, kickTargets3, ostrichKick3, placeOstrich3, vultureFly3, vultureThrow3,
   ostrichAct3, finish, timeout, status3, isOut, pos, advance, catchBird, knockout };
