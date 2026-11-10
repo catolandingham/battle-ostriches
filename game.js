@@ -17,7 +17,7 @@ const CONFIG = {
   stones: 1,           // stones the vulture can hold; refill by landing on a rock pile
   foods: [[0, 0], [8, 6]],   // fixed food spots (never run out)
   rocks: [[4, 0], [4, 6]],   // fixed rock piles (never run out)
-  hunterGoal: { '3': 'catches:3', '5': 'first' }, // HUNTER_GOAL per one-hunter mode (3 players, 5 = 2 vs 2 + hunter). 'all': knock out every bird. 'first': the first side to meet its goal wins (3 players: the hunter needs one bird; 2 vs 2 + hunter: one ostrich and one vulture). 'catches:N' (3 players): the hunter wins at N catches in total. The words on the hunter cards and the end screen follow this setting.
+  hunterGoal: { '3': 'catches:4', '5': 'first' }, // HUNTER_GOAL per one-hunter mode (3 players, 5 = 2 vs 2 + hunter). 'all': knock out every bird. 'first': the first side to meet its goal wins (3 players: the hunter needs one bird; 2 vs 2 + hunter: one ostrich and one vulture). 'catches:N' (3 players): the hunter wins at N catches in total. The words on the hunter cards and the end screen follow this setting.
   scramble: 2,         // a caught bird is pushed this many squares in a random direction
   pushHunters: 2,      // hunters meeting / a stone: the pushed animal goes this far
 };
