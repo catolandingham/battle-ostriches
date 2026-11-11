@@ -82,7 +82,7 @@ function advance(g) {
   }
 }
 function firstCaughtKo(g) { return BIRDS.some(b => g.three.birds[b].why === 'caught'); }
-// After the first credited catch knock-out, the hunter always takes 2 full turns in a row (fresh sense, pounce reset, new shot clock).
+// After the first credited catch knock-out, the hunter always takes 2 full turns in a row (fresh sense, pounce reset, new shot clock). Pounce is offered only on the first of those two turns.
 function startHunter(g) { const t = g.three; t.pounce = false; t.first = null; t.sense = senses(g); t.senseSeq++; t.senseAt = t.h.slice(); }
 function endHunter(g) {
   const t = g.three; t.pounce = false;
@@ -149,8 +149,9 @@ function hunterMove(g, p) {
   t.popout = !caught && wasBur ? { seq: t.popSeq = (t.popSeq || 0) + 1, round: g.round } : null; // popped out of the burrow without a catch (shown only to who can see the badger)
   t.lastHunter = { type: 'move', from, to: p.slice(), caught, pounce: wasP };
   if (g.phase === 'over') return true;
-  // Pounce (rule 7.3): a hyena that sensed a bird at the start of its turn and did not catch senses again and may take one more step
-  if (!caught && !wasP && t.kind === 'hyena' && t.sense) { t.pounce = true; t.first = t.sense; t.firstAt = from.slice(); t.sense = senses(g); t.senseSeq++; t.senseAt = t.h.slice(); return true; }
+  // Pounce (rule 7.3): a hyena that sensed a bird at the start of its turn and did not catch senses again from its new square and may take one more step only if a bird is still in range
+  const nowSense = senses(g);
+  if (!caught && !wasP && !t.extra && t.kind === 'hyena' && t.sense && nowSense) { t.pounce = true; t.first = t.sense; t.firstAt = from.slice(); t.sense = nowSense; t.senseSeq++; t.senseAt = t.h.slice(); return true; }
   endHunter(g); return true;
 }
 function hunterStay(g) { // badger: staying still burrows it (invisible to birds). During a pounce: skip the extra move.

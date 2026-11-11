@@ -1,0 +1,219 @@
+// Combined surprise-moment policy: who is affected, Look out!, motion timing, and the
+// 8s tap-hold cap. The 10s shot clock must not run during that hold.
+process.env.PORT = '0'; process.env.BO_NOSTORE = '1'; process.env.BO_BOTMS = '900000'; process.env.BO_CLOCKMS = '10000';
+const assert = require('assert');
+const SUR = require('./public/surprise');
+const S = require('./server');
+const T = require('./three');
+const H = require('./hunt');
+const TT = require('./team');
+const B = require('./game');
+const { make } = require('./tests/hunter-fixtures');
+
+assert.equal(SUR.LOOKOUT_MS, 1000);
+assert.equal(SUR.CARTOON_MS, 2000);
+assert.equal(SUR.STEP_MS, 600);
+assert.equal(SUR.HOLD_CAP_MS, 8000);
+assert.equal(SUR.WORD_MS, 300);
+assert.equal(SUR.MIN_LINE_MS, 1000);
+assert.equal(SUR.LOOKOUT_LINE, 'Look out!');
+assert.equal(SUR.GO_LINE, 'Tap to go on.');
+assert.equal(SUR.wordCount('The ostrich kicked you 3 squares!'), 6);
+assert.equal(SUR.holdFor('Go.'), 1000, 'short lines still get a 1s floor, not a flash');
+assert.equal(SUR.holdFor('The ostrich kicked you 3 squares!'), 6 * 300);
+assert.equal(SUR.holdFor('A stone hit you!'), Math.max(1000, 4 * 300));
+
+function humans(room) {
+  room.bots = [];
+  for (const p of Object.values(room.players || {})) if (p) p.bot = false;
+}
+
+function shot(f) { const o = {}; for (const r of f.roles) o[r] = f.view(r); return o; }
+function pol(f, prev, seat) { return SUR.policy(f.view(seat), prev[seat]); }
+
+// --- 3p kick: only the kicked bird gets Look out! and the tap hold ---
+{
+  const f = make(S, '3p'), g = f.g; g.turn = 'blue'; g.ostrich = [3, 3]; g.vulture = [4, 3]; g.three.h = [8, 6];
+  const prev = shot(f);
+  assert.ok(T.ostrichKick3(g, [4, 3]));
+  const red = pol(f, prev, 'red'), blue = pol(f, prev, 'blue'), hun = pol(f, prev, 'hunter');
+  assert.ok(red && red.affected && red.lookout && !red.actor, 'kicked vulture is affected');
+  assert.ok(blue && blue.actor && !blue.affected && !blue.lookout, 'kicker is not blocked');
+  assert.ok(!hun || (!hun.lookout && !hun.affected), 'far hunter is not the affected player');
+  assert.equal(red.motionDelay, SUR.LOOKOUT_MS + SUR.CARTOON_MS);
+  assert.ok(red.motionMs >= SUR.STEP_MS, 'real motion is 0.6s per square');
+  assert.equal(red.holdCap, 8000);
+  assert.equal(red.animMs, SUR.LOOKOUT_MS + SUR.CARTOON_MS + red.motionMs);
+  assert.equal(SUR.clockDelayMs(red, { isCurrent: true, seesEvent: true }), red.animMs + 8000);
+  assert.equal(SUR.clockDelayMs(blue, { isCurrent: true, seesEvent: true }), blue.animMs + SUR.MIN_LINE_MS);
+  assert.equal(SUR.clockDelayMs(red, { isBot: true, isCurrent: true, seesEvent: true }), 0, 'bots never delay the clock');
+  assert.equal(SUR.clockDelayMs(null, { isCurrent: true }), 0);
+}
+
+// --- wrap kick, every mode: the kicked animal is affected, a teammate is not ---
+for (const mode of ['3p', 'Hunters', '5p']) {
+  const f = make(S, mode), g = f.g; g.turn = f.blue;
+  if (mode === '5p') { g.b.o1.pos = [7, 3]; g.b.o2.pos = [0, 6]; g.b.v1.pos = [0, 0]; g.b.v2.pos = [4, 6]; g.h.p = [8, 3]; g.h.kind = 'hyena'; }
+  else if (mode === '3p') { g.ostrich = [7, 3]; g.vulture = [0, 6]; g.three.h = [8, 3]; g.three.pounce = false; }
+  else { g.ostrich = [7, 3]; g.vulture = [0, 6]; g.hunt.hs.hyena.p = [8, 3]; g.hunt.hs.badger.p = [4, 6]; g.hunt.hs.hyena.pounce = false; }
+  const prev = shot(f);
+  assert.ok(mode === '5p' ? TT.ostrichKick(g, 'o1', [8, 3]) : mode === '3p' ? T.ostrichKick3(g, [8, 3]) : H.ostrichKickH(g, [8, 3]), mode + ' wrap kick');
+  const hyena = mode === 'Hunters' ? 'hyena' : 'hunter';
+  const hit = pol(f, prev, hyena), kicker = pol(f, prev, f.blue);
+  assert.ok(hit && hit.affected && hit.lookout, mode + ' wrap: kicked hunter is affected');
+  assert.ok(kicker && kicker.actor && !kicker.lookout, mode + ' wrap: kicker is not held');
+  if (mode === '5p') {
+    const mate = pol(f, prev, 'o2');
+    assert.ok(!mate || (!mate.affected && !mate.lookout), '2v2 teammate is a bystander, not the kicked bird');
+  }
+}
+
+// --- catch and knock-out: only the caught bird; hidden and open use the same 1s Look out ---
+for (const mode of ['3p', 'Hunters', '5p']) {
+  const f = make(S, mode), prev = shot(f);
+  assert.ok(f.catchBird(), mode + ' catch');
+  const bird = pol(f, prev, f.bird), hun = pol(f, prev, mode === 'Hunters' ? 'hyena' : 'hunter');
+  assert.ok(bird && bird.affected && bird.lookout, mode + ' caught bird gets Look out!');
+  assert.ok(hun && hun.actor && !hun.lookout, mode + ' hunter does not get Look out!');
+  assert.equal(bird.motionDelay, SUR.LOOKOUT_MS + (bird.ev.cartoon ? SUR.CARTOON_MS : 0));
+  if (mode === '5p') {
+    const mate = pol(f, prev, 'v2');
+    assert.ok(!mate || (!mate.affected && !mate.lookout), 'the other vulture is not the caught bird');
+  }
+}
+
+{
+  const f = make(S, '3p'), g = f.g;
+  g.three.birds.red.catches = 1; // one more catch knocks the vulture out (2 hearts)
+  const prev = shot(f);
+  assert.ok(f.catchBird());
+  const red = pol(f, prev, 'red'), hun = pol(f, prev, 'hunter');
+  assert.ok(red && red.ev && red.ev.event === 'knockout' && red.affected && red.lookout, 'KO bird gets the full treatment');
+  assert.equal(red.ev.squares, 0, 'a knock-out has no travel: the bird leaves the board');
+  assert.equal(red.motionMs, 0, 'a knock-out does not slide');
+  assert.ok(hun && hun.actor && !hun.lookout);
+  const P = require('./public/push-motion');
+  assert.deepEqual(P.events(f.view('red'), prev.red).filter(e => e.key === 'red' || e.key === 'vulture'), [], 'the knocked-out vulture is not given a slide');
+}
+
+// --- stone: only a hit target is affected ---
+{
+  const f = make(S, '3p'), g = f.g; g.turn = 'red'; g.vulture = [4, 3]; g.ostrich = [4, 5]; g.three.h = [8, 6]; g.stones = 1;
+  // A mid-board throw that can legally land on the ostrich if the rules allow; fall back to planting a note.
+  const prev = shot(f);
+  let threw = false;
+  if (typeof T.vultureThrow3 === 'function') threw = !!T.vultureThrow3(g, [4, 5]);
+  if (threw && g.lastStone || g.stoneNote) {
+    /* use real note if the act left one on the game; views expose stoneNote */
+  }
+  const after = f.view('blue');
+  if (!after.stoneNote) {
+    // Plant the same shape the server already sends, so policy can be tested without depending on throw geometry.
+    const note = { seq: 7, by: 'red', targets: ['ostrich'], trails: [{ points: [[4, 3], [4, 4], [4, 5]] }], text: 'A stone hit the ostrich!' };
+    // Views come from the live game; attach via lastViews-style fake states instead.
+    const base = after;
+    const hit = SUR.policy({ ...base, stoneNote: note }, { ...prev.blue, stoneNote: null });
+    const thrower = SUR.policy({ ...f.view('red'), stoneNote: note }, { ...prev.red, stoneNote: null });
+    assert.ok(hit && hit.affected && hit.lookout, 'stone target is affected');
+    assert.ok(thrower && thrower.actor && !thrower.lookout, 'thrower is not held');
+    assert.equal(hit.motionMs, 2 * SUR.STEP_MS);
+  } else {
+    const hit = SUR.policy(f.view('blue'), prev.blue);
+    const thrower = SUR.policy(f.view('red'), prev.red);
+    assert.ok(hit && hit.affected && hit.lookout);
+    assert.ok(thrower && thrower.actor && !thrower.lookout);
+  }
+}
+
+// --- smash: only the egg's owner, even though every seat is told ---
+{
+  const ownerS = { role: 'blue', phase: 'play', h3: {}, smashNote: { seq: 3, by: 'red', owner: 'blue' } };
+  const prev = { role: 'blue', phase: 'play', h3: {}, smashNote: null };
+  const owner = SUR.policy(ownerS, prev);
+  const vulture = SUR.policy({ role: 'red', phase: 'play', h3: {}, smashNote: ownerS.smashNote }, { role: 'red', phase: 'play', h3: {}, smashNote: null });
+  const hunter = SUR.policy({ role: 'hunter', phase: 'play', kind: 'hyena', h3: { mySeat: 'hunter', kind: 'hyena' }, smashNote: ownerS.smashNote }, { role: 'hunter', phase: 'play', kind: 'hyena', h3: { mySeat: 'hunter', kind: 'hyena' }, smashNote: null });
+  assert.ok(owner && owner.affected && owner.lookout, 'egg owner is affected');
+  assert.ok(vulture && vulture.actor && !vulture.lookout, 'smasher is not held');
+  assert.ok(hunter && hunter.bystander && !hunter.lookout, 'hunter is told, but is a bystander');
+  const o2 = SUR.policy({ role: 'blue', team: true, phase: 'play', h3: { team: true, mySeat: 'o2' }, smashNote: { seq: 3, by: 'v1', owner: 'o1' } }, { role: 'blue', team: true, phase: 'play', h3: { team: true, mySeat: 'o2' }, smashNote: null });
+  assert.ok(!o2 || (!o2.affected && !o2.lookout), 'the other ostrich is not the egg owner');
+}
+
+// --- burst / shove ---
+{
+  const hyena = SUR.policy({ role: 'hunter', kind: 'hyena', phase: 'play', h3: { mySeat: 'hyena', kind: 'hyena', burst: { seq: 1, n: 2, to: [5, 3], trail: [[3, 3], [4, 3], [5, 3]] } } }, { role: 'hunter', kind: 'hyena', phase: 'play', h3: { mySeat: 'hyena', kind: 'hyena' } });
+  const badger = SUR.policy({ role: 'hunter', kind: 'badger', phase: 'play', h3: { mySeat: 'badger', kind: 'badger', burst: { seq: 1, n: 2, to: [5, 3], trail: [[3, 3], [4, 3], [5, 3]] } } }, { role: 'hunter', kind: 'badger', phase: 'play', h3: { mySeat: 'badger', kind: 'badger' } });
+  assert.ok(hyena && hyena.affected && hyena.lookout);
+  assert.ok(badger && badger.actor && !badger.lookout);
+  const shoved = SUR.policy({ role: 'hunter', kind: 'badger', phase: 'play', h3: { mySeat: 'badger', kind: 'badger', rival: { seq: 2, by: 'hyena', to: [6, 3], trail: [[4, 3], [5, 3], [6, 3]] } } }, { role: 'hunter', kind: 'badger', phase: 'play', h3: { mySeat: 'badger', kind: 'badger' } });
+  assert.ok(shoved && shoved.affected && shoved.lookout && shoved.ev.event === 'shove');
+}
+
+// --- Look out is skipped for dug-in / pop-out / sniff-like moments (no event in HIT_EVENTS) ---
+{
+  const dug = SUR.policy({ role: 'blue', phase: 'play', h3: { dug: { seq: 1 } } }, { role: 'blue', phase: 'play', h3: {} });
+  const pop = SUR.policy({ role: 'blue', phase: 'play', h3: { popout: { seq: 1, seen: true } } }, { role: 'blue', phase: 'play', h3: {} });
+  assert.equal(dug, null, 'dug-in is not a surprise hit');
+  assert.equal(pop, null, 'pop-out is not a surprise hit');
+}
+
+// --- hidden info: a seat that is not told about the event gets no policy and no clock delay ---
+{
+  const hiddenPrev = { role: 'red', phase: 'play', h3: {} };
+  const hiddenNow = { role: 'red', phase: 'play', h3: {} }; // server redacted the catch
+  assert.equal(SUR.policy(hiddenNow, hiddenPrev), null);
+  assert.equal(SUR.clockDelayMs(null, { isCurrent: true, seesEvent: false }), 0);
+}
+
+// --- server clock: the affected current player's 10s does not start until tap or cap ---
+{
+  const f = make(S, '3p'), g = f.g;
+  humans(f.room);
+  g.turn = 'blue'; g.ostrich = [3, 3]; g.vulture = [4, 3]; g.three.h = [8, 6];
+  f.room.lastViews = shot(f);
+  assert.ok(T.ostrichKick3(g, [4, 3]));
+  // After a kick the turn leaves the ostrich; if it is now the vulture (the one who was hit), the hold must cover the cap.
+  S.broadcast(f.room);
+  const turn = g.turn;
+  const p = SUR.policy(f.view(turn), f.room.lastViews && null);
+  // lastViews was updated at the end of broadcast; recompute with the pre-kick snapshot we kept.
+}
+{
+  const f = make(S, '3p'), g = f.g;
+  humans(f.room);
+  g.turn = 'blue'; g.ostrich = [3, 3]; g.vulture = [4, 3]; g.three.h = [8, 6];
+  const prev = shot(f);
+  f.room.lastViews = prev;
+  assert.ok(T.ostrichKick3(g, [4, 3]));
+  const turn = g.turn;
+  const delay = S.clockDelayFor(f.room, S.view3, turn);
+  const polNow = SUR.policy(f.view(turn), prev[turn]);
+  if (polNow && polNow.affected) {
+    assert.equal(delay, polNow.animMs + SUR.HOLD_CAP_MS, 'affected current player: animation + 8s cap');
+  } else if (polNow && polNow.ev) {
+    assert.equal(delay, polNow.animMs + SUR.MIN_LINE_MS, 'current viewer who was not hit: animation + 1s line floor');
+  } else {
+    assert.equal(delay, 0, 'a current player who cannot see the event gets no delay');
+  }
+  S.broadcast(f.room);
+  if (delay > 0) {
+    assert.ok(f.room.clockHoldKey, 'clock is held, not ticking');
+    assert.equal(f.room.deadline, null);
+    assert.equal((f.view(turn).h3||{}).clockLeft, null, 'clockLeft stays null during the hold');
+    if (polNow && polNow.affected) {
+      assert.equal(S.surpriseDone(f.room, 'blue'), false, 'the kicker cannot start the next player\'s clock');
+    }
+    assert.equal(S.surpriseDone(f.room, turn), true, 'the current player can start the clock early');
+    assert.equal(f.room.clockHoldKey, null);
+    assert.ok(f.room.deadline, '10s clock starts on surprise-done');
+    const left=(f.view(turn).h3||{}).clockLeft; assert.ok(left!=null && left>8000, 'full 10s remains after the hold: '+left);
+  } else {
+    assert.ok(f.room.deadline, 'no visible event: clock starts at once');
+  }
+  // A bot in the same seat would not have been delayed.
+  assert.equal(SUR.clockDelayMs(polNow, { isBot: true, isCurrent: true, seesEvent: !!polNow }), 0);
+}
+
+S.close();
+console.log('PASS surprise: who is affected, Look out, 8s cap, clock hold, hidden redaction, wrap/team');
+process.exit(0);

@@ -20,3 +20,20 @@ html[data-theme] #stage .cutaway .cutaway-piece .aimg:not(#_a):not(#_b):not(#_c)
 /* The board's own stone animation sits above the board; keep it out of the way while a card is up. */
 html.cutaway-up #smashfx{visibility:hidden!important}
 @media (prefers-reduced-motion:reduce){#stage .cutaway{display:none!important}}
+
+/* Combined pattern: hide the landed piece and its YOU tag until the slide arrives.
+   The rule is stronger than the hunter piece's own visibility, and it covers a
+   piece that is not a direct child of the square. */
+html[data-theme] #board .cell.surprise-landing .pc:not(#_a):not(#_b),
+html[data-theme] #board .cell.surprise-landing .youring:not(#_a):not(#_b),
+html[data-theme] #board .cell.surprise-landing .youpulse:not(#_a):not(#_b),
+.cell.surprise-landing > .pc,
+.cell.surprise-landing > .youring,
+.cell.surprise-landing > .youpulse{visibility:hidden!important}
+#stage > .youflag.surprise-hidden{visibility:hidden!important;opacity:0!important}
+/* While the cartoon is up, the action bar and the YOU tag stay out of the picture. */
+html.cutaway-up #actions,
+html.cutaway-up #aring{visibility:hidden!important;pointer-events:none!important}
+html.cutaway-up:has(#cutaway) #stage>.youflag{visibility:hidden!important}
+#surprise-go{position:absolute;left:12px;right:12px;bottom:16px;z-index:450;pointer-events:auto}
+#surprise-go button{display:block;width:100%;min-height:58px;padding:10px 14px;border:2px solid #111;border-radius:14px;background:#fff;color:#111;font:800 20px/1.15 system-ui,-apple-system,"Arial Rounded MT Bold",Helvetica,Arial,sans-serif;box-shadow:0 2px 0 #111}

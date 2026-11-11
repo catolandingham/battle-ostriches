@@ -15,7 +15,7 @@
     timer=schedule(()=>{hide(active);active=null;timer=schedule(pump,0);},entry.hold==null?hold:entry.hold);return;}
    pending.push(entry);
    if(!active&&timer==null)timer=schedule(pump,0);
-  },clear(){if(timer!=null)cancel(timer);timer=null;if(active)hide(active);active=null;pending=[];},state:()=>({active,pending:pending.slice()})};
+  },drop(pred){if(typeof pred!=='function')return;pending=pending.filter(item=>!pred(item));},clear(){if(timer!=null)cancel(timer);timer=null;if(active)hide(active);active=null;pending=[];},state:()=>({active,pending:pending.slice()})};
  }
  if(typeof module!=='undefined')module.exports={create};
  if(typeof document==='undefined')return;

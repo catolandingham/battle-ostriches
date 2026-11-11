@@ -226,7 +226,8 @@ function tap(x,y){clearTimeout(tap.q);if(!S||locked||cardOpen)return;if(Date.now
  throwPick=null;
  if(m==='kick'){const kk=key(p);if(kickPick!==kk){kickPick=kk;render();return;}kickPick=null;} // select, see where it goes, tap again to kick
  coachDid(m==='carry'?'step':m);send({t:'act',a:m,p});}
-function curMode(){if(!S.myTurn)return null;if(S.role==='hunter')return'hmove';if(S.role==='red')return mode||'fly';
+function onFoundEggWithStone(st){return !!(st&&st.role==='red'&&st.phase==='play'&&st.myTurn&&st.stones>0&&st.vulture&&st.marks&&st.marks[st.vulture[0]+','+st.vulture[1]]==='spotted');}
+function curMode(){if(!S.myTurn)return null;if(S.role==='hunter')return'hmove';if(S.role==='red'){if(mode)return mode;if(onFoundEggWithStone(S))return'throw';return'fly';}
  if(mode==='carry'&&S.can&&S.can.carry)return'carry';if(mode==='kick'&&S.kickTargets&&S.kickTargets.length)return'kick';return S.moves.length?'step':null;}
 // --- GUIDED HARD STOPS (human ostrich only, client-side): once per device, the ostrich must DO the thing.
 // start: just a one-time tip, never restricts (Brian 11/4). hungry: only moves toward the nearest leaf until it eats. cold: only moves toward the coldest egg until it stands on it.
@@ -449,7 +450,7 @@ function render(prev){
  if(ev)h=ev+(h?' '+h:'');
  if(W&&W.txt&&!G)h=W.txt;
  if(G&&!(foodLead&&G.id==='hungry')&&M!=='carry')h=G.txt;
- if(!blue&&S.phase==='play'&&S.myTurn&&S.marks[key(S.vulture)]==='spotted'&&S.stones>0&&!smashed)h='Throw on your own square.';
+ if(!blue&&S.phase==='play'&&S.myTurn&&S.marks[key(S.vulture)]==='spotted'&&S.stones>0&&!smashed)h="You're on the egg!";
  if(!blue&&S.role==='red'&&S.phase==='play'&&S.myTurn&&S.marks[key(S.vulture)]==='spotted'&&S.stones<1&&!smashed)h=NOSTONE_FOUND; // standing on a found egg with no stone: say why you can't smash it
  if(throwPick&&throwing&&S.myTurn)h='Throw anyway?'; // the confirm: the aimed square shows a tick, this says what a second tap does
  if(!throwing||!S.myTurn||S.stones!==1)throwPick=null;
