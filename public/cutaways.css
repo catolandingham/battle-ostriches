@@ -31,9 +31,15 @@ html[data-theme] #board .cell.surprise-landing .youpulse:not(#_a):not(#_b),
 .cell.surprise-landing > .youring,
 .cell.surprise-landing > .youpulse{visibility:hidden!important}
 #stage > .youflag.surprise-hidden{visibility:hidden!important;opacity:0!important}
-/* While the cartoon is up, the action bar and the YOU tag stay out of the picture. */
+/* While the cartoon is up, the action bar and the YOU tag stay out of the picture.
+   Theme sprites sit on top of the board; hide them for the whole surprise so a
+   second copy is not already waiting on the landing square. */
 html.cutaway-up #actions,
-html.cutaway-up #aring{visibility:hidden!important;pointer-events:none!important}
+html.cutaway-up #aring,
+html.surprise-slide #actions,
+html.surprise-slide #aring{visibility:hidden!important;pointer-events:none!important}
 html.cutaway-up:has(#cutaway) #stage>.youflag{visibility:hidden!important}
+html.cutaway-up #fx,
+html.surprise-slide #fx{visibility:hidden!important}
 #surprise-go{position:absolute;left:12px;right:12px;bottom:16px;z-index:450;pointer-events:auto}
 #surprise-go button{display:block;width:100%;min-height:58px;padding:10px 14px;border:2px solid #111;border-radius:14px;background:#fff;color:#111;font:800 20px/1.15 system-ui,-apple-system,"Arial Rounded MT Bold",Helvetica,Arial,sans-serif;box-shadow:0 2px 0 #111}

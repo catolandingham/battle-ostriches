@@ -162,9 +162,13 @@
     return hold;
   }
   function reveal() {
+    // Take the cartoon away in one step. A slide-off leaves the white sheet
+    // behind as a blank card, and the board (plus any real motion) should be
+    // what comes back.
+    const card = document.getElementById('cutaway'); if (card) card.remove();
     const hold = document.getElementById('boardhold'); if (hold) hold.remove(); holdEl = null;
+    document.documentElement.classList.add('surprise-slide');
     if (root.PUSH_MOTION && PUSH_MOTION.go) PUSH_MOTION.go();
-    const card = document.getElementById('cutaway'); if (card) card.classList.add('out');
   }
   function emitSurpriseDone() {
     try { if (window.UI && UI.send) UI.send({ t: 'surprise-done' }); } catch (e) {}
@@ -175,6 +179,7 @@
     const hold = document.getElementById('boardhold'); if (hold) hold.remove(); holdEl = null;
     const card = document.getElementById('cutaway'); if (card) card.remove();
     document.documentElement.classList.remove('cutaway-up');
+    document.documentElement.classList.remove('surprise-slide');
     emitSurpriseDone();
     while (queue.length && !(busyUntil > Date.now())) { const s = queue.shift(); try { apply && apply(s); } catch (e) { console.error(e); } }
   }
@@ -256,7 +261,7 @@
   // while the card is up, so the card uses the whole screen below the board's top and
   // stays as wide as the board. A short screen may shrink it; a white sheet behind it
   // still covers the board so a piece cannot peek out at the side.
-  const ART_W = 336, ART_H = 412, EDGE = 3, SHADOW_X = 8, SHADOW_Y = 11, CARD_EXIT = 320;
+  const ART_W = 336, ART_H = 412, EDGE = 3, SHADOW_X = 8, SHADOW_Y = 11;
   function cardBox(board, stage) {
     const b = board.getBoundingClientRect(), s = stage.getBoundingClientRect();
     const vh = window.innerHeight || document.documentElement.clientHeight || 844;
@@ -342,20 +347,17 @@
     const motionDelay = pol ? pol.motionDelay : (cartoon ? REVEAL : MS);
     const motionMs = pol ? pol.motionMs : 0;
     const after = pol && pol.affected ? (pol.holdCap || 8000) : ((root.SURPRISE && SURPRISE.MIN_LINE_MS) || 1000);
-    // The card slides off (CARD_EXIT) before Tap to go on. A moment with no
-    // travel still waits out that exit, so the button never shares the cartoon.
-    const exitMs = cartoon ? CARD_EXIT : 0;
-    const total = motionDelay + motionMs + exitMs + after;
+    // Tap waits until the cartoon is gone and the real move, if any, has finished.
+    const total = motionDelay + motionMs + after;
     busyUntil = Date.now() + total;
     const token = ++serial;
     nextCard = cartoon ? { scene, S, delay: pol && pol.lookout ? ((root.SURPRISE && SURPRISE.LOOKOUT_MS) || 1000) : 0 } : null;
     setTimeout(() => { if (token === serial) reveal(); }, motionDelay);
-    setTimeout(() => { if (token !== serial) return; const card = document.getElementById('cutaway'); if (card) card.remove(); }, motionDelay + exitMs);
     if (pol && pol.affected && !reduced()) {
-      setTimeout(() => { if (token === serial) showGo(token); }, motionDelay + motionMs + exitMs);
+      setTimeout(() => { if (token === serial && !document.getElementById('cutaway')) showGo(token); }, motionDelay + motionMs);
       setTimeout(() => { if (token === serial) api.dismiss(); }, total);
     } else {
-      setTimeout(() => finish(token), motionDelay + motionMs + exitMs);
+      setTimeout(() => finish(token), motionDelay + motionMs);
     }
   };
   api.play = function (S, prev, board) {

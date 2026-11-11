@@ -235,8 +235,9 @@ function speak(S,prev,txt,priority,preempt){
   const k=pol.ev.event+':'+pol.ev.seq;
   // The beat owns the status line. Drop a near warning that is waiting, and
   // refuse a new one until the beat (and the line that follows it) is up.
-  lookoutUntil=Date.now()+SURPRISE.LOOKOUT_MS+80;
+  lookoutUntil=Date.now()+SURPRISE.LOOKOUT_MS+400;
   if(window.STATUS_QUEUE.drop)STATUS_QUEUE.drop(isNearLine);
+  document.querySelectorAll('#msgslot .h3pop.near').forEach(el=>el.remove());
   if(lookoutKey!==k){lookoutKey=k;announce(SURPRISE.LOOKOUT_LINE,120,SURPRISE.LOOKOUT_MS,true);}
   setTimeout(()=>{if(window.STATUS_QUEUE.drop)STATUS_QUEUE.drop(isNearLine);announce(txt,priority,hold,true);},SURPRISE.LOOKOUT_MS);return;
  }
@@ -251,12 +252,25 @@ function events(S,prev,board){
   const sq=e.kind==='rival'||e.kind==='kick'||e.kind==='burst'?e.square:e.kind==='dug'?null:e.seen?(h.hunters?(h.hunters.find(x=>x.kind==='badger')||{}).p:h.hunter):null,c=cellAt(board,S,sq);c&&c.classList.add('h3kb');}}
 // One plain line at the start of every game: who hunts what, naming only the animals in the game (roles.js).
 let startDone=false;
+function eggLineShowing(){const h=document.getElementById('hint');return !!(h&&h.textContent.indexOf("You're on the egg!")===0);}
+function preferEggLine(){
+ if(!eggLineShowing()||!window.STATUS_QUEUE||!STATUS_QUEUE.drop)return;
+ STATUS_QUEUE.drop(item=>/hunts eggs/.test(item.text||''));
+}
 function startLine(S,prev,mode){
  if(!S||S.phase!=='play'){startDone=false;return;}
- const h=S.h3;if(startDone||(h&&(h.ready===false||h.needKind||(h.team&&h.teamSetup&&h.teamSetup!=='done'))))return;
+ const h=S.h3;if(h&&(h.ready===false||h.needKind||(h.team&&h.teamSetup&&h.teamSetup!=='done')))return;
+ // Standing on a found egg with a stone: that line is the top line. The
+ // opening "who hunts what" sentence waits until this turn is over.
+ if(eggLineShowing()){if(window.STATUS_QUEUE&&STATUS_QUEUE.drop)STATUS_QUEUE.drop(item=>/hunts eggs/.test(item.text||''));return;}
+ if(startDone)return;
  startDone=true;if(!prev&&S.round>1)return;
  announce(window.Roles.huntLine(mode,S.role==='hunter'?(S.kind||(h&&h.kind)):(h&&h.kind)),20);}
-function after(S,prev,board){badgerLines(S,prev);chips(S);clock(S);kindPick(S);if(S.h3.team)tPieces(S,board);if(S.h3.hunt)hPieces(S,board,prev);
+function after(S,prev,board){
+ // A hit's Look out! owns the status line from the start of this paint, before
+ // a "near" warning can be queued on top of it.
+ if(prev&&window.SURPRISE&&SURPRISE.policy){const pol=SURPRISE.policy(S,prev);if(pol&&pol.lookout)lookoutUntil=Date.now()+SURPRISE.LOOKOUT_MS+400;}
+ badgerLines(S,prev);chips(S);clock(S);kindPick(S);if(S.h3.team)tPieces(S,board);if(S.h3.hunt)hPieces(S,board,prev);
  rulesMode(S.h3.hunt?'4h':S.h3.team?String(S.h3.n):'3');
  const h=S.h3,k=h.kind||'hyena',me=S.role;
  // hunter piece: the hunter always sees itself; a bird only sees it within 2 squares (never a burrowed badger)
@@ -309,6 +323,6 @@ function over(S){if(S.h3.hunt)return hOver(S);if(S.h3.team)return tOver(S);const
   :w==='red'?(S.winBy==='cold'?`The last egg went cold in round ${S.round}.`:S.winBy==='starved'?'The ostrich was out and no eggs were left.':`The vulture smashed every egg by round ${S.round}.`)
   :S.winBy==='time'?'Time ran out: the ostrich was out and the vulture never got every egg.':'The eggs were lost, but the vulture was already out.';
  return endBox(S,endArt(S,art),endTitle(S,title),endWhyText(S,why));}
-window.T3UI={mark,markHTML,marksAround,after,events,startLine,announce,hint,tag,waitMsg,nopeMsg,over,endBits,KIND};
+window.T3UI={mark,markHTML,marksAround,after,events,startLine,preferEggLine,announce,hint,tag,waitMsg,nopeMsg,over,endBits,KIND};
 document.readyState==='loading'?document.addEventListener('DOMContentLoaded',lobby):lobby();
 })();

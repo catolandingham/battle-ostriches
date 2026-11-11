@@ -140,7 +140,14 @@
      const copy=actor.cloneNode(true),skin=document.querySelector('#fx .spr-'+layer.dataset.sprite);if(skin)copy.innerHTML=skin.innerHTML;copy.classList.add('push-actor');
      // Park the copy on the first square, not on the landing square. The piece already drawn there stays hidden until this copy arrives.
      copy.style.cssText=`position:absolute!important;left:${start.x+ox-ar.width/2+x}px!important;top:${start.y+oy-ar.height/2+y}px!important;width:${ar.width}px!important;height:${ar.height}px!important;border:0!important;visibility:visible!important;opacity:1!important;pointer-events:none!important;`;
-     layer.appendChild(copy);tagMovingYou(s,ev.key,copy);const frames=coords.map((p,i)=>({transform:`translate(${p.x-start.x}px,${p.y-start.y}px)`,offset:coords.length<2?1:i/(coords.length-1)}));
+     layer.appendChild(copy);
+     // A wrap draws a second copy so the animal can leave one edge and enter the other.
+     // That copy must not already be sitting on the landing square.
+     const dest=board.children[last[1]*s.cfg.cols+last[0]].getBoundingClientRect(),pr=copy.getBoundingClientRect();
+     const midX=pr.left+pr.width/2,midY=pr.top+pr.height/2;
+     const parked=midX>dest.left&&midX<dest.right&&midY>dest.top&&midY<dest.bottom&&!same(ev.points[0],last);
+     if(parked){copy.remove();continue;}
+     tagMovingYou(s,ev.key,copy);const frames=coords.map((p,i)=>({transform:`translate(${p.x-start.x}px,${p.y-start.y}px)`,offset:coords.length<2?1:i/(coords.length-1)}));
      const anim=copy.animate(frames,{duration:sceneMs(ev),easing:'linear',fill:'forwards'});anim.onfinish=layer._finish;
     }
     const watch=()=>{if(layer._done)return;hideLanding(ev,s,board);requestAnimationFrame(watch);};requestAnimationFrame(watch);

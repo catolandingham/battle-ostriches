@@ -141,6 +141,21 @@ function boardHTML(pieceAt) {
   assert.ok(slide.copy, 'a moving copy exists');
   assert.ok(!slide.copyOnLanding, 'the moving copy has not already settled on the landing square');
 
+  // The opening hunt sentence must not cover "You're on the egg!".
+  await P2.evaluate(() => {
+    document.getElementById('hint').textContent = "You're on the egg!";
+    const S = { phase: 'play', round: 1, role: 'red', h3: { ready: true } };
+    const prev = { phase: 'play', round: 1, h3: { ready: true } };
+    window.T3UI.startLine(S, prev, '3');
+    window.T3UI.preferEggLine();
+  });
+  const top = await P2.evaluate(() => ({
+    hint: document.getElementById('hint').textContent,
+    status: [...document.querySelectorAll('#msgslot .status-active')].map(e => e.textContent)
+  }));
+  assert.equal(top.hint, "You're on the egg!");
+  assert.ok(!top.status.some(t => /hunts eggs/.test(t)), 'the hunt intro is not the status line: ' + top.status.join(' | '));
+
   await b.close();
   server.close();
   console.log('PASS surprise fixes: cartoon covers the board, egg number stays put, stone landing stays hidden, tap waits');

@@ -34,4 +34,13 @@ A.equal(q3.state().pending.length,0,'a near line waiting during the beat is drop
 tick(1000);
 A.equal(q3.state().active,null);
 A.ok(!shown.some(x=>x[0]==='Hyena near!'&&x[1]>shown.find(y=>y[0]==='Look out!')[1]),'Hyena near! does not follow Look out!');
+// A near line already on screen is taken down when Look out! starts, so the two cannot stack.
+const q4=create({show:x=>shown.push([x.text,now]),hide:x=>hidden.push([x.text,now]),schedule:(fn,ms)=>{timers.push({fn,at:now+ms,id:++id});return id;},cancel:i=>timers=timers.filter(t=>t.id!==i)});
+q4.add({text:'Hyena near!',priority:10,hold:1000});tick(0);
+A.equal(q4.state().active.text,'Hyena near!');
+q4.drop(near);
+A.equal(q4.state().active,null,'the near line that was up is removed');
+q4.add({text:'Look out!',priority:120,hold:1000,preempt:true});
+A.equal(q4.state().active.text,'Look out!');
+A.equal(q4.state().pending.length,0);
 console.log('PASS status queue: personal first, one at a time, one second each; a new moment replaces the line already up');
