@@ -120,6 +120,15 @@ function kickableH(g) {
   return r;
 }
 const kickTargetsH = g => B.canKick(g) ? kickableH(g) : [];
+function kickPlansH(g) {
+  if (!B.canKick(g)) return [];
+  return kickableH(g).map(at => {
+    const h = hunterAt(g, at), n = h === 'badger' ? g.cfg.kickPushBadger : g.cfg.kickPush;
+    const path = B.slideN(g.cfg, at, B.awayFrom(g.ostrich, at), n, m => upAt(g, m, h || 'red'), g.marks, true);
+    const who = h || 'vulture';
+    return { at: at.slice(), to: path.to.slice(), points: path.points, who, key: h || 'red' };
+  });
+}
 function ostrichKickH(g, p) {
   if (!kickTargetsH(g).some(q => K(q) === K(p))) return false;
   const h = hunterAt(g, p), from = p.slice(), n = h === 'badger' ? g.cfg.kickPushBadger : g.cfg.kickPush;
@@ -194,4 +203,4 @@ function timeout(g) {
 function statusH(g) { const t = g.hunt;
   return { hunt: true, ko: TH.ko, birds: JSON.parse(JSON.stringify(t.birds)), order: ORDER, hkos: { hyena: t.hs.hyena.kos, badger: t.hs.badger.kos }, hcatches: { hyena: t.hs.hyena.catches, badger: t.hs.badger.catches } }; } // catches are announced to every seat, so the counts are public
 module.exports = { TH, OFF, BIRDS, HUNTERS, ORDER, isH, newHunt, senses, seen, ambushSight, hunterMoves, hunterMove, hunterStay, hunterBurst, canBurst, hunterRange, moveDir, upAt, placeOstrichH, vultureFlyH,
-  vultureThrowH, ostrichActH, finish, kickableH, kickTargetsH, ostrichKickH, timeout, statusH, isOut, pos, advance, catchBird, knockout, hunterAt };
+  vultureThrowH, ostrichActH, finish, kickableH, kickTargetsH, kickPlansH, ostrichKickH, timeout, statusH, isOut, pos, advance, catchBird, knockout, hunterAt };

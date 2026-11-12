@@ -53,7 +53,7 @@ function view(room, role) {
     Object.assign(v, { eggs: g.eggs.map(e => ({ pos: e.pos, alive: e.alive, coldIn: B.coldIn(g, e), carried: g.carrying === e.id })),
       carrying: g.carrying, onEgg: B.onEgg(g), mustLeave: B.mustLeave(g) });
     if (role === 'blue') Object.assign(v, { moves: mine ? B.ostrichMoves(g) : [], carryMoves: mine ? B.ostrichMoves(g, true) : [],
-      can: { sit: B.canSit(g), carry: B.canCarry(g), kick: mine && B.kickTargets(g).length > 0 }, kickTargets: mine ? B.kickTargets(g) : [], kickNear: mine && B.kickable(g).length > 0 });
+      can: { sit: B.canSit(g), carry: B.canCarry(g), kick: mine && B.kickTargets(g).length > 0 }, kickTargets: mine ? B.kickTargets(g) : [], kickPlans: mine ? B.kickPlans(g) : [], kickNear: mine && B.kickable(g).length > 0 });
   }
   if (role === 'red') Object.assign(v, { fly: pub.fly, throw: pub.throw });
   return stamp(room, v, role);
@@ -143,7 +143,7 @@ function view3(room, role) {
     }
   }
   // Kick: the ostrich's options; the kick itself is announced to every seat, the square it ended on only to a seat that can see that square
-  if (role === 'blue') { v.kickTargets = mine && !v.god ? T.kickTargets3(g) : []; v.kickNear = !!mine && !v.god && T.kickable3(g).length > 0; v.can = Object.assign(v.can || {}, { kick: v.kickTargets.length > 0 }); }
+  if (role === 'blue') { v.kickTargets = mine && !v.god ? T.kickTargets3(g) : []; v.kickPlans = mine && !v.god ? T.kickPlans3(g) : []; v.kickNear = !!mine && !v.god && T.kickable3(g).length > 0; v.can = Object.assign(v.can || {}, { kick: v.kickTargets.length > 0 }); }
   const lk = g.lastKick;
   v.kick = lk ? { who: lk.who, by: 'blue', target: lk.who === 'vulture' ? 'red' : lk.who, seq: lk.seq, round: lk.round, moved: kickMoved(lk), to: over || v.god || (role === 'hunter' ? lk.who !== 'vulture' : lk.who === 'vulture' || T.hunterSeenBy(g, role)) ? lk.to : null } : null;
   if (over && role === 'hunter') v.eggs = eggView(g);
@@ -348,7 +348,7 @@ function viewT(room, seat) {
   if (setup && step === 'done') v.myTurn = false;
   if (isO || over) Object.assign(v, { eggs: isO || over ? eggs() : undefined, carrying: isO ? myB.carrying : null, onEgg: isO && TT.onEgg(g, seat), mustLeave: isO && TT.mustLeave(g, seat) });
   if (isO) Object.assign(v, { moves: mine ? TT.ostrichMoves(g, seat) : [], carryMoves: mine ? TT.ostrichMoves(g, seat, true) : [], can: { sit: mine && TT.canSit(g, seat), carry: mine && TT.canCarry(g, seat), kick: mine && TT.kickTargets(g, seat).length > 0 },
-    kickTargets: mine ? TT.kickTargets(g, seat) : [], kickNear: mine && TT.kickable(g, seat).length > 0 });
+    kickTargets: mine ? TT.kickTargets(g, seat) : [], kickPlans: mine ? TT.kickPlans(g, seat) : [], kickNear: mine && TT.kickable(g, seat).length > 0 });
   if (isV) Object.assign(v, { fly: mine ? TT.flyTargets(g, seat) : [], throw: mine ? TT.throwTargets(g, seat) : [] });
   if (myB.out && g.phase === 'play') {
     v.god = true; v.myTurn = false; v.moves = []; v.carryMoves = []; v.fly = []; v.throw = []; v.hmoves = [];
@@ -441,7 +441,7 @@ function viewH(room, seat) {
       if (h3.rival) h3.rival.to = t.rival.to; if (h3.popout) h3.popout.seen = true; if (lc) lc.at = t.lastCatch.at;
     }
   }
-  if (seat === 'blue') { v.kickTargets = mine && !v.god ? HU.kickTargetsH(g) : []; v.kickNear = !!mine && !v.god && HU.kickableH(g).length > 0; v.can = Object.assign(v.can || {}, { kick: v.kickTargets.length > 0 }); }
+  if (seat === 'blue') { v.kickTargets = mine && !v.god ? HU.kickTargetsH(g) : []; v.kickPlans = mine && !v.god ? HU.kickPlansH(g) : []; v.kickNear = !!mine && !v.god && HU.kickableH(g).length > 0; v.can = Object.assign(v.can || {}, { kick: v.kickTargets.length > 0 }); }
   const lk = g.lastKick; // announced to every seat; the square only to a seat that can see it (birds see birds, a bird sees a hunter within 2, hunters see no bird)
   v.kick = lk ? { who: lk.who, by: 'blue', target: lk.who === 'vulture' ? 'red' : lk.who, seq: lk.seq, round: lk.round, moved: kickMoved(lk), to: over || v.god || (lk.who === 'vulture' ? !isH : HU.seen(g, seat, lk.who)) ? lk.to : null } : null;
   if (over && isH) v.eggs = eggView(g);

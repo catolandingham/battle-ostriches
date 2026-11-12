@@ -24,15 +24,16 @@ let seed = 7; const rnd = n => { seed = (seed * 16807) % 2147483647; return seed
         if (st.btns.some(x => x.pressed && /Throw/.test(x.t))) return /Tap to throw\./.test(h);
         return /Your turn\. Tap to fly\./.test(h);
       }
-      return /Tap to move|Pick where the egg goes|Kick it away|Your turn|Hide your eggs|Pick your start/i.test(h);
+      return /Tap to move|Pick where the egg goes|Tap where they go|Your turn|Hide your eggs|Pick your start/i.test(h);
     };
     for (let turn = 0; turn < 400; turn++) {
-      await P.waitForFunction(() => { const S = UI._S(); return S && (S.phase === 'over' || ((S.myTurn || S.phase.startsWith('setup') && S.role === 'blue') && !UI._locked() && document.getElementById('handoff').classList.contains('hidden'))) || !document.getElementById('handoff').classList.contains('hidden'); }, null, { timeout: 15000 });
+      await P.waitForFunction(() => { const S = UI._S(); const busy = !!(window.CUTAWAYS && CUTAWAYS.busy && CUTAWAYS.busy()); return S && (S.phase === 'over' || ((S.myTurn || S.phase.startsWith('setup') && S.role === 'blue') && !UI._locked() && !busy && document.getElementById('handoff').classList.contains('hidden'))) || !document.getElementById('handoff').classList.contains('hidden'); }, null, { timeout: 20000 });
       if (!(await P.locator('#handoff.hidden').count())) { await P.click('#hGo'); continue; }
       const st = await P.evaluate(() => { const S = UI._S(); return { phase: S.phase, role: S.role, legal: UI._legal(), hint: document.getElementById('hint').textContent,
         turn: S.turn, round: S.round, myTurn: S.myTurn, stones: S.stones, mustLeave: !!S.mustLeave, onEgg: !!S.onEgg,
         spotted: !!(S.role === 'red' && S.vulture && S.marks && S.marks[S.vulture[0] + ',' + S.vulture[1]] === 'spotted'),
         n: { fly: (S.fly || []).length, throw: (S.throw || []).length, moves: (S.moves || []).length, carry: (S.carryMoves || []).length, hmoves: (S.hmoves || []).length },
+        mode: window.UI && UI._mode ? UI._mode() : null,
         dom: [...document.querySelectorAll('#board .cell')].map((e, i) => e.classList.contains('legal') ? i : -1).filter(i => i >= 0),
         bad: [...document.querySelectorAll('#actions button')].filter(x => x.disabled && (x.matches('.on,.pulse,.spot') || getComputedStyle(x).animationName !== 'none')).map(x => x.textContent),
         btns: [...document.querySelectorAll('#actions button')].map(x => ({ t: x.textContent, dis: x.disabled, on: x.classList.contains('on'), pressed: x.getAttribute('aria-pressed') === 'true' })), cols: S.cfg.cols }; });
@@ -48,7 +49,8 @@ let seed = 7; const rnd = n => { seed = (seed * 16807) % 2147483647; return seed
       }
       lastTurn = st.turn + '|' + st.round;
       const want = st.legal.map(p => p[1] * st.cols + p[0]).sort((a, b) => a - b);
-      assert.deepEqual(st.dom.sort((a, b) => a - b), want, `${theme} glowing squares == legal (${st.role} ${st.phase})`);
+      if (st.mode === 'kick') { assert.deepEqual(st.dom, [], 'a kick shows no glowing boxes'); assert.equal(st.hint, 'Tap where they go.'); assert.equal(await P.locator('#board .kring,#board .kpath,#board .karrow').count(), 0, 'a kick shows no landing circles or dots'); }
+      else assert.deepEqual(st.dom.sort((a, b) => a - b), want, `${theme} glowing squares == legal (${st.role} ${st.phase})`);
       assert.ok(st.legal.length > 0, 'a turn always has targets | ' + dump);
       // The hint tells the player what to do this turn: glowing squares, a stone-less vulture's rock pile, a found egg to smash, or an ostrich that must step off.
       assert.ok(hintOk(st), `${theme} hint says what to do this turn: "${st.hint}" | ` + dump);
@@ -60,8 +62,8 @@ let seed = 7; const rnd = n => { seed = (seed * 16807) % 2147483647; return seed
           // a selected + Carry button is disabled, so it has no 'on' class; aria-pressed marks every selected mode
           const i = st.btns.indexOf(bt); if (await P.locator('#actions button').nth(i).isDisabled()) continue; // an earlier click (+ Carry) can disable a later button (Kick)
           await P.locator('#actions button').nth(i).click({ force: true });
-          const after = await P.evaluate(() => ({ on: [...document.querySelectorAll('#actions button')].findIndex(x => x.getAttribute('aria-pressed') === 'true'), n: document.querySelectorAll('.cell.legal').length, hint: document.getElementById('hint').textContent }));
-          assert.equal(after.on, i, 'tapped mode becomes selected'); assert.ok(after.n > 0 && /Tap to move|Tap to fly|Tap to throw|Pick where the egg goes|Kick it away|Your turn|No stone\. Go to rocks|Found it\. Get a stone first|Throw on your own square|You're on the egg!/.test(after.hint), 'mode shows targets + hint: ' + after.hint); // a found egg under the vulture swaps in the smash hints; throw mode names its targets "red-orange squares", not "glowing"; this wording dates from 3eb803b
+          const after = await P.evaluate(() => ({ on: [...document.querySelectorAll('#actions button')].findIndex(x => x.getAttribute('aria-pressed') === 'true'), n: document.querySelectorAll('.cell.legal').length, kick: UI._mode && UI._mode() === 'kick' ? UI._legal().length : 0, hint: document.getElementById('hint').textContent }));
+          assert.equal(after.on, i, 'tapped mode becomes selected'); assert.ok((after.n > 0 || after.kick > 0) && /Tap to move|Tap to fly|Tap to throw|Pick where the egg goes|Tap where they go|Your turn|No stone\. Go to rocks|Found it\. Get a stone first|Throw on your own square|You're on the egg!/.test(after.hint), 'mode shows targets + hint: ' + after.hint); // a found egg under the vulture swaps in the smash hints; throw mode names its targets "red-orange squares", not "glowing"; this wording dates from 3eb803b
         }
       }
       // tap a non-glowing square: explained locally, no server error. "Non-glowing" means legal in NO mode for this player,
@@ -84,14 +86,13 @@ let seed = 7; const rnd = n => { seed = (seed * 16807) % 2147483647; return seed
         target = cells.nth(L[rnd(L.length)]); const aim = (await target.evaluate(e => e.classList.contains('aimcue'))) && (await P.evaluate(() => UI._mode && UI._mode() === 'fly')); await target.click({ force: true });
         if (aim) await P.waitForFunction(() => UI._mode && UI._mode() === 'throw', null, { timeout: 4000 }).then(() => target.click({ force: true })); // the crosshair on a found egg: the first tap picks Throw, the second throws it
         if (await P.evaluate(() => !!document.querySelector('#board .cell.confirm'))) await target.click({ force: true }); // aiming the only stone at a square that is not a found egg asks once more: tap it again to throw
-        if (await P.evaluate(() => UI._mode && UI._mode() === 'kick')) { await P.waitForSelector('.kpath', { timeout: 4000 }); await target.click({ force: true }); } // a kick is two taps: the first shows where it goes (after a sniff pause), the second kicks: pick the animal, tap it again
       }
       // Wait for the server's answer, so the next pass never reads the old turn (the stale state still said myTurn, with Throw left selected).
       // The pass-and-play cover also counts: the handoff screen shows once the move was played.
       const answered = (ms) => P.waitForFunction(b => { const S = UI._S(); return !document.getElementById('handoff').classList.contains('hidden') || JSON.stringify([S.turn, S.round, S.phase, S.ostrich, S.vulture, S.stones, S.sitRun, S.carried, S.lastAction, S.eggs, S.marks]) !== b; }, before, { timeout: ms });
       // a tap that lands while the board is locked for an animation is dropped by design (a player taps again), so a move with no answer after 5 seconds is tapped once more
-      await answered(5000).catch(async () => { await P.waitForFunction(() => !UI._locked(), null, { timeout: 5000 }); if (target && await P.evaluate(() => UI._S().myTurn)) { await target.click({ force: true }); if (await P.evaluate(() => !!document.querySelector('#board .cell.confirm'))) await target.click({ force: true }); } })
-        .then(() => answered(8000)).catch(() => { throw new Error('the move was never answered | ' + dump); });
+      await answered(5000).catch(async () => { await P.waitForFunction(() => !UI._locked() && !(window.CUTAWAYS && CUTAWAYS.busy && CUTAWAYS.busy()), null, { timeout: 12000 }); if (target && await P.evaluate(() => UI._S().myTurn && !(window.CUTAWAYS && CUTAWAYS.busy && CUTAWAYS.busy()))) { await target.click({ force: true }); if (await P.evaluate(() => !!document.querySelector('#board .cell.confirm'))) await target.click({ force: true }); } })
+        .then(() => answered(8000)).catch(async () => { const now = await P.evaluate(() => ({ busy: !!(window.CUTAWAYS && CUTAWAYS.busy && CUTAWAYS.busy()), locked: UI._locked(), mode: UI._mode && UI._mode(), hint: document.getElementById('hint').textContent, go: !!document.getElementById('surprise-go') })).catch(() => null); throw new Error('the move was never answered | ' + dump + ' | now ' + JSON.stringify(now)); });
       assert.ok(!/Not a legal/.test(await P.textContent('#log')), 'legal tap accepted');
     }
     await P.waitForSelector('#over:not(.hidden)', { timeout: 20000 }); await c.close();

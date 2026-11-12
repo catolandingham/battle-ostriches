@@ -266,7 +266,7 @@ const nearF=(C,p)=>C.foods.some(q=>Math.max(Math.abs(q[0]-p[0]),Math.abs(q[1]-p[
 function legalNow(){if(!S)return[];const blue=S.role==='blue',M=curMode(),C=S.cfg;
  if(blue&&S.phase==='setupEggs'){const eg=new Set((S.eggs||[]).map(e=>key(e.pos)));const r=[];for(let y=0;y<C.rows;y++)for(let x=0;x<C.cols;x++){const k=x+','+y;if(!eg.has(k)&&k!==key(S.vulture)&&!(S.h3&&S.h3.block||[]).some(q=>key(q)===k)&&!isR(C,k)&&!nearF(C,[x,y]))r.push([x,y]);}return r;}
  if(blue&&S.phase==='setupOstrich'){const blocked=new Set();if(S.h3){(S.h3.block||[]).forEach(q=>blocked.add(key(q)));(S.h3.pieces||[]).forEach(q=>{if(q.p&&q.p[0]>=0)blocked.add(key(q.p));});}const r=[];for(let y=0;y<C.rows;y++)for(let x=0;x<C.cols;x++){const k=x+','+y;if(!blocked.has(k))r.push([x,y]);}return r;}
- if(!S.myTurn)return[];if(S.role==='hunter')return S.hmoves||[];return blue?(M==='carry'?S.carryMoves:M==='kick'?S.kickTargets||[]:S.moves):(M==='throw'?S.throw:S.fly);}
+ if(!S.myTurn)return[];if(S.role==='hunter')return S.hmoves||[];if(blue&&M==='kick')return (S.kickPlans||[]).map(p=>p.to);return blue?(M==='carry'?S.carryMoves:S.moves):(M==='throw'?S.throw:S.fly);}
 // The banner is drawn again on every state. A line in it stays up long enough to read (1s, or 0.3s a word when longer, the same rule as the status queue)
 // before a different line, or none, replaces it. Redrawing the same line keeps its clock.
 const BO_BANNER=(()=>{let shown='',at=0,want=null,timer=null;
@@ -289,8 +289,8 @@ function tap(x,y){clearTimeout(tap.q);if(!S||locked||cardOpen||inHold())return;i
  const m=curMode();if(!m)return;
  if(S.role==='red'&&m==='fly'){const cc=$('board').children[y*S.cfg.cols+x];if(cc&&cc.classList.contains('aimcue'))return UI.setMode('throw');} // the crosshair on a found egg: tapping it picks Throw
  if(!ok&&m==='carry'&&isF(S.cfg,key(p))&&gd(p,S.ostrich)===1){const c=$('board').children[p[1]*S.cfg.cols+p[0]];c&&c.animate([{transform:'translateX(0)'},{transform:'translateX(-3px)'},{transform:'translateX(3px)'},{transform:'translateX(0)'}],{duration:180});return nope('No eggs by food.',p);}
- if(!ok)return nope(m==='throw'?(S.stones<1?'No stone. Go to rocks.':'Too far.'):m==='kick'?'Tap an animal.':m==='carry'?'Not there.':'Too far.',p);
- if(m==='kick'){const kk=key(p);if(kickPick!==kk){kickPick=kk;render();return;}kickPick=null;} // select, see where it goes, tap again to kick
+ if(!ok)return nope(m==='throw'?(S.stones<1?'No stone. Go to rocks.':'Too far.'):m==='kick'?'Tap where they go.':m==='carry'?'Not there.':'Too far.',p);
+ if(m==='kick'){const plan=(S.kickPlans||[]).find(q=>q.to&&q.to[0]===x&&q.to[1]===y);if(!plan)return;coachDid('kick');send({t:'act',a:'kick',p:plan.at});return;}
  coachDid(m==='carry'?'step':m);send({t:'act',a:m,p});}
 function onFoundEggWithStone(st){return !!(st&&st.role==='red'&&st.phase==='play'&&st.myTurn&&st.stones>0&&st.vulture&&st.marks&&st.marks[st.vulture[0]+','+st.vulture[1]]==='spotted');}
 function curMode(){if(!S.myTurn)return null;if(S.role==='hunter')return'hmove';if(S.role==='red'){if(mode)return mode;if(onFoundEggWithStone(S))return'throw';return'fly';}
@@ -351,21 +351,6 @@ function youTag(board){
  const el=Date.now()-youAt;if(el>=600)return;
  const p=document.createElement('span');p.className='youpulse';p.style.animationDelay=(-el)+'ms';cell.appendChild(p);
  setTimeout(()=>document.querySelectorAll('.youpulse').forEach(e=>e.remove()),650-el);}
-// Kick, shown instead of told: the chosen animal gets a straight line of dots (one per square it will travel, around the edge if it wraps) and a faded copy of it
-// where it lands. Dots on squares the ostrich can see are solid; dots beyond its sight are hollow. Nothing says what lies there.
-function drawKickPreview(board,S,C,kicking){
- if(!kicking||!kickPick||!S.ostrich){kickPick=null;return;}
- const [tx,ty]=kickPick.split(',').map(Number),o=S.ostrich;
- if(!(S.kickTargets||[]).some(q=>q[0]===tx&&q[1]===ty)){kickPick=null;return;}
- const dx=Math.sign(tx-o[0]),dy=Math.sign(ty-o[1]),h=S.h3||{};
- const isBadger=(h.hunter&&h.kind==='badger'&&h.hunter[0]===tx&&h.hunter[1]===ty)||(h.hunters||[]).some(x=>x.kind==='badger'&&x.p[0]===tx&&x.p[1]===ty);
- const n=isBadger?S.cfg.kickPushBadger:S.cfg.kickPush,from=board.children[ty*C.cols+tx];
- let x=tx,y=ty,last=null;
- for(let i=1;i<=n;i++){x=(x+dx+C.cols)%C.cols;y=(y+dy+C.rows)%C.rows;const c=board.children[y*C.cols+x];if(!c)break;
-  const d=document.createElement('i');d.className='kpath'+(Math.max(Math.abs(x-o[0]),Math.abs(y-o[1]))<=2?'':' hollow');c.appendChild(d);last=c;}
- const art=from&&from.querySelector('.pc:not(.po)');if(last&&art){const g=document.createElement('div');g.className='pc kghost';g.innerHTML=art.innerHTML;last.appendChild(g);}
- if(from){const a=document.createElement('i');a.className='karrow';a.style.setProperty('--ang',(Math.atan2(dy,dx)*180/Math.PI)+'deg');from.appendChild(a);}
-}
 // Kick preview (long-press tooltip): the direction and how far, nothing about what lies there. It wraps at the edge and may stop early.
 function kickTip(x,y){const o=S.ostrich,dx=Math.sign(x-o[0]),dy=Math.sign(y-o[1]),A={'0,-1':'up','0,1':'down','-1,0':'left','1,0':'right','-1,-1':'up and left','1,-1':'up and right','-1,1':'down and left','1,1':'down and right'};
  const h=S.h3||{},badgerHere=h.kind==='badger'||!!h.hunt; // only name an animal that is in this game
@@ -422,7 +407,7 @@ function render(prev){
  let foodLead=false,foodText='';
  if(S.phase==='play'&&blue&&S.ostrich&&S.ostrich[0]>=0&&M!=='carry'){const route=BO.foodRoute(C,S.ostrich,S.marks);const base=(S._o&&S._o.m)||S.moves||[];
   if(route&&route.len>0&&S.hungerLeft<=route.len+1&&route.next&&base.some(p=>key(p)===key(route.next))){if(!(S.moves||[]).some(p=>key(p)===key(route.next)))S.moves=(S.moves||[]).concat([route.next]);foodText=`Leaf in ${route.len} move${route.len===1?'':'s'} · ${S.hungerLeft} left`;foodLead=true;}}
- const L=!S.myTurn?[]:S.role==='hunter'?(S.hmoves||[]):(blue?(M==='carry'?S.carryMoves:M==='kick'?S.kickTargets||[]:S.moves):(M==='throw'?S.throw:S.fly));
+ const L=!S.myTurn?[]:S.role==='hunter'?(S.hmoves||[]):(blue?(M==='carry'?S.carryMoves:M==='kick'?(S.kickPlans||[]).map(p=>p.to):S.moves):(M==='throw'?S.throw:S.fly));
  const lk=new Set(L.map(key)),setup=blue&&(S.phase==='setupEggs'||S.phase==='setupOstrich');
  const NS=window.NextStep?NextStep.compute(S):{kind:null,targets:[],toward:[],button:null},nsT=new Set(NS.targets),nsW=new Set(NS.toward); // the next step of this animal's loop, drawn on the board (nextstep.js)
  const board=$('board');board.style.gridTemplateColumns=`repeat(${C.cols},minmax(0,1fr))`;board.style.alignContent='start';board.style.alignItems='start';
@@ -444,8 +429,9 @@ function render(prev){
   const m=S.role==='hunter'&&S.phase!=='over'&&S.marks[k]==='spotted'?null:S.marks[k];if(m)d.classList.add(m);const tags=[],tip=[];
   if(fogOf&&Math.max(Math.abs(x-fogOf[0]),Math.abs(y-fogOf[1]))>2)d.classList.add('fog'); // fog of war: a bird sees hunters only within 2 (hunters get none)
   const legal=lk.has(k)||(setup&&legalNow().some(q=>key(q)===k));
-  if(nsT.has(k)&&NS.kind!=='rocks')d.classList.add('cue','cue-'+NS.kind);
-  if(legal){d.classList.add('legal');if(setup)d.classList.add('setupsq');if(throwing||kicking)d.classList.add('target');tags.push(throwing||kicking?'target':'legal');d.setAttribute('aria-label',throwing?'Throw here':kicking?'Kick here':'Legal step');if(nsW.has(k))d.classList.add('toward');}
+  if(nsT.has(k)&&NS.kind!=='rocks'&&!kicking)d.classList.add('cue','cue-'+NS.kind);
+  if(legal&&kicking){d.setAttribute('aria-label','Tap where they go.');}
+  else if(legal){d.classList.add('legal');if(setup)d.classList.add('setupsq');if(throwing)d.classList.add('target');tags.push(throwing?'target':'legal');d.setAttribute('aria-label',throwing?'Throw here':'Legal step');if(nsW.has(k))d.classList.add('toward');}
   if(!blue&&sn&&sn.yes&&!found&&inSn(k)&&!m&&k!==ok)tip.push('Egg may be here.'); // the 8 squares get a small egg outline in the corner (below)
   if(sn&&snNew&&inSn(k)&&!found){d.classList.add(sn.yes?'snyes':'snno');d.style.animationDelay=(Math.max(Math.abs(x-sn.p[0]),Math.abs(y-sn.p[1]))*.18)+'s';}
   // exactly one tile icon: smashed > found egg > own egg > food > rocks
@@ -467,7 +453,7 @@ function render(prev){
   if(legal)tip.push(kicking?kickTip(x,y):throwing?'Throw here.':setup?(S.phase==='setupEggs'?'Hide an egg here':'Start here'):blue||S.role==='hunter'?'Move here':'Fly here'); // a hunter walks; only the vulture flies
   const aimCue=NS.kind==='throw'&&nsT.has(k); // a found egg in throw range: the crosshair already sits on it
   if(aimCue&&!throwing)d.classList.add('aimcue');
-  d.innerHTML=h+(aimCue&&!throwing?'<i class="aim cue"></i>':legal?(kicking?'<i class="kring"></i>':throwing?'<i class="aim'+(aimCue?' cue':'')+'"></i>':''):'');d.dataset.tip=[...new Set(tip)].join(' · ');
+  d.innerHTML=h+(kicking?'':(aimCue&&!throwing?'<i class="aim cue"></i>':(legal&&throwing?'<i class="aim'+(aimCue?' cue':'')+'"></i>':'')));d.dataset.tip=[...new Set(tip)].join(' · ');
   d.dataset.tags=tags.join(' ');if(tags.includes('me'))d.id='current';d.onclick=()=>{if(Date.now()<noClick)return;tap(x,y);};board.appendChild(d);}
  {const cs=getComputedStyle(board),gap=parseFloat(cs.columnGap)||0,pad=parseFloat(cs.paddingLeft)+parseFloat(cs.paddingRight),inner=board.clientWidth-pad,w=(inner-gap*(C.cols-1))/C.cols;if(w>1){board.style.gridAutoRows='0';board.style.gridTemplateRows=`repeat(${C.rows},${w}px)`;}}
  if(prev&&blue&&S.hungerLeft>prev.hungerLeft&&S.ostrich&&S.ostrich[0]>=0){const c=board.children[S.ostrich[1]*C.cols+S.ostrich[0]];if(c)c.classList.add('ate');}
@@ -495,7 +481,7 @@ function render(prev){
  else if(S.phase==='play'&&!S.myTurn)h=blue?(satNote(S)?'The vulture sees you sit.':'Vulture\'s turn…'):'Ostrich\'s turn…';
  else if(S.phase==='play'&&blue){
   a.innerHTML=btn('s','Walk',M==='step',"UI.setMode('step')")+(S.onEgg?btn('c',CARRYIC+'Carry',M==='carry',"UI.setMode('carry')",M==='carry'||!S.can.carry)+btn('t',EYE+'Sit',false,"UI.act('sit')",!S.can.sit):'')+(S.kickNear?btn('k','Kick',M==='kick',"UI.kick()",M==='carry'||!(S.can&&S.can.kick)):'');
-  h=M==='kick'?'Kick it away.':M==='carry'?'Pick where the egg goes.':S.moves.length?'Your turn. Tap to move.':'';
+  h=M==='kick'?'Tap where they go.':M==='carry'?'Pick where the egg goes.':S.moves.length?'Your turn. Tap to move.':'';
  } else if(S.phase==='play'){
   a.innerHTML=btn('fl','Fly',M==='fly',"UI.setMode('fly')")+btn('th','Throw',M==='throw',"UI.setMode('throw')",S.stones<1);
   if(NS.button==='throw'&&M!=='throw'){const tb=[...a.querySelectorAll('button')].find(x=>/Throw/.test(x.textContent));if(tb)tb.classList.add('cuebtn');}
@@ -539,7 +525,7 @@ function render(prev){
   if(an&&!an.disabled){an.classList.add('spot','pulse');}if(CM.at==='board'||(an&&!an.disabled))h=CM.txt+(h&&CM.at!=='board'?' — or '+h.charAt(0).toLowerCase()+h.slice(1):'');}
  (S.sittingAt||[]).forEach(q=>{const c=board.children[q[1]*C.cols+q[0]];if(c&&c.classList&&!c.querySelector('.sittag')){const t=document.createElement('span');t.className='sittag';t.innerHTML=EYE;t.setAttribute('aria-label','Seen by the vulture');c.appendChild(t);}});
  if(S.three)window.T3UI.after(S,prev,board);
- drawKickPreview(board,S,C,blue&&M==='kick'); // after the hunters are drawn, so a kicked hunter can be copied as the faded landing piece
+ if(window.PUSH_MOTION)PUSH_MOTION.kickChoose(board,blue&&M==='kick'?(S.kickPlans||[]):[]);
  window.T3UI.events(S,prev,board);window.T3UI.startLine(S,prev,cardMode(S));
  if(/^(Missed\.|Miss\.)/.test(ev))setTimeout(()=>flashRight(),50); // a miss: the right option pulses
  youTag(board);
@@ -549,7 +535,8 @@ function render(prev){
  const mt=S.phase==='play'&&S.myTurn&&!S.pass;$('hint').classList.toggle('myturn',!!mt);
  if(window.BORing&&S.phase==='play'&&S.myTurn){for(const note of BORing.omittedNotes(S)){const sit=/^sit/i.test(note),stone=/stone/i.test(note);if(sit&&!/step off|sit is used/i.test(h))h=(h?h+' ':'')+note;if(stone&&!/stone/i.test(h))h=(h?h+' ':'')+note;}}
  if(mt&&(!h||/turn…$/.test(h))){const what=S.role==='red'?'Tap to fly':S.role==='hunter'?'Tap to move':'Tap to move';h=(h&&!/turn…$/.test(h)?h:'Your turn. '+what+'.');}
- $('hint').textContent=h;if(typeof preferEggLine==='function')preferEggLine();if(h&&(G||(W&&W.txt))){const sb=document.createElement('button');sb.className='skipguide';sb.id='skipGuide';sb.textContent='Skip guide';$('hint').appendChild(sb);tapper(sb,()=>{UI.guides(false)});}$('hint').classList.toggle('empty',!h);$('hint').classList.toggle('guide',!!G||!!(W&&W.txt));$('hint').classList.toggle('cold',!G&&!!(W&&W.txt));$('hint').classList.toggle('urgent',!G&&!!(W&&W.urgent));$('log').textContent=S.joined&&!S.opponent&&S.phase!=='over'?'Opponent offline… they can rejoin with the same link.':'';
+ if(blue&&M==='kick')h='Tap where they go.';
+ $('hint').textContent=h;if(typeof preferEggLine==='function')preferEggLine();if(h&&(G||(W&&W.txt))&&!(blue&&M==='kick')){const sb=document.createElement('button');sb.className='skipguide';sb.id='skipGuide';sb.textContent='Skip guide';$('hint').appendChild(sb);tapper(sb,()=>{UI.guides(false)});}$('hint').classList.toggle('empty',!h);$('hint').classList.toggle('guide',!!G||!!(W&&W.txt));$('hint').classList.toggle('cold',!G&&!!(W&&W.txt));$('hint').classList.toggle('urgent',!G&&!!(W&&W.urgent));$('log').textContent=S.joined&&!S.opponent&&S.phase!=='over'?'Opponent offline… they can rejoin with the same link.':'';
  // cause before result (D36): stone into the count, carried egg slide, cold egg dims, badger sinks; each only on a screen that already held the facts (fx.js)
  if(window.CAUSE)CAUSE.run(S,prev,board,{stone:STONE,egg:MYEGG,ring:n=>warmRing(n,C.warmth)});
  if(window.PUSH_MOTION)PUSH_MOTION.run(S,prev,board);
