@@ -76,6 +76,11 @@ function orientPrints(S){if(S.role!=='red'||!S.prints)return;const P=S.prints,b=
   for(let dx=-1;dx<=1;dx++)for(let dy=-1;dy<=1;dy++){if(!dx&&!dy)continue;const v=P[(x+dx)+','+(y+dy)]||0;if(v>bv){bv=v;best=[dx,dy];}}
   const c=b.children[y*S.cfg.cols+x],n=c&&c.querySelector('.num');if(n&&best)n.style.setProperty('--prot',(Math.atan2(best[1],best[0])*180/Math.PI+90)+'deg');}}
 window.FX={update(S,prev){const t=theme();ensure();layer.className=t||'';
+ // A surprise owns the moving animal. Leave the theme sprites hidden, and forget
+ // their last square so they do not slide into the landing spot when the cartoon ends.
+ const surprise=document.documentElement.classList.contains('cutaway-up')||document.documentElement.classList.contains('surprise-slide');
+ if(surprise){for(const k in spr){spr[k].style.visibility='hidden';spr[k].dataset.pos='';}return;}
+ for(const k in spr)spr[k].style.visibility='';
  if(!TH[t]||!S||S.phase==='setupEggs'){for(const k in spr){spr[k].remove();delete spr[k];}return;}
  orientPrints(S);
  const sz=TH[t].sz;

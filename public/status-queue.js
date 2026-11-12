@@ -15,6 +15,8 @@
     timer=schedule(()=>{hide(active);active=null;timer=schedule(pump,0);},entry.hold==null?hold:entry.hold);return;}
    pending.push(entry);
    if(!active&&timer==null)timer=schedule(pump,0);
+  },drop(pred){if(typeof pred!=='function')return;pending=pending.filter(item=>!pred(item));
+   if(active&&pred(active)){if(timer!=null)cancel(timer);timer=null;hide(active);active=null;}
   },clear(){if(timer!=null)cancel(timer);timer=null;if(active)hide(active);active=null;pending=[];},state:()=>({active,pending:pending.slice()})};
  }
  if(typeof module!=='undefined')module.exports={create};

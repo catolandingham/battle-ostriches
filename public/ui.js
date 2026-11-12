@@ -226,7 +226,8 @@ function tap(x,y){clearTimeout(tap.q);if(!S||locked||cardOpen)return;if(Date.now
  throwPick=null;
  if(m==='kick'){const kk=key(p);if(kickPick!==kk){kickPick=kk;render();return;}kickPick=null;} // select, see where it goes, tap again to kick
  coachDid(m==='carry'?'step':m);send({t:'act',a:m,p});}
-function curMode(){if(!S.myTurn)return null;if(S.role==='hunter')return'hmove';if(S.role==='red')return mode||'fly';
+function onFoundEggWithStone(st){return !!(st&&st.role==='red'&&st.phase==='play'&&st.myTurn&&st.stones>0&&st.vulture&&st.marks&&st.marks[st.vulture[0]+','+st.vulture[1]]==='spotted');}
+function curMode(){if(!S.myTurn)return null;if(S.role==='hunter')return'hmove';if(S.role==='red'){if(mode)return mode;if(onFoundEggWithStone(S))return'throw';return'fly';}
  if(mode==='carry'&&S.can&&S.can.carry)return'carry';if(mode==='kick'&&S.kickTargets&&S.kickTargets.length)return'kick';return S.moves.length?'step':null;}
 // --- GUIDED HARD STOPS (human ostrich only, client-side): once per device, the ostrich must DO the thing.
 // start: just a one-time tip, never restricts (Brian 11/4). hungry: only moves toward the nearest leaf until it eats. cold: only moves toward the coldest egg until it stands on it.
@@ -449,7 +450,7 @@ function render(prev){
  if(ev)h=ev+(h?' '+h:'');
  if(W&&W.txt&&!G)h=W.txt;
  if(G&&!(foodLead&&G.id==='hungry')&&M!=='carry')h=G.txt;
- if(!blue&&S.phase==='play'&&S.myTurn&&S.marks[key(S.vulture)]==='spotted'&&S.stones>0&&!smashed)h='Throw on your own square.';
+ if(!blue&&S.phase==='play'&&S.myTurn&&S.marks[key(S.vulture)]==='spotted'&&S.stones>0&&!smashed)h="You're on the egg!";
  if(!blue&&S.role==='red'&&S.phase==='play'&&S.myTurn&&S.marks[key(S.vulture)]==='spotted'&&S.stones<1&&!smashed)h=NOSTONE_FOUND; // standing on a found egg with no stone: say why you can't smash it
  if(throwPick&&throwing&&S.myTurn)h='Throw anyway?'; // the confirm: the aimed square shows a tick, this says what a second tap does
  if(!throwing||!S.myTurn||S.stones!==1)throwPick=null;
@@ -484,7 +485,7 @@ function render(prev){
  const mt=S.phase==='play'&&S.myTurn&&!S.pass;$('hint').classList.toggle('myturn',!!mt);
  if(window.BORing&&S.phase==='play'&&S.myTurn){for(const note of BORing.omittedNotes(S)){const sit=/^sit/i.test(note),stone=/stone/i.test(note);if(sit&&!/step off|sit is used/i.test(h))h=(h?h+' ':'')+note;if(stone&&!/stone/i.test(h))h=(h?h+' ':'')+note;}}
  if(mt&&(!h||/turn…$/.test(h))){const what=S.role==='red'?'Tap to fly':S.role==='hunter'?'Tap to move':'Tap to move';h=(h&&!/turn…$/.test(h)?h:'Your turn. '+what+'.');}
- $('hint').textContent=h;if(h&&(G||(W&&W.txt))){const sb=document.createElement('button');sb.className='skipguide';sb.id='skipGuide';sb.textContent='Skip guide';$('hint').appendChild(sb);tapper(sb,()=>{UI.guides(false)});}$('hint').classList.toggle('empty',!h);$('hint').classList.toggle('guide',!!G||!!(W&&W.txt));$('hint').classList.toggle('cold',!G&&!!(W&&W.txt));$('hint').classList.toggle('urgent',!G&&!!(W&&W.urgent));$('log').textContent=S.joined&&!S.opponent&&S.phase!=='over'?'Opponent offline… they can rejoin with the same link.':'';
+ $('hint').textContent=h;if(typeof preferEggLine==='function')preferEggLine();if(h&&(G||(W&&W.txt))){const sb=document.createElement('button');sb.className='skipguide';sb.id='skipGuide';sb.textContent='Skip guide';$('hint').appendChild(sb);tapper(sb,()=>{UI.guides(false)});}$('hint').classList.toggle('empty',!h);$('hint').classList.toggle('guide',!!G||!!(W&&W.txt));$('hint').classList.toggle('cold',!G&&!!(W&&W.txt));$('hint').classList.toggle('urgent',!G&&!!(W&&W.urgent));$('log').textContent=S.joined&&!S.opponent&&S.phase!=='over'?'Opponent offline… they can rejoin with the same link.':'';
  // cause before result (D36): stone into the count, carried egg slide, cold egg dims, badger sinks; each only on a screen that already held the facts (fx.js)
  if(window.CAUSE)CAUSE.run(S,prev,board,{stone:STONE,egg:MYEGG,ring:n=>warmRing(n,C.warmth)});
  if(window.PUSH_MOTION)PUSH_MOTION.run(S,prev,board);

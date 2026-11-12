@@ -103,6 +103,23 @@
   // true while the egg-smash cartoon is about to play or playing: smash.js then skips its own little egg-crack on the board
   api.smashCartoon = () => !!((nextCard && nextCard.scene.id === 'egg-smash') || document.querySelector('#cutaway[data-scene="egg-smash"]'));
   api.defer = state => { if (busyUntil > Date.now()) { queue.push(state); return true; } return false; };
+  api.policy = null;
+  function hideGo() {
+    const el = document.getElementById('surprise-go'); if (el) el.remove();
+  }
+  function showGo(token) {
+    hideGo();
+    const app = document.getElementById('app') || document.body;
+    const bar = document.createElement('div'); bar.id = 'surprise-go';
+    const b = document.createElement('button'); b.type = 'button';
+    b.textContent = (root.SURPRISE && SURPRISE.GO_LINE) || 'Tap to go on.';
+    b.addEventListener('click', () => api.dismiss());
+    bar.appendChild(b); app.appendChild(bar);
+  }
+  api.dismiss = function () {
+    hideGo();
+    finish(serial);
+  };
   const reduced = () => { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } };
   function pieceSel(key) {
     if (key === 'blue' || /^o\d/.test(key)) return '.pc.po';
@@ -145,15 +162,25 @@
     return hold;
   }
   function reveal() {
+    // Take the cartoon away in one step. A slide-off leaves the white sheet
+    // behind as a blank card, and the board (plus any real motion) should be
+    // what comes back.
+    const card = document.getElementById('cutaway'); if (card) card.remove();
     const hold = document.getElementById('boardhold'); if (hold) hold.remove(); holdEl = null;
-    if (root.PUSH_MOTION && PUSH_MOTION.finish) PUSH_MOTION.finish();
-    const card = document.getElementById('cutaway'); if (card) card.classList.add('out');
+    document.documentElement.classList.add('surprise-slide');
+    if (root.PUSH_MOTION && PUSH_MOTION.go) PUSH_MOTION.go();
+  }
+  function emitSurpriseDone() {
+    try { if (window.UI && UI.send) UI.send({ t: 'surprise-done' }); } catch (e) {}
   }
   function finish(token) {
     if (token !== serial) return;
-    serial++; busyUntil = 0; reveal();
+    serial++; busyUntil = 0; hideGo();
+    const hold = document.getElementById('boardhold'); if (hold) hold.remove(); holdEl = null;
     const card = document.getElementById('cutaway'); if (card) card.remove();
     document.documentElement.classList.remove('cutaway-up');
+    document.documentElement.classList.remove('surprise-slide');
+    emitSurpriseDone();
     while (queue.length && !(busyUntil > Date.now())) { const s = queue.shift(); try { apply && apply(s); } catch (e) { console.error(e); } }
   }
   function stepDir(a, b, cols, rows) {
@@ -230,17 +257,22 @@
   }
   function preload() { const art = root.CUTAWAY_ART; if (art) for (const n in art.sprites) picture(n); }
   // The card keeps the drawings' own shape (ART_W x ART_H, never stretched). Its top is the
-  // board's top, so the line above the board stays in view; it shrinks only on a short screen.
+  // board's top, so the line above the board stays in view. The action bar is hidden
+  // while the card is up, so the card uses the whole screen below the board's top and
+  // stays as wide as the board. A short screen may shrink it; a white sheet behind it
+  // still covers the board so a piece cannot peek out at the side.
   const ART_W = 336, ART_H = 412, EDGE = 3, SHADOW_X = 8, SHADOW_Y = 11;
   function cardBox(board, stage) {
     const b = board.getBoundingClientRect(), s = stage.getBoundingClientRect();
     const vh = window.innerHeight || document.documentElement.clientHeight || 844;
-    const bar = document.getElementById('actions'), ar = bar && bar.getBoundingClientRect();
-    const floor = ar && ar.height > 0 && ar.top > b.top + 120 ? Math.min(vh, ar.top) : vh;
-    const room = Math.max(160, floor - b.top - SHADOW_Y - 4);
+    const floor = vh - 8;
+    const room = Math.max(160, floor - b.top - SHADOW_Y);
     let w = b.width, h = (w - 2 * EDGE) * ART_H / ART_W + 2 * EDGE;
     if (h > room) { h = room; w = (h - 2 * EDGE) * ART_W / ART_H + 2 * EDGE; }
-    return { left: b.left - s.left + (b.width - w) / 2, top: b.top - s.top, w, h };
+    return {
+      left: b.left - s.left + (b.width - w) / 2, top: b.top - s.top, w, h,
+      boardLeft: b.left - s.left, boardTop: b.top - s.top, boardW: b.width, boardH: b.height
+    };
   }
   function drawStep(ctx, scene, i) {
     const steps = scene.steps, st = steps[Math.min(steps.length - 1, i)];
@@ -264,8 +296,13 @@
     const data = root.CUTAWAY_ART && CUTAWAY_ART.scenes[scene.id]; if (!data) return;
     const el = document.createElement('div'); el.id = 'cutaway'; el.className = 'cutaway'; el.dataset.scene = scene.id; el.setAttribute('aria-hidden', 'true');
     const box = cardBox(board, stage);
-    el.style.left = box.left + 'px'; el.style.top = box.top + 'px'; el.style.width = (box.w + SHADOW_X) + 'px'; el.style.height = (box.h + SHADOW_Y) + 'px';
+    const sheetW = Math.max(box.boardW, box.w + SHADOW_X), sheetH = Math.max(box.boardH, box.h + SHADOW_Y);
+    el.style.left = box.boardLeft + 'px'; el.style.top = box.boardTop + 'px'; el.style.width = sheetW + 'px'; el.style.height = sheetH + 'px';
+    const sheet = document.createElement('div'); sheet.className = 'cutaway-sheet';
+    sheet.style.cssText = 'position:absolute;left:0;top:0;width:' + box.boardW + 'px;height:' + box.boardH + 'px;background:#fff;z-index:0;pointer-events:none';
+    el.appendChild(sheet);
     const card = document.createElement('div'); card.className = 'cutaway-card';
+    card.style.left = Math.max(0, (box.boardW - box.w) / 2) + 'px'; card.style.top = '0'; card.style.zIndex = '1';
     card.style.width = box.w + 'px'; card.style.height = box.h + 'px';
     const art = document.createElement('canvas'); art.className = 'cutaway-art';
     const dpr = Math.min(3, Math.max(1, window.devicePixelRatio || 1));
@@ -279,7 +316,7 @@
     let shown = -1, whole = false;
     const step = now => {
       if (!art.isConnected) return;
-      const i = Math.min(last, Math.floor((now - t0) / STEP));
+      const i = Math.min(last, Math.max(0, Math.floor((now - t0) / STEP)));
       if (i !== shown || !whole) { whole = drawStep(ctx, data, i); shown = i; }
       if (i < last || !whole) requestAnimationFrame(step);
     };
@@ -304,15 +341,32 @@
       const prevHold = document.getElementById('boardhold'); if (prevHold) prevHold.remove();
       stage.appendChild(hold); holdEl = hold;
     }
-    busyUntil = Date.now() + MS;
-    const token = ++serial;
+    const pol = (root.SURPRISE && SURPRISE.policy) ? SURPRISE.policy(S, prev) : null;
+    api.policy = pol;
     const cartoon = scene && !reduced();
-    nextCard = cartoon ? { scene, S } : null;
-    setTimeout(() => { if (token === serial) reveal(); }, cartoon ? REVEAL : MS);
-    setTimeout(() => finish(token), MS);
+    const motionDelay = pol ? pol.motionDelay : (cartoon ? REVEAL : MS);
+    const motionMs = pol ? pol.motionMs : 0;
+    const after = pol && pol.affected ? (pol.holdCap || 8000) : ((root.SURPRISE && SURPRISE.MIN_LINE_MS) || 1000);
+    // Tap waits until the cartoon is gone and the real move, if any, has finished.
+    const total = motionDelay + motionMs + after;
+    busyUntil = Date.now() + total;
+    const token = ++serial;
+    nextCard = cartoon ? { scene, S, delay: pol && pol.lookout ? ((root.SURPRISE && SURPRISE.LOOKOUT_MS) || 1000) : 0 } : null;
+    setTimeout(() => { if (token === serial) reveal(); }, motionDelay);
+    if (pol && pol.affected && !reduced()) {
+      setTimeout(() => { if (token === serial && !document.getElementById('cutaway')) showGo(token); }, motionDelay + motionMs);
+      setTimeout(() => { if (token === serial) api.dismiss(); }, total);
+    } else {
+      setTimeout(() => finish(token), motionDelay + motionMs);
+    }
   };
   api.play = function (S, prev, board) {
-    if (nextCard) { const job = nextCard; nextCard = null; showCard(job.scene, S, board); }
+    if (nextCard) {
+      const job = nextCard; nextCard = null;
+      const wait = job.delay || 0;
+      if (wait) setTimeout(() => { if (document.getElementById('boardhold') || document.documentElement.classList.contains('cutaway-up')) showCard(job.scene, S, board); }, wait);
+      else showCard(job.scene, S, board);
+    }
     const hold = document.getElementById('boardhold'), leg = board && board.querySelector('.kick-leg');
     if (hold && leg) {
       const idx = [...board.children].indexOf(leg.closest('.cell'));

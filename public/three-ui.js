@@ -140,9 +140,15 @@ function hOver(S){const h=S.h3,w=S.winner,me=h.mySeat,C=S.cfg;
  return endBox(S,endArt(S,art),endTitle(S,title),endWhyText(S,why));}
 // --- in game ---
 let lastSense='',lastCatch=0,deadline=0,clockMs=10000,raf=0,lastTurnKey='',nearSeen=null;
-function warnNear(S,board){if(!window.BORing)return;if(!S||S.phase!=='play'){nearSeen=null;return;}
- const now=BORing.seenHunterKinds(S),prev=nearSeen;nearSeen=now.slice();
- const added=prev?BORing.hunterAlerts(prev,now):now;
+function warnNear(S,board,prev){if(!window.BORing)return;if(!S||S.phase!=='play'){nearSeen=null;return;}
+ // Look out! is a 1s beat after a hit: no "X near!" on that state, or on a
+ // redraw during the beat. Remember who is already seen so the line does not
+ // pop the moment the beat ends and cover the real event line.
+ const pol=prev&&window.SURPRISE&&SURPRISE.policy?SURPRISE.policy(S,prev):null;
+ const now=BORing.seenHunterKinds(S);
+ if((pol&&pol.lookout)||Date.now()<lookoutUntil){nearSeen=now.slice();return;}
+ const was=nearSeen;nearSeen=now.slice();
+ const added=was?BORing.hunterAlerts(was,now):now;
  added.forEach(k=>pop(board,BORing.hunterNearLabel(k),'near'));}
 function tag(S){if(S.h3&&S.h3.team&&S.h3.mySeat!=='hunter')return tTag(S);const k=S.h3&&S.h3.kind||'hyena';return `<span style="display:inline-block;width:30px;height:30px;vertical-align:middle">${KIND[k].art}</span> ${KIND[k].n.toUpperCase()}`;}
 function waitMsg(S){return `Wait, it's the ${tname(S,S.turn)}'s turn.`;}
@@ -217,24 +223,54 @@ const noEgg=(S,x,y)=>{const C=S.cfg,m=(S.marks||{})[x+','+y];return (C.rocks||[]
 function marksAround(board,S,cx,cy,range,kind,cls){const C=S.cfg;let n=0;
  for(let y=Math.max(0,cy-range);y<=Math.min(C.rows-1,cy+range);y++)for(let x=Math.max(0,cx-range);x<=Math.min(C.cols-1,cx+range);x++){if(x===cx&&y===cy)continue;if(kind==='egg'&&S.cfg&&noEgg(S,x,y))continue;const c=board.children[y*C.cols+x];if(c&&c.classList&&c.classList.contains('cell')&&mark(c,kind,cls))n++;}
  return n;}
-function pop(board,txt,cls){window.STATUS_QUEUE.add({className:'h3pop '+cls,text:txt,priority:10});}
+function isNearLine(item){const t=(item&&item.text||'').trim(),c=item&&item.className||'';return /\bnear[!.]?$/i.test(t)||/(^|\s)near(\s|$)/.test(c);}
+function pop(board,txt,cls){if(Date.now()<lookoutUntil)return;window.STATUS_QUEUE.add({className:'h3pop '+cls,text:txt,priority:10});}
 // Shared with sniff/fact notices: one one-second message, personal events before background facts.
 function announce(txt,priority,hold,preempt){window.STATUS_QUEUE.add({id:'announce',className:'show'+(/you/i.test(txt)?' bad':''),text:txt,priority:priority==null?(/\byou\b/i.test(txt)?100:50):priority,hold:hold||undefined,preempt:!!preempt});}
+let lookoutKey='',lookoutUntil=0;
+function speak(S,prev,txt,priority,preempt){
+ const pol=window.SURPRISE&&SURPRISE.policy&&S&&prev?SURPRISE.policy(S,prev):null;
+ const hold=pol&&pol.affected?pol.lineHold:(window.SURPRISE?SURPRISE.holdFor(txt):undefined);
+ if(pol&&pol.lookout&&pol.ev){
+  const k=pol.ev.event+':'+pol.ev.seq;
+  // The beat owns the status line. Drop a near warning that is waiting, and
+  // refuse a new one until the beat (and the line that follows it) is up.
+  lookoutUntil=Date.now()+SURPRISE.LOOKOUT_MS+400;
+  if(window.STATUS_QUEUE.drop)STATUS_QUEUE.drop(isNearLine);
+  document.querySelectorAll('#msgslot .h3pop.near').forEach(el=>el.remove());
+  if(lookoutKey!==k){lookoutKey=k;announce(SURPRISE.LOOKOUT_LINE,120,SURPRISE.LOOKOUT_MS,true);}
+  setTimeout(()=>{if(window.STATUS_QUEUE.drop)STATUS_QUEUE.drop(isNearLine);announce(txt,priority,hold,true);},SURPRISE.LOOKOUT_MS);return;
+ }
+ announce(txt,priority,hold,preempt);
+}
 const evSeen={kick:0,pop:0,rival:0,stone:0,dug:0,burst:0};
 function events(S,prev,board){
  if(!S)return;if(!S.three)rulesMode('2');
  const h=S.h3||{};
- for(const e of window.CatchText.newEvents(evSeen,S,prev)){const big=e.kind==='kick'||e.kind==='burst'||e.kind==='rival'||(e.kind==='stone'&&S.stoneNote&&(S.stoneNote.targets||[]).length);announce(window.CatchText.viewerEvent(e,S),null,big?2000:undefined,big);
+ for(const e of window.CatchText.newEvents(evSeen,S,prev)){const big=e.kind==='kick'||e.kind==='burst'||e.kind==='rival'||e.kind==='smash'||(e.kind==='stone'&&S.stoneNote&&(S.stoneNote.targets||[]).length);speak(S,prev,window.CatchText.viewerEvent(e,S),null,big);
   // the square highlight: the hyena's landing square for the meeting; the badger's own square for a pop-out, only if this phone can see the badger
   const sq=e.kind==='rival'||e.kind==='kick'||e.kind==='burst'?e.square:e.kind==='dug'?null:e.seen?(h.hunters?(h.hunters.find(x=>x.kind==='badger')||{}).p:h.hunter):null,c=cellAt(board,S,sq);c&&c.classList.add('h3kb');}}
 // One plain line at the start of every game: who hunts what, naming only the animals in the game (roles.js).
 let startDone=false;
+function eggLineShowing(){const h=document.getElementById('hint');return !!(h&&h.textContent.indexOf("You're on the egg!")===0);}
+function preferEggLine(){
+ if(!eggLineShowing()||!window.STATUS_QUEUE||!STATUS_QUEUE.drop)return;
+ STATUS_QUEUE.drop(item=>/hunts eggs/.test(item.text||''));
+}
 function startLine(S,prev,mode){
  if(!S||S.phase!=='play'){startDone=false;return;}
- const h=S.h3;if(startDone||(h&&(h.ready===false||h.needKind||(h.team&&h.teamSetup&&h.teamSetup!=='done'))))return;
+ const h=S.h3;if(h&&(h.ready===false||h.needKind||(h.team&&h.teamSetup&&h.teamSetup!=='done')))return;
+ // Standing on a found egg with a stone: that line is the top line. The
+ // opening "who hunts what" sentence waits until this turn is over.
+ if(eggLineShowing()){if(window.STATUS_QUEUE&&STATUS_QUEUE.drop)STATUS_QUEUE.drop(item=>/hunts eggs/.test(item.text||''));return;}
+ if(startDone)return;
  startDone=true;if(!prev&&S.round>1)return;
  announce(window.Roles.huntLine(mode,S.role==='hunter'?(S.kind||(h&&h.kind)):(h&&h.kind)),20);}
-function after(S,prev,board){badgerLines(S,prev);chips(S);clock(S);kindPick(S);if(S.h3.team)tPieces(S,board);if(S.h3.hunt)hPieces(S,board,prev);
+function after(S,prev,board){
+ // A hit's Look out! owns the status line from the start of this paint, before
+ // a "near" warning can be queued on top of it.
+ if(prev&&window.SURPRISE&&SURPRISE.policy){const pol=SURPRISE.policy(S,prev);if(pol&&pol.lookout)lookoutUntil=Date.now()+SURPRISE.LOOKOUT_MS+400;}
+ badgerLines(S,prev);chips(S);clock(S);kindPick(S);if(S.h3.team)tPieces(S,board);if(S.h3.hunt)hPieces(S,board,prev);
  rulesMode(S.h3.hunt?'4h':S.h3.team?String(S.h3.n):'3');
  const h=S.h3,k=h.kind||'hyena',me=S.role;
  // hunter piece: the hunter always sees itself; a bird only sees it within 2 squares (never a burrowed badger)
@@ -271,11 +307,10 @@ function after(S,prev,board){badgerLines(S,prev);chips(S);clock(S);kindPick(S);i
    if(tc)tc.classList.add('h3kb');
    // what the catch means, in words: hurt or out, and who did it (catchtext.js)
    const CT=window.CatchText,seat=h.mySeat||me,by=lc.by||k;
-   announce(CT.catchLine(lc,seat,by,CT.catchesLeft(h,lc)),seat===lc.bird?100:50,2000,true);
-   if(seat===lc.bird&&!lc.ko)announce(CT.catchLine(lc,'hunter',by,CT.catchesLeft(h,lc)),90);
+   speak(S,prev,CT.catchLine(lc,seat,by,CT.catchesLeft(h,lc)),seat===lc.bird?100:50,true);
    const ch=document.querySelector('#h3bar .bchip.'+lc.bird);ch&&ch.classList.add('hitnow');window.SFX&&SFX.play(me==='hunter'?'win':'warn');}}
  outBanner(S,prev);
- warnNear(S,board);
+ warnNear(S,board,prev);
  // waiting panel text: which seats are still open
  if(!S.joined){const w=$('wait');const open=Object.entries(h.seats).filter(([,v])=>v==='open').map(([r])=>SN[r]);if(w)w.firstElementChild.nextElementSibling.textContent=`Waiting for: ${open.join(', ')}. Send them this link:`;}}
 function kindPick(S){let k=$('kindPick');if(!S.h3.needKind){k&&k.classList.add('hidden');return;}
@@ -288,6 +323,6 @@ function over(S){if(S.h3.hunt)return hOver(S);if(S.h3.team)return tOver(S);const
   :w==='red'?(S.winBy==='cold'?`The last egg went cold in round ${S.round}.`:S.winBy==='starved'?'The ostrich was out and no eggs were left.':`The vulture smashed every egg by round ${S.round}.`)
   :S.winBy==='time'?'Time ran out: the ostrich was out and the vulture never got every egg.':'The eggs were lost, but the vulture was already out.';
  return endBox(S,endArt(S,art),endTitle(S,title),endWhyText(S,why));}
-window.T3UI={mark,markHTML,marksAround,after,events,startLine,announce,hint,tag,waitMsg,nopeMsg,over,endBits,KIND};
+window.T3UI={mark,markHTML,marksAround,after,events,startLine,preferEggLine,announce,hint,tag,waitMsg,nopeMsg,over,endBits,KIND};
 document.readyState==='loading'?document.addEventListener('DOMContentLoaded',lobby):lobby();
 })();

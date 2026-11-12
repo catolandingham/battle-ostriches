@@ -17,6 +17,22 @@ t('hyena pounce: sense yes -> one extra 1-square move the same turn; sense no ->
   assert(g.three.sense); assert(T.hunterMove(g, [8, 2])); assert.equal(g.turn, 'hunter'); assert(g.three.pounce); assert.equal(T.hunterMoves(g).length, 5); assert(T.hunterMove(g, [7, 2])); assert.equal(g.turn, 'red');
   const h = setup('hyena', [8, 0]); T.vultureFly3(h, [4, 1]); T.ostrichAct3(h, 'step', [5, 5]); assert(!h.three.sense); T.hunterMove(h, [8, 1]); assert.equal(h.turn, 'red');
   const c = setup('hyena', [8, 3]); T.vultureFly3(c, [6, 3]); T.ostrichAct3(c, 'step', [5, 5]); T.hunterMove(c, [7, 3]); assert(T.hunterMove(c, [6, 3])); assert.equal(c.three.birds.red.catches, 1, 'pounce catches'); });
+t('hyena pounce is checked from the square the hunter is on now, not only the start of the turn', () => {
+  const g = setup('hyena', [4, 3]);
+  g.phase = 'play'; g.turn = 'hunter'; g.three.h = [4, 3]; g.vulture = [4, 5]; g.ostrich = [8, 6];
+  g.three.pounce = false; g.three.sense = true; // a bird was in range at the start
+  assert.equal(T.senses(g), true);
+  assert(T.hunterMove(g, [4, 1])); // walked 2 away; no bird is within 2 now
+  assert.equal(T.senses(g), false);
+  assert.equal(g.three.pounce, false, 'no pounce after walking out of range');
+  assert.equal(g.turn, 'red');
+  const h = setup('hyena', [4, 3]);
+  h.phase = 'play'; h.turn = 'hunter'; h.three.h = [4, 3]; h.vulture = [4, 5]; h.ostrich = [8, 6];
+  h.three.pounce = false; h.three.sense = true;
+  assert(T.hunterMove(h, [4, 4])); // stepped closer; a bird is still in range
+  assert.equal(h.three.pounce, true);
+  assert.equal(h.turn, 'hunter');
+});
 t('badger burrow: stay burrows, moving pops up and can catch on that move', () => { const g = setup('badger', [8, 3]); T.vultureFly3(g, [4, 1]); T.ostrichAct3(g, 'step', [7, 5]);
   T.hunterStay(g); assert(g.three.burrowed); T.vultureFly3(g, [4, 2]); T.ostrichAct3(g, 'step', [7, 4]); assert(!T.hunterSeenBy(g, 'blue')); g.three.birds.blue.catches = 1; assert(T.hunterMove(g, [7, 4])); assert(!g.three.burrowed); assert(T.isOut(g, 'blue'));
   const h = setup('hyena'); T.vultureFly3(h, [4, 1]); T.ostrichAct3(h, 'step', [5, 5]); T.hunterStay(h); assert(!h.three.burrowed, 'hyenas never burrow'); });
@@ -94,6 +110,28 @@ t('3 catches do not win; 4 catches do', () => {
   assert.ok(/made 4 catches|knocked out both birds/.test(g.endWhy), g.endWhy);
   assert.equal(g.three.extra, true); // the game ended on the extra turn; endHunter did not run
 });
+t('after the first knock-out the hyena may still pounce on the first of its two turns', () => {
+  const g = setup('hyena', [5, 2]); atHunter(g, [5, 2], [8, 6], [5, 4]);
+  g.three.birds.blue.out = true; g.three.birds.blue.why = 'caught'; g.three.birds.blue.catches = 2;
+  g.three.sense = T.senses(g); assert.equal(g.three.sense, true); assert.equal(g.three.extra, false);
+  assert(T.hunterMove(g, [5, 3]));
+  assert.equal(g.three.pounce, true, 'pounce is still allowed on the first turn');
+  assert.equal(g.three.extra, false); assert.equal(g.turn, 'hunter');
+  assert(T.hunterMove(g, [4, 3]));
+  assert.equal(g.turn, 'hunter'); assert.equal(g.three.extra, true); assert.equal(g.three.pounce, false);
+});
+t('after the first knock-out the hyena does not pounce on the second of its two turns', () => {
+  const g = setup('hyena', [5, 2]); atHunter(g, [5, 2], [8, 6], [5, 4]);
+  g.three.birds.blue.out = true; g.three.birds.blue.why = 'caught'; g.three.birds.blue.catches = 2;
+  g.three.sense = T.senses(g);
+  assert(T.hunterMove(g, [5, 3])); assert.equal(g.three.pounce, true);
+  assert(T.hunterStay(g)); // skip the pounce; the second turn starts
+  assert.equal(g.three.extra, true); assert.equal(g.turn, 'hunter');
+  assert.equal(g.three.pounce, false); assert.equal(g.three.sense, true); assert.equal(T.senses(g), true);
+  assert(T.hunterMove(g, [4, 4])); // still next to the vulture
+  assert.equal(g.three.pounce, false, 'no pounce on the second turn');
+  assert.equal(g.turn, 'red'); assert.equal(g.three.extra, false);
+});
 t('a starved bird does not give the hunter a double turn', () => {
   const g = setup('hyena', [0, 3]); g.hungerLeft = 1; T.vultureFly3(g, [4, 1]); T.ostrichAct3(g, 'step', [5, 5]);
   assert.equal(g.three.birds.blue.why, 'starved'); assert.equal(g.turn, 'hunter');
@@ -144,7 +182,13 @@ t('the second hunter turn gets a new 10s clock', () => {
   assert(T.hunterMove(room.g, [6, 2]));
   S.broadcast(room);
   assert.equal(room.g.three.extra, true);
-  assert.ok(room.clockKey && room.clockKey.endsWith(':2'), 'the extra turn keys a new clock: ' + room.clockKey);
+  const key2 = room.clockKey || room.clockHoldKey;
+  assert.ok(key2 && key2.endsWith(':2'), 'the extra turn keys a new clock: ' + key2);
+  assert.ok(key2 !== key1, 'the extra turn is not the same clock as the first');
+  if (room.clockHoldKey) {
+    assert.equal(room.deadline, null, 'the catch cartoon holds the 10s until the hunter is done watching');
+    assert.equal(S.surpriseDone(room, 'hunter'), true);
+  }
   assert.ok(room.deadline && room.deadline >= d1, 'the extra turn starts a fresh deadline');
   assert.equal(S.view3(room, 'hunter').h3.extra, true);
   assert.equal(S.view3(room, 'red').h3.extra, true);

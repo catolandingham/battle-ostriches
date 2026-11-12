@@ -4,6 +4,7 @@ const { WebSocketServer } = require('ws');
 const B = require('./game.js'), AI = require('./ai.js'), T = require('./three.js'), HU = require('./hunt.js'), HA = require('./huntai.js');
 const LB = require('./lobby.js');
 const RULES = require('./public/roles.js').rulesFromModules(); // the numbers on the role card, from the rules (plain numbers only, nothing hidden)
+const SUR = require('./public/surprise');
 const PORT = process.env.PORT || 3000, PUB = path.join(__dirname, 'public');
 const TYPES = { '.html': 'text/html', '.css': 'text/css', '.js': 'application/javascript', '.svg': 'image/svg+xml', '.mp4': 'video/mp4', '.jpg': 'image/jpeg', '.png': 'image/png' };
 const server = http.createServer((req, res) => {
@@ -145,6 +146,7 @@ function view3(room, role) {
 function broadcast3(room) {
   sched3(room); clock3(room);
   for (const r of SEATS3) { const p = room.players[r]; if (p && p.ws && p.ws.readyState === 1) p.ws.send(JSON.stringify({ t: 'state', state: view3(room, r) })); }
+  rememberViews(room, SEATS3, view3);
 }
 function act3(room, role, m) {
   const g = room.g, p = m.p;
@@ -180,15 +182,77 @@ function sched3(room) {
     if (!act3(room, r, m)) { console.error('AI3 illegal move', r, m); if (g.phase === 'play') T.timeout(g); }
     room.touched = Date.now(); broadcast(room); }, delay);
 }
+function isBotSeat(room, seat) {
+  if (!seat || !room) return false;
+  if (room.ai && room.ai === seat) return true;
+  if (Array.isArray(room.bots) && room.bots.includes(seat)) return true;
+  const p = room.players && room.players[seat];
+  return !!(p && p.bot);
+}
+function rememberViews(room, seats, viewFn) {
+  room.lastViews = {};
+  for (const s of seats) { try { room.lastViews[s] = viewFn(room, s); } catch (e) {} }
+}
+function clockDelayFor(room, viewFn, seat) {
+  if (!seat || isBotSeat(room, seat)) return 0;
+  const prev = room.lastViews && room.lastViews[seat];
+  let now = null;
+  try { now = viewFn(room, seat); } catch (e) { return 0; }
+  const pol = SUR.policy(now, prev);
+  const sees = !!(pol && pol.ev);
+  return SUR.clockDelayMs(pol, { isBot: false, isCurrent: true, seesEvent: sees });
+}
+function clearClock(room) {
+  clearTimeout(room.clockT); room.clockT = null;
+  room.clockKey = null; room.deadline = null; room.clockHoldKey = null;
+  room.clockFire = null; room.clockMsPending = null;
+}
+function armClock(room, k, ms, onFire, delay) {
+  if (room.clock === false) { clearClock(room); return; }
+  if (k && k === room.clockKey && room.deadline) return;
+  if (k && k === room.clockHoldKey) return;
+  clearClock(room);
+  if (!k) return;
+  const start = () => {
+    room.clockHoldKey = null;
+    room.clockKey = k;
+    room.deadline = Date.now() + ms;
+    room.clockFire = onFire;
+    room.clockMsPending = ms;
+    room.clockT = setTimeout(onFire, ms);
+  };
+  if (!delay) { start(); return; }
+  room.clockHoldKey = k;
+  room.clockMsPending = ms;
+  room.clockFire = onFire;
+  room.clockT = setTimeout(() => {
+    if (room.clockHoldKey !== k) return;
+    start();
+    broadcast(room);
+  }, delay);
+}
+function surpriseDone(room, seat) {
+  if (!room || !room.clockHoldKey || !room.clockFire) return false;
+  const g = room.g;
+  if (!g || g.phase !== 'play' || g.turn !== seat) return false;
+  const k = room.clockHoldKey, ms = room.clockMsPending, onFire = room.clockFire;
+  clearTimeout(room.clockT);
+  room.clockHoldKey = null;
+  room.clockKey = k;
+  room.deadline = Date.now() + ms;
+  room.clockT = setTimeout(onFire, ms);
+  return true;
+}
+function seatsOwned(room, ws) {
+  const out = [];
+  for (const s of Object.keys(room.players || {})) if (room.players[s] && room.players[s].ws === ws) out.push(s);
+  return out;
+}
 // 10-second shot clock on every play turn (3 players only); runs once all seats are filled and the hunter is picked
 function clock3(room) {
-  if (room.clock === false) { clearTimeout(room.clockT); room.clockKey = null; room.deadline = null; return; }
-  const g = room.g, k = g.phase === 'play' && ready3(room) ? g.round + ':' + g.turn + ':' + (g.three && g.three.extra ? '2' : '1') : null;
-  if (k === room.clockKey) return;
-  clearTimeout(room.clockT); room.clockKey = k; room.deadline = null; if (!k) return;
-  const ms = +process.env.BO_CLOCKMS || T.T3.clockMs;
-  room.deadline = Date.now() + ms;
-  room.clockT = setTimeout(() => { if (room.clockKey !== k || room.g !== g) return; room.clockKey = null; T.timeout(g); room.touched = Date.now(); broadcast(room); }, ms);
+  const g = room.g, k = room.clock !== false && g && g.phase === 'play' && ready3(room) ? g.round + ':' + g.turn + ':' + (g.three && g.three.extra ? '2' : '1') : null;
+  const delay = k ? clockDelayFor(room, view3, g.turn) : 0;
+  armClock(room, k, +process.env.BO_CLOCKMS || T.T3.clockMs, () => { if (room.clockKey !== k || room.g !== g) return; room.clockKey = null; T.timeout(g); room.touched = Date.now(); broadcast(room); }, delay);
 }
 // ===== 4 players (2v2: o1, o2 vs v1, v2) and 5 players (+ hunter). Rules in team.js, bots in teamai.js. =====
 const TT = require('./team.js'), TA = require('./teamai.js');
@@ -256,6 +320,7 @@ function viewT(room, seat) {
 function broadcastT(room) {
   schedT(room); clockT(room);
   for (const s of tseats(room.g)) { const p = room.players[s]; if (p && p.ws && p.ws.readyState === 1) p.ws.send(JSON.stringify({ t: 'state', state: viewT(room, s) })); }
+  rememberViews(room, tseats(room.g), viewT);
 }
 function actT(room, seat, m) {
   const g = room.g, p = m.p;
@@ -287,13 +352,9 @@ function schedT(room) {
     room.touched = Date.now(); broadcast(room); }, delay);
 }
 function clockT(room) {
-  if (room.clock === false) { clearTimeout(room.clockT); room.clockKey = null; room.deadline = null; return; }
-  const g = room.g, k = g.phase === 'play' && readyT(room) ? g.round + ':' + g.turn : null;
-  if (k === room.clockKey) return;
-  clearTimeout(room.clockT); room.clockKey = k; room.deadline = null; if (!k) return;
-  const ms = +process.env.BO_CLOCKMS || TT.TM.clockMs;
-  room.deadline = Date.now() + ms;
-  room.clockT = setTimeout(() => { if (room.clockKey !== k || room.g !== g) return; room.clockKey = null; TT.timeout(g); room.touched = Date.now(); broadcast(room); }, ms);
+  const g = room.g, k = room.clock !== false && g && g.phase === 'play' && readyT(room) ? g.round + ':' + g.turn : null;
+  const delay = k ? clockDelayFor(room, viewT, g.turn) : 0;
+  armClock(room, k, +process.env.BO_CLOCKMS || TT.TM.clockMs, () => { if (room.clockKey !== k || room.g !== g) return; room.clockKey = null; TT.timeout(g); room.touched = Date.now(); broadcast(room); }, delay);
 }
 
 // ===== 4 players "Hunters": ostrich (blue) + vulture (red) + hyena + badger. Rules in hunt.js, bots in huntai.js. =====
@@ -346,6 +407,7 @@ function viewH(room, seat) {
 function broadcastH(room) {
   schedH(room); clockH(room);
   for (const r of SEATSH) { const p = room.players[r]; if (p && p.ws && p.ws.readyState === 1) p.ws.send(JSON.stringify({ t: 'state', state: viewH(room, r) })); }
+  rememberViews(room, SEATSH, viewH);
 }
 function actH(room, seat, m) {
   const g = room.g;
@@ -366,13 +428,9 @@ function schedH(room) {
     room.touched = Date.now(); broadcast(room); }, delay);
 }
 function clockH(room) {
-  if (room.clock === false) { clearTimeout(room.clockT); room.clockKey = null; room.deadline = null; return; }
-  const g = room.g, k = g.phase === 'play' && readyH(room) ? g.round + ':' + g.turn + ':' + (HU.isH(g.turn) ? g.hunt.hs[g.turn].senseSeq : '') : null;
-  if (k === room.clockKey) return;
-  clearTimeout(room.clockT); room.clockKey = k; room.deadline = null; if (!k) return;
-  const ms = +process.env.BO_CLOCKMS || HU.TH.clockMs;
-  room.deadline = Date.now() + ms;
-  room.clockT = setTimeout(() => { if (room.clockKey !== k || room.g !== g) return; room.clockKey = null; HU.timeout(g); room.touched = Date.now(); broadcast(room); }, ms);
+  const g = room.g, k = room.clock !== false && g && g.phase === 'play' && readyH(room) ? g.round + ':' + g.turn + ':' + (HU.isH(g.turn) ? g.hunt.hs[g.turn].senseSeq : '') : null;
+  const delay = k ? clockDelayFor(room, viewH, g.turn) : 0;
+  armClock(room, k, +process.env.BO_CLOCKMS || HU.TH.clockMs, () => { if (room.clockKey !== k || room.g !== g) return; room.clockKey = null; HU.timeout(g); room.touched = Date.now(); broadcast(room); }, delay);
 }
 function viewerIsHost(room, v) {
   const roster = room && room.roster || [];
@@ -438,7 +496,7 @@ function lobbyBroadcast(room) {
   persist(room);
   for (const h of room.humans || []) if (h.ws && h.ws.readyState === 1) h.ws.send(JSON.stringify({ t: 'state', lobby: true, state: LB.view(room, h.id) }));
 }
-function stopClock(room) { clearTimeout(room.aiT); clearTimeout(room.clockT); room.aiT = room.clockT = null; room.clockKey = null; room.deadline = null; }
+function stopClock(room) { clearTimeout(room.aiT); room.aiT = null; clearClock(room); }
 function rebuildSame(room) {
   stopClock(room); room.mem = {};
   const id = room.setupId, hs = process.env.BO_H3START ? process.env.BO_H3START.split(',').map(Number) : undefined;
@@ -536,6 +594,13 @@ wss.on('connection', ws => {
     let m; try { m = JSON.parse(raw); } catch { return; }
     if (!m || typeof m !== 'object' || Array.isArray(m)) return;
     if (m.t === 'ping') return send({ t: 'pong' });
+    if (m.t === 'surprise-done') {
+      const b = ws._bo; if (!b || !b.room) return;
+      const room = b.room, owned = seatsOwned(room, ws);
+      const seat = (room.g && owned.includes(room.g.turn)) ? room.g.turn : b.seat;
+      if (surpriseDone(room, seat)) { room.touched = Date.now(); broadcast(room); }
+      return;
+    }
     if (m.t === 'create' && (m.friends || m.solo)) return openLobby(ws, m);
     if (m.t === 'create' && m.hunt) { const rh = createH(m, ws); ws._bo = { room: rh.room, seat: rh.role, hid: null }; send({ t: 'joined', code: rh.room.code, role: HU.isH(rh.role) ? 'hunter' : rh.role, token: rh.token, three: true }); return broadcast(rh.room); }
     if (m.t === 'create' && m.team) { const rt = createT(m, ws); ws._bo = { room: rt.room, seat: rt.role, hid: null }; send({ t: 'joined', code: rt.room.code, role: rt.role, token: rt.token, team: rt.room.n }); return broadcast(rt.room); }
@@ -666,4 +731,4 @@ setInterval(() => { const now = Date.now(); for (const [c, r] of rooms) if (now 
 server.listen(PORT, () => console.log('Battle Ostriches on http://localhost:' + PORT));
 // on shutdown (deploys send SIGTERM) save every live room right away
 process.on('SIGTERM', async () => { try { await Promise.all([...rooms.values()].map(r => ST.save(r))); ST.flushFile(); } catch {} process.exit(0); });
-module.exports = server; server.view = view; server.timersOn = timersOn; server.view3 = view3; server.create3 = create3; server.viewT = viewT; server.createT = createT; server.viewH = viewH; server.createH = createH; server.act3 = act3; server.actT = actT; server.actH = actH; server.rooms = rooms; server.broadcast = broadcast;
+module.exports = server; server.view = view; server.timersOn = timersOn; server.view3 = view3; server.create3 = create3; server.viewT = viewT; server.createT = createT; server.viewH = viewH; server.createH = createH; server.act3 = act3; server.actT = actT; server.actH = actH; server.rooms = rooms; server.broadcast = broadcast; server.surpriseDone = surpriseDone; server.clockDelayFor = clockDelayFor; server.isBotSeat = isBotSeat;
