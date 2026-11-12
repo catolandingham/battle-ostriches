@@ -51,7 +51,7 @@ const R = require('./public/roles.js'), THEMES = fs.readFileSync('./public/theme
 
   // a tap closes it and the game keeps going
   await V.click('#rolecard'); assert.equal(await shown(V).count(), 0, 'a tap closes the card');
-  assert.equal(await V.evaluate(() => localStorage.getItem('bo_card_vulture_hyena_3')), '1', 'the phone remembers this card');
+  assert.equal(await V.evaluate(() => localStorage.getItem('bo_card_vulture_hyena_3_p2')), '1', 'the phone remembers this card');
   await H.click('#rolecard .rok'); await A.click('#rolecard .rc');
   assert.equal(await shown(H).count() + await shown(A).count(), 0);
   await V.waitForSelector('#actions.mine', { state: 'attached' }); await cell(V, 4, 1).click();

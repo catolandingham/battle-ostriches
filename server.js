@@ -144,6 +144,7 @@ function view3(room, role) {
   v.h3 = h3; v.three = true; v.showTimers = timersOn(room); return stamp(room, v, role);
 }
 function broadcast3(room) {
+  noteHolds(room, SEATS3, view3);
   sched3(room); clock3(room);
   for (const r of SEATS3) { const p = room.players[r]; if (p && p.ws && p.ws.readyState === 1) p.ws.send(JSON.stringify({ t: 'state', state: view3(room, r) })); }
   rememberViews(room, SEATS3, view3);
@@ -182,6 +183,12 @@ function sched3(room) {
     if (!act3(room, r, m)) { console.error('AI3 illegal move', r, m); if (g.phase === 'play') T.timeout(g); }
     room.touched = Date.now(); broadcast(room); }, delay);
 }
+// A restart does not bring the hold timer back. Drop the saved flag so the shot clock can arm.
+function scrubSaved(saved) {
+  if (!saved) return saved;
+  for (const k of ['clockHoldKey', 'clockFire', 'clockMsPending', 'deadline', 'lastViews', 'holdUntil', 'clockT', 'clockKey', 'aiT', 'saveT']) delete saved[k];
+  return saved;
+}
 function isBotSeat(room, seat) {
   if (!seat || !room) return false;
   if (room.ai && room.ai === seat) return true;
@@ -193,14 +200,36 @@ function rememberViews(room, seats, viewFn) {
   room.lastViews = {};
   for (const s of seats) { try { room.lastViews[s] = viewFn(room, s); } catch (e) {} }
 }
+// A hit player's phone holds on "Tap to go on." even when someone else moves first.
+// Remember that hold per seat, so their own 10s clock waits when the turn arrives.
+function noteHolds(room, seats, viewFn) {
+  if (!room.holdUntil) room.holdUntil = {};
+  const now = Date.now();
+  for (const s of seats) {
+    if (isBotSeat(room, s)) { delete room.holdUntil[s]; continue; }
+    const prev = room.lastViews && room.lastViews[s];
+    let nowView = null;
+    try { nowView = viewFn(room, s); } catch (e) { continue; }
+    if (!nowView || nowView.phase === 'over') continue;
+    const pol = SUR.policy(nowView, prev);
+    if (pol && pol.affected) {
+      const until = now + (pol.animMs || 0) + SUR.HOLD_CAP_MS;
+      if (until > (room.holdUntil[s] || 0)) room.holdUntil[s] = until;
+    }
+  }
+}
+function holdLeftMs(room, seat) {
+  const until = room.holdUntil && seat && room.holdUntil[seat];
+  return until ? Math.max(0, until - Date.now()) : 0;
+}
 function clockDelayFor(room, viewFn, seat) {
   if (!seat || isBotSeat(room, seat)) return 0;
   const prev = room.lastViews && room.lastViews[seat];
   let now = null;
-  try { now = viewFn(room, seat); } catch (e) { return 0; }
+  try { now = viewFn(room, seat); } catch (e) { return holdLeftMs(room, seat); }
   const pol = SUR.policy(now, prev);
   const sees = !!(pol && pol.ev);
-  return SUR.clockDelayMs(pol, { isBot: false, isCurrent: true, seesEvent: sees });
+  return Math.max(SUR.clockDelayMs(pol, { isBot: false, isCurrent: true, seesEvent: sees }), holdLeftMs(room, seat));
 }
 function clearClock(room) {
   clearTimeout(room.clockT); room.clockT = null;
@@ -232,7 +261,9 @@ function armClock(room, k, ms, onFire, delay) {
   }, delay);
 }
 function surpriseDone(room, seat) {
-  if (!room || !room.clockHoldKey || !room.clockFire) return false;
+  if (!room || !seat) return false;
+  if (room.holdUntil) delete room.holdUntil[seat];
+  if (!room.clockHoldKey || !room.clockFire) return false;
   const g = room.g;
   if (!g || g.phase !== 'play' || g.turn !== seat) return false;
   const k = room.clockHoldKey, ms = room.clockMsPending, onFire = room.clockFire;
@@ -318,6 +349,7 @@ function viewT(room, seat) {
   return stamp(room, v, seat);
 }
 function broadcastT(room) {
+  noteHolds(room, tseats(room.g), viewT);
   schedT(room); clockT(room);
   for (const s of tseats(room.g)) { const p = room.players[s]; if (p && p.ws && p.ws.readyState === 1) p.ws.send(JSON.stringify({ t: 'state', state: viewT(room, s) })); }
   rememberViews(room, tseats(room.g), viewT);
@@ -405,6 +437,7 @@ function viewH(room, seat) {
   v.h3 = h3; v.three = true; v.showTimers = timersOn(room); return stamp(room, v, seat);
 }
 function broadcastH(room) {
+  noteHolds(room, SEATSH, viewH);
   schedH(room); clockH(room);
   for (const r of SEATSH) { const p = room.players[r]; if (p && p.ws && p.ws.readyState === 1) p.ws.send(JSON.stringify({ t: 'state', state: viewH(room, r) })); }
   rememberViews(room, SEATSH, viewH);
@@ -643,6 +676,7 @@ wss.on('connection', ws => {
       if (!r) { const saved = await ST.load(code).catch(() => null);
         if (saved && (saved.g || saved.lobby) && !rooms.has(code)) {
           saved.touched = Date.now();
+          scrubSaved(saved);
           for (const k in saved.players || {}) if (saved.players[k]) saved.players[k].ws = null;
           for (const h of saved.humans || []) h.ws = null;
           for (const a of saved.arrivals || []) a.ws = null;
@@ -731,4 +765,4 @@ setInterval(() => { const now = Date.now(); for (const [c, r] of rooms) if (now 
 server.listen(PORT, () => console.log('Battle Ostriches on http://localhost:' + PORT));
 // on shutdown (deploys send SIGTERM) save every live room right away
 process.on('SIGTERM', async () => { try { await Promise.all([...rooms.values()].map(r => ST.save(r))); ST.flushFile(); } catch {} process.exit(0); });
-module.exports = server; server.view = view; server.timersOn = timersOn; server.view3 = view3; server.create3 = create3; server.viewT = viewT; server.createT = createT; server.viewH = viewH; server.createH = createH; server.act3 = act3; server.actT = actT; server.actH = actH; server.rooms = rooms; server.broadcast = broadcast; server.surpriseDone = surpriseDone; server.clockDelayFor = clockDelayFor; server.isBotSeat = isBotSeat;
+module.exports = server; server.view = view; server.timersOn = timersOn; server.view3 = view3; server.create3 = create3; server.viewT = viewT; server.createT = createT; server.viewH = viewH; server.createH = createH; server.act3 = act3; server.actT = actT; server.actH = actH; server.rooms = rooms; server.broadcast = broadcast; server.surpriseDone = surpriseDone; server.clockDelayFor = clockDelayFor; server.isBotSeat = isBotSeat; server.scrubSaved = scrubSaved;

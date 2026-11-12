@@ -133,7 +133,11 @@ function ostrichAct3(g, a, p) {
 // Hunters walk T3.walk squares; the Pounce extra step is T3.pounce. They may pass over anything and land anywhere that is not wrecked.
 function hunterRange(g) { return g.three.pounce ? T3.pounce : T3.walk; }
 // the farthest this hunter can reach on any turn (what a bird has to stay out of)
-const hunterReach = g => T3.walk + (g.three.kind === 'hyena' ? T3.pounce : 0);
+// One turn, or both turns after the first catch knock-out (the birds do not move between them). Pounce is only on the first of those two.
+const hunterReach = g => {
+  const one = T3.walk + (g.three.kind === 'hyena' ? T3.pounce : 0);
+  return firstCaughtKo(g) ? one + T3.walk : one;
+};
 function hunterMoves(g) {
   if (g.phase !== 'play' || g.turn !== 'hunter') return [];
   const h = g.three.h, n = hunterRange(g), r = [];

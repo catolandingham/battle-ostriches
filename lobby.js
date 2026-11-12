@@ -15,7 +15,7 @@ const META = {
   o2: { name: 'Ostrich 2', sub: 'team ostrich' },
   v1: { name: 'Vulture 1', sub: 'team vulture' },
   v2: { name: 'Vulture 2', sub: 'team vulture' },
-  hyena: { name: 'Hyena', sub: 'Pounce · 2 catches' },
+  hyena: { name: 'Hyena', sub: '1 more when you miss' },
   badger: { name: 'Badger', sub: 'Burrow · 2 catches' },
 };
 const PREFER = {
@@ -34,7 +34,7 @@ function prefer(role, kind) {
 const ANIMAL = {
   ostrich: { name: 'Ostrich', sub: 'hide eggs', seats4: ['o1', 'o2'], seats4h: ['blue'] },
   vulture: { name: 'Vulture', sub: 'hunt eggs', seats4: ['v1', 'v2'], seats4h: ['red'] },
-  hyena: { name: 'Hyena', sub: 'Pounce · 2 catches', seats4: [], seats4h: ['hyena'] },
+  hyena: { name: 'Hyena', sub: '1 more when you miss', seats4: [], seats4h: ['hyena'] },
   badger: { name: 'Badger', sub: 'Burrow · 2 catches', seats4: [], seats4h: ['badger'] },
 };
 function animalOf(h) {
@@ -382,7 +382,7 @@ function view(room, hid) {
       const blocked = !!(holder && holder.id !== hid && (kind === id || singleSeat));
       const takenBy = blocked ? 'Taken by ' + holder.name : '';
       return { id, name: id === 'badger' ? 'Badger' : 'Hyena', kind: id,
-        mine, taken: blocked, takenBy, who: '', sub: mine ? 'YOU' : (takenBy || 'Open') };
+        mine, taken: blocked, takenBy, who: '', sub: mine ? 'YOU' : (takenBy || ANIMAL[id].sub) };
     });
   };
   let roles = (setupId === '4' || setupId === '4h') ? animalCards(playingHumans, setupId, hid)

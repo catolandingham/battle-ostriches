@@ -143,13 +143,15 @@ const near = (a, c) => Math.max(Math.abs(a[0] - c[0]), Math.abs(a[1] - c[1]));
       await shot(A,'kick-ostrich-2-mid');await shot(H,'kick-hyena-2-mid');await sleep(350);await shot(A,'kick-ostrich-2b-landing');await shot(H,'kick-hyena-2b-landing');await sleep(400);      await shot(A,'kick-ostrich-3-after');await shot(H,'kick-hyena-3-after');
       await A.waitForFunction(() => !document.querySelector('.push-motion,.partial-motion,#cutaway,#boardhold'), null, { timeout: 5000 });
       await H.waitForFunction(() => !document.querySelector('.push-motion,.partial-motion,#cutaway,#boardhold'), null, { timeout: 5000 });
+      for (const page of [A, H]) { const go = page.locator('#surprise-go button'); if (await go.count()) await go.click(); await page.waitForFunction(() => !(window.CUTAWAYS && CUTAWAYS.busy()), null, { timeout: 12000 }); }
       await A.emulateMedia({reducedMotion:'reduce'});await H.emulateMedia({reducedMotion:'reduce'});g.turn='blue';g.three.h=[4,3];bc();await sleep(100);act('blue',{a:'kick',p:[4,3]});await A.waitForSelector('.push-motion');
       if(await A.locator('.push-actor').count()||await H.locator('.push-actor').count())throw new Error('reduced-motion kick must have static trails only');
       await shot(A,'kick-ostrich-reduced');await shot(H,'kick-hyena-reduced');
       await A.waitForFunction(() => !document.querySelector('.push-motion,.partial-motion,#cutaway,#boardhold'), null, { timeout: 5000 });
+      for (const page of [A, H]) { const go = page.locator('#surprise-go button'); if (await go.count()) await go.click(); await page.waitForFunction(() => !(window.CUTAWAYS && CUTAWAYS.busy()), null, { timeout: 12000 }); }
       await A.emulateMedia({reducedMotion:'no-preference'});await H.emulateMedia({reducedMotion:'no-preference'});g.turn='blue';g.three.h=[4,3];g.marks['7,3']='stone';g.lastAction=null;g.lastKick=null;bc();await sleep(400);
       await shot(A,'kick-stopped-ostrich-0-before');await shot(H,'kick-stopped-hyena-0-before');act('blue',{a:'kick',p:[4,3]});await A.waitForSelector('.push-motion .push-actor');await H.waitForSelector('.push-motion .push-actor');
-      for(const page of [A,H]){const k=await page.evaluate(()=>UI._S().kick);if(k.moved!==2||JSON.stringify(k.to)!=='[6,3]'||k.trail.filter(Boolean).length!==3)throw new Error('stopped kick must show actual two-step landing');}
+      for(const page of [A,H]){const k=await page.evaluate(()=>UI._S().kick);if(!k||k.moved!==2||JSON.stringify(k.to)!=='[6,3]'||!k.trail||k.trail.filter(Boolean).length!==3)throw new Error('stopped kick must show actual two-step landing '+JSON.stringify(k));}
       await shot(A,'kick-stopped-ostrich-1-start');await shot(H,'kick-stopped-hyena-1-start');await sleep(350);await shot(A,'kick-stopped-ostrich-2-mid');await shot(H,'kick-stopped-hyena-2-mid');await sleep(350);await shot(A,'kick-stopped-ostrich-2b-landing');await shot(H,'kick-stopped-hyena-2b-landing');await sleep(400);await shot(A,'kick-stopped-ostrich-3-after');await shot(H,'kick-stopped-hyena-3-after');
       for(const p of [A,Vp,H])await p.context().close();
     }
@@ -157,13 +159,16 @@ const near = (a, c) => Math.max(Math.abs(a[0] - c[0]), Math.abs(a[1] - c[1]));
       const { A, Vp, H, g3, bc, act } = await lobby('hyena');
       const g=g3();g.turn='hunter';g.three.h=[3,3];g.three.pounce=false;g.vulture=[4,3];g.ostrich=[6,1];bc();await sleep(3400);
       await shot(Vp,'catch-scramble-0-before');act('hunter',{a:'hmove',p:[4,3]});
-      await Vp.waitForSelector('.push-actor',{timeout:3000});
+      const hunterNote=H.evaluate(()=>new Promise(resolve=>{const t0=performance.now();const tick=()=>{const e=document.getElementById('announce');if(e&&/caught the vulture/.test(e.textContent))return resolve(e.textContent);if(performance.now()-t0>5000)return resolve(e?e.textContent:'');setTimeout(tick,40);};tick();}));
+      await Vp.waitForSelector('.push-actor',{timeout:8000});
+      const lc=await Vp.evaluate(()=>UI._S().h3.lastCatch),steps=Math.max(Math.abs(lc.to[0]-lc.at[0]),Math.abs(lc.to[1]-lc.at[1]));
       const durations=await Vp.locator('.push-actor').first().evaluate(e=>e.getAnimations().map(a=>a.effect.getTiming().duration));
-      if(!durations.includes(2000))throw new Error('scramble motion must total two seconds');
+      if(!durations.includes(steps*600))throw new Error('scramble motion is 0.6s per square, got '+JSON.stringify(durations)+' for '+steps+' squares');
       if(await H.locator('.push-actor').count())throw new Error('hunter saw hidden scramble animation');
-      const lc=await Vp.evaluate(()=>UI._S().h3.lastCatch),n=Math.max(Math.abs(lc.to[0]-lc.at[0]),Math.abs(lc.to[1]-lc.at[1]));
-      if(await Vp.locator('#announce').textContent()!==`You were caught! You fled ${n} square${n===1?'':'s'}.`)throw new Error('caught bird notice');
-      if(await H.locator('#announce').textContent()!=='The hyena caught the vulture!')throw new Error('hunter notice');
+      const n=steps;
+      const birdLine=await Vp.evaluate(()=>{const e=document.getElementById('announce');return e?e.textContent:'(no announce) '+(document.getElementById('msgslot')||{}).innerText;});
+      if(birdLine!==`You were caught! You fled ${n} square${n===1?'':'s'}.`)throw new Error('caught bird notice: '+JSON.stringify(birdLine));
+      const hunterText=await hunterNote;if(hunterText!=='The hyena caught the vulture!')throw new Error('hunter notice: '+JSON.stringify(hunterText));
       await shot(Vp,'catch-scramble-1-start');bc();await sleep(300);if(!await Vp.locator('.push-actor').count())throw new Error('duplicate packet interrupted one-second motion');await shot(Vp,'catch-scramble-2-mid');await sleep(650);await shot(Vp,'catch-scramble-3-after');
       await quiet(Vp); await quiet(H);
       for (const [page, who] of [[Vp, 'bird'], [H, 'hunter']]) {
@@ -181,7 +186,7 @@ const near = (a, c) => Math.max(Math.abs(a[0] - c[0]), Math.abs(a[1] - c[1]));
       await shot(H, 'catch-hunter-after-no-square-mark');
       await Vp.emulateMedia({reducedMotion:'reduce'});
       const prev=await Vp.evaluate(()=>UI._S());g.three.birds.red.catches=0;g.turn='hunter';g.three.pounce=false;g.three.h=[3,3];g.vulture=[4,3];bc();await sleep(100);
-      act('hunter',{a:'hmove',p:[4,3]});await Vp.waitForSelector('.push-motion',{timeout:3000});
+      act('hunter',{a:'hmove',p:[4,3]});await Vp.waitForSelector('.push-motion',{timeout:8000});
       if(await Vp.locator('.push-actor').count())throw new Error('reduced motion must use static trail');
       await shot(Vp,'catch-scramble-reduced-motion');
       for(const p of [A,Vp,H])await p.context().close();

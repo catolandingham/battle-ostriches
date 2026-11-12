@@ -27,7 +27,7 @@ const shot = (p, n) => p.screenshot({ path: OUT + n + '.jpg', type: 'jpeg', qual
   await H.waitForSelector('#actions.mine', { state: 'attached' }); await H.waitForSelector('.cell.maybird', { state: 'attached' }); await H.waitForSelector('.h3pop.yes', { state: 'attached' }); await H.waitForTimeout(400); await shot(H, '3-sense');
   console.log('maybird', await H.locator('.cell.maybird').count()); assert.ok(await H.locator('.cell.maybird').count() >= 9, 'sense zone: rose "Bird may be here" dots'); 
   await H.waitForTimeout(800); await shot(H, '4-hunter-view');
-  await cell(H, 8, 4).click(); await H.waitForFunction(() => /Pounce: 1 more square/.test(document.getElementById('hint').textContent)); // hyena pounce: extra square
+  await cell(H, 8, 4).click(); await H.waitForFunction(() => /When you miss, move 1 more square/.test(document.getElementById('hint').textContent)); // hyena pounce: extra square
   await H.waitForTimeout(1200); await cell(H, 7, 5).click();
   const said = () => /caught|knocked/i.test((document.getElementById('announce') || {}).textContent || ''); // the catch line (the start-of-game line may be up first)
   await A.waitForFunction(said, null, { timeout: 15000 }); await H.waitForFunction(said, null, { timeout: 15000 }); await A.waitForTimeout(250); await shot(A, '5-catch-ostrich'); await shot(H, '5-catch-hunter');

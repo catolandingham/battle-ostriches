@@ -32,7 +32,12 @@ const at = { state: 'attached' };
   const bd = room.g.hunt.hs.badger.p, hy = [bd[0] - 1, bd[1]]; room.g.hunt.hs.hyena.p = hy.slice(); server.broadcast(room);
   await A.waitForFunction(p => document.querySelectorAll('#board .cell')[p[1] * 9 + p[0]].querySelector('.pc.ph'), hy, { timeout: 5000 });
   await A.locator('.cell').nth(hy[1] * 9 + hy[0]).click({ force: true });
-  for (const [P, name] of [[A, 'badger'], [Y, 'hyena']]) await P.waitForFunction(t => (document.getElementById('badgerline') || {}).textContent === t, BL.LINES.shove, { timeout: 12000 }).catch(e => { throw new Error(name + ' phone never showed the shove line: ' + e.message); });
+  for (const [P, name] of [[A, 'badger'], [Y, 'hyena']]) {
+    await P.waitForFunction(t => (document.getElementById('badgerline') || {}).textContent === t || !!document.getElementById('surprise-go'), BL.LINES.shove, { timeout: 15000 }).catch(e => { throw new Error(name + ' phone never reached the shove line: ' + e.message); });
+    const go = P.locator('#surprise-go button');
+    if (await go.count()) await go.click();
+    await P.waitForFunction(t => (document.getElementById('badgerline') || {}).textContent === t, BL.LINES.shove, { timeout: 8000 }).catch(e => { throw new Error(name + ' phone never showed the shove line: ' + e.message); });
+  }
   assert.equal(room.g.hunt.rival && room.g.hunt.rival.by, 'badger', 'the badger shoved the hyena');
   await shot(A, '2-shove-badger'); await shot(Y, '3-shove-hyena');
   console.log('errors', errs); assert.equal(errs.length, 0);

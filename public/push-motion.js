@@ -61,13 +61,24 @@
    const base=xy(first);let last=base;const frames=ev.points.map((p,i)=>{if(valid(p))last=xy(p);return {transform:`translate(${last.x-base.x}px,${last.y-base.y}px)`,opacity:valid(p)?1:0,offset:i/(ev.points.length-1)};});copy.animate(frames,{duration:sceneMs(),easing:'linear'});
   }setTimeout(layer._finish,sceneMs()+50);
  }
+ let pendingCause=[];
+ function causeLife(s){
+  const k=s&&s.kick,n=k&&Array.isArray(k.trail)?Math.max(1,k.trail.filter(valid).length-1):1;
+  return n*stepMs()+50;
+ }
+ function releaseCause(s){const drops=pendingCause.splice(0),life=causeLife(s);drops.forEach(drop=>setTimeout(drop,life));}
  function cause(s,prev,board){if(!prev)return;const h=s.h3||{},old=prev.h3||{},items=[];
   if(fresh(s.kick,prev.kick))items.push({by:s.kick.by||'blue',kick:true});
   if(fresh(s.stoneNote,prev.stoneNote)&&s.stoneNote.targets?.length)items.push({by:s.stoneNote.by||'red'});
   if(fresh(h.rival,old.rival))items.push({by:h.rival.by});if(fresh(h.burst,old.burst))items.push({by:'badger'});if(fresh(h.lastCatch,old.lastCatch))items.push({by:h.lastCatch.by||h.kind});
+  const wait=!!(root.CUTAWAYS&&CUTAWAYS.busy&&CUTAWAYS.busy());
   for(const item of items){const cls=item.by==='blue'||/^o[12]$/.test(item.by)?'.pc.po':item.by==='red'||/^v[12]$/.test(item.by)?'.pc.pv':'.pc.h'+item.by;
-   const p=positions(s)[item.by],cell=valid(p)?board.children[p[1]*s.cfg.cols+p[0]]:null,pc=cell&&cell.querySelector(cls),chip=document.querySelector('#h3bar [data-b="'+item.by+'"]'),el=pc||chip;if(!el)continue;el.classList.add('push-cause');setTimeout(()=>el.classList.remove('push-cause'),sceneMs()+50);
-   if(item.kick){const leg=document.createElement('i');leg.className='kick-leg';el.appendChild(leg);setTimeout(()=>leg.remove(),sceneMs()+50);}
+   const p=positions(s)[item.by],cell=valid(p)?board.children[p[1]*s.cfg.cols+p[0]]:null,pc=cell&&cell.querySelector(cls),chip=document.querySelector('#h3bar [data-b="'+item.by+'"]'),el=pc||chip;if(!el)continue;
+   const leg=item.kick?document.createElement('i'):null;if(leg){leg.className='kick-leg';el.appendChild(leg);}
+   el.classList.add('push-cause');
+   const drop=()=>{el.classList.remove('push-cause');if(leg&&leg.parentNode)leg.remove();};
+   // The slide waits behind the cartoon. Keep the cause mark until that slide is on screen.
+   if(wait)pendingCause.push(drop);else setTimeout(drop,causeLife(s));
   }
  }
  function stepMs(){return (root.SURPRISE&&root.SURPRISE.STEP_MS)||600;}
@@ -111,6 +122,7 @@
  let armed=null;
  function playArmed(job){
   const {s,prev,board,pending,current,stage}=job;
+  releaseCause(s);
   for(const ev of pending){
    hideLanding(ev,s,board);
    if(ev.points.some(p=>!valid(p))){partial(ev,s,board,stage,current);continue;}
@@ -156,6 +168,6 @@
   }
  }
  function go(){if(!armed)return;const job=armed;armed=null;playArmed(job);}
- function finish(){const stage=typeof document!=='undefined'&&document.getElementById('stage');if(!stage)return;stage.querySelectorAll('.push-motion,.partial-motion').forEach(l=>l._finish&&l._finish());armed=null;clearLanding();}
+ function finish(){const stage=typeof document!=='undefined'&&document.getElementById('stage');if(!stage)return;stage.querySelectorAll('.push-motion,.partial-motion').forEach(l=>l._finish&&l._finish());if(pendingCause.length)releaseCause(null);armed=null;clearLanding();}
  const api={path,positions,events,run,go,finish,sceneMs,stepMs};if(typeof module!=='undefined')module.exports=api;root.PUSH_MOTION=api;
 })(typeof window==='undefined'?globalThis:window);

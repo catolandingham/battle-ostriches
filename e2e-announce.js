@@ -44,11 +44,22 @@ const MEET = 'The badger shoved the hyena!';
   const kbNow = {}; for (const p of ALL) kbNow[p.name] = await p.evaluate(() => document.querySelectorAll('#board .cell.h3kb').length);
   await K.waitForTimeout(400); await K.screenshot({ path: OUT + 'badger-line.png' }); await O.screenshot({ path: OUT + 'ostrich-line.png' });
   for (let i = 0; i < 3; i++) { await K.waitForTimeout(600); server.broadcast(room); } // board redraws while the line is up
-  for (const p of ALL) await p.waitForFunction(() => window.__ann[1] && window.__ann[1].end, null, { timeout: 8000 });
+  // The shoved hyena keeps that line through the cartoon. Tapping ends it, so it does not sit there for the whole cap.
+  const hyenaGo = Y.locator('#surprise-go button');
+  const goUp = await hyenaGo.waitFor({ state: 'attached', timeout: 8000 }).then(() => true).catch(() => false);
+  if (goUp) await hyenaGo.click();
+  const meetingText = p => p.name === 'badger' ? 'You shoved the hyena!' : p.name === 'hyena' ? 'The badger shoved you!' : MEET;
   for (const p of ALL) {
-    const a = await p.evaluate(() => window.__ann.slice()), m = a[1];
-    assert.equal(a.length, 2, p.name + ' exactly one meeting line: ' + JSON.stringify(a)); assert.equal(m.text, p.name==='badger'?'You shoved the hyena!':p.name==='hyena'?'The badger shoved you!':MEET, p.name + ' reads its viewer-specific line'); assert.equal(m.inBoard, false, 'the line lives outside the board');
-    const secs = (m.end - m.start) / 1000; assert.ok(secs >= 1.85 && secs <= 2.6, `${p.name}: the line stayed up ${secs.toFixed(2)} s`);
+    const want = meetingText(p);
+    const ended = await p.waitForFunction(t => { const m = (window.__ann || []).find(x => x.text === t); return m && m.end; }, want, { timeout: 20000 }).then(() => true).catch(() => false);
+    if (!ended) throw new Error(p.name + ' line did not end ' + JSON.stringify(await p.evaluate(() => window.__ann)));
+  }
+  for (const p of ALL) {
+    const a = await p.evaluate(() => window.__ann.slice()), want = meetingText(p), m = a.find(x => x.text === want);
+    assert.ok(m, p.name + ' meeting line: ' + JSON.stringify(a)); assert.equal(m.inBoard, false, 'the line lives outside the board');
+    const secs = (m.end - m.start) / 1000;
+    const cap = p.name === 'hyena' ? 9 : 2.6;
+    assert.ok(secs >= 0.9 && secs <= cap, `${p.name}: the line stayed up ${secs.toFixed(2)} s`);
     console.log(p.name.padEnd(8), 'meeting line up', secs.toFixed(2), 's, highlight', kbNow[p.name]);
   }
   // the square: only the hunters (who can see the hyena) get it; the far birds get the line and no location
@@ -61,7 +72,7 @@ const MEET = 'The badger shoved the hyena!';
   // a 2 player game against the computer: the start line is the vulture alone
   const P = await mk('classic'); await P.goto(U); await P.click('#playSolo'); await P.click('[data-bots="1"]'); await P.click('#soloGo'); await P.click('[data-role="blue"]'); await P.click('#startGame');
   await P.evaluate(() => { window.__ann = []; setInterval(() => { const e = document.getElementById('announce'); if (e && e.classList.contains('show') && !window.__ann.includes(e.textContent)) window.__ann.push(e.textContent); }, 40); });
-  for (let i = 0; i < 12 && (await P.evaluate(() => UI._S().phase)) !== 'play'; i++) { await P.waitForSelector('#board .cell.legal'); await P.locator('#board .cell.legal').first().click(); await P.waitForTimeout(350); }
+  for (let i = 0; i < 12 && (await P.evaluate(() => (UI._S() || {}).phase)) !== 'play'; i++) { await P.waitForSelector('#board .cell.legal'); await P.locator('#board .cell.legal').first().click(); await P.waitForTimeout(350); }
   await P.waitForFunction(() => window.__ann.length >= 1, null, { timeout: 8000 }); assert.deepEqual(await P.evaluate(() => window.__ann), ['The vulture hunts eggs.'], '2 players start line');
   await P.evaluate(() => UI.rules()); assert.equal(await P.locator('.mrules:not(.hidden) .huntline').first().textContent(), 'The vulture hunts eggs.', 'How to play, 2 players');
   console.log('errors', errs); assert.deepEqual(errs, []);

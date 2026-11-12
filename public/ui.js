@@ -79,7 +79,9 @@ function stopHB(){clearInterval(hb);}
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&inRoom()&&(!ws||ws.readyState>1)){attempts=0;connect();}});
 let fitAt=0;function fitPhone(){const now=Date.now();if(now-fitAt<250)return;fitAt=now;const vv=window.visualViewport,h=Math.round(vv?vv.height:innerHeight)+'px',top=Math.round(Math.max(0,vv?vv.offsetTop:0))+'px',root=document.documentElement;root.style.setProperty('--vvh',h);root.style.setProperty('--vvo',top);}
 fitPhone();if(window.visualViewport)visualViewport.addEventListener('resize',fitPhone);window.addEventListener('resize',fitPhone);
-const send=o=>{try{tipBar(null)}catch(e){}return ws&&ws.readyState===1&&ws.send(JSON.stringify(o));};
+const send=o=>{try{tipBar(null)}catch(e){}
+ if(o&&o.t==='act'&&window.CUTAWAYS&&CUTAWAYS.busy&&CUTAWAYS.busy())CUTAWAYS.dismiss();
+ return ws&&ws.readyState===1&&ws.send(JSON.stringify(o));};
 function open(msg){pending=msg;attempts=0;if(ws&&ws.readyState===1)sendPending();else connect();}
 function tapper(el,fn){if(!el)return;let t=0;el.addEventListener('touchend',e=>{e.preventDefault();t=Date.now();fn();},{passive:false});el.addEventListener('click',()=>{if(Date.now()-t>600)fn();});}
 function home(){$('homeStep').classList.remove('hidden');$('passStep').classList.add('hidden');$('soloStep').classList.add('hidden');$('roomLobby').classList.add('hidden');status('');}

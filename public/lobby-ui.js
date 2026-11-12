@@ -89,7 +89,7 @@
       ${recover}
       ${roles ? `<div class="roles" aria-label="Roles">${roles}</div>` : ''}
       ${s.computers ? `<p class="statusline">Computers: ${esc(s.computers)}</p>` : ''}
-      ${s.showHunterKind ? `<p class="statusline">Computer hunter, if nobody claims it</p><div class="row hunterkind"><button type="button" data-hkind="hyena" class="${s.hunterKind === 'badger' ? '' : 'on'}" aria-pressed="${s.hunterKind === 'badger' ? 'false' : 'true'}">Hyena</button><button type="button" data-hkind="badger" class="${s.hunterKind === 'badger' ? 'on' : ''}" aria-pressed="${s.hunterKind === 'badger' ? 'true' : 'false'}">Badger</button></div>` : ''}
+      ${s.showHunterKind ? `<p class="statusline">Computer hunter, if nobody claims it</p><div class="row hunterkind"><button type="button" data-hkind="hyena" class="${s.hunterKind === 'badger' ? '' : 'on'}" aria-pressed="${s.hunterKind === 'badger' ? 'false' : 'true'}">Hyena<small>When you miss, move 1 more.</small></button><button type="button" data-hkind="badger" class="${s.hunterKind === 'badger' ? 'on' : ''}" aria-pressed="${s.hunterKind === 'badger' ? 'true' : 'false'}">Badger</button></div>` : ''}
       ${bots}
       ${s.host ? `<button type="button" class="big" id="startGame"${s.canStart ? '' : ' disabled'}>${esc(s.startLabel || 'Start game')}</button>` : '<p class="footnote">Waiting for the host to start.</p>'}`;
   }

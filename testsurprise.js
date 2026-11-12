@@ -214,6 +214,126 @@ for (const mode of ['3p', 'Hunters', '5p']) {
   assert.equal(SUR.clockDelayMs(polNow, { isBot: true, isCurrent: true, seesEvent: !!polNow }), 0);
 }
 
+function stop(room) { clearTimeout(room.clockT); clearTimeout(room.aiT); }
+
+// The hit player's own clock waits for their hold even when someone else moves first.
+{
+  const f = make(S, '3p'), g = f.g;
+  humans(f.room);
+  f.room.bots = ['red']; f.room.players.red.bot = true;
+  g.turn = 'hunter'; g.three.h = [3, 3]; g.three.pounce = false; g.three.sense = false;
+  g.ostrich = [4, 3]; g.vulture = [8, 6];
+  S.broadcast(f.room);
+  assert.ok(T.hunterMove(g, [4, 3]), 'hyena catches the ostrich');
+  assert.notEqual(g.turn, 'blue', 'the vulture moves before the caught ostrich');
+  S.broadcast(f.room);
+  assert.ok(f.room.holdUntil && f.room.holdUntil.blue > Date.now() + 8000, 'the ostrich hold is remembered');
+  assert.ok(!f.room.holdUntil.red, 'a bot in between takes no hold');
+  assert.equal(g.turn, 'red');
+  assert.ok(T.timeout(g));
+  S.broadcast(f.room);
+  assert.equal(g.turn, 'blue');
+  assert.ok(f.room.clockHoldKey, 'the ostrich clock does not run during their hold');
+  assert.equal(f.room.deadline, null);
+  assert.equal(S.surpriseDone(f.room, 'blue'), true, 'tapping ends the hold and starts the 10s');
+  assert.ok(!f.room.holdUntil.blue);
+  assert.ok(f.room.deadline > Date.now() + 8000);
+  stop(f.room);
+}
+{
+  const f = make(S, '3p'), g = f.g;
+  humans(f.room);
+  g.three.birds.blue.out = true; g.three.birds.blue.why = 'caught'; g.three.birds.blue.catches = 2; g.ostrich = [-99, -99];
+  g.turn = 'hunter'; g.three.h = [3, 3]; g.three.pounce = false; g.three.sense = false; g.three.extra = false;
+  g.vulture = [4, 3];
+  S.broadcast(f.room);
+  assert.ok(T.hunterMove(g, [4, 3]), 'hyena catches the vulture on the first of two turns');
+  assert.equal(g.three.extra, true); assert.equal(g.turn, 'hunter');
+  S.broadcast(f.room);
+  assert.ok(f.room.holdUntil && f.room.holdUntil.red > Date.now() + 8000, 'the vulture hold survives the extra turn');
+  assert.ok(T.hunterStay(g));
+  assert.equal(g.turn, 'red');
+  S.broadcast(f.room);
+  assert.ok(f.room.clockHoldKey && !f.room.deadline, 'after the double turn the vulture clock still waits');
+  stop(f.room);
+}
+for (const mode of ['Hunters', '5p']) {
+  const f = make(S, mode), g = f.g;
+  humans(f.room);
+  S.broadcast(f.room);
+  if (mode === 'Hunters') {
+    g.turn = 'hyena'; g.hunt.hs.hyena.p = [6, 5]; g.hunt.hs.hyena.pounce = false; g.hunt.hs.hyena.sense = false;
+    g.ostrich = [7, 5]; g.vulture = [0, 0]; g.hunt.hs.badger.p = [0, 6];
+    assert.ok(H.hunterMove(g, [7, 5]), 'hyena catches the ostrich');
+    assert.notEqual(g.turn, 'blue');
+    S.broadcast(f.room);
+    assert.ok(f.room.holdUntil && f.room.holdUntil.blue > Date.now(), mode + ' remembers the ostrich hold');
+    let guard = 0;
+    while (g.turn !== 'blue' && g.phase === 'play' && guard++ < 6) assert.ok(H.timeout(g));
+    S.broadcast(f.room);
+    assert.equal(g.turn, 'blue');
+    assert.ok(f.room.clockHoldKey && !f.room.deadline, mode + ' ostrich clock waits for the hold');
+  } else {
+    g.turn = 'hunter'; g.h.p = [6, 5]; g.h.pounce = false; g.h.sense = false;
+    g.b.o1.pos = [7, 5]; g.b.v1.pos = [0, 0]; g.b.o2.pos = [0, 6]; g.b.v2.pos = [8, 0];
+    assert.ok(TT.hunterMove(g, [7, 5]), 'hunter catches ostrich 1');
+    assert.notEqual(g.turn, 'o1');
+    S.broadcast(f.room);
+    assert.ok(f.room.holdUntil && f.room.holdUntil.o1 > Date.now(), '5p remembers ostrich 1 hold');
+    let guard = 0;
+    while (g.turn !== 'o1' && g.phase === 'play' && guard++ < 6) assert.ok(TT.timeout(g));
+    S.broadcast(f.room);
+    assert.equal(g.turn, 'o1');
+    assert.ok(f.room.clockHoldKey && !f.room.deadline, '5p ostrich clock waits for the hold');
+  }
+  stop(f.room);
+}
+{
+  const f = make(S, '3p'), g = f.g;
+  humans(f.room);
+  g.turn = 'hunter'; g.three.h = [3, 3]; g.three.pounce = false; g.three.sense = false;
+  g.ostrich = [4, 3]; g.vulture = [8, 6];
+  S.broadcast(f.room);
+  assert.ok(T.hunterMove(g, [4, 3]));
+  S.broadcast(f.room);
+  assert.equal(S.surpriseDone(f.room, 'blue'), false, 'the ostrich is not the one moving yet');
+  assert.ok(!f.room.holdUntil.blue, 'their tap clears the saved hold');
+  assert.ok(T.timeout(g));
+  S.broadcast(f.room);
+  assert.equal(g.turn, 'blue');
+  assert.ok(!f.room.clockHoldKey && f.room.deadline, 'after the tap, the clock is already running');
+  stop(f.room);
+}
+
+// A restart must not restore a hold with no timer, and must not keep every seat's view.
+{
+  const ST = require('./store');
+  const packed = JSON.parse(ST.pack({
+    code: 'ABCD', clockHoldKey: '3:blue:1', clockMsPending: 10000, deadline: 123,
+    lastViews: { blue: { eggs: [{ pos: [1, 1] }] } }, holdUntil: { blue: 9 }, clockKey: 'x', g: { phase: 'play' }
+  }));
+  assert.equal(packed.clockHoldKey, undefined);
+  assert.equal(packed.deadline, undefined);
+  assert.equal(packed.lastViews, undefined);
+  assert.equal(packed.holdUntil, undefined);
+  assert.equal(packed.clockKey, undefined);
+  assert.equal(packed.g.phase, 'play');
+  const saved = { clockHoldKey: '3:red:1', deadline: 5, lastViews: { red: 1 }, holdUntil: { red: 1 }, clockT: 1, g: { phase: 'play' } };
+  S.scrubSaved(saved);
+  assert.equal(saved.clockHoldKey, undefined);
+  assert.equal(saved.deadline, undefined);
+  assert.equal(saved.lastViews, undefined);
+  assert.equal(saved.holdUntil, undefined);
+  assert.equal(saved.g.phase, 'play');
+  const f = make(S, '3p');
+  humans(f.room);
+  f.room.clockHoldKey = '1:blue:1'; f.room.deadline = null; f.room.clockKey = null;
+  S.scrubSaved(f.room);
+  S.broadcast(f.room);
+  if (f.g.phase === 'play') assert.ok(!f.room.clockHoldKey || f.room.deadline || f.room.clockT, 'a scrubbed room can arm a clock');
+  stop(f.room);
+}
+
 S.close();
 console.log('PASS surprise: who is affected, Look out, 8s cap, clock hold, hidden redaction, wrap/team');
 process.exit(0);

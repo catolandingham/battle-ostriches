@@ -16,7 +16,7 @@
    pending.push(entry);
    if(!active&&timer==null)timer=schedule(pump,0);
   },drop(pred){if(typeof pred!=='function')return;pending=pending.filter(item=>!pred(item));
-   if(active&&pred(active)){if(timer!=null)cancel(timer);timer=null;hide(active);active=null;}
+   if(active&&pred(active)){if(timer!=null)cancel(timer);timer=null;hide(active);active=null;if(pending.length)timer=schedule(pump,0);}
   },clear(){if(timer!=null)cancel(timer);timer=null;if(active)hide(active);active=null;pending=[];},state:()=>({active,pending:pending.slice()})};
  }
  if(typeof module!=='undefined')module.exports={create};

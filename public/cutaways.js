@@ -180,6 +180,8 @@
     const card = document.getElementById('cutaway'); if (card) card.remove();
     document.documentElement.classList.remove('cutaway-up');
     document.documentElement.classList.remove('surprise-slide');
+    // Drop the held event line before the queued states paint, so the next line is not stuck behind it.
+    try { if (api.onDone) api.onDone(); } catch (e) {}
     emitSurpriseDone();
     while (queue.length && !(busyUntil > Date.now())) { const s = queue.shift(); try { apply && apply(s); } catch (e) { console.error(e); } }
   }
@@ -346,14 +348,17 @@
     const cartoon = scene && !reduced();
     const motionDelay = pol ? pol.motionDelay : (cartoon ? REVEAL : MS);
     const motionMs = pol ? pol.motionMs : 0;
-    const after = pol && pol.affected ? (pol.holdCap || 8000) : ((root.SURPRISE && SURPRISE.MIN_LINE_MS) || 1000);
+    // A hit that already ended the game does not add the 8s tap on top of the cartoon.
+    const ended = !!(S && S.phase === 'over');
+    const tapHold = !!(pol && pol.affected && !ended && !reduced());
+    const after = tapHold ? (pol.holdCap || 8000) : ((root.SURPRISE && SURPRISE.MIN_LINE_MS) || 1000);
     // Tap waits until the cartoon is gone and the real move, if any, has finished.
-    const total = motionDelay + motionMs + after;
-    busyUntil = Date.now() + total;
+    const total = motionDelay + motionMs + (tapHold ? after : 0);
+    busyUntil = Date.now() + (tapHold ? total : motionDelay + motionMs);
     const token = ++serial;
     nextCard = cartoon ? { scene, S, delay: pol && pol.lookout ? ((root.SURPRISE && SURPRISE.LOOKOUT_MS) || 1000) : 0 } : null;
     setTimeout(() => { if (token === serial) reveal(); }, motionDelay);
-    if (pol && pol.affected && !reduced()) {
+    if (tapHold) {
       setTimeout(() => { if (token === serial && !document.getElementById('cutaway')) showGo(token); }, motionDelay + motionMs);
       setTimeout(() => { if (token === serial) api.dismiss(); }, total);
     } else {

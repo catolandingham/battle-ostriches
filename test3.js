@@ -169,6 +169,16 @@ t('a game-ending catch does not start an extra turn', () => {
   assert.equal(g.turn, 'hunter'); // endHunter did not run, so extra stays off
   assert.equal(!!g.three.extra, false);
 });
+t('bot birds count both hunter turns after the first knock-out', () => {
+  const g = setup('hyena', [5, 2]);
+  assert.equal(T.hunterReach(g), T.T3.walk + T.T3.pounce);
+  g.three.birds.blue.why = 'caught'; g.three.birds.blue.out = true;
+  assert.equal(T.hunterReach(g), T.T3.walk + T.T3.pounce + T.T3.walk);
+  const b = setup('badger', [5, 2]);
+  assert.equal(T.hunterReach(b), T.T3.walk);
+  b.three.birds.red.why = 'caught'; b.three.birds.red.out = true;
+  assert.equal(T.hunterReach(b), T.T3.walk * 2);
+});
 t('the second hunter turn gets a new 10s clock', () => {
   const S = require('./server.js');
   const { room } = S.create3({ role: 'hunter', bots: ['red', 'blue'], kind: 'hyena' }, null);
