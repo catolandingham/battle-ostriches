@@ -1,10 +1,13 @@
-// One status at a time, about one second each. Batch a frame so personal events go first.
+// One status at a time. Each line stays up long enough to read: at least one second, and 0.3 seconds a word for a longer line (the same rule as SURPRISE.holdFor).
+// Batch a frame so personal events go first.
 (function(root){
- function create({show,hide,blocked=()=>false,schedule=setTimeout,cancel=clearTimeout,hold=1000}){
+ function create({show,hide,blocked=()=>false,schedule=setTimeout,cancel=clearTimeout,hold=1000,wordMs=300}){
+  const words=t=>(String(t||'').trim().match(/\S+/g)||[]).length;
+  const holdOf=item=>item.hold==null?Math.max(hold,words(item.text)*wordMs):item.hold;
   let pending=[],active=null,timer=null,serial=0;
   function pump(){timer=null;if(active||!pending.length)return;if(blocked()){timer=schedule(pump,100);return;}
    pending.sort((a,b)=>b.priority-a.priority||a.order-b.order);active=pending.shift();show(active);
-   timer=schedule(()=>{hide(active);active=null;timer=schedule(pump,0);},active.hold==null?hold:active.hold);
+   timer=schedule(()=>{hide(active);active=null;timer=schedule(pump,0);},holdOf(active));
   }
   return {add(item){if(!item||!item.text)return;const key=item.key||item.text;
    if(active&&active.key===key||pending.some(x=>x.key===key))return;
@@ -12,7 +15,7 @@
    // A new big moment replaces whatever line is already up, so the words and the card start together.
    // Anything still waiting stays waiting. It must not cover this moment's line.
    if(item.preempt){if(timer!=null)cancel(timer);timer=null;if(active)hide(active);active=entry;show(active);
-    timer=schedule(()=>{hide(active);active=null;timer=schedule(pump,0);},entry.hold==null?hold:entry.hold);return;}
+    timer=schedule(()=>{hide(active);active=null;timer=schedule(pump,0);},holdOf(entry));return;}
    pending.push(entry);
    if(!active&&timer==null)timer=schedule(pump,0);
   },drop(pred){if(typeof pred!=='function')return;pending=pending.filter(item=>!pred(item));

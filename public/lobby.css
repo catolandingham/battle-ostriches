@@ -110,3 +110,8 @@ html[data-theme="bw"] #roomLobby .hunterkind button[aria-pressed="true"] small:n
 #roomLobby .who.seats .openseat .opentxt{margin:0;opacity:.6;font-weight:700;color:inherit}
 #roomLobby .who.seats .addcomp{width:auto;flex:none;margin:0;padding:8px 14px;font-size:16px;font-weight:800}
 #roomLobby .who.seats .seatwho{margin:0;color:inherit;font-weight:400}
+
+#roomLobby .rejoinlist{display:flex;flex-direction:column;gap:8px;margin:12px 0}
+#roomLobby .rejoinlist .rejoin{width:100%}
+#roomLobby .rejoinrow{margin:12px 0 8px}
+#roomLobby .rejoinrow .big{flex:1}

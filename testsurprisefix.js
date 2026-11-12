@@ -60,7 +60,7 @@ function boardHTML(pieceAt) {
     };
   });
   assert.equal(look.text, '14');
-  assert.equal(look.font, '7px', 'the egg number stays the small in-egg size on the frozen board, not a large 14: ' + look.font);
+  assert.equal(look.font, '10px', 'the egg number stays the in-egg size on the frozen board, not a large 14: ' + look.font);
   assert.ok(look.inside, 'the egg number stays inside its own square during Look out!');
 
   await P.waitForTimeout(1200); // into the cartoon (Look out is 1s)

@@ -30,6 +30,18 @@
   if(fresh(h.burst,old.burst)&&valid(h.burst.to))add('hyena',a.hyena,h.burst.to,false,2);
   if(fresh(s.stoneNote,prev.stoneNote))for(const t of s.stoneNote.trails||[])if(t.points.some(valid)&&t.points.length>1)out.push({key:t.key,points:t.points});
   if(fresh(s.stoneNote,prev.stoneNote))for(const key in b)if(valid(a[key])&&!same(a[key],b[key]))add(key,a[key],b[key],false,2);
+  // A state applied when the surprise hold ends may include an ordinary move
+  // that happened while this phone was watching the slide (in Hunters, the
+  // shoved badger's turn starts at once, and a bot can walk during the cartoon).
+  // Ordinary walks have no surprise trail, so without this the piece snaps from
+  // the slide landing to its new square. Slide each moved visible piece from
+  // where the hold left it; if the squares are not a straight push, still lerp.
+  if(root.CUTAWAYS&&root.CUTAWAYS.flushing)for(const key in b){
+   if(!valid(a[key])||!valid(b[key])||same(a[key],b[key])||out.some(e=>e.key===key))continue;
+   add(key,a[key],b[key],false,3);
+   if(!out.some(e=>e.key===key))add(key,a[key],b[key],true,3);
+   if(!out.some(e=>e.key===key))out.push({key,points:[a[key].slice(),b[key].slice()]});
+  }
   return out;
  }
  function run(s,prev,board){if(typeof document==='undefined')return;const stage=document.getElementById('stage');if(!stage)return;

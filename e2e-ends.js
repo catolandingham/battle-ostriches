@@ -52,8 +52,8 @@ const CARDS = [
   await A.click('[data-role="blue"]'); await V.click('[data-role="red"]'); await H.click('[data-role="hyena"]');
   await A.click('#startGame');
   await A.waitForSelector('#board .cell'); await V.waitForSelector('#board .cell'); await H.waitForSelector('#board .cell');
-  for (const [x, y] of [[2, 1], [6, 1], [2, 5], [7, 6]]) { await cell(A, x, y).click(); await A.waitForTimeout(80); }
   for (const p of [A, V, H]) { await p.waitForSelector('#rolecard:not(.hidden)'); await p.click('#rolecard .rok'); }
+  for (const [x, y] of [[2, 1], [6, 1], [2, 5], [7, 6]]) { await cell(A, x, y).click(); await A.waitForTimeout(80); }
   await A.waitForTimeout(200);
 
   // --- every reminder card over the live board ---

@@ -11,8 +11,8 @@ const OSTI=ART.ostrich;
 const VULI=ART.vulture;
 const KIND={hyena:{n:'Hyena',art:HYENA,pw:'Pounce',pwTxt:'When you miss, move 1 more.'},
  badger:{n:'Badger',art:BADGER,pw:'Burrow',pwTxt:'Burrow: stay still to hide.'}};
-// The hyena small line is the sentence once. Prefixing the short name doubled it ("Pounce: Pounce:").
-const kindLine=k=>k==='hyena'?KIND[k].pwTxt:(KIND[k].pw+': '+KIND[k].pwTxt);
+// The small line is the sentence once. Prefixing the short name doubled a sentence that already started with that name.
+const kindLine=k=>KIND[k].pwTxt;
 const BN={blue:'Ostrich',red:'Vulture',hunter:'Hunter'};
 const hName=S=>S.h3&&S.h3.kind?KIND[S.h3.kind].n:'Hunter';
 const tname=(S,r)=>r==='hunter'?hName(S):r==='hyena'||r==='badger'?KIND[r].n:(S&&S.h3&&S.h3.team?{o1:'Ostrich 1',o2:'Ostrich 2',v1:'Vulture 1',v2:'Vulture 2'}[r]:0)||BN[r];
@@ -157,7 +157,7 @@ function waitMsg(S){return `Wait, it's the ${tname(S,S.turn)}'s turn.`;}
 function nopeMsg(S){return `Move up to ${S.h3.range} square${S.h3.range>1?'s':''}: tap a glowing square.`;}
 function hint(S,a){if(S.h3.team&&!hint.in){hint.in=1;try{return tHint(S,a);}finally{hint.in=0;}}const r=S.role,t=S.turn;
  if(r==='hunter'&&S.myTurn){const k=S.h3.kind;
-  a.innerHTML=S.pounce?'<button class="on" title="Skip this extra move. You will not catch the bird." onclick="UI.send({t:\'act\',a:\'hstay\'})">Stop</button>':`<button title="${k==='badger'?(S.burrowed?'Stay burrowed. Birds still cannot see you.':'Stay still to burrow.'):'Stay put and end your turn.'}" onclick="UI.send({t:'act',a:'hstay'})">${k==='badger'?(S.burrowed?'Stay':'Burrow'):'Stay'}</button>${S.canBurst?`<button title="Come up and shove the hyena back." onclick="UI.send({t:'act',a:'hburst'})">Burst out</button>`:''}`;
+  a.innerHTML=S.pounce?'<button class="on" title="Skip this extra move. You will not catch the bird." onclick="UI.send({t:\'act\',a:\'hstay\'})">Stay</button>':`<button title="${k==='badger'?(S.burrowed?'Stay burrowed. Birds still cannot see you.':'Stay still to burrow.'):'Stay put and end your turn.'}" onclick="UI.send({t:'act',a:'hstay'})">${k==='badger'?(S.burrowed?'Stay':'Burrow'):'Stay'}</button>${S.canBurst?`<button title="Come up and shove the hyena back." onclick="UI.send({t:'act',a:'hburst'})">Burst out</button>`:''}`;
   if(S.pounce)return 'When you miss, move 1 more square.';
   if(S.h3.extra)return 'Your turn again. Tap to move.';
   const burrowNote=k==='badger'&&!S.burrowed?'Tap to move, or Burrow. ':'Your turn. Tap to move. ';
@@ -183,7 +183,7 @@ function clock(S){let c=$('clock3');if(!c){c=document.createElement('div');c.id=
   c.lastChild.innerHTML='<svg class="clk" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 7.5V12l3 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> '+s+'s';c.classList.toggle('low',left<=4000);c.setAttribute('aria-label','Shot clock, '+s+' seconds');if(left>0)raf=requestAnimationFrame(tick);};
  cancelAnimationFrame(raf);tick();}
 function cellAt(board,S,p){return p&&p[0]>=0?board.children[p[1]*S.cfg.cols+p[0]]:null;}
-function noteBanner(cls,txt,force){const bn=$('banner');if(!bn)return;if(!force&&bn.textContent&&!bn.classList.contains('hidden'))return;bn.textContent=txt;bn.className=cls;}
+function noteBanner(cls,txt,force){const bn=$('banner');if(!bn)return;if(!force&&bn.textContent&&!bn.classList.contains('hidden'))return;if(window.BO_BANNER)BO_BANNER.set(txt,cls);else{bn.textContent=txt;bn.className=cls;}}
 // "The ostrich is out." once per elimination, for everyone still playing. outSeen remembers which birds were already out (a re-render, or opening
 // the page mid-game, never repeats it; a new game clears it). The line stays up a few seconds and is re-applied if the next state redraws the banner.
 const outSeen={};let outNote=null;

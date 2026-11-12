@@ -1,5 +1,5 @@
-// Shared check (Brian, approved full-board layout): an animal beside an egg, leaf or rock stays centred
-// and as big as it can be. Overlap means drawn ink touching (plus a ~2% gap), not the empty corners of the boxes.
+// Shared check (S2): an animal beside an egg sits down-right at about 60%. Beside a leaf or rock it sits up-left at about 64%.
+// Overlap means drawn ink touching (plus a ~2% gap), not the empty corners of the boxes.
 // Returns a Promise so callers always await it.
 module.exports = {
   SQUARE_CHECK: async () => {
@@ -91,16 +91,15 @@ module.exports = {
         if (b.l < cr.left - 0.5 || b.r > cr.right + 0.5 || b.t < cr.top - 0.5 || b.b > cr.bottom + 0.5) bad.push(k + ' leaves its square');
       }
 
-      // Lone animal stays centred; size floors match the approved look (egg ~55–65%, leaf/rock ~70–80%).
+      // One animal tucks away from the corner mark. Egg is top-left, so the animal sits down-right. A leaf or rock tucks bottom-right, so the animal sits up-left.
       if (pcs.length === 1) {
         const b = box(pcs[0]);
-        const cx = Math.abs((b.l + b.r) / 2 - (cr.left + cr.right) / 2);
-        const cy = Math.abs((b.t + b.b) / 2 - (cr.top + cr.bottom) / 2);
-        if (cx > 1.5 || cy > 1.5) bad.push('lone animal not centred beside its egg/leaf/rock');
+        const mx = (b.l + b.r) / 2, my = (b.t + b.b) / 2;
+        const cx = (cr.left + cr.right) / 2, cy = (cr.top + cr.bottom) / 2;
         const frac = b.w / cr.width;
         sizes.push(+frac.toFixed(3));
-        if (hasEgg && frac < 0.55) bad.push('animal with egg too small (' + frac.toFixed(2) + ')');
-        if (!hasEgg && hasCorner && frac < 0.68) bad.push('animal with leaf/rock too small (' + frac.toFixed(2) + ')');
+        if (hasEgg && (frac < 0.55 || frac > 0.70 || mx <= cx || my <= cy)) bad.push('animal with egg should be about 60% and down-right (' + frac.toFixed(2) + ')');
+        if (!hasEgg && hasCorner && (frac < 0.60 || frac > 0.72 || mx >= cx || my >= cy)) bad.push('animal with leaf/rock should be about 64% and up-left (' + frac.toFixed(2) + ')');
       } else {
         for (const pc of pcs) sizes.push(+(box(pc).w / cr.width).toFixed(3));
       }

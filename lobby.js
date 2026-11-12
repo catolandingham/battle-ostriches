@@ -427,12 +427,61 @@ function view(room, hid) {
     needKind, canStart,
   };
 }
+// PLACEHOLDER WORDS — pending Brian's approval.
+// The title "You're in" stays. The old running note repeated it in the body ("You're in. This game is already running…").
+const LATE_NOTE = "This game is already running. You'll play in the next one.";
+const LATE_NOTE_REJOIN = "This game is already running. If you were playing, pick your animal to come back. Otherwise you'll play in the next one.";
+const REJOIN_WORDS = {
+  confirmBody: 'Only pick this if this was you.',
+  confirmYes: 'Rejoin',
+  confirmNo: 'Not me',
+};
+const SEAT_LABEL = { blue: 'ostrich', red: 'vulture', hunter: 'hunter', hyena: 'hyena', badger: 'badger', o1: 'Ostrich 1', o2: 'Ostrich 2', v1: 'Vulture 1', v2: 'Vulture 2' };
+function hunterKindOf(room) {
+  const g = room && room.g;
+  return (g && g.three && g.three.kind) || (g && g.h && g.h.kind) || room.hunterKind || null;
+}
+function playSeats(room) {
+  if (room.hunt) return ['blue', 'red', 'hyena', 'badger'].filter(s => s in (room.players || {}));
+  if (room.team) return ['o1', 'v1', 'o2', 'v2', 'hunter'].filter(s => s in (room.players || {}));
+  if (room.three) return ['blue', 'red', 'hunter'];
+  return ['blue', 'red'];
+}
+function seatLabel(room, seat) {
+  if (seat === 'hunter') {
+    const kind = hunterKindOf(room);
+    if (kind === 'badger' || kind === 'hyena') return kind;
+  }
+  return SEAT_LABEL[seat] || seat;
+}
+function rejoinAction(label) {
+  return /^[A-Z]/.test(label) ? 'Rejoin as ' + label : 'Rejoin as the ' + label;
+}
+function confirmTitle(label) {
+  return rejoinAction(label) + '?';
+}
+function isOnline(p) { return !!(p && p.ws && p.ws.readyState === 1); }
+function offlineSeats(room) {
+  if (!room || !room.g || room.g.phase === 'over' || room.pass) return [];
+  const out = [];
+  for (const s of playSeats(room)) {
+    const p = room.players && room.players[s];
+    if (!p || p.bot) continue;
+    if (isOnline(p)) continue;
+    const label = seatLabel(room, s);
+    out.push({ seat: s, label, action: rejoinAction(label), confirm: confirmTitle(label) });
+  }
+  return out;
+}
 function benchView(room, a) {
   const running = !!(a.late && room.g && room.g.phase !== 'over');
+  const offline = running ? offlineSeats(room) : [];
+  const note = running ? (offline.length ? LATE_NOTE_REJOIN : LATE_NOTE) : 'You are in the room. The next game adds you.';
   return {
     lobby: true, between: true, code: room.code, solo: false, you: a.name, host: false,
-    note: running ? "You're in. This game is already running. You'll play in the next one." : 'You are in the room. The next game adds you.', clock: room.clock !== false, level: room.level || 'normal',
+    note, clock: room.clock !== false, level: room.level || 'normal',
     humans: [], roles: [], canStart: false, reason: null, botsWanted: 0, maxBots: 0, total: 0,
+    offline, rejoinWords: REJOIN_WORDS,
   };
 }
 // After a game: fold late joiners into the same setup when that is unique, otherwise back to the lobby.
@@ -465,4 +514,5 @@ function sameOrAdapt(state) {
 module.exports = {
   SETUPS, META, ANIMAL, infer, fourMode, animalOf, maxBots, clampBots, effective, seatsNow, isHost, reconcile, claim,
   setBots, setChoice, setRecovery, setClock, setLevel, setHunterKind, plan, view, benchView, sameOrAdapt,
+  LATE_NOTE, LATE_NOTE_REJOIN, REJOIN_WORDS, offlineSeats, playSeats, seatLabel, rejoinAction,
 };

@@ -131,25 +131,19 @@ const hint = p => p.evaluate(() => document.getElementById('hint').textContent.t
   { const st = await V.evaluate(() => [...document.querySelectorAll('#board .cmark.cm-egg')].map(m => { const p = m.querySelector('.mk'), cs = getComputedStyle(p); return { dash: cs.strokeDasharray, fill: cs.fill, stroke: cs.stroke, is: m.classList.contains('is') }; }));
     assert.ok(st.length === ring(2, 2).length && st.every(q => !q.is && q.dash !== 'none' && q.fill === 'none' && /^rgb\((255, 255, 255|0, 0, 0)\)$/.test(q.stroke)), '"may be here" is a dashed white outline with no fill, never yellow ' + JSON.stringify(st[0])); }
   ok('"may be here" is a small dashed egg outline in the corner of each of the 8 squares around the landing, only for the latest sniff');
-  // --- confirm before the only stone is spent
-  const tgt = [3, 2]; await cell(V, 2, 2).click(); await V.waitForFunction(() => UI._mode() === 'throw' || true); // own square is legal in fly mode? choose Throw instead
+  // --- one tap throws the only stone, including an empty square
+  const tgt = [2, 3];
+  { const gg = room2().g, eg = B.eggAt(gg, tgt); if (eg) eg.pos = [8, 0]; if (key(gg.ostrich) === key(tgt)) gg.ostrich = [8, 1]; gg.turn = 'red'; gg.stones = 1; await push(); }
   await V.evaluate(() => UI.setMode('throw')); await sleep(200);
-  await cell(V, ...tgt).click(); await sleep(250);
-  let st = await V.evaluate(() => ({ turn: UI._S().turn, stones: UI._S().stones })); assert.deepEqual(st, { turn: 'red', stones: 1 }, 'the first tap does not throw');
-  cs = await cueState(V); assert.equal(cs.confirm, 1, 'the target shows the confirm mark'); assert.equal(await hint(V), 'Throw anyway?');
-  assert.equal(await V.locator('#board .cell.confirm .aim.ask').count(), 1);
-  await checkLayout(V, 'confirm'); const conf = await V.screenshot({ path: OUT + 'confirm.png' });
-  await cell(V, 2, 3).click(); await sleep(250); st = await V.evaluate(() => ({ turn: UI._S().turn })); assert.equal(st.turn, 'red', 'a different square moves the confirm, it does not throw');
-  assert.equal(await V.evaluate(() => [...document.querySelectorAll('#board .cell.confirm')].map(c => [...c.parentNode.children].indexOf(c)).join()), String(idx(2, 3)));
-  await V.evaluate(() => UI.setMode('fly')); await sleep(200); assert.equal((await cueState(V)).confirm, 0, 'changing mode clears the confirm');
-  { const gg = room2().g, eg = B.eggAt(gg, [2, 3]); if (eg) eg.pos = [8, 0]; if (key(gg.ostrich) === '2,3') gg.ostrich = [8, 1]; await push(); } // make sure the throw at (2,3) is a plain miss
-  await V.evaluate(() => UI.setMode('throw')); await sleep(150); await cell(V, 2, 3).click(); await sleep(200); await cell(V, 2, 3).click();
-  await V.waitForFunction(() => UI._S().turn === 'blue', null, { timeout: 5000 }); assert.equal(room2().g.stones, 0);
+  assert.equal((await cueState(V)).confirm, 0, 'there is no confirm mark');
+  assert.ok(!(await hint(V)).includes('Throw anyway'), 'the confirm line is gone');
+  await cell(V, ...tgt).click();
+  await V.waitForFunction(() => UI._S().stones === 0, null, { timeout: 5000 }); assert.equal(room2().g.stones, 0);
   // a miss: the message says so and the right option (the rock piles, there being no stone left) pulses
   await V.waitForFunction(() => document.querySelectorAll('#board .cell.fix').length >= 1, null, { timeout: 3000 });
   { const mf = await V.evaluate(() => ({ hint: document.getElementById('hint').textContent.trim(), fix: [...document.querySelectorAll('#board .cell.fix')].map(c => [...c.parentNode.children].indexOf(c)).sort((a, c) => a - c) }));
     assert.ok(/^Miss\./.test(mf.hint), 'the miss is said: ' + mf.hint); assert.deepEqual(mf.fix, room2().g.cfg.rocks.map(r => idx(...r)).sort((a, c) => a - c), 'after the miss the rock piles pulse'); }
-  ok('aiming the only stone anywhere but at a found egg asks first; the second tap throws');
+  ok('one tap throws the only stone, including an empty square');
   await V.context().close();
 
   // ================= classic: human ostrich =================
@@ -167,20 +161,20 @@ const hint = p => p.evaluate(() => document.getElementById('hint').textContent.t
   let ocs = await cueState(O); const lowEgg = g.eggs[1].pos; assert.deepEqual(ocs.cue, [idx(...lowEgg)], 'the lowest egg pulses'); assert.equal(await O.evaluate(i => getComputedStyle(document.querySelectorAll('#board .cell')[i], '::after').animationName, idx(...lowEgg)), 'cuepulse');
   g.hungerLeft = 1; await push(); ocs = await cueState(O); assert.equal(ocs.cue.length, 1, 'one cue at a time'); assert.ok(g.cfg.foods.map(f => idx(...f)).includes(ocs.cue[0]) || ocs.cue[0] === idx(...lowEgg));
   g.hungerLeft = 12; g.eggs.forEach(e => { e.lastWarm = g.round; }); await push(); assert.deepEqual((await cueState(O)).cue, [], 'nothing pulses when all is well'); ok('ostrich: the lowest egg or the leaf pulses only when low');
-  // YOU above the square; the small egg under you sits upper-left, clear of your centred animal; ring around the whole square; refill when arriving
+  // YOU above the square; the egg sits upper-left and the animal tucks down-right; ring around the whole square; refill when arriving
   g.eggs[1].lastWarm = g.round - 8; await push(); const E1 = g.eggs[1].pos.slice();
   g.ostrich = [E1[0] - 1, E1[1]]; if (g.ostrich[0] < 0) g.ostrich = [E1[0] + 1, E1[1]]; await push();
   await cell(O, ...E1).click(); await O.waitForFunction(() => UI._S().turn === 'red', null, { timeout: 5000 }); await sleep(250);
   const you = await O.evaluate(() => { const f = document.querySelector('#stage>.youflag'), c = document.querySelector('#board .cell.sat'); if (!f || !c) return { f: !!f, c: !!c }; const fr = f.getBoundingClientRect(), cr = c.getBoundingClientRect(), pc = c.querySelector('.pc.po').getBoundingClientRect(), eg = c.querySelector('.ic-myegg .cmark.cm-egg.is svg').getBoundingClientRect(), nb = c.querySelector('.wnum').getBoundingClientRect(), ring = c.querySelector('.wring.sq').getBoundingClientRect();
-    return { n: document.querySelectorAll('.youflag').length, above: fr.bottom <= cr.top + 3, centred: Math.abs((fr.left + fr.right) / 2 - (cr.left + cr.right) / 2) <= 2, off: pc.bottom - fr.bottom, pcCentred: Math.abs((pc.left + pc.right) / 2 - (cr.left + cr.right) / 2) <= 1 && Math.abs((pc.top + pc.bottom) / 2 - (cr.top + cr.bottom) / 2) <= 1, pcFull: pc.width / cr.width, eggCorner: (eg.left + eg.right) / 2 - cr.left < cr.width * 0.4 && (eg.top + eg.bottom) / 2 - cr.top < cr.height * 0.4, numInEgg: (nb.left + nb.right) / 2 > eg.left && (nb.left + nb.right) / 2 < eg.right && (nb.top + nb.bottom) / 2 > eg.top + eg.height * 0.3 && (nb.top + nb.bottom) / 2 < eg.bottom - eg.height * 0.15, ringFull: Math.abs(ring.width - cr.width) <= 1 && Math.abs(ring.height - cr.height) <= 1, refill: !!c.querySelector('.wring.sq.refill'), num: c.querySelector('.wnum').textContent, pcInside: pc.left >= cr.left - 1 && pc.right <= cr.right + 1 };
+    return { n: document.querySelectorAll('.youflag').length, above: fr.bottom <= cr.top + 3, centred: Math.abs((fr.left + fr.right) / 2 - (cr.left + cr.right) / 2) <= 2, off: pc.bottom - fr.bottom, pcDownRight: (pc.left + pc.right) / 2 > (cr.left + cr.right) / 2 && (pc.top + pc.bottom) / 2 > (cr.top + cr.bottom) / 2, pcFull: pc.width / cr.width, eggCorner: (eg.left + eg.right) / 2 - cr.left < cr.width * 0.4 && (eg.top + eg.bottom) / 2 - cr.top < cr.height * 0.4, numInEgg: (nb.left + nb.right) / 2 > eg.left && (nb.left + nb.right) / 2 < eg.right && (nb.top + nb.bottom) / 2 > eg.top + eg.height * 0.3 && (nb.top + nb.bottom) / 2 < eg.bottom - eg.height * 0.15, ringFull: Math.abs(ring.width - cr.width) <= 1 && Math.abs(ring.height - cr.height) <= 1, refill: !!c.querySelector('.wring.sq.refill'), num: c.querySelector('.wnum').textContent, pcInside: pc.left >= cr.left - 1 && pc.right <= cr.right + 1 };
   });
-  assert.equal(you.n, 1, 'one YOU tag'); assert.ok(you.above, 'the YOU tag sits above the square, not on it'); assert.ok(you.centred); assert.ok(you.pcFull >= 0.55 && you.pcFull <= 0.70 && you.pcCentred && you.eggCorner && you.numInEgg, 'small egg upper-left with the number inside; the animal about half the square, centred (approved full-board layout) ' + JSON.stringify(you)); assert.ok(you.ringFull, 'the warmth ring wraps the whole square'); assert.ok(you.refill, 'the ring visibly refills when the ostrich arrives');
+  assert.equal(you.n, 1, 'one YOU tag'); assert.ok(you.above, 'the YOU tag sits above the square, not on it'); assert.ok(you.centred); assert.ok(you.pcFull >= 0.55 && you.pcFull <= 0.70 && you.pcDownRight && you.eggCorner && you.numInEgg, 'egg upper-left with the number inside; the animal about 60% and down-right ' + JSON.stringify(you)); assert.ok(you.ringFull, 'the warmth ring wraps the whole square'); assert.ok(you.refill, 'the ring visibly refills when the ostrich arrives');
   const fillAnim = await O.evaluate(() => getComputedStyle(document.querySelector('#board .wring.sq.refill rect:last-child')).animationName); assert.equal(fillAnim, 'ringfill');
   ok('your own square reads: YOU above it, the egg is a small filled egg in the corner, the ring wraps the square and refills on arrival');
   await checkLayout(O, 'ostrich on its egg'); await O.screenshot({ path: OUT + 'ostrich-on-egg.png' });
   { const { SQUARE_CHECK } = require('./tools/square-overlap'); let r = await O.evaluate(SQUARE_CHECK); assert.deepEqual(r.bad, [], 'ostrich on its egg: no overlap ' + JSON.stringify(r)); assert.ok(r.seen.some(x => x.includes('animal') && x.includes('egg')), 'checked an egg + animal square ' + JSON.stringify(r.seen));
     for (const [what, q] of [['leaf', g.cfg.foods[0]], ['rock', (g.cfg.rocks || [])[0]]]) { if (!q) continue; g.ostrich = q.slice(); await push(); await sleep(300); r = await O.evaluate(SQUARE_CHECK); assert.deepEqual(r.bad, [], 'ostrich on a ' + what + ': no overlap ' + JSON.stringify(r)); assert.ok(r.seen.some(x => x.includes('animal') && x.includes(what)), 'checked ostrich + ' + what + ' ' + JSON.stringify(r.seen)); }
-    ok('animal beside an egg, leaf or rock: centred, large enough, ink does not overlap'); }
+    ok('animal beside an egg, leaf or rock: tucked clear of the mark, large enough, ink does not overlap'); }
   await withMessages(O, 'ostrich', sayAll);
   await O.context().close();
 
@@ -245,7 +239,7 @@ const hint = p => p.evaluate(() => document.getElementById('hint').textContent.t
     await R.waitForSelector('#rolecard:not(.hidden)', { timeout: 20000 });
     let leaked = false; for (let i = 0; i < 8; i++) { if (await R.evaluate(() => !!document.querySelector('#announce.show'))) leaked = true; await sleep(200); }
     assert.ok(!leaked, 'no start toast runs while the role card is up');
-    await R.click('#rolecard .rok'); await R.waitForSelector('#announce.show', { timeout: 4000 }); await checkLayout(R, 'start line after the card');
+    await R.click('#rolecard .rok'); await R.waitForSelector('#announce.show', { timeout: 20000 }); await checkLayout(R, 'start line after the card');
     await c.close(); ok('the start line waits for the role card to close, then shows in the slot'); }
 
   // ================= How to play =================

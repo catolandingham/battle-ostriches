@@ -138,4 +138,30 @@ ok('hunter cards follow the goal number in 3 players; other modes use the approv
   assert.equal(R.roleCard('hyena', null, '4h').goal, 'Hunters win when both birds are out. You win if you knocked out more birds than the badger.');
 });
 
+ok('no visible label repeats its own prefix', () => {
+  const fs = require('fs');
+  const files = ['public/three-ui.js', 'public/ui.js', 'public/lobby-ui.js', 'public/index.html', 'public/roles.js', 'lobby.js'];
+  const re = /([A-Za-z][A-Za-z' ]{0,24}): \1:/;
+  for (const f of files) {
+    const src = fs.readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
+    const m = src.match(re);
+    assert.ok(!m, f + ' repeats a prefix: ' + (m && m[0]));
+  }
+  const ui = fs.readFileSync('public/three-ui.js', 'utf8');
+  const fn = ui.match(/const kindLine=k=>([^;\n]+)/);
+  assert.ok(fn && /pwTxt/.test(fn[1]) && !/\bpw\b\s*\+/.test(fn[1]), 'kindLine shows the sentence once: ' + (fn && fn[1]));
+  const KIND = { hyena: { pw: 'Pounce', pwTxt: 'When you miss, move 1 more.' }, badger: { pw: 'Burrow', pwTxt: 'Burrow: stay still to hide.' } };
+  for (const k of Object.keys(KIND)) assert.ok(!KIND[k].pwTxt.startsWith(KIND[k].pw + ': ' + KIND[k].pw), KIND[k].pwTxt);
+  assert.equal(KIND.badger.pwTxt, 'Burrow: stay still to hide.');
+});
+
+ok('the pounce extra move button says Stay and still sends hstay', () => {
+  const fs = require('fs');
+  const ui = fs.readFileSync('public/three-ui.js', 'utf8');
+  const ring = fs.readFileSync('public/ring.js', 'utf8');
+  assert.ok(/Skip this extra move[\s\S]{0,120}>Stay</.test(ui), 'the pounce button says Stay');
+  assert.ok(!/>Stop</.test(ui), 'Stop is not a button on that screen');
+  assert.ok(/if \(S\.pounce\) return \[\{ id: 'hstay', label: 'Stay', detail: 'Skip the extra move\.'/.test(ring));
+});
+
 console.log(`PASS testroles (${n} groups)`); process.exit(0);

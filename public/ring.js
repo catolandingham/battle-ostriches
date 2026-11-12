@@ -31,7 +31,7 @@
     const C = S.cfg || {};
     if (S.role === 'hunter') {
       const k = (S.h3 && S.h3.kind) || S.kind || 'hyena';
-      if (S.pounce) return [{ id: 'hstay', label: 'Stop', detail: 'Skip the extra move.', enabled: true, run: 'hstay' }];
+      if (S.pounce) return [{ id: 'hstay', label: 'Stay', detail: 'Skip the extra move.', enabled: true, run: 'hstay' }];
       if (k === 'badger') {
         if (S.burrowed) return [{ id: 'hstay', label: 'Stay', detail: 'Stay hidden.', enabled: true, run: 'hstay' }].concat(S.canBurst ? [{ id: 'hburst', label: 'Burst out', detail: 'Come up and shove the hyena away.', enabled: true, run: 'hburst' }] : []);
         return [{ id: 'hstay', label: 'Burrow', detail: 'Stay still to hide.', enabled: true, run: 'hstay' }];

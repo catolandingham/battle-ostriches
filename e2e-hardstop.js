@@ -38,7 +38,7 @@ const OUT = 'shots/hardstop/'; fs.mkdirSync(OUT, { recursive: true });
   assert.equal((await A.textContent('#banner')).trim(), `Leaf in ${walk} move${walk === 1 ? '' : 's'} · ${left} left`);
   assert.ok(await A.locator('#banner.hungry').count() === 1, 'food warning uses the hungry banner');
   L = await legal(); assert.ok(L.length && L.every(p => gd(p, food) < gd(o, food)), 'hungry: only closer moves'); await shot('3-hungry-go-eat.jpg');
-  await A.evaluate(w => { UI._S().hungerLeft = w + 2; UI._rr(); }, walk); assert.ok(!/Leaf in/.test(await A.textContent('#banner')), 'no food warning while there is time to spare');
+  await A.evaluate(w => { UI._S().hungerLeft = w + 2; UI._rr(); }, walk); await A.waitForFunction(() => !/Leaf in/.test(document.getElementById('banner').textContent), null, { timeout: 4000 }).catch(() => assert.fail('no food warning while there is time to spare')); // the old line stays up long enough to read first
   await A.evaluate(() => localStorage.setItem('bo_g_hungry', '1')); await A.evaluate(() => { UI._S().hungerLeft = 13; UI._rr(); });
   // 3) cold egg: NOT forced. First time <=8 rounds: loud pulse + warning, escalating; afterward subtle pulse only.
   const setCold = n => A.evaluate(n => { const S = UI._S(); S.eggs.find(e => e.pos[0] === 3).coldIn = n; UI._rr(); }, n);
@@ -55,7 +55,7 @@ const OUT = 'shots/hardstop/'; fs.mkdirSync(OUT, { recursive: true });
   await A.click('#skipGuide'); assert.equal(await A.evaluate(() => localStorage.getItem('bo_hs_off')), '1');
   assert.ok(!(await A.locator('#hint.guide').count()) && !(await A.locator('.cell.gpath,.cell.gtarget,.cell.gloud,.cell.gcool').count()), 'guides gone after skip');
   assert.ok((await legal()).length >= 3, 'free moves after skip'); await A.evaluate(() => { UI._S().hungerLeft = 13; UI._rr(); });
-  await A.click('#helpBtn'); assert.match(await A.textContent('#guideToggle'), /OFF/); await A.click('#guideToggle');
+  await A.click('#moreBtn'); await A.click('#menuHelp'); assert.match(await A.textContent('#guideToggle'), /OFF/); await A.click('#guideToggle');
   assert.equal(await A.evaluate(() => localStorage.getItem('bo_hs_off')), null, 'guides back on'); await A.evaluate(() => UI.closeRules());
   console.log('errors', errs); assert.equal(errs.length, 0);
   await b.close(); server.close(); console.log('PASS e2e-hardstop'); process.exit(0);

@@ -8,7 +8,7 @@ const server = require('./server.js');
   const b = await webkit.launch(), errs = [];
   const mk = async () => {
     const c = await b.newContext({ ...devices['iPhone 13'] }); const p = await c.newPage();
-    await p.addInitScript(() => { for (const k of ['bo_hs_off', 'bo_tut_seen', 'bo_walk_blue', 'bo_walk_red', 'bo_tips_off']) localStorage.setItem(k, '1'); });
+    await p.addInitScript(() => { for (const k of ['bo_hs_off', 'bo_tut_seen', 'bo_walk_blue', 'bo_walk_red', 'bo_tips_off', 'bo_card_off']) localStorage.setItem(k, '1'); });
     p.on('pageerror', e => errs.push(e.message)); return p;
   };
   const A = await mk();
