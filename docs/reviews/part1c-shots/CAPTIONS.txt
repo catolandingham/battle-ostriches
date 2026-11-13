@@ -1,3 +1,5 @@
+The PNG files named below are not in the working tree. Recover them from commit 548f054995d139568c4613e4db85ee2629ee3bee. See docs/reviews/README.md.
+
 All shots: phone size 390x664, classic theme, real play (each state was reached by playing the turns). Order is the order a player meets them.
 
 01-hyena-a-start-of-turn-bird-sensed.png: The hyena's turn starts and it smells a bird; a dashed bird in the corner of each square within 2 means a bird may be there.

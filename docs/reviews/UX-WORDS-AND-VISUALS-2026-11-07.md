@@ -399,4 +399,4 @@ Optional, after these: fog of war for birds (squares more than 2 away a little d
 - [Fog of war](https://en.wikipedia.org/wiki/Fog_of_war), Wikipedia
 - [Rulebook design: structure, clarity and examples of play](https://neutronium-landing.pages.dev/blog/board-game-rulebook-design)
 
-Evidence files: `ux-shots-2026-11-07/themes-*.png` (one sheet per view, 13 themes each) and `zoom-own-square.png`.
+Evidence files: `ux-shots-2026-11-07/themes-*.png` (one sheet per view, 13 themes each) and `zoom-own-square.png`. Those sheets were never committed here. The handover says they stay on Drive.

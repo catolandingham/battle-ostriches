@@ -1,5 +1,7 @@
 # Code review, Battle Ostriches, 2026-11-06 (one page)
 
+> Point-in-time review of commit `6e7c072` (2026-11-06). It is not a description of current `main`.
+
 Reviewer: Agent B (Claude), about 15 minutes, repo at `main` = `6e7c072` (37 commits, 2026-11-02 to 2026-11-05, same agent workflow as Space Snack Quest). Nothing committed. **[ran]** = I executed it here. **[read]** = I read the code.
 
 ## What it is [read]

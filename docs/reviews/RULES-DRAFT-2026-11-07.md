@@ -1,5 +1,7 @@
 # Battle Ostriches rules draft, 2026-11-07
 
+> Superseded. The rules source of truth is [RULEBOOK-v2-2026-11-07.md](RULEBOOK-v2-2026-11-07.md). This draft is the hypothesis version 2 was written from.
+
 Written by Claude for Brian from today's decisions (DECISIONS.md) and simulations (SIMULATIONS-2026-11-07.md). This is the best current hypothesis, not what is live. Items marked **DECIDE** need Brian's call. Numbers in [brackets] come from the rules constants and appear on the role cards.
 
 ## Status as of 2026-11-07, about 9 PM PT

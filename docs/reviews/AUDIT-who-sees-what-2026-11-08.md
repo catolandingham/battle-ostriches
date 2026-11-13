@@ -1,5 +1,7 @@
 # Who can see what, 2026-11-08
 
+> Pictures named in this file are not in the working tree. Recover them from commit `548f054995d139568c4613e4db85ee2629ee3bee`. See [docs/reviews/README.md](README.md).
+
 The rules in `docs/reviews/RULEBOOK-v2-2026-11-07.md` are the source of truth, including the sight table in section 10 and the announcements in section 11.
 
 Checked by playing each mode on this computer and reading the message the server sends to each seat. That message is what the phone receives. The pictures are the same iPhone size as real play (390 by 664). No game code was changed. A fix for the hunter egg leak is already in another pull request.
@@ -24,7 +26,7 @@ The original audit below predates Brian's decisions. Full read-only god view for
 
 The scramble landing itself is hidden from hunters during play. That part is working.
 
-![Hyena's phone after the vulture finds an egg. The egg is drawn. The birds are not.](busy-2026-11-08/3p-hunter-sees-found-egg.jpg)
+Hyena's phone after the vulture finds an egg. The egg is drawn. The birds are not. (`busy-2026-11-08/3p-hunter-sees-found-egg.jpg`)
 
 ## How a phone is filtered
 
