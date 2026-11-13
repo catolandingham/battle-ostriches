@@ -1,11 +1,13 @@
 # L2 lobby + all-white default look review
 
+> Pictures named in this file are not in the working tree. Recover them from commit `548f054995d139568c4613e4db85ee2629ee3bee`. See [docs/reviews/README.md](../README.md).
+
 - Real-play WebKit phone shots: 390 × 664 CSS pixels, 2× pixel density.
-- [Every-screen contact sheet](00-contact-sheet.png)
-- [Before / after: wrecked square, How to play, vulture + egg, ostrich + egg](before-after-steer3.png)
-- [Earlier before / after](before-after.png), [close-ups](closeups.png)
-- [Eggs at real size](eggs-closeup.png), made with `node tools/icon-tests/make-eggs.js` then `node tools/icon-tests/shot.js eggs.html <out>` (3× phone pixel density).
-- [Ostrich's approved caption](howto-ostrich-approved.png), [vulture's approved caption](howto-vulture-approved.png).
+- Every-screen contact sheet (`00-contact-sheet.png`)
+- Before / after: wrecked square, How to play, vulture + egg, ostrich + egg (`before-after-steer3.png`)
+- Earlier before / after (`before-after.png`), close-ups (`closeups.png`)
+- Eggs at real size (`eggs-closeup.png`), made with `node tools/icon-tests/make-eggs.js` then `node tools/icon-tests/shot.js eggs.html <out>` (3× phone pixel density).
+- Ostrich's approved caption (`howto-ostrich-approved.png`), vulture's approved caption (`howto-vulture-approved.png`).
 
 ## What to review
 

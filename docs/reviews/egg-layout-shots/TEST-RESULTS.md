@@ -1,5 +1,7 @@
 # Test results — remove on-square catch markers (2026-11-08)
 
+> Pictures named in this file are not in the working tree. Recover them from commit `548f054995d139568c4613e4db85ee2629ee3bee`. See [docs/reviews/README.md](../README.md).
+
 ## Full `npm test`
 - **54 of 55** suites passed on the first full run.
 - **PASS** includes `e2e-catch-markers.js` (header pips still fill) and `e2e-hunter-phone.js` (asserts no on-square hurtag/claw/injured; header pip + chip injured).
@@ -37,7 +39,7 @@ Verified 2026-11-08 17:29 PST; suites ran sequentially.
 - All 13 consistency walks / **366 checks, no browser errors** (652 seconds). Pulse/reduced motion, catch markers, team sharing, full knocked-out god views, hunter egg privacy, hidden catch-scramble locations, status queue and prior input fixes still pass.
 - Kicker gets the complete explicit server kick trail and actual landing, including early stops before a wreck or an animal (hidden badger obstruction included), in **3p, Hunters and 5p**. Far watching vultures and the other ostrich retain normal filtering. The kicked hunter sees its own full path. The event grants no ongoing hunter sight or separately transmitted blocker coordinate/identity; an inference from an early stop is an accepted trade-off.
 - `e2e-motion-views.js` passes with **22 freshly generated phone captures**: full three-square and stopped-early two-square kicks, five frames per sequence per phone, plus static reduced-motion trails. Duplicate packets preserve the full slide. The capture fixture now clears stale prior action notices before the second sequence. Frame strips show the current complete-run images, not stale earlier captures.
-- [Ostrich strip](kick-ostrich-strip.png), [hyena strip](kick-hyena-strip.png), [both](kick-both-phones.png); 58-screen contact sheet (36 prior review states + 22 updated kick views). Runtime code stayed unchanged after the complete run began.
+- Ostrich strip (`kick-ostrich-strip.png`), hyena strip (`kick-hyena-strip.png`), both (`kick-both-phones.png`); 58-screen contact sheet (36 prior review states + 22 updated kick views). Runtime code stayed unchanged after the complete run began.
 - Exact approved numbered partner-find/team-smash and watcher kick/stone/meeting/burst wording is implemented. Numbered kickback watcher, vulture-target kick and multi-hunter stone extensions remain drafts. Big-scene duration/skip design remains unapproved and unbuilt; ordinary board movement is about one second.
 
 
@@ -56,7 +58,7 @@ Verified 2026-11-08 16:57 PST. Tests run sequentially, not concurrently.
 - Actual kick capture preflight: 5/5, then the strengthened `e2e-motion-views.js` reran alone, 1/1. An initial capture-driver branch skipped the kick sequence; that was fixed and the E2E now requires actual before/start/mid/after files and verified animation/opacity keyframes, not a no-op exit.
 - Full run: all 13 consistency walks / **366 checks, no browser errors** (654 seconds); B&W pulse/reduced motion, uniform eggs/count padding, caught-marker pixels, status timing, all-role god/normal visibility, approved personal notices and numbered identities pass.
 - Full god view restored for knocked-out vultures and ostriches in **3p, Hunters, 2v2, 5p**. Explicit coverage includes all eggs and hidden/buried badgers, no actions. Classic reveals the full board when its knockout ends the game. Living hunter egg privacy, hidden kick landings, indistinguishable wreckage and hidden catch-scramble locations remain protected.
-- New phone captures: [both kick views](kick-both-phones.png), [ostrich strip](kick-ostrich-strip.png), [hyena strip](kick-hyena-strip.png), reduced-motion static trails and expanded 46-state contact sheet. The ostrich sees only its permitted slide prefix; the hunter sees its own whole slide, with no hidden ostrich board position.
+- New phone captures: both kick views (`kick-both-phones.png`), ostrich strip (`kick-ostrich-strip.png`), hyena strip (`kick-hyena-strip.png`), reduced-motion static trails and expanded 46-state contact sheet. The ostrich sees only its permitted slide prefix; the hunter sees its own whole slide, with no hidden ostrich board position.
 - No big cut-scene duration or tap-to-skip design approved, built or locked in. Ordinary board motion remains about one second.
 
 

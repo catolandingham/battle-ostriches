@@ -63,11 +63,11 @@ Everything the handover mentions is in this repo under `docs/`. Brian keeps his 
 | `docs/reviews/UX-WORDS-AND-VISUALS-2026-11-07.md` | The research-backed audit of every on-screen word and mark (top 10 built in PR #17) |
 | `docs/reviews/COLD-AUDIT-FIXES-2026-11-07.md` | 15 ranked fixes from the cold-player audit, plus the walkthrough recommendation |
 | `docs/reviews/cold-audit-notes/` | One note per cold-audit screenshot: the situation it shows. What the reviewers said is summarized in `COLD-AUDIT-FIXES-2026-11-07.md`. The 57 screenshots stay on Brian's Drive |
-| `docs/reviews/part1c-shots/` | Current screens of PR #18, numbered in play order, with `CAPTIONS.txt` |
+| `docs/reviews/part1c-shots/CAPTIONS.txt` | Captions for the PR #18 screens, in play order. The PNGs are in commit `548f054995d139568c4613e4db85ee2629ee3bee` |
 | `docs/reviews/move-style-playground.html` | The mockup Brian used to choose lit squares and corner marks |
-| `docs/reviews/BW-THEME-MOCKUP-2026-11-08.png` + `bw-theme-mockup-2026-11-08.html` | The black-and-white theme mockup (the next build) |
+| `docs/reviews/BW-THEME-MOCKUP-2026-11-08.png` + `bw-theme-mockup-2026-11-08.html` | The black-and-white theme mockup (the next build). The PNG in the tree is a smaller copy; the full-size original is in commit `548f054995d139568c4613e4db85ee2629ee3bee` |
 
-Older screenshot sets (`part1-shots`, `part1b-shots`, `ux-shots`, the cold-audit images) stay on the Drive only. They show looks that have been replaced.
+Older screenshot sets (`part1-shots`, `part1b-shots`, `ux-shots`, the cold-audit images) stay on the Drive only. They show looks that have been replaced. The review screenshots that were committed under `docs/reviews/` (`busy-2026-11-08`, `egg-layout-shots`, `bw-theme-shots`, `part1c-shots`, `lobby-wait-shots`) were removed from the working tree. Recover them from commit `548f054995d139568c4613e4db85ee2629ee3bee`. See `docs/reviews/README.md`.
 
 ---
 

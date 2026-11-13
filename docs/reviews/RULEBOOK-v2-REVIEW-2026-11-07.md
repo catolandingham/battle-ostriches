@@ -1,5 +1,7 @@
 # Battle Ostriches rulebook v2 (2026-11-07): rules editor review
 
+> Review of version 2, not a second rulebook. The rules text is [RULEBOOK-v2-2026-11-07.md](RULEBOOK-v2-2026-11-07.md).
+
 Reviewed from RULEBOOK-v2-2026-11-07.md only, checked against the earlier review RULEBOOK-REVIEW-2026-11-07.md. No code read. Rule numbers are v2's.
 
 ## Summary

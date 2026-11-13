@@ -1,5 +1,7 @@
 # Battle Ostriches rulebook v1 (2026-11-07): rules editor review
 
+> Historical review of version 1. The rules source of truth is [RULEBOOK-v2-2026-11-07.md](RULEBOOK-v2-2026-11-07.md). The follow-up review of version 2 is [RULEBOOK-v2-REVIEW-2026-11-07.md](RULEBOOK-v2-REVIEW-2026-11-07.md).
+
 Reviewed from the rulebook text only (no code, no other notes). Rule numbers refer to that file.
 
 ## Summary
