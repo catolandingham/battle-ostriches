@@ -192,7 +192,7 @@ function sched3(room) {
 // A restart does not bring the hold timer back. Drop the saved flag so the shot clock can arm.
 function scrubSaved(saved) {
   if (!saved) return saved;
-  for (const k of ['clockHoldKey', 'clockFire', 'clockMsPending', 'deadline', 'lastViews', 'holdUntil', 'cardHold', 'clockT', 'clockKey', 'aiT', 'saveT']) delete saved[k];
+  for (const k of ['clockHoldKey', 'clockFire', 'clockMsPending', 'deadline', 'lastViews', 'holdUntil', 'cardHold', 'clockT', 'clockKey', 'aiT', 'saveT', 'clockAskPause']) delete saved[k];
   return saved;
 }
 function isBotSeat(room, seat) {
@@ -245,10 +245,52 @@ function clockDelayFor(room, viewFn, seat) {
 function clearClock(room) {
   clearTimeout(room.clockT); room.clockT = null;
   room.clockKey = null; room.deadline = null; room.clockHoldKey = null;
-  room.clockFire = null; room.clockMsPending = null;
+  room.clockFire = null; room.clockMsPending = null; room.clockAskPause = null;
+}
+// The table is looking at "Let them in / Not them". Same check as the prompt in stamp().
+function rejoinPromptOpen(room) {
+  if (!room || room.lobby || room.pass || !room.g || room.g.phase === 'over') return false;
+  return (room.rejoinAsks || []).some(a => a && seatOpen(room, a.seat) && personLive(room, a.hid));
+}
+// Freeze the shot clock that is already counting. A card or surprise hold is left alone,
+// because that clock has not started. The saved time is what resumes after the answer.
+function holdClockForAsk(room, k, ms, onFire) {
+  if (!k) return;
+  if (room.clockHoldKey && !room.deadline && !room.clockAskPause) return;
+  if (room.clockAskPause && room.clockAskPause.key === k) {
+    room.clockAskPause.fire = onFire;
+    room.clockFire = onFire;
+    return;
+  }
+  let left = ms;
+  if (room.deadline && room.clockKey === k) left = Math.max(0, room.deadline - Date.now());
+  clearTimeout(room.clockT);
+  room.clockT = null;
+  room.deadline = null;
+  room.clockHoldKey = null;
+  room.clockKey = k;
+  room.clockFire = onFire;
+  room.clockMsPending = left;
+  room.clockAskPause = { key: k, left, fire: onFire };
+}
+function resumeClockAfterAsk(room, k) {
+  const p = room.clockAskPause;
+  if (!p) return;
+  room.clockAskPause = null;
+  if (!p.key || p.key !== k || !p.fire || !room.g || room.g.phase !== 'play') return;
+  clearTimeout(room.clockT);
+  const left = Math.max(0, p.left);
+  room.clockHoldKey = null;
+  room.clockKey = p.key;
+  room.clockFire = p.fire;
+  room.clockMsPending = left;
+  room.deadline = Date.now() + left;
+  room.clockT = setTimeout(p.fire, left);
 }
 function armClock(room, k, ms, onFire, delay) {
   if (room.clock === false) { clearClock(room); return; }
+  if (rejoinPromptOpen(room)) return holdClockForAsk(room, k, ms, onFire, delay);
+  if (room.clockAskPause) resumeClockAfterAsk(room, k);
   if (k && k === room.clockKey && room.deadline) return;
   if (k && k === room.clockHoldKey) return;
   clearClock(room);
@@ -267,6 +309,17 @@ function armClock(room, k, ms, onFire, delay) {
   room.clockFire = onFire;
   room.clockT = setTimeout(() => {
     if (room.clockHoldKey !== k) return;
+    if (rejoinPromptOpen(room)) {
+      room.clockHoldKey = null;
+      room.clockT = null;
+      room.deadline = null;
+      room.clockKey = k;
+      room.clockFire = onFire;
+      room.clockMsPending = ms;
+      room.clockAskPause = { key: k, left: ms, fire: onFire };
+      broadcast(room);
+      return;
+    }
     start();
     broadcast(room);
   }, delay);
@@ -280,6 +333,15 @@ function surpriseDone(room, seat) {
   const k = room.clockHoldKey, ms = room.clockMsPending, onFire = room.clockFire;
   clearTimeout(room.clockT);
   room.clockHoldKey = null;
+  if (rejoinPromptOpen(room)) {
+    room.clockT = null;
+    room.deadline = null;
+    room.clockKey = k;
+    room.clockFire = onFire;
+    room.clockMsPending = ms;
+    room.clockAskPause = { key: k, left: ms, fire: onFire };
+    return true;
+  }
   room.clockKey = k;
   room.deadline = Date.now() + ms;
   room.clockT = setTimeout(onFire, ms);
@@ -532,6 +594,10 @@ function stamp(room, v, seat) {
       const label = LB.seatLabel(room, ask.seat);
       v.rejoinAsk = { id: ask.id, seat: ask.seat, title: LB.askLine(label), body: LB.REJOIN_WORDS.askBody, yes: LB.REJOIN_WORDS.askYes, no: LB.REJOIN_WORDS.askNo };
     }
+  }
+  if (v && v.h3 && room && room.clockAskPause && room.g && room.g.phase === 'play') {
+    v.h3.clockLeft = room.clockAskPause.left;
+    v.h3.clockPaused = true;
   }
   return v;
 }
