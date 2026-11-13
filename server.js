@@ -526,25 +526,108 @@ function stamp(room, v, seat) {
     v.flow = 1;
     if (room.g && room.g.phase === 'over') v.arrivals = (room.arrivals || []).map(a => a.name).filter(Boolean);
   }
+  if (v && room && room.g && !room.pass && !room.lobby) {
+    const ask = (room.rejoinAsks || []).find(a => a && seatOpen(room, a.seat) && personLive(room, a.hid));
+    if (ask) {
+      const label = LB.seatLabel(room, ask.seat);
+      v.rejoinAsk = { id: ask.id, seat: ask.seat, title: LB.askLine(label), body: LB.REJOIN_WORDS.askBody, yes: LB.REJOIN_WORDS.askYes, no: LB.REJOIN_WORDS.askNo };
+    }
+  }
   return v;
 }
 const hid = () => Math.random().toString(36).slice(2, 10);
 function clientRole(room, seat) { return room.hunt && (seat === 'hyena' || seat === 'badger') ? 'hunter' : seat; }
 function tell(ws, room, seat, token) { try { ws.send(JSON.stringify({ t: 'joined', code: room.code, role: clientRole(room, seat), token, flow: 1 })); } catch {} }
+function live(p) { return !!(p && p.ws && p.ws.readyState === 1); }
+function clearGone(p) {
+  if (!p) return;
+  if (p.graceT) { clearTimeout(p.graceT); p.graceT = null; }
+  p.goneAt = null;
+}
+function scheduleGrace(room, seat) {
+  const p = room.players && room.players[seat];
+  if (!p || p.bot) return;
+  if (p.graceT) clearTimeout(p.graceT);
+  const left = Math.max(0, LB.rejoinGraceMs() - (p.goneAt ? Date.now() - p.goneAt : 0));
+  p.graceT = setTimeout(() => {
+    p.graceT = null;
+    if (rooms.get(room.code) !== room || room.players[seat] !== p || live(p)) return;
+    tellArrivals(room);
+  }, left);
+  if (p.graceT.unref) p.graceT.unref();
+}
+function markGone(room, seat) {
+  const p = room.players && room.players[seat];
+  if (!p) return;
+  p.ws = null;
+  if (p.bot) return;
+  if (!p.goneAt) p.goneAt = Date.now();
+  scheduleGrace(room, seat);
+}
+function armGrace(room) {
+  for (const [seat, p] of Object.entries(room.players || {})) {
+    if (!p || p.bot || live(p)) continue;
+    delete p.graceT;
+    if (!p.goneAt) p.goneAt = Date.now();
+    scheduleGrace(room, seat);
+  }
+}
+function personById(room, id) {
+  if (!id) return null;
+  return (room.watchers || []).find(x => x.id === id) || (room.arrivals || []).find(x => x.id === id) || null;
+}
+function personLive(room, id) {
+  const w = personById(room, id);
+  return !!(w && live(w));
+}
+function anyLiveHuman(room) {
+  return Object.values(room.players || {}).some(p => p && !p.bot && live(p));
+}
+function seatOpen(room, seat) {
+  const p = room.players && room.players[seat];
+  if (!room || !room.g || room.g.phase === 'over' || room.pass) return false;
+  return !!(p && !p.bot && !live(p) && !LB.seatInGrace(p));
+}
+function roomDropAsks(room, pred) {
+  if (!room.rejoinAsks || !room.rejoinAsks.length) return;
+  room.rejoinAsks = room.rejoinAsks.filter(a => !pred(a));
+}
+function liveToken(room, token) {
+  return Object.values(room.players || {}).some(p => p && !p.bot && p.token === token && live(p));
+}
+function adoptRoster(room, seat, oldToken, fresh, who, name) {
+  const roster = room.roster || [];
+  const rec = roster.find(x => !x.bot && (x.token === oldToken || x.role === seat));
+  if (!rec) return who || null;
+  rec.token = fresh;
+  if (who) rec.id = who;
+  if (name) rec.name = name;
+  rec.bot = false;
+  if (rec.host) {
+    const other = roster.find(x => x !== rec && !x.bot && liveToken(room, x.token));
+    if (other) { rec.host = false; other.host = true; }
+  }
+  return rec.id;
+}
+// A fallback claim never inherits the seat token. The previous token is retired so it cannot kick the new person.
 function takeSeat(room, ws, seat) {
   const p = room.players && room.players[seat];
-  if (!p || p.bot) return { error: 'That seat is taken.' };
-  if (p.ws && p.ws.readyState === 1) return { error: 'That seat is taken.' };
+  if (!seatOpen(room, seat)) return { error: 'That seat is taken.' };
   const who = ws._bo && ws._bo.hid;
+  const person = personById(room, who);
   if (room.arrivals) room.arrivals = room.arrivals.filter(a => a.ws !== ws && a.id !== who);
   if (room.watchers) room.watchers = room.watchers.filter(a => a.ws !== ws && a.id !== who);
-  const rosterId = (room.roster || []).find(x => x.token === p.token)?.id || who || null;
-  room.players[seat] = { ws, token: p.token, bot: false };
-  ws._bo = { room, seat, hid: rosterId };
+  roomDropAsks(room, a => a.hid === who || a.seat === seat);
+  const fresh = tok();
+  const retired = (p.retired || []).concat(p.token).filter((t, i, arr) => t && arr.indexOf(t) === i).slice(-12);
+  const rosterId = adoptRoster(room, seat, p.token, fresh, who, person && person.name);
+  clearGone(p);
+  room.players[seat] = { ws, token: fresh, bot: false, retired };
+  ws._bo = { room, seat, hid: rosterId, arrival: false };
   room.touched = Date.now();
-  try { ws.send(JSON.stringify({ t: 'joined', code: room.code, role: clientRole(room, seat), token: p.token, flow: room.flow ? 1 : undefined })); } catch {}
+  try { ws.send(JSON.stringify({ t: 'joined', code: room.code, role: clientRole(room, seat), token: fresh, flow: room.flow ? 1 : undefined })); } catch {}
   broadcast(room);
-  return { ok: true };
+  return { ok: true, token: fresh };
 }
 function leftInfo(room, seat) {
   const g = room.g || {};
@@ -748,10 +831,11 @@ wss.on('connection', ws => {
         if (saved && (saved.g || saved.lobby) && !rooms.has(code)) {
           saved.touched = Date.now();
           scrubSaved(saved);
-          for (const k in saved.players || {}) if (saved.players[k]) saved.players[k].ws = null;
+          for (const k in saved.players || {}) if (saved.players[k]) { saved.players[k].ws = null; delete saved.players[k].graceT; }
           for (const h of saved.humans || []) h.ws = null;
           for (const a of saved.arrivals || []) a.ws = null;
           rooms.set(code, saved);
+          armGrace(saved);
         }
         r = rooms.get(code); }
       if (!r) return send({ t: 'error', msg: 'No game with that code.', gone: !!m.token });
@@ -771,13 +855,28 @@ wss.on('connection', ws => {
         send({ t: 'joined', code: r.code, role: 'blue', token: m.token, pass: true }); return broadcast(r);
       }
       const SEATS = r.hunt ? SEATSH : r.team ? ['o1', 'v1', 'o2', 'v2', 'hunter'].filter(x => x in (r.players || {})) : r.three ? ['blue', 'red', 'hunter'] : ['blue', 'red'];
-      let seat = SEATS.find(s => r.players[s] && m.token && r.players[s].token === m.token);
+      let token = m.token || null;
+      let seat = token && SEATS.find(s => r.players[s] && !r.players[s].bot && r.players[s].token === token);
       if (seat) {
-        r.players[seat] = { ws, token: r.players[seat].token, bot: false }; ws._bo = { room: r, seat, hid: (r.roster || []).find(x => x.token === m.token)?.id || null };
-        r.touched = Date.now(); send({ t: 'joined', code: r.code, role: clientRole(r, seat), token: r.players[seat].token, flow: r.flow ? 1 : undefined }); return broadcast(r);
+        const p = r.players[seat];
+        clearGone(p);
+        roomDropAsks(r, a => a.seat === seat);
+        p.ws = ws; p.bot = false;
+        ws._bo = { room: r, seat, hid: (r.roster || []).find(x => x.token === p.token)?.id || null };
+        r.touched = Date.now();
+        send({ t: 'joined', code: r.code, role: clientRole(r, seat), token: p.token, flow: r.flow ? 1 : undefined });
+        return broadcast(r);
       }
-      const back = (r.arrivals || []).find(a => m.token && a.token === m.token);
-      if (back) { back.ws = ws; ws._bo = { room: r, seat: null, hid: back.id, arrival: true }; send({ t: 'joined', code: r.code, role: null, token: back.token, lobby: true }); send({ t: 'state', lobby: true, state: LB.benchView(r, back) }); return broadcast(r); }
+      const retiredSeat = token && SEATS.find(s => r.players[s] && !r.players[s].bot && (r.players[s].retired || []).includes(token));
+      if (retiredSeat && live(r.players[retiredSeat])) return send({ t: 'error', msg: 'That seat is taken.' });
+      if (retiredSeat) token = null;
+      const back = token && ((r.arrivals || []).find(a => a.token === token) || (r.watchers || []).find(a => a.token === token));
+      if (back) {
+        back.ws = ws; ws._bo = { room: r, seat: null, hid: back.id, arrival: true };
+        send({ t: 'joined', code: r.code, role: null, token: back.token, lobby: true });
+        send({ t: 'state', lobby: true, state: LB.benchView(r, back) });
+        return broadcast(r);
+      }
       seat = SEATS.find(s => !r.players[s]);
       const over = !!(r.g && r.g.phase === 'over');
       if (r.flow && (over || !seat)) {
@@ -793,10 +892,10 @@ wss.on('connection', ws => {
         if (over) return broadcast(r);
         tellArrivals(r); return persist(r);
       }
-      // A mid-game return without a token (storage gone): offer offline human seats instead of a hard stop.
+      // A mid-game return without a token (storage gone). During the grace only the original token can sit back down,
+      // so the bench shows the no-seat line until the grace ends and tellArrivals offers the seat.
       if (!seat && r.g && r.g.phase !== 'over' && !r.pass) {
-        const offline = LB.offlineSeats(r);
-        if (offline.length) {
+        if (LB.offlineSeats(r).length || LB.graceSeats(r).length) {
           const a = { id: hid(), token: tok(), ws, name: 'Player', late: true };
           r.watchers = r.watchers || []; r.watchers.push(a);
           ws._bo = { room: r, seat: null, hid: a.id, arrival: true }; r.touched = Date.now();
@@ -806,14 +905,36 @@ wss.on('connection', ws => {
         }
       }
       if (!seat) return send({ t: 'error', msg: 'That game is full and already started. Ask for a new code.' });
-      const token = tok(); r.players[seat] = { ws, token }; ws._bo = { room: r, seat, hid: null }; r.touched = Date.now();
-      send({ t: 'joined', code: r.code, role: clientRole(r, seat), token }); return broadcast(r);
+      const freshSeat = tok(); r.players[seat] = { ws, token: freshSeat }; ws._bo = { room: r, seat, hid: null }; r.touched = Date.now();
+      send({ t: 'joined', code: r.code, role: clientRole(r, seat), token: freshSeat }); return broadcast(r);
     }
     if (m.t === 'claim') {
       const b0 = ws._bo, room0 = b0 && b0.room;
       if (!room0 || room0.lobby || room0.pass) return send({ t: 'error', msg: 'Not a legal move right now.', soft: true });
       if (b0.seat && room0.players[b0.seat] && room0.players[b0.seat].ws === ws) return;
-      const res = takeSeat(room0, ws, String(m.seat || ''));
+      const want = String(m.seat || '');
+      if (!seatOpen(room0, want)) return send({ t: 'error', msg: 'That seat is taken.', soft: true });
+      const who = b0.hid;
+      const pending = (room0.rejoinAsks || []).find(a => a.seat === want && a.hid !== who);
+      if (pending && personLive(room0, pending.hid)) return send({ t: 'error', msg: 'That seat is taken.', soft: true });
+      room0.rejoinAsks = (room0.rejoinAsks || []).filter(a => a.hid !== who && !(a.seat === want && !personLive(room0, a.hid)));
+      room0.rejoinAsks.push({ id: hid(), seat: want, hid: who, at: Date.now() });
+      room0.touched = Date.now();
+      if (!anyLiveHuman(room0)) return takeSeat(room0, ws, want);
+      broadcast(room0);
+      return;
+    }
+    if (m.t === 'claim-answer') {
+      const b0 = ws._bo, room0 = b0 && b0.room;
+      if (!room0 || room0.lobby || room0.pass) return;
+      const mine = b0.seat && room0.players[b0.seat];
+      if (!mine || mine.bot || mine.ws !== ws) return send({ t: 'error', msg: 'That seat is taken.', soft: true });
+      const ask = (room0.rejoinAsks || []).find(a => (m.id && a.id === m.id) || (!m.id && m.seat && a.seat === m.seat));
+      if (!ask) return;
+      if (!m.yes) { roomDropAsks(room0, a => a === ask); room0.touched = Date.now(); return broadcast(room0); }
+      const w = personById(room0, ask.hid);
+      if (!w || !live(w) || !seatOpen(room0, ask.seat)) { roomDropAsks(room0, a => a === ask); room0.touched = Date.now(); return broadcast(room0); }
+      const res = takeSeat(room0, w.ws, ask.seat);
       if (res && res.error) return send({ t: 'error', msg: res.error, soft: true });
       return;
     }
@@ -853,11 +974,15 @@ wss.on('connection', ws => {
       }
       return lobbyBroadcast(room);
     }
-    if (b.arrival) { const a = (room.arrivals || []).find(x => x.id === b.hid); if (a && a.ws === ws) a.ws = null; const w = (room.watchers || []).find(x => x.id === b.hid); if (w && w.ws === ws) w.ws = null; return; }
+    if (b.arrival) {
+      const a = (room.arrivals || []).find(x => x.id === b.hid); if (a && a.ws === ws) a.ws = null;
+      const w = (room.watchers || []).find(x => x.id === b.hid); if (w && w.ws === ws) w.ws = null;
+      if ((room.rejoinAsks || []).some(x => x.hid === b.hid)) { roomDropAsks(room, x => x.hid === b.hid); broadcast(room); }
+      return;
+    }
     if (room.cardHold && b.seat && room.cardHold[b.seat]) releaseCard(room, b.seat);
-    if (room.three || room.team || room.hunt) { if (room.players[b.seat] && room.players[b.seat].ws === ws) { room.players[b.seat].ws = null; broadcast(room); } return; }
     if (room.pass) { for (const s of ['blue', 'red']) if (room.players[s] && room.players[s].ws === ws) room.players[s].ws = null; return; }
-    if (room.players[b.seat] && room.players[b.seat].ws === ws) { room.players[b.seat].ws = null; broadcast(room); }
+    if (b.seat && room.players[b.seat] && room.players[b.seat].ws === ws) { markGone(room, b.seat); broadcast(room); }
   });
 });
 setInterval(() => { for (const c of wss.clients) { if (!c.isAlive) { c.terminate(); continue; } c.isAlive = false; try { c.ping(); } catch {} } }, 25000).unref();

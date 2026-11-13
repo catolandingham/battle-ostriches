@@ -2,7 +2,7 @@
 // default ./data/rooms.json). Rooms are saved a moment after any change and on SIGTERM; a join for an unknown code checks the store first,
 // which also covers zero-downtime deploys (the old instance keeps saving until it stops).
 const fs = require('fs'), path = require('path');
-const SKIP = new Set(['ws', 'aiT', 'clockT', 'clockKey', 'saveT', 'clockHoldKey', 'clockFire', 'clockMsPending', 'deadline', 'lastViews', 'holdUntil', 'cardHold']);
+const SKIP = new Set(['ws', 'aiT', 'clockT', 'clockKey', 'saveT', 'clockHoldKey', 'clockFire', 'clockMsPending', 'deadline', 'lastViews', 'holdUntil', 'cardHold', 'graceT']);
 const ser = room => JSON.stringify(room, (k, v) => SKIP.has(k) ? undefined : v);
 let kv = null, ready = null;
 if (process.env.REDIS_URL) { try { const { createClient } = require('redis'); kv = createClient({ url: process.env.REDIS_URL }); kv.on('error', () => {}); ready = kv.connect().catch(() => { kv = null; }); } catch { kv = null; } }

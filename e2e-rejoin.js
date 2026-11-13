@@ -1,5 +1,6 @@
-// Rejoin after leaving the site: token auto-returns you; lost storage offers only offline seats.
+// Rejoin after leaving the site: token auto-returns you; lost storage offers only offline seats after the grace.
 process.env.PORT = 4021; process.env.BO_NOSTORE = '1'; process.env.BO_CLOCKMS = '600000';
+process.env.BO_REJOIN_GRACE_MS = '1500';
 const { webkit, devices } = require('playwright-core');
 const assert = require('assert'), fs = require('fs'), path = require('path');
 const server = require('./server.js');
@@ -46,16 +47,21 @@ async function clearSeatMemory(page) {
   await A.p.goto('http://localhost:4021/?room=' + code);
   await A.p.waitForFunction(() => UI._S() && UI._S().phase && document.querySelectorAll('#board .cell').length > 0);
   assert.equal(await A.p.evaluate(() => UI._S().role), roleA, '2p token survived a trip to another site');
-  const hash = await A.p.evaluate(() => location.hash);
-  assert.ok(/m=/.test(hash), 'token is in the URL hash: ' + hash);
+  const href = await A.p.evaluate(() => location.href);
+  assert.ok(!/#m=/.test(href) && !/[?&]m=/.test(href), 'token is not in the URL: ' + href);
+  const stored = await A.p.evaluate(() => localStorage.getItem('bo_me'));
+  assert.ok(stored && JSON.parse(stored).token, 'token stays in localStorage');
   const share = await A.p.evaluate(() => document.getElementById('shareLink') && document.getElementById('shareLink').value);
-  if (share) assert.ok(!/#m=/.test(share), 'share link has no token');
-  console.log('ok 2p navigate away and back with storage');
+  if (share) assert.ok(!/#m=/.test(share) && !/[?&]m=/.test(share), 'share link has no token');
+  console.log('ok 2p navigate away and back with storage, token kept out of the URL');
 
   // lost storage: show reclaim, confirm, sit back down
   await clearSeatMemory(A.p);
   await A.p.goto('http://localhost:4021/?room=' + code); // no hash, no storage
-  await A.p.waitForFunction(() => /already running/.test((document.getElementById('roomLobby') || {}).textContent || ''));
+  await A.p.waitForSelector('#roomLobby');
+  const early2 = await A.p.textContent('#roomLobby');
+  if (/You'll play in the next one/.test(early2) && !/Rejoin as/.test(early2)) await shot(A.p, '2p-grace');
+  await A.p.waitForFunction(() => /Back in the game\? Tap your animal\./.test((document.getElementById('roomLobby') || {}).textContent || ''), null, { timeout: 8000 });
   const body2 = await A.p.textContent('#roomLobby');
   assert.ok(!/You're in[\s\S]*You're in/.test(body2), 'title is not repeated in the body');
   assert.ok(/Rejoin as the ostrich/.test(body2), body2);
@@ -63,9 +69,14 @@ async function clearSeatMemory(page) {
   await shot(A.p, '2p-rejoin');
   await A.p.click('button[data-claim="blue"]');
   await A.p.waitForSelector('#claimYes');
+  assert.ok(/Rejoin as the ostrich\?/.test(await A.p.textContent('#roomLobby')));
   assert.ok(/Only pick this if this was you/.test(await A.p.textContent('#roomLobby')));
   await shot(A.p, '2p-confirm');
   await A.p.click('#claimYes');
+  await A.p.waitForFunction(() => /let you in/.test((document.getElementById('roomLobby') || {}).textContent || ''));
+  await V.p.waitForSelector('#rejoinAsk:not(.hidden)');
+  await shot(V.p, '2p-approve');
+  await V.p.click('#rejoinAskYes');
   await A.p.waitForFunction(() => UI._S() && UI._S().role === 'blue' && document.querySelectorAll('#board .cell').length > 0);
   assert.equal(await A.p.evaluate(() => UI._S().role), 'blue');
   console.log('ok 2p lost-storage fallback');
@@ -73,7 +84,7 @@ async function clearSeatMemory(page) {
   // a third phone, everyone still in, is the waiting bench with no reclaim buttons
   const late = await mk();
   await late.p.goto(link);
-  await late.p.waitForFunction(() => /already running/.test((document.getElementById('roomLobby') || {}).textContent || ''));
+  await late.p.waitForFunction(() => /You'll play in the next one/.test((document.getElementById('roomLobby') || {}).textContent || ''));
   const lateTxt = await late.p.textContent('#roomLobby');
   assert.ok(!/Rejoin as/.test(lateTxt), 'a new arrival cannot take a live seat');
   assert.ok(!/You're in[\s\S]*You're in/.test(lateTxt));
@@ -101,14 +112,17 @@ async function clearSeatMemory(page) {
 
   await clearSeatMemory(H3.p);
   await H3.p.goto('http://localhost:4021/?room=' + code3);
-  await H3.p.waitForFunction(() => /Rejoin as the hyena/.test((document.getElementById('roomLobby') || {}).textContent || ''));
+  await H3.p.waitForFunction(() => /Rejoin as the hyena/.test((document.getElementById('roomLobby') || {}).textContent || ''), null, { timeout: 8000 });
   const hTxt = await H3.p.textContent('#roomLobby');
+  assert.ok(/Back in the game\? Tap your animal\./.test(hTxt), hTxt);
   assert.ok(!/Rejoin as the ostrich/.test(hTxt) && !/Rejoin as the vulture/.test(hTxt), 'only the offline hyena');
   await shot(H3.p, '3p-rejoin');
   await H3.p.click('button[data-claim="hunter"]');
   await H3.p.waitForSelector('#claimYes');
   await shot(H3.p, '3p-confirm');
   await H3.p.click('#claimYes');
+  await A3.p.waitForSelector('#rejoinAsk:not(.hidden)');
+  await A3.p.click('#rejoinAskYes');
   await H3.p.waitForFunction(() => UI._S() && UI._S().role === 'hunter' && document.querySelectorAll('#board .cell').length > 0);
   console.log('ok 3p lost-storage fallback');
   await A3.c.close(); await V3.c.close(); await H3.c.close();
@@ -134,16 +148,21 @@ async function clearSeatMemory(page) {
 
   await clearSeatMemory(A4.p);
   await A4.p.goto('http://localhost:4021/?room=' + code4);
-  await A4.p.waitForFunction(() => /Rejoin as/.test((document.getElementById('roomLobby') || {}).textContent || ''));
+  await A4.p.waitForFunction(() => /Rejoin as/.test((document.getElementById('roomLobby') || {}).textContent || ''), null, { timeout: 8000 });
   const tTxt = await A4.p.textContent('#roomLobby');
+  assert.ok(/Back in the game\? Tap your animal\./.test(tTxt), tTxt);
   assert.ok(/Rejoin as Ostrich 1|Rejoin as the ostrich/.test(tTxt), tTxt);
   assert.ok(!/Rejoin as Vulture/.test(tTxt) && !/Rejoin as the vulture/.test(tTxt), 'connected vulture not offered');
   await shot(A4.p, 'team-rejoin');
   const claimSeat = await A4.p.getAttribute('button[data-claim]', 'data-claim');
   await A4.p.click('button[data-claim]');
   await A4.p.waitForSelector('#claimYes');
+  assert.ok(/Only pick this if this was you/.test(await A4.p.textContent('#roomLobby')));
   await shot(A4.p, 'team-confirm');
   await A4.p.click('#claimYes');
+  await V4.p.waitForSelector('#rejoinAsk:not(.hidden)');
+  await shot(V4.p, 'team-approve');
+  await V4.p.click('#rejoinAskYes');
   await A4.p.waitForFunction(r => UI._S() && UI._S().role === r && document.querySelectorAll('#board .cell').length > 0, role4);
   assert.equal(await A4.p.evaluate(() => UI._S().role), role4);
   assert.ok(claimSeat === 'o1' || claimSeat === 'o2' || claimSeat === 'v1' || claimSeat === 'v2', 'claimed a team seat: ' + claimSeat);

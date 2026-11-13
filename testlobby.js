@@ -306,11 +306,16 @@ t('viewing the lobby never marks or seats anyone', () => {
 });
 
 t('bench note no longer repeats You\'re in, and offers only offline human seats', () => {
+  assert.equal(LB.LATE_NOTE_REJOIN, 'Back in the game? Tap your animal.');
+  assert.equal(LB.LATE_NOTE, "This game is already running. You'll play in the next one.");
+  assert.equal(LB.REJOIN_WORDS.confirmBody, 'Only pick this if this was you.');
+  assert.equal(LB.REJOIN_WORDS.confirmYes, 'Rejoin');
+  assert.equal(LB.REJOIN_WORDS.confirmNo, 'Not me');
   const room = { code: 'AB', g: { phase: 'play' }, flow: 1, players: {
     blue: { token: 'a', ws: { readyState: 1 } },
     red: { token: 'b', ws: null },
   }, bots: [] };
-  const v = LB.benchView(room, { name: 'Player 3', late: true });
+  const v = LB.benchView(room, { name: 'Player 3', late: true, id: 'w' });
   assert.equal(v.note, LB.LATE_NOTE_REJOIN);
   assert.ok(!/^You're in\./.test(v.note));
   assert.deepEqual(v.offline.map(o => o.seat), ['red']);
@@ -332,6 +337,31 @@ t('bench note no longer repeats You\'re in, and offers only offline human seats'
   } };
   const hv = LB.benchView(three, { name: 'P', late: true });
   assert.deepEqual(hv.offline.map(o => o.action), ['Rejoin as the hyena']);
+  const prev = process.env.BO_REJOIN_GRACE_MS;
+  process.env.BO_REJOIN_GRACE_MS = '60000';
+  const held = { code: 'GR', g: { phase: 'play' }, players: {
+    blue: { token: 'a', ws: null, goneAt: Date.now() },
+    red: { token: 'b', ws: { readyState: 1 } },
+  } };
+  const during = LB.benchView(held, { name: 'P', late: true, id: 'w' });
+  assert.equal(during.note, LB.LATE_NOTE);
+  assert.deepEqual(during.offline, []);
+  assert.deepEqual(LB.graceSeats(held), ['blue']);
+  held.players.blue.goneAt = Date.now() - 70000;
+  const after = LB.benchView(held, { name: 'P', late: true, id: 'w' });
+  assert.equal(after.note, LB.LATE_NOTE_REJOIN);
+  assert.deepEqual(after.offline.map(o => o.seat), ['blue']);
+  held.players.blue.goneAt = Date.now() - 70000;
+  held.rejoinAsks = [{ id: 'ask1', seat: 'blue', hid: 'other' }];
+  const reserved = LB.benchView(held, { name: 'P', late: true, id: 'w' });
+  assert.deepEqual(reserved.offline, []);
+  assert.equal(reserved.note, LB.LATE_NOTE);
+  const mine = LB.benchView(held, { name: 'P', late: true, id: 'other' });
+  assert.equal(mine.note, LB.REJOIN_WORDS.waiting);
+  assert.equal(mine.ask.seat, 'blue');
+  assert.equal(LB.askLine('ostrich'), 'Someone wants to rejoin as the ostrich.');
+  assert.equal(LB.askLine('Ostrich 1'), 'Someone wants to rejoin as Ostrich 1.');
+  if (prev === undefined) delete process.env.BO_REJOIN_GRACE_MS; else process.env.BO_REJOIN_GRACE_MS = prev;
 });
 
 process.env.PORT = 3977; process.env.BO_NOSTORE = '1'; process.env.BO_CLOCKMS = '60000';

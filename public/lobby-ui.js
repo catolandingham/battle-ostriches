@@ -22,7 +22,7 @@
   let gear = false, botsOpen = false, kindOpen = false, st = null, pendingClaim = null;
   const send = o => window.UI && UI.send(o);
   function show(state) {
-    if (!st || st.code !== state.code) pendingClaim = null;
+    if (!st || st.code !== state.code || state.ask) pendingClaim = null;
     st = state; $('lobby').classList.remove('hidden'); $('lobby').classList.add('inroom');
     $('over').classList.add('hidden'); $('homeStep').classList.add('hidden');
     $('soloStep').classList.add('hidden'); $('passStep').classList.add('hidden');
@@ -142,5 +142,6 @@
       return;
     }
   });
-  window.LobbyUI = { show, hide, get: () => st };
+  function fail() { pendingClaim = null; if (st) draw(); }
+  window.LobbyUI = { show, hide, fail, get: () => st };
 })();

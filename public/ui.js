@@ -4,8 +4,8 @@ const OST=ART.ostrich;
 const VUL=ART.vulture;
 $('lobbyArt').innerHTML=OST;
 let ws,S=null,mode=null,me={};
-// Seat token is saved in localStorage, a first-party cookie, a per-room key, and the URL hash (#m=).
-// Share links stay /?room=CODE with no token. Brave may still clear site data when the last tab of this site closes.
+// Seat token is saved in localStorage and a 6-hour first-party cookie. It is not put in the URL.
+// A copied address bar is only /?room=CODE, so the link cannot reclaim someone else's seat.
 const seatKey=c=>'bo_seat_'+String(c||'').toUpperCase();
 function lsGet(k){try{return localStorage.getItem(k)}catch(e){return null}}
 function lsSet(k,v){try{localStorage.setItem(k,v)}catch(e){}}
@@ -13,8 +13,13 @@ function lsDel(k){try{localStorage.removeItem(k)}catch(e){}}
 function cookieGet(n){const m=document.cookie.split(';').map(s=>s.trim()).find(s=>s.startsWith(n+'='));if(!m)return '';try{return decodeURIComponent(m.slice(n.length+1))}catch(e){return m.slice(n.length+1)}}
 function cookieSet(n,v,sec){const secure=location.protocol==='https:'?'; Secure':'';document.cookie=n+'='+encodeURIComponent(v)+'; Path=/; Max-Age='+sec+'; SameSite=Lax'+secure}
 function cookieDel(n){document.cookie=n+'=; Path=/; Max-Age=0; SameSite=Lax'}
-function hashTok(){const m=(location.hash||'').match(/(?:^[#&]|[?#])m=([^&]+)/);if(!m)return '';try{return decodeURIComponent(m[1])}catch(e){return m[1]}}
+function stripSeatHash(){
+  if(!/(?:^|#|&)m=/.test(location.hash||''))return;
+  const room=(new URLSearchParams(location.search).get('room')||'').toUpperCase();
+  history.replaceState(null,'',room?'/?room='+room:(location.pathname+location.search));
+}
 function loadMe(){
+  stripSeatHash();
   let stored={};try{stored=JSON.parse(lsGet('bo_me')||'{}')||{}}catch(e){stored={}}
   const roomQ=(new URLSearchParams(location.search).get('room')||'').toUpperCase();
   const code=roomQ||String(stored.code||'').toUpperCase();
@@ -25,21 +30,20 @@ function loadMe(){
     try{const ck=JSON.parse(cookieGet('bo_me')||'null');if(ck&&ck.code&&String(ck.code).toUpperCase()===code&&ck.token)token=ck.token;if(ck&&ck.role)role=role||ck.role}catch(e){}
     if(!token){const c2=cookieGet(seatKey(code));if(c2)token=c2}
   }
-  if(!token)token=hashTok();
   return {code:code||stored.code,token,role};
 }
 function saveMe(next){
   me={code:String(next.code||'').toUpperCase(),token:next.token,role:next.role};
   lsSet('bo_me',JSON.stringify(me));
   if(me.code&&me.token){lsSet(seatKey(me.code),me.token);cookieSet('bo_me',JSON.stringify(me),6*3600);cookieSet(seatKey(me.code),me.token,6*3600)}
-  if(me.code)history.replaceState(null,'','/?room='+me.code+(me.token?'#m='+encodeURIComponent(me.token):''));
+  if(me.code)history.replaceState(null,'','/?room='+me.code);
 }
 function clearMe(){
   if(me&&me.code){lsDel(seatKey(me.code));cookieDel(seatKey(me.code))}
   lsDel('bo_me');cookieDel('bo_me');me={};
 }
 me=loadMe();
-function tokenFor(code){const c=String(code||'').trim().toUpperCase();if(!c)return;if(me.code&&String(me.code).toUpperCase()===c&&me.token)return me.token;const t=lsGet(seatKey(c));if(t)return t;try{const ck=JSON.parse(cookieGet('bo_me')||'null');if(ck&&ck.code&&String(ck.code).toUpperCase()===c&&ck.token)return ck.token}catch(e){}const c2=cookieGet(seatKey(c));if(c2)return c2;if((new URLSearchParams(location.search).get('room')||'').toUpperCase()===c&&hashTok())return hashTok();}
+function tokenFor(code){const c=String(code||'').trim().toUpperCase();if(!c)return;if(me.code&&String(me.code).toUpperCase()===c&&me.token)return me.token;const t=lsGet(seatKey(c));if(t)return t;try{const ck=JSON.parse(cookieGet('bo_me')||'null');if(ck&&ck.code&&String(ck.code).toUpperCase()===c&&ck.token)return ck.token}catch(e){}const c2=cookieGet(seatKey(c));if(c2)return c2;}
 const key=p=>p[0]+','+p[1];
 // Open-skies icon set: ONE big simple mark per square, no corner badges. Same in every theme (vocab.css).
 window.addEventListener('DOMContentLoaded',()=>{const r=document.getElementById('roundsLeft');if(r&&window.BO)r.textContent=BO.CONFIG.rounds;});
@@ -95,11 +99,11 @@ function connect(){
  sock.onmessage=ev=>{const m=JSON.parse(ev.data);lastPong=Date.now();
   if(m.t==='pong')return;
   if(m.t==='joined'){pending=null;clearTimeout(pendTimer);attempts=0;status('');sniffSeen={};saveMe({code:m.code,token:m.token,role:m.role});return;}
-  if(m.t==='state'&&m.lobby){if(S&&S.phase&&S.phase!=='over')return;pending=null;clearTimeout(pendTimer);attempts=0;status('');S=null;window.LobbyUI&&LobbyUI.show(m.state);return;}
+  if(m.t==='state'&&m.lobby){if(S&&S.phase&&S.phase!=='over')return;pending=null;clearTimeout(pendTimer);attempts=0;status('');S=null;const ask=$('rejoinAsk');if(ask)ask.classList.add('hidden');window.LobbyUI&&LobbyUI.show(m.state);return;}
   else if(m.t==='state'&&m.pass)return passState(m);
   else if(m.t==='state'){window.LobbyUI&&LobbyUI.hide();if(window.CUTAWAYS&&CUTAWAYS.defer(m.state))return;acceptState(m.state);return;}
   else if(m.t==='error'&&/No game with that code/.test(m.msg)&&(S||m.gone)){gameGone();return;}
-  else if(m.t==='error'){if(!S){pending=null;clearTimeout(pendTimer);attempts=0;status(m.msg,true);}else $('log').textContent=m.msg;}};
+  else if(m.t==='error'){if(!S){pending=null;clearTimeout(pendTimer);attempts=0;status(m.msg,true);window.LobbyUI&&LobbyUI.fail&&LobbyUI.fail();}else $('log').textContent=m.msg;}};
 }
 function acceptState(state){const prev=S;S=state;if(!prev||prev.turn!==S.turn||prev.phase!==S.phase)mode=null;render(prev);sounds(prev);if(!prev)maybeWalk(S.role);}
 if(window.CUTAWAYS)CUTAWAYS.bind(acceptState);
@@ -163,6 +167,8 @@ tapper($('menuTimer'),()=>{const b=$('timerToggle');if(b)b.click();syncMenu();})
 tapper($('menuLeave'),()=>{closeGameMenu();if(!S||S.phase==='over')return;const friends=!(S.pass||S.ai);$('leaveTitle').textContent='Leave this game?';$('leaveBody').textContent=friends?'This ends the game for everyone.':"You'll go back to the start.";$('leaveAsk').classList.remove('hidden');});
 tapper($('leaveNo'),()=>$('leaveAsk').classList.add('hidden'));
 tapper($('leaveYes'),()=>{$('leaveAsk').classList.add('hidden');send({t:'act',a:'leave'});setTimeout(()=>UI.menu(),150);});
+tapper($('rejoinAskYes'),()=>{const el=$('rejoinAsk');if(!el||el.classList.contains('hidden'))return;send({t:'claim-answer',seat:el.dataset.seat,id:el.dataset.id,yes:true});});
+tapper($('rejoinAskNo'),()=>{const el=$('rejoinAsk');if(!el||el.classList.contains('hidden'))return;send({t:'claim-answer',seat:el.dataset.seat,id:el.dataset.id,yes:false});});
 document.addEventListener('mousedown',e=>{if(gameMenu&&!e.target.closest('#gameMenu,#moreBtn'))closeGameMenu();},true);
 function muteLabel(){const t=SFX.muted?'Sound off':'Sound on';$('muteBtn').innerHTML=SFX.muted?'<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M3 9v6h4l5 4V5L7 9H3z" fill="#fff" stroke="#111" stroke-width="1.5" stroke-linejoin="round"/><path d="M16 9l5 6M21 9l-5 6" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>':'<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M3 9v6h4l5 4V5L7 9H3z" fill="#fff" stroke="#111" stroke-width="1.5" stroke-linejoin="round"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>';$('muteBtn').setAttribute('aria-label',t);if($('muteBtn2')){$('muteBtn2').textContent=t;$('muteBtn2').setAttribute('aria-label',t);}}
 muteLabel();tapper($('muteBtn'),()=>{SFX.toggle();muteLabel();});tapper($('muteBtn2'),()=>{SFX.toggle();muteLabel();});
@@ -378,7 +384,12 @@ function howPics(){const box=$('howPics');if(!box)return;
  const real=document.documentElement.getAttribute('data-theme')==='bw';
  box.innerHTML='';pics.forEach((p,i)=>{const f=document.createElement('figure');f.className='pic'+(real?' realpic'+(i===2?' found':''):'');if(real){const im=document.createElement('img');im.src='tut/how/'+(i===2&&S&&S.role==='blue'?'2-blue':i)+'.png';im.alt='';f.appendChild(im);}else f.appendChild(p.m);const c=document.createElement('figcaption');c.textContent=lines[i];f.appendChild(c);box.appendChild(f);});
  if(!real)pics.forEach(p=>p.after());}
+function syncRejoinAsk(){const el=$('rejoinAsk');if(!el)return;const a=S&&S.rejoinAsk;if(!a){el.classList.add('hidden');return;}
+ $('rejoinAskTitle').textContent=a.title||'';const body=$('rejoinAskBody');if(body)body.textContent=a.body||'';
+ $('rejoinAskYes').textContent=a.yes||'Let them in';$('rejoinAskNo').textContent=a.no||'Not them';
+ el.dataset.id=a.id||'';el.dataset.seat=a.seat||'';el.classList.remove('hidden');}
 function render(prev){
+ syncRejoinAsk();
  maybeCard();$('lobby').classList.add('hidden');const C=S.cfg,blue=S.role==='blue',body=document.body;body.className=(S.role==='hunter'?'hunter':blue?'blue':'red')+(S.three?' three':'')+(S.god?' godview':'');
  $('turnTag').innerHTML=S.role==='hunter'||(S.h3&&S.h3.team)?window.T3UI.tag(S):`<span style="display:inline-block;width:26px;height:26px;vertical-align:middle">${blue?OST:VUL}</span> ${blue?'OSTRICH':'VULTURE'}`;
  $('roundsLeft').textContent=C.rounds-S.round+1;$('eggsLeft').textContent=S.eggsLeft;
