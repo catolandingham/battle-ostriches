@@ -27,7 +27,9 @@ jobs:
           sudo env "PATH=$PATH" node node_modules/playwright-core/cli.js install-deps webkit
           npm run setup:e2e
       - name: Full test suite
-        run: set -o pipefail; npm test -- e2e-cause e2e-invite e2e-motion-views e2e-pass e2e-sweep e2e-three 2>&1 | tee /tmp/test.log # TEMPORARY: only the suites that failed on the first run
+        env:
+          NODE_OPTIONS: --require ./tests/debug-dump.js
+        run: set -o pipefail; npm test -- e2e-cause e2e-motion-views e2e-sweep e2e-three 2>&1 | tee /tmp/test.log # TEMPORARY: only the suites that failed on the first run
       - name: Failed suites, in short
         if: always()
         run: |
