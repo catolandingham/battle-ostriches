@@ -33,7 +33,7 @@ Screenshot files were removed. How to get them back is in [reviews/README.md](re
 
 These overlap something else. They are not the same text, so they were not deleted or folded together.
 
-- [OPEN-ITEMS.md](OPEN-ITEMS.md) overlaps the state snapshot. It is a 2026-11-08 checklist with its own wording. Pull request #28 is already editing the state file, so this cleanup did not touch `STATE-2026-11-08.md` or `DECISIONS-2026-11-08.md`.
+- [OPEN-ITEMS.md](OPEN-ITEMS.md) overlaps the state snapshot. It is a 2026-11-08 checklist with its own wording. The 2026-11-09 lines from pull request #28 are in `DECISIONS-2026-11-08.md` and `STATE-2026-11-08.md`.
 - Version 1, the rules draft, and both rulebook reviews overlap version 2. They are the trail the handover points at.
 - The four Nov 4 playtest transcripts are different recordings, not copies.
 - A few cold-audit notes are a second take of the same screen (the names ending in `b` or `clean`). Each pair differs, so both stayed.
