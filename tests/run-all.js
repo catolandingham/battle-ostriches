@@ -40,6 +40,11 @@ function run(file) {
     r.known = !r.ok && !!known; r.fixed = r.ok && !!known;
     console.log(`${r.ok ? 'PASS' : r.known ? 'KNOWN' : 'FAIL'}  ${r.file.padEnd(26)} ${String(r.secs).padStart(4)}s  ${r.ok ? (r.fixed ? 'now passing: remove it from KNOWN_FAILURES in tests/run-all.js' : '') : r.known ? 'known failure: ' + known : r.note}`);
   }
+  // Show the end of each failed suite's log right here, so a red check explains itself without downloading anything.
+  for (const r of results.filter(x => !x.ok && !x.known)) {
+    let txt = ''; try { txt = fs.readFileSync(path.join(LOGS, r.file.replace(/\.js$/, '.log')), 'utf8'); } catch (e) {}
+    console.log(`\n----- ${r.file}: last lines of its log -----\n` + txt.trim().split('\n').slice(-25).join('\n').slice(-3000));
+  }
   const failed = results.filter(r => !r.ok && !r.known), known = results.filter(r => r.known), passed = results.filter(r => r.ok);
   console.log(`\n${passed.length} of ${results.length} suites passed.${known.length ? ' ' + known.length + ' known failure(s) (listed in KNOWN_FAILURES in tests/run-all.js).' : ''}${failed.length ? ' ' + failed.length + ' FAILED. Logs: shots/test-logs/' : ''}`);
   // A short summary for GitHub (the workflow copies it into the job summary).
