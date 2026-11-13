@@ -1,5 +1,6 @@
 // Installs the WebKit build the phone (e2e) tests use into node_modules/.pw-browsers (about 90 MB download).
 // Usage: npm run setup:e2e
+// On Linux the browser also needs system libraries. If a phone test says "Host system is missing dependencies", run once: sudo node node_modules/playwright-core/cli.js install-deps webkit   (Ubuntu 22.04 or 24.04; the GitHub check does this for you).
 // On Nov 6 the Playwright installer downloaded its zip on this Mac and then hung while unpacking it.
 // If the download sits unchanged for a minute and the installer has not finished, this unzips it itself.
 const fs = require('fs'), os = require('os'), path = require('path'), { spawn, execFileSync } = require('child_process');

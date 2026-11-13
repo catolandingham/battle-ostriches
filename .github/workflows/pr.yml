@@ -1,0 +1,45 @@
+# Runs every test suite (npm test) on GitHub for every pull request and every push to main.
+# A change is only "passing" when this check is green. See README "Tests".
+name: check
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: check-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Phone browser (WebKit) and its system libraries
+        run: |
+          sudo env "PATH=$PATH" node node_modules/playwright-core/cli.js install-deps webkit
+          npm run setup:e2e
+      - name: Full test suite
+        run: set -o pipefail; npm test 2>&1 | tee /tmp/test.log
+      - name: Failed suites, in short
+        if: always()
+        run: |
+          if [ -f shots/test-logs/summary.md ]; then cat shots/test-logs/summary.md >> "$GITHUB_STEP_SUMMARY";
+          else echo "## The test run did not finish. See the full test output in the log." >> "$GITHUB_STEP_SUMMARY"; fi
+      - name: Test output (logs, screenshots)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-output
+          path: |
+            shots/
+            /tmp/test.log
+          if-no-files-found: ignore
+          retention-days: 14

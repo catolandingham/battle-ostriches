@@ -1,6 +1,6 @@
 // Pass & play on current main: the ostrich carries an egg into the vulture's vicinity, then leaves.
 // The stored clue stays on the board as green squares, and is not spoken again as a live banner.
-const { webkit, chromium, devices } = require('playwright-core');
+const { webkit, devices } = require('playwright-core');
 const assert = require('assert'), fs = require('fs');
 process.env.PORT = process.env.PORT || 4013;
 process.env.BO_NOSTORE = '1';
@@ -8,9 +8,7 @@ const server = require('./server.js');
 const OUT = require('path').join(__dirname, 'shots', 'e2e');
 try { fs.mkdirSync(OUT, { recursive: true }); } catch (e) {}
 (async () => {
-  let b, kind = 'webkit';
-  try { b = await webkit.launch(); }
-  catch (e) { kind = 'chrome'; b = await chromium.launch({ channel: 'chrome' }); }
+  const kind = 'webkit', b = await webkit.launch(); // the same browser as every other phone test
   const errs = [];
   const c = await b.newContext({ ...devices['iPhone 13'] }), P = await c.newPage();
   await P.addInitScript(() => { localStorage.setItem('bo_card_off','1'); localStorage.setItem('bo_hs_off', '1'); localStorage.setItem('bo_tut_seen', '1'); localStorage.setItem('bo_walk_blue', '1'); localStorage.setItem('bo_walk_red', '1'); localStorage.setItem('bo_tips_off', '1'); ['blue', 'red'].forEach(r => localStorage.setItem('bo_cs_' + r, '9')); });

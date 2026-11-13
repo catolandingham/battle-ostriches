@@ -1,9 +1,13 @@
 // Runs every unit and phone (e2e) suite one at a time and prints one PASS or FAIL line each.
 // Usage: node tests/run-all.js [name-filter ...]   (e.g. `node tests/run-all.js lobby` runs testlobby.js and e2e-lobby*.js)
+// A suite listed in KNOWN_FAILURES below fails for a real game reason that is on the problem list. It is still run and still shown (as KNOWN), but it does not turn the check red. Never add a suite here to hide a failure you have not written down.
 // Each suite gets 4 minutes (e2e-consistency.js, which plays 13 full games, gets 15). Logs go to shots/test-logs/<suite>.log. Exits 1 if any suite fails.
 const fs = require('fs'), path = require('path'), { spawn } = require('child_process');
 const ROOT = path.join(__dirname, '..'), LOGS = path.join(ROOT, 'shots', 'test-logs'), LIMIT = 4 * 60 * 1000, LONG = { 'e2e-consistency.js': 15 * 60 * 1000 };
 const SKIP = new Set(['e2e-live.js']); // e2e-live.js plays against the live site, not a local server
+const KNOWN_FAILURES = {
+  // 'e2e-example.js': 'one line on what is broken in the game, and where it is on the problem list',
+};
 const filters = process.argv.slice(2);
 const all = fs.readdirSync(ROOT).filter(f => /^(test.*|ai-test|e2e.*)\.js$/.test(f) && !SKIP.has(f));
 const unit = all.filter(f => !f.startsWith('e2e')).sort(), e2e = all.filter(f => f.startsWith('e2e')).sort();
@@ -32,9 +36,16 @@ function run(file) {
   const results = [];
   for (const f of suites) {
     const r = await run(f); results.push(r);
-    console.log(`${r.ok ? 'PASS' : 'FAIL'}  ${r.file.padEnd(26)} ${String(r.secs).padStart(4)}s  ${r.ok ? '' : r.note}`);
+    const known = KNOWN_FAILURES[f];
+    r.known = !r.ok && !!known; r.fixed = r.ok && !!known;
+    console.log(`${r.ok ? 'PASS' : r.known ? 'KNOWN' : 'FAIL'}  ${r.file.padEnd(26)} ${String(r.secs).padStart(4)}s  ${r.ok ? (r.fixed ? 'now passing: remove it from KNOWN_FAILURES in tests/run-all.js' : '') : r.known ? 'known failure: ' + known : r.note}`);
   }
-  const failed = results.filter(r => !r.ok);
-  console.log(`\n${results.length - failed.length} of ${results.length} suites passed.${failed.length ? ' Logs: shots/test-logs/' : ''}`);
+  const failed = results.filter(r => !r.ok && !r.known), known = results.filter(r => r.known), passed = results.filter(r => r.ok);
+  console.log(`\n${passed.length} of ${results.length} suites passed.${known.length ? ' ' + known.length + ' known failure(s) (listed in KNOWN_FAILURES in tests/run-all.js).' : ''}${failed.length ? ' ' + failed.length + ' FAILED. Logs: shots/test-logs/' : ''}`);
+  // A short summary for GitHub (the workflow copies it into the job summary).
+  const md = [`## Test suites: ${passed.length} of ${results.length} passed`];
+  md.push(failed.length ? `\n### Failed (${failed.length})\n` + failed.map(r => `- ${r.file}: ${r.note.replace(/[\r\n|]/g, ' ')}`).join('\n') : '\nNo failures.');
+  if (known.length) md.push(`\n### Known failures, not counted as red (${known.length})\n` + known.map(r => `- ${r.file}: ${KNOWN_FAILURES[r.file]}`).join('\n'));
+  fs.writeFileSync(path.join(LOGS, 'summary.md'), md.join('\n') + '\n');
   process.exit(failed.length ? 1 : 0);
 })();
