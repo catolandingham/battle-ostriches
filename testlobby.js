@@ -13,7 +13,7 @@ t('lobby role lines say the catch counts the rules use (both hunters 2)', () => 
   const T3 = require('./three.js').T3, TH = require('./hunt.js').TH, TM = require('./team.js').TM;
   for (const ko of [T3.ko, TH.ko, TM.ko]) assert.equal(ko.badger, ko.hyena);
   assert.equal(LB.META.badger.sub, 'Burrow · ' + T3.ko.badger + ' catches'); assert.equal(LB.ANIMAL.badger.sub, 'Burrow · ' + T3.ko.badger + ' catches');
-  assert.equal(LB.META.hyena.sub, 'Pounce · ' + T3.ko.hyena + ' catches'); assert.equal(LB.ANIMAL.hyena.sub, 'Pounce · ' + T3.ko.hyena + ' catches');
+  assert.equal(LB.META.hyena.sub, '1 more when you miss'); assert.equal(LB.ANIMAL.hyena.sub, '1 more when you miss');
 });
 t('one friend previews 2p roles and cannot start', () => {
   const r = humans(1); LB.reconcile(r);
@@ -305,6 +305,65 @@ t('viewing the lobby never marks or seats anyone', () => {
   LB.view(q, 'h0'); assert.equal(q.humans[0].picked, false);
 });
 
+t('bench note no longer repeats You\'re in, and offers only offline human seats', () => {
+  assert.equal(LB.LATE_NOTE_REJOIN, 'Back in the game? Tap your animal.');
+  assert.equal(LB.LATE_NOTE, "This game is already running. You'll play in the next one.");
+  assert.equal(LB.REJOIN_WORDS.confirmBody, 'Only pick this if this was you.');
+  assert.equal(LB.REJOIN_WORDS.confirmYes, 'Rejoin');
+  assert.equal(LB.REJOIN_WORDS.confirmNo, 'Not me');
+  const room = { code: 'AB', g: { phase: 'play' }, flow: 1, players: {
+    blue: { token: 'a', ws: { readyState: 1 } },
+    red: { token: 'b', ws: null },
+  }, bots: [] };
+  const v = LB.benchView(room, { name: 'Player 3', late: true, id: 'w' });
+  assert.equal(v.note, LB.LATE_NOTE_REJOIN);
+  assert.ok(!/^You're in\./.test(v.note));
+  assert.deepEqual(v.offline.map(o => o.seat), ['red']);
+  assert.equal(v.offline[0].action, 'Rejoin as the vulture');
+  assert.equal(v.offline[0].confirm, 'Rejoin as the vulture?');
+  assert.equal(v.rejoinWords.confirmYes, 'Rejoin');
+  const allOn = LB.benchView({ ...room, players: { blue: { token: 'a', ws: { readyState: 1 } }, red: { token: 'b', ws: { readyState: 1 } } } }, { name: 'P', late: true });
+  assert.equal(allOn.note, LB.LATE_NOTE);
+  assert.deepEqual(allOn.offline, []);
+  const withBot = LB.benchView({ ...room, players: { blue: { token: 'a', ws: null, bot: true }, red: { token: 'b', ws: null } } }, { name: 'P', late: true });
+  assert.deepEqual(withBot.offline.map(o => o.seat), ['red']);
+  const team = { code: 'T1', team: true, g: { phase: 'play' }, players: {
+    o1: { token: 'a', ws: null }, v1: { token: 'b', ws: { readyState: 1 } }, o2: { token: 'c', bot: true, ws: null }, v2: { token: 'd', ws: null },
+  } };
+  const tv = LB.benchView(team, { name: 'P', late: true });
+  assert.deepEqual(tv.offline.map(o => o.action), ['Rejoin as Ostrich 1', 'Rejoin as Vulture 2']);
+  const three = { code: 'C3', three: true, g: { phase: 'play', three: { kind: 'hyena' } }, players: {
+    blue: { token: 'a', ws: { readyState: 1 } }, red: { token: 'b', ws: { readyState: 1 } }, hunter: { token: 'c', ws: null },
+  } };
+  const hv = LB.benchView(three, { name: 'P', late: true });
+  assert.deepEqual(hv.offline.map(o => o.action), ['Rejoin as the hyena']);
+  const prev = process.env.BO_REJOIN_GRACE_MS;
+  process.env.BO_REJOIN_GRACE_MS = '60000';
+  const held = { code: 'GR', g: { phase: 'play' }, players: {
+    blue: { token: 'a', ws: null, goneAt: Date.now() },
+    red: { token: 'b', ws: { readyState: 1 } },
+  } };
+  const during = LB.benchView(held, { name: 'P', late: true, id: 'w' });
+  assert.equal(during.note, LB.LATE_NOTE);
+  assert.deepEqual(during.offline, []);
+  assert.deepEqual(LB.graceSeats(held), ['blue']);
+  held.players.blue.goneAt = Date.now() - 70000;
+  const after = LB.benchView(held, { name: 'P', late: true, id: 'w' });
+  assert.equal(after.note, LB.LATE_NOTE_REJOIN);
+  assert.deepEqual(after.offline.map(o => o.seat), ['blue']);
+  held.players.blue.goneAt = Date.now() - 70000;
+  held.rejoinAsks = [{ id: 'ask1', seat: 'blue', hid: 'other' }];
+  const reserved = LB.benchView(held, { name: 'P', late: true, id: 'w' });
+  assert.deepEqual(reserved.offline, []);
+  assert.equal(reserved.note, LB.LATE_NOTE);
+  const mine = LB.benchView(held, { name: 'P', late: true, id: 'other' });
+  assert.equal(mine.note, LB.REJOIN_WORDS.waiting);
+  assert.equal(mine.ask.seat, 'blue');
+  assert.equal(LB.askLine('ostrich'), 'Someone wants to rejoin as the ostrich.');
+  assert.equal(LB.askLine('Ostrich 1'), 'Someone wants to rejoin as Ostrich 1.');
+  if (prev === undefined) delete process.env.BO_REJOIN_GRACE_MS; else process.env.BO_REJOIN_GRACE_MS = prev;
+});
+
 process.env.PORT = 3977; process.env.BO_NOSTORE = '1'; process.env.BO_CLOCKMS = '60000';
 const server = require('./server.js');
 const WS = require('ws');
@@ -457,7 +516,7 @@ const roomOf = code => server.rooms.get(code);
   console.log('ok T7 picked reaches the game view, and solo refuses a start with no pick');
 
   // ---- T5: a friend who types the code mid-game waits for the next game (Nov 4 playtest, A11) ----
-  const LATE = "You're in. This game is already running. You'll play in the next one.";
+  const LATE = LB.LATE_NOTE;
   const twoPlayers = async () => {
     const a = await conn(); a.send({ t: 'create', friends: 1 });
     const aj = await wait(a, m => m.t === 'joined' && m.lobby);
@@ -476,6 +535,7 @@ const roomOf = code => server.rooms.get(code);
     assert.equal(joined.lobby, true); assert.equal(joined.role, null);
     const bench = await wait(c, m => m.t === 'state' && m.lobby && m.state.between);
     assert.equal(bench.state.note, LATE);
+    assert.deepEqual(bench.state.offline || [], []);
     assert.equal(bench.state.canStart, false); assert.equal(bench.state.host, false);
     await new Promise(r => setTimeout(r, 250));
     assert.equal(quiet(g.a), na, 'the first player gets no message when a friend waits'); assert.equal(quiet(g.b), nb, 'the second player gets no message either');

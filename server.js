@@ -53,14 +53,20 @@ function view(room, role) {
     Object.assign(v, { eggs: g.eggs.map(e => ({ pos: e.pos, alive: e.alive, coldIn: B.coldIn(g, e), carried: g.carrying === e.id })),
       carrying: g.carrying, onEgg: B.onEgg(g), mustLeave: B.mustLeave(g) });
     if (role === 'blue') Object.assign(v, { moves: mine ? B.ostrichMoves(g) : [], carryMoves: mine ? B.ostrichMoves(g, true) : [],
-      can: { sit: B.canSit(g), carry: B.canCarry(g), kick: mine && B.kickTargets(g).length > 0 }, kickTargets: mine ? B.kickTargets(g) : [], kickNear: mine && B.kickable(g).length > 0 });
+      can: { sit: B.canSit(g), carry: B.canCarry(g), kick: mine && B.kickTargets(g).length > 0 }, kickTargets: mine ? B.kickTargets(g) : [], kickPlans: mine ? B.kickPlans(g) : [], kickNear: mine && B.kickable(g).length > 0 });
   }
   if (role === 'red') Object.assign(v, { fly: pub.fly, throw: pub.throw });
   return stamp(room, v, role);
 }
 const active = g => g.phase === 'play' ? g.turn : 'blue'; // pass & play: whose hands the phone is in
 function persist(room) { if (room.saveT) return; room.saveT = setTimeout(() => { room.saveT = null; if (rooms.get(room.code) === room) ST.save(room); }, 150); }
-function broadcast(room) { persist(room); if (room.hunt) return broadcastH(room); if (room.team) return broadcastT(room); if (room.three) return broadcast3(room); schedAI(room);
+function tellArrivals(room) {
+  const list = (room.arrivals || []).concat(room.watchers || []);
+  for (const a of list) if (a && a.ws && a.ws.readyState === 1) {
+    try { a.ws.send(JSON.stringify({ t: 'state', lobby: true, state: LB.benchView(room, a) })); } catch {}
+  }
+}
+function broadcast(room) { persist(room); tellArrivals(room); if (room.hunt) return broadcastH(room); if (room.team) return broadcastT(room); if (room.three) return broadcast3(room); schedAI(room);
   if (room.pass) { const p = room.players.blue; if (p && p.ws && p.ws.readyState === 1) p.ws.send(JSON.stringify({ t: 'state', pass: true, active: active(room.g), views: { blue: view(room, 'blue'), red: view(room, 'red') } })); return; }
   for (const r of ['blue', 'red']) { const p = room.players[r]; if (p && p.ws && p.ws.readyState === 1) p.ws.send(JSON.stringify({ t: 'state', state: view(room, r) })); } }
 function act(room, role, m) {
@@ -137,13 +143,14 @@ function view3(room, role) {
     }
   }
   // Kick: the ostrich's options; the kick itself is announced to every seat, the square it ended on only to a seat that can see that square
-  if (role === 'blue') { v.kickTargets = mine && !v.god ? T.kickTargets3(g) : []; v.kickNear = !!mine && !v.god && T.kickable3(g).length > 0; v.can = Object.assign(v.can || {}, { kick: v.kickTargets.length > 0 }); }
+  if (role === 'blue') { v.kickTargets = mine && !v.god ? T.kickTargets3(g) : []; v.kickPlans = mine && !v.god ? T.kickPlans3(g) : []; v.kickNear = !!mine && !v.god && T.kickable3(g).length > 0; v.can = Object.assign(v.can || {}, { kick: v.kickTargets.length > 0 }); }
   const lk = g.lastKick;
   v.kick = lk ? { who: lk.who, by: 'blue', target: lk.who === 'vulture' ? 'red' : lk.who, seq: lk.seq, round: lk.round, moved: kickMoved(lk), to: over || v.god || (role === 'hunter' ? lk.who !== 'vulture' : lk.who === 'vulture' || T.hunterSeenBy(g, role)) ? lk.to : null } : null;
   if (over && role === 'hunter') v.eggs = eggView(g);
   v.h3 = h3; v.three = true; v.showTimers = timersOn(room); return stamp(room, v, role);
 }
 function broadcast3(room) {
+  noteHolds(room, SEATS3, view3);
   sched3(room); clock3(room);
   for (const r of SEATS3) { const p = room.players[r]; if (p && p.ws && p.ws.readyState === 1) p.ws.send(JSON.stringify({ t: 'state', state: view3(room, r) })); }
   rememberViews(room, SEATS3, view3);
@@ -182,6 +189,12 @@ function sched3(room) {
     if (!act3(room, r, m)) { console.error('AI3 illegal move', r, m); if (g.phase === 'play') T.timeout(g); }
     room.touched = Date.now(); broadcast(room); }, delay);
 }
+// A restart does not bring the hold timer back. Drop the saved flag so the shot clock can arm.
+function scrubSaved(saved) {
+  if (!saved) return saved;
+  for (const k of ['clockHoldKey', 'clockFire', 'clockMsPending', 'deadline', 'lastViews', 'holdUntil', 'cardHold', 'clockT', 'clockKey', 'aiT', 'saveT']) delete saved[k];
+  return saved;
+}
 function isBotSeat(room, seat) {
   if (!seat || !room) return false;
   if (room.ai && room.ai === seat) return true;
@@ -193,14 +206,41 @@ function rememberViews(room, seats, viewFn) {
   room.lastViews = {};
   for (const s of seats) { try { room.lastViews[s] = viewFn(room, s); } catch (e) {} }
 }
+// A hit player's phone holds on "Tap to go on." even when someone else moves first.
+// Remember that hold per seat, so their own 10s clock waits when the turn arrives.
+function noteHolds(room, seats, viewFn) {
+  if (!room.holdUntil) room.holdUntil = {};
+  const now = Date.now();
+  for (const s of seats) {
+    if (isBotSeat(room, s)) { delete room.holdUntil[s]; continue; }
+    const prev = room.lastViews && room.lastViews[s];
+    let nowView = null;
+    try { nowView = viewFn(room, s); } catch (e) { continue; }
+    if (!nowView || nowView.phase === 'over') continue;
+    const pol = SUR.policy(nowView, prev);
+    if (pol && pol.affected) {
+      const until = now + (pol.animMs || 0) + SUR.HOLD_CAP_MS;
+      if (until > (room.holdUntil[s] || 0)) room.holdUntil[s] = until;
+    }
+  }
+}
+function holdLeftMs(room, seat) {
+  const until = room.holdUntil && seat && room.holdUntil[seat];
+  return until ? Math.max(0, until - Date.now()) : 0;
+}
+function cardHoldMs(room, seat) {
+  return room && room.cardHold && seat && room.cardHold[seat] ? 24 * 60 * 60 * 1000 : 0;
+}
 function clockDelayFor(room, viewFn, seat) {
+  const card = cardHoldMs(room, seat);
   if (!seat || isBotSeat(room, seat)) return 0;
   const prev = room.lastViews && room.lastViews[seat];
   let now = null;
-  try { now = viewFn(room, seat); } catch (e) { return 0; }
-  const pol = SUR.policy(now, prev);
+  try { now = viewFn(room, seat); } catch (e) { return Math.max(holdLeftMs(room, seat), card); }
+  let pol = null;
+  try { pol = SUR.policy(now, prev); } catch (e) { return Math.max(holdLeftMs(room, seat), card); }
   const sees = !!(pol && pol.ev);
-  return SUR.clockDelayMs(pol, { isBot: false, isCurrent: true, seesEvent: sees });
+  return Math.max(SUR.clockDelayMs(pol, { isBot: false, isCurrent: true, seesEvent: sees }), holdLeftMs(room, seat), card);
 }
 function clearClock(room) {
   clearTimeout(room.clockT); room.clockT = null;
@@ -232,7 +272,9 @@ function armClock(room, k, ms, onFire, delay) {
   }, delay);
 }
 function surpriseDone(room, seat) {
-  if (!room || !room.clockHoldKey || !room.clockFire) return false;
+  if (!room || !seat) return false;
+  if (room.holdUntil) delete room.holdUntil[seat];
+  if (!room.clockHoldKey || !room.clockFire) return false;
   const g = room.g;
   if (!g || g.phase !== 'play' || g.turn !== seat) return false;
   const k = room.clockHoldKey, ms = room.clockMsPending, onFire = room.clockFire;
@@ -306,7 +348,7 @@ function viewT(room, seat) {
   if (setup && step === 'done') v.myTurn = false;
   if (isO || over) Object.assign(v, { eggs: isO || over ? eggs() : undefined, carrying: isO ? myB.carrying : null, onEgg: isO && TT.onEgg(g, seat), mustLeave: isO && TT.mustLeave(g, seat) });
   if (isO) Object.assign(v, { moves: mine ? TT.ostrichMoves(g, seat) : [], carryMoves: mine ? TT.ostrichMoves(g, seat, true) : [], can: { sit: mine && TT.canSit(g, seat), carry: mine && TT.canCarry(g, seat), kick: mine && TT.kickTargets(g, seat).length > 0 },
-    kickTargets: mine ? TT.kickTargets(g, seat) : [], kickNear: mine && TT.kickable(g, seat).length > 0 });
+    kickTargets: mine ? TT.kickTargets(g, seat) : [], kickPlans: mine ? TT.kickPlans(g, seat) : [], kickNear: mine && TT.kickable(g, seat).length > 0 });
   if (isV) Object.assign(v, { fly: mine ? TT.flyTargets(g, seat) : [], throw: mine ? TT.throwTargets(g, seat) : [] });
   if (myB.out && g.phase === 'play') {
     v.god = true; v.myTurn = false; v.moves = []; v.carryMoves = []; v.fly = []; v.throw = []; v.hmoves = [];
@@ -318,6 +360,7 @@ function viewT(room, seat) {
   return stamp(room, v, seat);
 }
 function broadcastT(room) {
+  noteHolds(room, tseats(room.g), viewT);
   schedT(room); clockT(room);
   for (const s of tseats(room.g)) { const p = room.players[s]; if (p && p.ws && p.ws.readyState === 1) p.ws.send(JSON.stringify({ t: 'state', state: viewT(room, s) })); }
   rememberViews(room, tseats(room.g), viewT);
@@ -398,13 +441,14 @@ function viewH(room, seat) {
       if (h3.rival) h3.rival.to = t.rival.to; if (h3.popout) h3.popout.seen = true; if (lc) lc.at = t.lastCatch.at;
     }
   }
-  if (seat === 'blue') { v.kickTargets = mine && !v.god ? HU.kickTargetsH(g) : []; v.kickNear = !!mine && !v.god && HU.kickableH(g).length > 0; v.can = Object.assign(v.can || {}, { kick: v.kickTargets.length > 0 }); }
+  if (seat === 'blue') { v.kickTargets = mine && !v.god ? HU.kickTargetsH(g) : []; v.kickPlans = mine && !v.god ? HU.kickPlansH(g) : []; v.kickNear = !!mine && !v.god && HU.kickableH(g).length > 0; v.can = Object.assign(v.can || {}, { kick: v.kickTargets.length > 0 }); }
   const lk = g.lastKick; // announced to every seat; the square only to a seat that can see it (birds see birds, a bird sees a hunter within 2, hunters see no bird)
   v.kick = lk ? { who: lk.who, by: 'blue', target: lk.who === 'vulture' ? 'red' : lk.who, seq: lk.seq, round: lk.round, moved: kickMoved(lk), to: over || v.god || (lk.who === 'vulture' ? !isH : HU.seen(g, seat, lk.who)) ? lk.to : null } : null;
   if (over && isH) v.eggs = eggView(g);
   v.h3 = h3; v.three = true; v.showTimers = timersOn(room); return stamp(room, v, seat);
 }
 function broadcastH(room) {
+  noteHolds(room, SEATSH, viewH);
   schedH(room); clockH(room);
   for (const r of SEATSH) { const p = room.players[r]; if (p && p.ws && p.ws.readyState === 1) p.ws.send(JSON.stringify({ t: 'state', state: viewH(room, r) })); }
   rememberViews(room, SEATSH, viewH);
@@ -463,7 +507,7 @@ function stamp(room, v, seat) {
     if (t) { const bur = g.three ? g.three.burrowed : g.hunt ? g.hunt.hs.badger.burrowed : g.h.burrowed, m = t.mound;
       v.h3.dug = t.dug ? { seq: t.dug.seq, round: t.dug.round } : null; v.h3.mound = !over && bur && m && (m.seenBy || []).includes(seat) ? m.at.slice() : null;
       const bs = g.hunt && g.hunt.burst; v.h3.burst = bs ? { seq: bs.seq, round: bs.round, n: bs.n, to: over || v.god || ['hyena', 'badger'].includes(seat) || HU.seen(g, seat, 'hyena') ? bs.to : null } : null; } }
-  if (v && room && room.g) { const g = room.g; v.endWhy = g.phase === 'over' ? g.endWhy || null : null; v.stoneNote = g.lastStone ? { seq: g.lastStone.seq, text: g.lastStone.text, by: g.lastStone.by, targets: g.lastStone.targets || [], kicker:g.lastStone.kicker||null } : null;
+  if (v && room && room.g) { const g = room.g; v.endWhy = g.phase === 'over' ? g.endWhy || null : null; v.leftName = g.phase === 'over' && g.winBy === 'left' ? (g.leftName || null) : null; v.leftArt = g.phase === 'over' && g.winBy === 'left' ? (g.leftArt || null) : null; v.stoneNote = g.lastStone ? { seq: g.lastStone.seq, text: g.lastStone.text, by: g.lastStone.by, targets: g.lastStone.targets || [], kicker:g.lastStone.kicker||null } : null;
     v.smashNote = g.lastSmash ? {seq:g.lastSmash.seq,by:g.lastSmash.by,owner:g.team||v.role==='blue'||v.god?g.lastSmash.owner:null} : null;
     if(v.kick&&g.lastKick){const k=g.lastKick,key=g.team?(k.seat==='hunter'?g.h.kind:k.seat):k.who==='vulture'?'red':k.who;v.kick.trail=seat===(v.kick.by||'blue')?motionPath(g.cfg,k.from,k.to,true,k.moved||3):trailView(room,v,seat,key,k.from,k.to,true,k.moved||3);v.kick.key=key;}
     if(v.stoneNote)v.stoneNote.trails=(g.lastStone.trails||[]).map(t=>({key:t.key,points:trailView(room,v,seat,t.key,t.from,t.to,false,2)}));
@@ -482,11 +526,141 @@ function stamp(room, v, seat) {
     v.flow = 1;
     if (room.g && room.g.phase === 'over') v.arrivals = (room.arrivals || []).map(a => a.name).filter(Boolean);
   }
+  if (v && room && room.g && !room.pass && !room.lobby) {
+    const ask = (room.rejoinAsks || []).find(a => a && seatOpen(room, a.seat) && personLive(room, a.hid));
+    if (ask) {
+      const label = LB.seatLabel(room, ask.seat);
+      v.rejoinAsk = { id: ask.id, seat: ask.seat, title: LB.askLine(label), body: LB.REJOIN_WORDS.askBody, yes: LB.REJOIN_WORDS.askYes, no: LB.REJOIN_WORDS.askNo };
+    }
+  }
   return v;
 }
 const hid = () => Math.random().toString(36).slice(2, 10);
 function clientRole(room, seat) { return room.hunt && (seat === 'hyena' || seat === 'badger') ? 'hunter' : seat; }
 function tell(ws, room, seat, token) { try { ws.send(JSON.stringify({ t: 'joined', code: room.code, role: clientRole(room, seat), token, flow: 1 })); } catch {} }
+function live(p) { return !!(p && p.ws && p.ws.readyState === 1); }
+function clearGone(p) {
+  if (!p) return;
+  if (p.graceT) { clearTimeout(p.graceT); p.graceT = null; }
+  p.goneAt = null;
+}
+function scheduleGrace(room, seat) {
+  const p = room.players && room.players[seat];
+  if (!p || p.bot) return;
+  if (p.graceT) clearTimeout(p.graceT);
+  const left = Math.max(0, LB.rejoinGraceMs() - (p.goneAt ? Date.now() - p.goneAt : 0));
+  p.graceT = setTimeout(() => {
+    p.graceT = null;
+    if (rooms.get(room.code) !== room || room.players[seat] !== p || live(p)) return;
+    tellArrivals(room);
+  }, left);
+  if (p.graceT.unref) p.graceT.unref();
+}
+function markGone(room, seat) {
+  const p = room.players && room.players[seat];
+  if (!p) return;
+  p.ws = null;
+  if (p.bot) return;
+  if (!p.goneAt) p.goneAt = Date.now();
+  scheduleGrace(room, seat);
+}
+function armGrace(room) {
+  for (const [seat, p] of Object.entries(room.players || {})) {
+    if (!p || p.bot || live(p)) continue;
+    delete p.graceT;
+    if (!p.goneAt) p.goneAt = Date.now();
+    scheduleGrace(room, seat);
+  }
+}
+function personById(room, id) {
+  if (!id) return null;
+  return (room.watchers || []).find(x => x.id === id) || (room.arrivals || []).find(x => x.id === id) || null;
+}
+function personLive(room, id) {
+  const w = personById(room, id);
+  return !!(w && live(w));
+}
+function anyLiveHuman(room) {
+  return Object.values(room.players || {}).some(p => p && !p.bot && live(p));
+}
+function seatOpen(room, seat) {
+  const p = room.players && room.players[seat];
+  if (!room || !room.g || room.g.phase === 'over' || room.pass) return false;
+  return !!(p && !p.bot && !live(p) && !LB.seatInGrace(p));
+}
+function roomDropAsks(room, pred) {
+  if (!room.rejoinAsks || !room.rejoinAsks.length) return;
+  room.rejoinAsks = room.rejoinAsks.filter(a => !pred(a));
+}
+function liveToken(room, token) {
+  return Object.values(room.players || {}).some(p => p && !p.bot && p.token === token && live(p));
+}
+function adoptRoster(room, seat, oldToken, fresh, who, name) {
+  const roster = room.roster || [];
+  const rec = roster.find(x => !x.bot && (x.token === oldToken || x.role === seat));
+  if (!rec) return who || null;
+  rec.token = fresh;
+  if (who) rec.id = who;
+  if (name) rec.name = name;
+  rec.bot = false;
+  if (rec.host) {
+    const other = roster.find(x => x !== rec && !x.bot && liveToken(room, x.token));
+    if (other) { rec.host = false; other.host = true; }
+  }
+  return rec.id;
+}
+// A fallback claim never inherits the seat token. The previous token is retired so it cannot kick the new person.
+function takeSeat(room, ws, seat) {
+  const p = room.players && room.players[seat];
+  if (!seatOpen(room, seat)) return { error: 'That seat is taken.' };
+  const who = ws._bo && ws._bo.hid;
+  const person = personById(room, who);
+  if (room.arrivals) room.arrivals = room.arrivals.filter(a => a.ws !== ws && a.id !== who);
+  if (room.watchers) room.watchers = room.watchers.filter(a => a.ws !== ws && a.id !== who);
+  roomDropAsks(room, a => a.hid === who || a.seat === seat);
+  const fresh = tok();
+  const retired = (p.retired || []).concat(p.token).filter((t, i, arr) => t && arr.indexOf(t) === i).slice(-12);
+  const rosterId = adoptRoster(room, seat, p.token, fresh, who, person && person.name);
+  clearGone(p);
+  room.players[seat] = { ws, token: fresh, bot: false, retired };
+  ws._bo = { room, seat, hid: rosterId, arrival: false };
+  room.touched = Date.now();
+  try { ws.send(JSON.stringify({ t: 'joined', code: room.code, role: clientRole(room, seat), token: fresh, flow: room.flow ? 1 : undefined })); } catch {}
+  broadcast(room);
+  return { ok: true, token: fresh };
+}
+function leftInfo(room, seat) {
+  const g = room.g || {};
+  const named = { o1: 'Ostrich 1', o2: 'Ostrich 2', v1: 'Vulture 1', v2: 'Vulture 2' };
+  if (named[seat]) return { art: seat[0] === 'o' ? 'ostrich' : 'vulture', title: named[seat] + ' left.' };
+  if (seat === 'hyena' || seat === 'badger') return { art: seat, title: 'The ' + seat + ' left.' };
+  if (seat === 'hunter') {
+    const kind = (g.three && g.three.kind) || (g.h && g.h.kind) || 'hyena';
+    const k = kind === 'badger' ? 'badger' : 'hyena';
+    return { art: k, title: 'The ' + k + ' left.' };
+  }
+  if (seat === 'red') return { art: 'vulture', title: 'The vulture left.' };
+  return { art: 'ostrich', title: 'The ostrich left.' };
+}
+function leaveGame(room, seat) {
+  const g = room.g;
+  if (!g || g.phase === 'over' || !seat) return false;
+  const info = leftInfo(room, seat);
+  g.phase = 'over';
+  g.winner = 'none';
+  g.winBy = 'left';
+  g.leftName = info.title;
+  g.leftArt = info.art;
+  g.endWhy = 'This game is over.';
+  clearClock(room);
+  return true;
+}
+function releaseCard(room, seat) {
+  if (!room.cardHold || !seat || !room.cardHold[seat]) return false;
+  delete room.cardHold[seat];
+  if (room.g && room.g.phase === 'play' && room.g.turn === seat && room.clockHoldKey) clearClock(room);
+  return true;
+}
 function wsFor(room, token) {
   for (const p of Object.values(room.players || {})) if (p && p.token === token && p.ws && p.ws.readyState === 1) return p.ws;
   const a = (room.arrivals || []).find(x => x.token === token && x.ws && x.ws.readyState === 1);
@@ -601,6 +775,19 @@ wss.on('connection', ws => {
       if (surpriseDone(room, seat)) { room.touched = Date.now(); broadcast(room); }
       return;
     }
+    if (m.t === 'card-hold' || m.t === 'card-done') {
+      const b = ws._bo; if (!b || !b.room || !b.room.g) return;
+      const room = b.room, owned = seatsOwned(room, ws);
+      const seat = owned.includes(m.seat) ? m.seat : ((room.g && owned.includes(room.g.turn)) ? room.g.turn : b.seat);
+      if (!seat) return;
+      if (!room.cardHold) room.cardHold = {};
+      if (m.t === 'card-hold') {
+        room.cardHold[seat] = true;
+        if (room.g.phase === 'play' && room.g.turn === seat && (room.clockKey || room.clockHoldKey)) clearClock(room);
+      } else releaseCard(room, seat);
+      room.touched = Date.now();
+      return broadcast(room);
+    }
     if (m.t === 'create' && (m.friends || m.solo)) return openLobby(ws, m);
     if (m.t === 'create' && m.hunt) { const rh = createH(m, ws); ws._bo = { room: rh.room, seat: rh.role, hid: null }; send({ t: 'joined', code: rh.room.code, role: HU.isH(rh.role) ? 'hunter' : rh.role, token: rh.token, three: true }); return broadcast(rh.room); }
     if (m.t === 'create' && m.team) { const rt = createT(m, ws); ws._bo = { room: rt.room, seat: rt.role, hid: null }; send({ t: 'joined', code: rt.room.code, role: rt.role, token: rt.token, team: rt.room.n }); return broadcast(rt.room); }
@@ -643,10 +830,12 @@ wss.on('connection', ws => {
       if (!r) { const saved = await ST.load(code).catch(() => null);
         if (saved && (saved.g || saved.lobby) && !rooms.has(code)) {
           saved.touched = Date.now();
-          for (const k in saved.players || {}) if (saved.players[k]) saved.players[k].ws = null;
+          scrubSaved(saved);
+          for (const k in saved.players || {}) if (saved.players[k]) { saved.players[k].ws = null; delete saved.players[k].graceT; }
           for (const h of saved.humans || []) h.ws = null;
           for (const a of saved.arrivals || []) a.ws = null;
           rooms.set(code, saved);
+          armGrace(saved);
         }
         r = rooms.get(code); }
       if (!r) return send({ t: 'error', msg: 'No game with that code.', gone: !!m.token });
@@ -666,13 +855,28 @@ wss.on('connection', ws => {
         send({ t: 'joined', code: r.code, role: 'blue', token: m.token, pass: true }); return broadcast(r);
       }
       const SEATS = r.hunt ? SEATSH : r.team ? ['o1', 'v1', 'o2', 'v2', 'hunter'].filter(x => x in (r.players || {})) : r.three ? ['blue', 'red', 'hunter'] : ['blue', 'red'];
-      let seat = SEATS.find(s => r.players[s] && m.token && r.players[s].token === m.token);
+      let token = m.token || null;
+      let seat = token && SEATS.find(s => r.players[s] && !r.players[s].bot && r.players[s].token === token);
       if (seat) {
-        r.players[seat] = { ws, token: r.players[seat].token, bot: false }; ws._bo = { room: r, seat, hid: (r.roster || []).find(x => x.token === m.token)?.id || null };
-        r.touched = Date.now(); send({ t: 'joined', code: r.code, role: clientRole(r, seat), token: r.players[seat].token, flow: r.flow ? 1 : undefined }); return broadcast(r);
+        const p = r.players[seat];
+        clearGone(p);
+        roomDropAsks(r, a => a.seat === seat);
+        p.ws = ws; p.bot = false;
+        ws._bo = { room: r, seat, hid: (r.roster || []).find(x => x.token === p.token)?.id || null };
+        r.touched = Date.now();
+        send({ t: 'joined', code: r.code, role: clientRole(r, seat), token: p.token, flow: r.flow ? 1 : undefined });
+        return broadcast(r);
       }
-      const back = (r.arrivals || []).find(a => m.token && a.token === m.token);
-      if (back) { back.ws = ws; ws._bo = { room: r, seat: null, hid: back.id, arrival: true }; send({ t: 'joined', code: r.code, role: null, token: back.token, lobby: true }); send({ t: 'state', lobby: true, state: LB.benchView(r, back) }); return broadcast(r); }
+      const retiredSeat = token && SEATS.find(s => r.players[s] && !r.players[s].bot && (r.players[s].retired || []).includes(token));
+      if (retiredSeat && live(r.players[retiredSeat])) return send({ t: 'error', msg: 'That seat is taken.' });
+      if (retiredSeat) token = null;
+      const back = token && ((r.arrivals || []).find(a => a.token === token) || (r.watchers || []).find(a => a.token === token));
+      if (back) {
+        back.ws = ws; ws._bo = { room: r, seat: null, hid: back.id, arrival: true };
+        send({ t: 'joined', code: r.code, role: null, token: back.token, lobby: true });
+        send({ t: 'state', lobby: true, state: LB.benchView(r, back) });
+        return broadcast(r);
+      }
       seat = SEATS.find(s => !r.players[s]);
       const over = !!(r.g && r.g.phase === 'over');
       if (r.flow && (over || !seat)) {
@@ -684,11 +888,55 @@ wss.on('connection', ws => {
         send({ t: 'joined', code: r.code, role: null, token: a.token, lobby: true });
         send({ t: 'state', lobby: true, state: LB.benchView(r, a) });
         // between games the players see the new name; mid-game nothing on their screens changes, so only save
-        return over ? broadcast(r) : persist(r);
+        // tell other waiters their reclaim list (an offline seat may already be waiting)
+        if (over) return broadcast(r);
+        tellArrivals(r); return persist(r);
+      }
+      // A mid-game return without a token (storage gone). During the grace only the original token can sit back down,
+      // so the bench shows the no-seat line until the grace ends and tellArrivals offers the seat.
+      if (!seat && r.g && r.g.phase !== 'over' && !r.pass) {
+        if (LB.offlineSeats(r).length || LB.graceSeats(r).length) {
+          const a = { id: hid(), token: tok(), ws, name: 'Player', late: true };
+          r.watchers = r.watchers || []; r.watchers.push(a);
+          ws._bo = { room: r, seat: null, hid: a.id, arrival: true }; r.touched = Date.now();
+          send({ t: 'joined', code: r.code, role: null, token: a.token, lobby: true });
+          send({ t: 'state', lobby: true, state: LB.benchView(r, a) });
+          return persist(r);
+        }
       }
       if (!seat) return send({ t: 'error', msg: 'That game is full and already started. Ask for a new code.' });
-      const token = tok(); r.players[seat] = { ws, token }; ws._bo = { room: r, seat, hid: null }; r.touched = Date.now();
-      send({ t: 'joined', code: r.code, role: clientRole(r, seat), token }); return broadcast(r);
+      const freshSeat = tok(); r.players[seat] = { ws, token: freshSeat }; ws._bo = { room: r, seat, hid: null }; r.touched = Date.now();
+      send({ t: 'joined', code: r.code, role: clientRole(r, seat), token: freshSeat }); return broadcast(r);
+    }
+    if (m.t === 'claim') {
+      const b0 = ws._bo, room0 = b0 && b0.room;
+      if (!room0 || room0.lobby || room0.pass) return send({ t: 'error', msg: 'Not a legal move right now.', soft: true });
+      if (b0.seat && room0.players[b0.seat] && room0.players[b0.seat].ws === ws) return;
+      const want = String(m.seat || '');
+      if (!seatOpen(room0, want)) return send({ t: 'error', msg: 'That seat is taken.', soft: true });
+      const who = b0.hid;
+      const pending = (room0.rejoinAsks || []).find(a => a.seat === want && a.hid !== who);
+      if (pending && personLive(room0, pending.hid)) return send({ t: 'error', msg: 'That seat is taken.', soft: true });
+      room0.rejoinAsks = (room0.rejoinAsks || []).filter(a => a.hid !== who && !(a.seat === want && !personLive(room0, a.hid)));
+      room0.rejoinAsks.push({ id: hid(), seat: want, hid: who, at: Date.now() });
+      room0.touched = Date.now();
+      if (!anyLiveHuman(room0)) return takeSeat(room0, ws, want);
+      broadcast(room0);
+      return;
+    }
+    if (m.t === 'claim-answer') {
+      const b0 = ws._bo, room0 = b0 && b0.room;
+      if (!room0 || room0.lobby || room0.pass) return;
+      const mine = b0.seat && room0.players[b0.seat];
+      if (!mine || mine.bot || mine.ws !== ws) return send({ t: 'error', msg: 'That seat is taken.', soft: true });
+      const ask = (room0.rejoinAsks || []).find(a => (m.id && a.id === m.id) || (!m.id && m.seat && a.seat === m.seat));
+      if (!ask) return;
+      if (!m.yes) { roomDropAsks(room0, a => a === ask); room0.touched = Date.now(); return broadcast(room0); }
+      const w = personById(room0, ask.hid);
+      if (!w || !live(w) || !seatOpen(room0, ask.seat)) { roomDropAsks(room0, a => a === ask); room0.touched = Date.now(); return broadcast(room0); }
+      const res = takeSeat(room0, w.ws, ask.seat);
+      if (res && res.error) return send({ t: 'error', msg: res.error, soft: true });
+      return;
     }
     const b = ws._bo, room = b && b.room, role = b && b.seat;
     if ((m.t === 'act' || m.t === 'seat') && !validMove(m)) return send({ t: 'error', msg: 'Not a legal move right now.', soft: true }); // a malformed square never reaches the rules
@@ -701,6 +949,12 @@ wss.on('connection', ws => {
     }
     if (b && b.arrival && (m.t === 'act' || m.t === 'seat')) return; // a friend waiting for the next game cannot act in this one
     if (m.t === 'act' && room && !room.lobby) {
+      if (m.a === 'leave') {
+        const who = room.pass ? active(room.g) : role;
+        if (!who || !room.g || room.g.phase === 'over') return send({ t: 'error', msg: 'Not a legal move right now.', soft: true });
+        if (leaveGame(room, who)) { room.touched = Date.now(); broadcast(room); }
+        return;
+      }
       if (m.a === 'rematch' && room.flow) { if (!room.g || room.g.phase !== 'over') return send({ t: 'error', msg: 'Not a legal move right now.', soft: true }); return handleRematch(room, m.how === 'change' ? 'change' : 'same'); }
       const who = room.pass ? (m.a === 'rematch' ? 'blue' : active(room.g)) : role;
       if (act(room, who, m)) { room.touched = Date.now(); broadcast(room); }
@@ -720,10 +974,15 @@ wss.on('connection', ws => {
       }
       return lobbyBroadcast(room);
     }
-    if (b.arrival) { const a = (room.arrivals || []).find(x => x.id === b.hid); if (a && a.ws === ws) a.ws = null; return; }
-    if (room.three || room.team || room.hunt) { if (room.players[b.seat] && room.players[b.seat].ws === ws) { room.players[b.seat].ws = null; broadcast(room); } return; }
+    if (b.arrival) {
+      const a = (room.arrivals || []).find(x => x.id === b.hid); if (a && a.ws === ws) a.ws = null;
+      const w = (room.watchers || []).find(x => x.id === b.hid); if (w && w.ws === ws) w.ws = null;
+      if ((room.rejoinAsks || []).some(x => x.hid === b.hid)) { roomDropAsks(room, x => x.hid === b.hid); broadcast(room); }
+      return;
+    }
+    if (room.cardHold && b.seat && room.cardHold[b.seat]) releaseCard(room, b.seat);
     if (room.pass) { for (const s of ['blue', 'red']) if (room.players[s] && room.players[s].ws === ws) room.players[s].ws = null; return; }
-    if (room.players[b.seat] && room.players[b.seat].ws === ws) { room.players[b.seat].ws = null; broadcast(room); }
+    if (b.seat && room.players[b.seat] && room.players[b.seat].ws === ws) { markGone(room, b.seat); broadcast(room); }
   });
 });
 setInterval(() => { for (const c of wss.clients) { if (!c.isAlive) { c.terminate(); continue; } c.isAlive = false; try { c.ping(); } catch {} } }, 25000).unref();
@@ -731,4 +990,4 @@ setInterval(() => { const now = Date.now(); for (const [c, r] of rooms) if (now 
 server.listen(PORT, () => console.log('Battle Ostriches on http://localhost:' + PORT));
 // on shutdown (deploys send SIGTERM) save every live room right away
 process.on('SIGTERM', async () => { try { await Promise.all([...rooms.values()].map(r => ST.save(r))); ST.flushFile(); } catch {} process.exit(0); });
-module.exports = server; server.view = view; server.timersOn = timersOn; server.view3 = view3; server.create3 = create3; server.viewT = viewT; server.createT = createT; server.viewH = viewH; server.createH = createH; server.act3 = act3; server.actT = actT; server.actH = actH; server.rooms = rooms; server.broadcast = broadcast; server.surpriseDone = surpriseDone; server.clockDelayFor = clockDelayFor; server.isBotSeat = isBotSeat;
+module.exports = server; server.view = view; server.timersOn = timersOn; server.view3 = view3; server.create3 = create3; server.viewT = viewT; server.createT = createT; server.viewH = viewH; server.createH = createH; server.act3 = act3; server.actT = actT; server.actH = actH; server.rooms = rooms; server.broadcast = broadcast; server.surpriseDone = surpriseDone; server.clockDelayFor = clockDelayFor; server.isBotSeat = isBotSeat; server.scrubSaved = scrubSaved;

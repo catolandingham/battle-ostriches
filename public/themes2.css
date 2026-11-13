@@ -118,3 +118,9 @@ html[data-theme=tactical],html[data-theme=tactical] body{background:#061a14 radi
 #fx.tactical .spr{filter:drop-shadow(0 0 5px currentColor)}
 .tacarc{fill:none;stroke:#ffd166;stroke-width:1.6;stroke-dasharray:3 5!important;filter:drop-shadow(0 0 3px #ffd166)}
 .fxret{position:absolute;width:56px;height:56px;margin:-28px 0 0 -28px;border:2px solid #ff6b5a;border-radius:50%;box-shadow:0 0 8px #ff6b5a;background:linear-gradient(#ff6b5a,#ff6b5a) center/2px 100% no-repeat,linear-gradient(#ff6b5a,#ff6b5a) center/100% 2px no-repeat;animation:ret .6s ease-out forwards}@keyframes ret{from{transform:scale(2) rotate(-45deg);opacity:0}to{transform:scale(1) rotate(0);opacity:1}}
+/* Bug sweep: icons and digits that were white on a light bar (invisible), fixed per theme */
+[data-theme=paper] #hud .ctr .or{color:#b4531a!important;text-shadow:none!important}
+[data-theme=notes] #hud button svg *:not(#_a){stroke:#2b2118!important}
+[data-theme=toybox] #hud #inviteBtn svg *:not(#_a){stroke:#3a2a1a!important}
+
+[data-theme=notes] #hud .ctr .or,[data-theme=toybox] #hud .ctr .or,[data-theme=pharaoh] #hud .ctr .or{text-shadow:none!important}

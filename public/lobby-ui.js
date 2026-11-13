@@ -19,9 +19,10 @@
     const r = { blue: 'Ostrich', red: 'Vulture', o1: 'Ostrich 1', o2: 'Ostrich 2', v1: 'Vulture 1', v2: 'Vulture 2', hyena: 'Hyena', badger: 'Badger' };
     return r[role] || role;
   };
-  let gear = false, botsOpen = false, kindOpen = false, st = null;
+  let gear = false, botsOpen = false, kindOpen = false, st = null, pendingClaim = null;
   const send = o => window.UI && UI.send(o);
   function show(state) {
+    if (!st || st.code !== state.code || state.ask) pendingClaim = null;
     st = state; $('lobby').classList.remove('hidden'); $('lobby').classList.add('inroom');
     $('over').classList.add('hidden'); $('homeStep').classList.add('hidden');
     $('soloStep').classList.add('hidden'); $('passStep').classList.add('hidden');
@@ -35,8 +36,23 @@
     const box = $('roomLobby');
     const link = esc(location.origin + '/?room=' + s.code);
     if (s.between) {
+      const words = s.rejoinWords || {};
+      const offline = s.offline || [];
+      let mid;
+      if (pendingClaim && offline.some(o => o.seat === pendingClaim)) {
+        const o = offline.find(x => x.seat === pendingClaim);
+        mid = `<p class="sub">${esc(o.confirm || o.action + '?')}</p>
+          <p class="statusline">${esc(words.confirmBody || '')}</p>
+          <div class="row rejoinrow">
+            <button type="button" class="big" id="claimYes">${esc(words.confirmYes || 'Rejoin')}</button>
+            <button type="button" class="big alt" id="claimNo">${esc(words.confirmNo || 'Not me')}</button>
+          </div>`;
+      } else {
+        const btns = offline.map(o => `<button type="button" class="big alt rejoin" data-claim="${esc(o.seat)}">${esc(o.action)}</button>`).join('');
+        mid = `<p class="sub">${esc(s.note || 'The next game adds you.')}</p>${btns ? `<div class="rejoinlist">${btns}</div>` : ''}`;
+      }
       box.innerHTML = `<div class="toolbar"><button class="linkbtn" id="lobbyHome" type="button">← Home</button></div>
-        <h2>You're in</h2><p class="sub">${esc(s.note || 'The next game adds you.')}</p>
+        <h2>You're in</h2>${mid}
         <div class="codebox"><div id="lobbyCode" aria-label="Room code ${esc(s.code)}">${esc(s.code)}</div>
         <button type="button" id="shareGo" aria-label="Share room ${esc(s.code)}">Share</button>
         <input id="lobbyLink" class="visually-hidden" readonly tabindex="0" aria-label="Room link" value="${link}"></div>
@@ -89,13 +105,16 @@
       ${recover}
       ${roles ? `<div class="roles" aria-label="Roles">${roles}</div>` : ''}
       ${s.computers ? `<p class="statusline">Computers: ${esc(s.computers)}</p>` : ''}
-      ${s.showHunterKind ? `<p class="statusline">Computer hunter, if nobody claims it</p><div class="row hunterkind"><button type="button" data-hkind="hyena" class="${s.hunterKind === 'badger' ? '' : 'on'}" aria-pressed="${s.hunterKind === 'badger' ? 'false' : 'true'}">Hyena</button><button type="button" data-hkind="badger" class="${s.hunterKind === 'badger' ? 'on' : ''}" aria-pressed="${s.hunterKind === 'badger' ? 'true' : 'false'}">Badger</button></div>` : ''}
+      ${s.showHunterKind ? `<p class="statusline">Computer hunter, if nobody claims it</p><div class="row hunterkind"><button type="button" data-hkind="hyena" class="${s.hunterKind === 'badger' ? '' : 'on'}" aria-pressed="${s.hunterKind === 'badger' ? 'false' : 'true'}">Hyena<small>When you miss, move 1 more.</small></button><button type="button" data-hkind="badger" class="${s.hunterKind === 'badger' ? 'on' : ''}" aria-pressed="${s.hunterKind === 'badger' ? 'true' : 'false'}">Badger</button></div>` : ''}
       ${bots}
       ${s.host ? `<button type="button" class="big" id="startGame"${s.canStart ? '' : ' disabled'}>${esc(s.startLabel || 'Start game')}</button>` : '<p class="footnote">Waiting for the host to start.</p>'}`;
   }
   document.addEventListener('click', e => {
     const root = $('roomLobby'); if (!root || root.classList.contains('hidden') || !root.contains(e.target)) return;
     const home = e.target.closest('#lobbyHome'); if (home) { UI.menu(); return; }
+    const claimBtn = e.target.closest('[data-claim]'); if (claimBtn) { pendingClaim = claimBtn.dataset.claim; draw(); return; }
+    const yes = e.target.closest('#claimYes'); if (yes && pendingClaim) { send({ t: 'claim', seat: pendingClaim }); return; }
+    const no = e.target.closest('#claimNo'); if (no) { pendingClaim = null; draw(); return; }
     const gearBtn = e.target.closest('#lobbyGear'); if (gearBtn) { gear = !gear; draw(); return; }
     const clock = e.target.closest('#clockToggle'); if (clock && st && st.host) { send({ t: 'lobby', a: 'clock', on: !st.clock }); return; }
     const lvl = e.target.closest('[data-level]'); if (lvl && st && st.host) { send({ t: 'lobby', a: 'level', level: lvl.dataset.level }); return; }
@@ -123,5 +142,6 @@
       return;
     }
   });
-  window.LobbyUI = { show, hide, get: () => st };
+  function fail() { pendingClaim = null; if (st) draw(); }
+  window.LobbyUI = { show, hide, fail, get: () => st };
 })();

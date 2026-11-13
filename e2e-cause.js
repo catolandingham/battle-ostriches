@@ -137,6 +137,9 @@ const COLS = 9;
   await A.waitForTimeout(1300);
   await none(A, 'A when V smashed an egg (a smash is not a cold egg)');
   assert.equal(await A.textContent('#eggsLeft'), '1');
+  const smashGo = A.locator('#surprise-go button');
+  if (await smashGo.count()) await smashGo.click();
+  if (await A.evaluate(() => !!(window.CUTAWAYS && CUTAWAYS.busy()))) await A.waitForFunction(() => !CUTAWAYS.busy(), null, { timeout: 15000 });
 
   // (5) the same carry in a sprite theme: the sprite layer already moves the ostrich, so only the egg slides
   await myTurn(A);

@@ -92,7 +92,11 @@
     }
     return null;
   }
-  const api = { MS, REVEAL, TABLE, kindOf, seenWrap, candidates, sceneFor };
+  // After a surprise hold, only the latest deferred state is applied (the board
+  // should show the current truth). Intermediate packets are dropped so we do not
+  // replay a mid-hold turn as a snap.
+  function flushStates(queue) { return queue && queue.length ? [queue[queue.length - 1]] : []; }
+  const api = { MS, REVEAL, TABLE, kindOf, seenWrap, candidates, sceneFor, flushStates, flushing: false };
   if (typeof module !== 'undefined') module.exports = api;
 
   if (typeof document === 'undefined') return;
@@ -180,8 +184,18 @@
     const card = document.getElementById('cutaway'); if (card) card.remove();
     document.documentElement.classList.remove('cutaway-up');
     document.documentElement.classList.remove('surprise-slide');
+    // Drop the held event line before the queued states paint, so the next line is not stuck behind it.
+    try { if (api.onDone) api.onDone(); } catch (e) {}
     emitSurpriseDone();
-    while (queue.length && !(busyUntil > Date.now())) { const s = queue.shift(); try { apply && apply(s); } catch (e) { console.error(e); } }
+    const pending = queue.splice(0);
+    const last = api.flushStates(pending)[0];
+    if (!last || !apply) return;
+    // A move made during the hold must not appear as a snap at the landing of
+    // the slide we just played. Mark this apply so push-motion can slide each
+    // visible piece from where the hold left it to where it is now.
+    api.flushing = true;
+    try { apply(last); } catch (e) { console.error(e); }
+    finally { api.flushing = false; }
   }
   function stepDir(a, b, cols, rows) {
     let dx = b[0] - a[0], dy = b[1] - a[1];
@@ -326,6 +340,9 @@
   api.prepare = function (S, prev, board) {
     if (!board || busyUntil > Date.now()) return;
     const scene = sceneFor(S, prev);
+    // A follow-up walk flushed after a surprise is just a slide, not a new
+    // cartoon. Starting a hold here would hide the piece for 2s with no copy.
+    if (api.flushing && !scene) return;
     const ev = (root.PUSH_MOTION && PUSH_MOTION.events(S, prev)) || [];
     if (!scene && !ev.length) return;
     const stage = document.getElementById('stage');
@@ -346,14 +363,17 @@
     const cartoon = scene && !reduced();
     const motionDelay = pol ? pol.motionDelay : (cartoon ? REVEAL : MS);
     const motionMs = pol ? pol.motionMs : 0;
-    const after = pol && pol.affected ? (pol.holdCap || 8000) : ((root.SURPRISE && SURPRISE.MIN_LINE_MS) || 1000);
+    // A hit that already ended the game does not add the 8s tap on top of the cartoon.
+    const ended = !!(S && S.phase === 'over');
+    const tapHold = !!(pol && pol.affected && !ended && !reduced());
+    const after = tapHold ? (pol.holdCap || 8000) : ((root.SURPRISE && SURPRISE.MIN_LINE_MS) || 1000);
     // Tap waits until the cartoon is gone and the real move, if any, has finished.
-    const total = motionDelay + motionMs + after;
-    busyUntil = Date.now() + total;
+    const total = motionDelay + motionMs + (tapHold ? after : 0);
+    busyUntil = Date.now() + (tapHold ? total : motionDelay + motionMs);
     const token = ++serial;
     nextCard = cartoon ? { scene, S, delay: pol && pol.lookout ? ((root.SURPRISE && SURPRISE.LOOKOUT_MS) || 1000) : 0 } : null;
     setTimeout(() => { if (token === serial) reveal(); }, motionDelay);
-    if (pol && pol.affected && !reduced()) {
+    if (tapHold) {
       setTimeout(() => { if (token === serial && !document.getElementById('cutaway')) showGo(token); }, motionDelay + motionMs);
       setTimeout(() => { if (token === serial) api.dismiss(); }, total);
     } else {

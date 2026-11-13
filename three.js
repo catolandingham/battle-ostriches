@@ -113,6 +113,17 @@ function kickable3(g) {
   return r;
 }
 const kickTargets3 = g => B.canKick(g) ? kickable3(g) : [];
+function kickPlans3(g) {
+  if (!B.canKick(g)) return [];
+  const t = g.three;
+  return kickable3(g).map(at => {
+    const hunter = K(at) === K(t.h), n = hunter && t.kind === 'badger' ? g.cfg.kickPushBadger : g.cfg.kickPush;
+    const blocked = m => hunter ? liveAt(g, 'red') && K(m) === K(g.vulture) : (K(m) === K(t.h) && !(t.kind === 'badger' && t.burrowed));
+    const path = B.slideN(g.cfg, at, B.awayFrom(g.ostrich, at), n, blocked, g.marks, true);
+    const who = hunter ? (t.kind || 'hyena') : 'vulture';
+    return { at: at.slice(), to: path.to.slice(), points: path.points, who, key: hunter ? who : 'red' };
+  });
+}
 function ostrichKick3(g, p) {
   if (!kickTargets3(g).some(q => K(q) === K(p))) return false;
   const t = g.three, hunter = K(p) === K(t.h), from = p.slice(), n = hunter && t.kind === 'badger' ? g.cfg.kickPushBadger : g.cfg.kickPush;
@@ -133,7 +144,11 @@ function ostrichAct3(g, a, p) {
 // Hunters walk T3.walk squares; the Pounce extra step is T3.pounce. They may pass over anything and land anywhere that is not wrecked.
 function hunterRange(g) { return g.three.pounce ? T3.pounce : T3.walk; }
 // the farthest this hunter can reach on any turn (what a bird has to stay out of)
-const hunterReach = g => T3.walk + (g.three.kind === 'hyena' ? T3.pounce : 0);
+// One turn, or both turns after the first catch knock-out (the birds do not move between them). Pounce is only on the first of those two.
+const hunterReach = g => {
+  const one = T3.walk + (g.three.kind === 'hyena' ? T3.pounce : 0);
+  return firstCaughtKo(g) ? one + T3.walk : one;
+};
 function hunterMoves(g) {
   if (g.phase !== 'play' || g.turn !== 'hunter') return [];
   const h = g.three.h, n = hunterRange(g), r = [];
@@ -172,5 +187,5 @@ function timeout(g) {
 // Public 3-player status every seat may see (no positions).
 function status3(g) { const t = g.three;
   return { kind: t.kind, ko: koAt(g), birds: JSON.parse(JSON.stringify(t.birds)), order: ['red', 'blue', 'hunter'], extra: !!t.extra }; }
-module.exports = { T3, OFF, NAME, newGame3, senses, hunterSeenBy, ambushSight, hunterMoves, hunterMove, hunterStay, hunterRange, hunterReach, kickable3, kickTargets3, ostrichKick3, placeOstrich3, vultureFly3, vultureThrow3,
+module.exports = { T3, OFF, NAME, newGame3, senses, hunterSeenBy, ambushSight, hunterMoves, hunterMove, hunterStay, hunterRange, hunterReach, kickable3, kickTargets3, kickPlans3, ostrichKick3, placeOstrich3, vultureFly3, vultureThrow3,
   ostrichAct3, finish, timeout, status3, isOut, pos, advance, catchBird, knockout };

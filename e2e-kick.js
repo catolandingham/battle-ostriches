@@ -44,13 +44,22 @@ const at = { state: 'attached' };
   g.hunt.hs.badger.burrowed = false; server.broadcast(room); await A.waitForSelector('#actions button:has-text("Kick")');
   // kick: the badger flies 2 squares east
   await A.locator('#actions button:has-text("Kick")').click({ force: true });
-  await A.waitForFunction(() => /Kick it away\./.test(document.getElementById('hint').textContent));
-  assert.equal(await A.locator('.cell.legal').count(), 1, 'only the badger glows'); await cell(A, 3, 5).click(); await A.waitForSelector('.kpath'); assert.ok(await A.locator('.karrow').count() === 1 && await A.locator('.kghost').count() === 1, 'the preview shows an arrow, dots and a ghost'); await cell(A, 3, 5).click(); // tap again to kick
+  await A.waitForFunction(() => document.getElementById('hint').textContent === 'Tap where they go.');
+  assert.deepEqual(await A.evaluate(() => UI._legal()), [[5, 5]], 'the landing square is the tap');
+  assert.equal(await A.locator('#board .kpath,#board .karrow,#board .kring,#board .cell.target,#board .cell.legal').count(), 0, 'no dots, arrows, landing boxes, or circles');
+  assert.ok(await A.locator('.kick-preview .kick-ghost').count() >= 1, 'a faint copy slides along the path');
+  await cell(A, 5, 5).click();
   for (let i = 0; i < 100 && !g.lastKick; i++) await A.waitForTimeout(50);
   assert.deepEqual(g.hunt.hs.badger.p, [5, 5], 'pushed 2 squares straight away: ' + JSON.stringify([g.hunt.hs.badger.p, g.hunt.hs.hyena.p, g.vulture, g.ostrich])); assert.deepEqual(g.ostrich, [2, 5], 'the ostrich stays'); assert.equal(g.lastKick.who, 'badger');
   const line = 'Ostrich kicked the badger 2 squares away.';
-  for (const [P, name] of [[A, 'ostrich'], [Y, 'badger']]) await P.waitForFunction(t => (document.getElementById('announce') || {}).textContent === t, name==='ostrich'?'You kicked the badger 2 squares!':'The ostrich kicked you 2 squares!', { timeout: 6000 }).catch(e => { throw new Error(name + ' phone never showed the kick line: ' + e.message); });
-  for (const P of [A, Y]) await P.waitForFunction(t => (document.getElementById('badgerline') || {}).textContent === t, BL.LINES.kicked, { timeout: 8000 });
+  for (const [P, name] of [[A, 'ostrich'], [Y, 'badger']]) await P.waitForFunction(t => (document.getElementById('announce') || {}).textContent === t, name==='ostrich'?'You kicked the badger 2 squares!':'The ostrich kicked you 2 squares!', { timeout: 8000 }).catch(e => { throw new Error(name + ' phone never showed the kick line: ' + e.message); });
+  for (const P of [A, Y]) {
+    const go = P.locator('#surprise-go button');
+    if (await go.count()) await go.click();
+    await P.waitForFunction(t => (document.getElementById('badgerline') || {}).textContent === t || !!document.getElementById('surprise-go'), BL.LINES.kicked, { timeout: 12000 });
+    if (await go.count()) await go.click();
+    await P.waitForFunction(t => (document.getElementById('badgerline') || {}).textContent === t, BL.LINES.kicked, { timeout: 20000 });
+  }
   assert.equal(BL.LINES.kicked, "Ouch. I mean... badger doesn't care.");
   await shot(A, '3-kick-ostrich'); await shot(Y, '4-kick-badger');
   // Both participants get the actual landing; this does not grant ongoing sight.

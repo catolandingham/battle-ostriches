@@ -23,7 +23,8 @@
 #clock3.hidden{display:none}#clock3 .cfill{position:absolute;inset:0 auto 0 0;background:#38d66b;transition:background .3s}
 #clock3.low .cfill{background:#ff3b2f;animation:pul .5s infinite}#clock3 .ctxt{position:relative;display:block;text-align:center;font-weight:900;color:#fff;line-height:22px;font-size:15px;text-shadow:0 2px 0 #000,0 0 3px #000}
 #clock3.mine{border-color:#ffd21f}
-.cell .pc.ph,html[data-theme] #board .cell .pc.ph{position:absolute;inset:4%;z-index:6;visibility:visible;filter:none}.cell .pc.ph svg{width:100%;height:100%}
+/* Hunters use the same 8% / 84% box as the birds. inset:4% plus width:84% shoved them into the top-left, and the badger overflowed the square. */
+.cell .pc.ph,html[data-theme] #board .cell .pc.ph{position:absolute;inset:auto;left:8%;top:8%;width:84%;height:84%;z-index:6;visibility:visible;filter:none}.cell .pc.ph svg{width:100%;height:100%}
 .cell .pc.ph.bur{opacity:.95}
 #board #current{box-shadow:inset 0 0 0 2px rgba(0,0,0,.55)!important}
 @keyframes moundin{from{opacity:0;transform:scale(.7)}to{opacity:1;transform:none}}

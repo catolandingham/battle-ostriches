@@ -15,7 +15,7 @@ const META = {
   o2: { name: 'Ostrich 2', sub: 'team ostrich' },
   v1: { name: 'Vulture 1', sub: 'team vulture' },
   v2: { name: 'Vulture 2', sub: 'team vulture' },
-  hyena: { name: 'Hyena', sub: 'Pounce · 2 catches' },
+  hyena: { name: 'Hyena', sub: '1 more when you miss' },
   badger: { name: 'Badger', sub: 'Burrow · 2 catches' },
 };
 const PREFER = {
@@ -34,7 +34,7 @@ function prefer(role, kind) {
 const ANIMAL = {
   ostrich: { name: 'Ostrich', sub: 'hide eggs', seats4: ['o1', 'o2'], seats4h: ['blue'] },
   vulture: { name: 'Vulture', sub: 'hunt eggs', seats4: ['v1', 'v2'], seats4h: ['red'] },
-  hyena: { name: 'Hyena', sub: 'Pounce · 2 catches', seats4: [], seats4h: ['hyena'] },
+  hyena: { name: 'Hyena', sub: '1 more when you miss', seats4: [], seats4h: ['hyena'] },
   badger: { name: 'Badger', sub: 'Burrow · 2 catches', seats4: [], seats4h: ['badger'] },
 };
 function animalOf(h) {
@@ -382,7 +382,7 @@ function view(room, hid) {
       const blocked = !!(holder && holder.id !== hid && (kind === id || singleSeat));
       const takenBy = blocked ? 'Taken by ' + holder.name : '';
       return { id, name: id === 'badger' ? 'Badger' : 'Hyena', kind: id,
-        mine, taken: blocked, takenBy, who: '', sub: mine ? 'YOU' : (takenBy || 'Open') };
+        mine, taken: blocked, takenBy, who: '', sub: mine ? 'YOU' : (takenBy || ANIMAL[id].sub) };
     });
   };
   let roles = (setupId === '4' || setupId === '4h') ? animalCards(playingHumans, setupId, hid)
@@ -427,12 +427,95 @@ function view(room, hid) {
     needKind, canStart,
   };
 }
+// The title "You're in" stays. Brian approved the note above the Rejoin button, the button, the confirm, and the no-seat line.
+// waiting / askBody / askYes / askNo are the table-approval lines. They are new and still need his OK.
+const LATE_NOTE = "This game is already running. You'll play in the next one.";
+const LATE_NOTE_REJOIN = "Back in the game? Tap your animal.";
+const REJOIN_WORDS = {
+  confirmBody: 'Only pick this if this was you.',
+  confirmYes: 'Rejoin',
+  confirmNo: 'Not me',
+  waiting: 'Waiting for someone in the game to let you in.',
+  askBody: 'Only let them in if this was their seat.',
+  askYes: 'Let them in',
+  askNo: 'Not them',
+};
+function rejoinGraceMs() {
+  const n = Number(process.env.BO_REJOIN_GRACE_MS);
+  return Number.isFinite(n) && n >= 0 ? n : 60000;
+}
+function seatInGrace(p, now) {
+  if (!p || p.bot || isOnline(p) || !p.goneAt) return false;
+  return (now || Date.now()) - p.goneAt < rejoinGraceMs();
+}
+const SEAT_LABEL = { blue: 'ostrich', red: 'vulture', hunter: 'hunter', hyena: 'hyena', badger: 'badger', o1: 'Ostrich 1', o2: 'Ostrich 2', v1: 'Vulture 1', v2: 'Vulture 2' };
+function hunterKindOf(room) {
+  const g = room && room.g;
+  return (g && g.three && g.three.kind) || (g && g.h && g.h.kind) || room.hunterKind || null;
+}
+function playSeats(room) {
+  if (room.hunt) return ['blue', 'red', 'hyena', 'badger'].filter(s => s in (room.players || {}));
+  if (room.team) return ['o1', 'v1', 'o2', 'v2', 'hunter'].filter(s => s in (room.players || {}));
+  if (room.three) return ['blue', 'red', 'hunter'];
+  return ['blue', 'red'];
+}
+function seatLabel(room, seat) {
+  if (seat === 'hunter') {
+    const kind = hunterKindOf(room);
+    if (kind === 'badger' || kind === 'hyena') return kind;
+  }
+  return SEAT_LABEL[seat] || seat;
+}
+function rejoinAction(label) {
+  return /^[A-Z]/.test(label) ? 'Rejoin as ' + label : 'Rejoin as the ' + label;
+}
+function confirmTitle(label) {
+  return rejoinAction(label) + '?';
+}
+function askLine(label) {
+  const action = rejoinAction(label);
+  return 'Someone wants to ' + action.charAt(0).toLowerCase() + action.slice(1) + '.';
+}
+function isOnline(p) { return !!(p && p.ws && p.ws.readyState === 1); }
+function offlineSeats(room, forId) {
+  if (!room || !room.g || room.g.phase === 'over' || room.pass) return [];
+  const asks = room.rejoinAsks || [];
+  const out = [];
+  for (const s of playSeats(room)) {
+    const p = room.players && room.players[s];
+    if (!p || p.bot || isOnline(p) || seatInGrace(p)) continue;
+    if (asks.some(a => a && a.seat === s && a.hid && a.hid !== forId)) continue;
+    if (asks.some(a => a && a.seat === s && forId && a.hid === forId)) continue;
+    const label = seatLabel(room, s);
+    out.push({ seat: s, label, action: rejoinAction(label), confirm: confirmTitle(label) });
+  }
+  return out;
+}
+function graceSeats(room) {
+  if (!room || !room.g || room.g.phase === 'over' || room.pass) return [];
+  const out = [];
+  for (const s of playSeats(room)) {
+    const p = room.players && room.players[s];
+    if (!p || p.bot || isOnline(p)) continue;
+    if (seatInGrace(p)) out.push(s);
+  }
+  return out;
+}
 function benchView(room, a) {
   const running = !!(a.late && room.g && room.g.phase !== 'over');
+  const who = a && a.id;
+  const offline = running ? offlineSeats(room, who) : [];
+  const mine = who && (room.rejoinAsks || []).find(x => x && x.hid === who && x.seat);
+  let ask = null;
+  if (running && mine) {
+    ask = { id: mine.id, seat: mine.seat, label: seatLabel(room, mine.seat), waiting: REJOIN_WORDS.waiting };
+  }
+  const note = running ? (ask ? REJOIN_WORDS.waiting : (offline.length ? LATE_NOTE_REJOIN : LATE_NOTE)) : 'You are in the room. The next game adds you.';
   return {
     lobby: true, between: true, code: room.code, solo: false, you: a.name, host: false,
-    note: running ? "You're in. This game is already running. You'll play in the next one." : 'You are in the room. The next game adds you.', clock: room.clock !== false, level: room.level || 'normal',
+    note, clock: room.clock !== false, level: room.level || 'normal',
     humans: [], roles: [], canStart: false, reason: null, botsWanted: 0, maxBots: 0, total: 0,
+    offline, ask, rejoinWords: REJOIN_WORDS,
   };
 }
 // After a game: fold late joiners into the same setup when that is unique, otherwise back to the lobby.
@@ -465,4 +548,6 @@ function sameOrAdapt(state) {
 module.exports = {
   SETUPS, META, ANIMAL, infer, fourMode, animalOf, maxBots, clampBots, effective, seatsNow, isHost, reconcile, claim,
   setBots, setChoice, setRecovery, setClock, setLevel, setHunterKind, plan, view, benchView, sameOrAdapt,
+  LATE_NOTE, LATE_NOTE_REJOIN, REJOIN_WORDS, offlineSeats, graceSeats, playSeats, seatLabel, rejoinAction, askLine,
+  rejoinGraceMs, seatInGrace,
 };

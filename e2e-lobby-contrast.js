@@ -62,14 +62,17 @@ const parse = c => { const m = /rgba?\((\d+),\s*(\d+),\s*(\d+)/.exec(c); if (!m)
     await check(A, '[data-role="red"]:disabled b', th, 'vulture');
     await check(A, '[data-role="red"]:disabled small', th, 'player');
   }
-  await A.click('#botPlus'); await A.click('#botPlus');
-  await A.waitForSelector('[data-role="hyena"] b');
+  await A.click('#botPlus');
+  await A.waitForFunction(() => LobbyUI.get() && LobbyUI.get().botsWanted >= 1);
+  await A.click('#botPlus');
+  await A.waitForFunction(() => LobbyUI.get() && LobbyUI.get().botsWanted >= 2);
+  await A.waitForSelector('[data-role="ostrich"] b');
   for (const th of THEMES) {
     await paint(A, th);
     await check(A, '[data-role="ostrich"] b', th, 'ostrich');
     await check(A, '[data-role="vulture"] b', th, 'vulture');
     await check(A, '[data-role="hyena"] b', th, 'hyena');
-    await check(A, '[data-role="hyena"] small', th, 'pounce');
+    await check(A, '[data-role="hyena"] small', th, 'miss');
     await check(A, '[data-role="badger"] b', th, 'badger');
     await check(A, '[data-role="badger"] small', th, 'burrow');
     await check(A, '#botMinus', th, '−');

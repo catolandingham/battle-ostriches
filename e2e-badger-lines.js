@@ -24,7 +24,7 @@ const at = { state: 'attached' };
   await A.waitForFunction(t => (document.getElementById('badgerline') || {}).textContent === t, BL.LINES.firstBurrow, { timeout: 5000 });
   await shot(A, '1-first-burrow-badger');
   assert.equal(await Y.locator('#badgerline').count(), 0, 'the hyena sees no burrow line'); assert.equal(room.g.hunt.hs.badger.burrowed, true);
-  await A.waitForFunction(() => !document.getElementById('badgerline'), null, { timeout: 6000 }); // each line lasts about 3 seconds
+  await A.waitForFunction(() => !document.getElementById('badgerline'), null, { timeout: 15000 }); // a quote stays up 1s plus 0.3s a word (the first-burrow quote is long)
   assert.equal(await Y.locator('#badgerline').count(), 0, 'still nothing on the hyena\'s phone');
   // the shove: the (burrowed) badger moves onto the hyena; both hunters see the line
   await Y.waitForSelector('#actions.mine', { ...at, timeout: 20000 }); await Y.locator('#actions button').first().click({ force: true });
@@ -32,7 +32,12 @@ const at = { state: 'attached' };
   const bd = room.g.hunt.hs.badger.p, hy = [bd[0] - 1, bd[1]]; room.g.hunt.hs.hyena.p = hy.slice(); server.broadcast(room);
   await A.waitForFunction(p => document.querySelectorAll('#board .cell')[p[1] * 9 + p[0]].querySelector('.pc.ph'), hy, { timeout: 5000 });
   await A.locator('.cell').nth(hy[1] * 9 + hy[0]).click({ force: true });
-  for (const [P, name] of [[A, 'badger'], [Y, 'hyena']]) await P.waitForFunction(t => (document.getElementById('badgerline') || {}).textContent === t, BL.LINES.shove, { timeout: 12000 }).catch(e => { throw new Error(name + ' phone never showed the shove line: ' + e.message); });
+  for (const [P, name] of [[A, 'badger'], [Y, 'hyena']]) {
+    await P.waitForFunction(t => (document.getElementById('badgerline') || {}).textContent === t || !!document.getElementById('surprise-go'), BL.LINES.shove, { timeout: 15000 }).catch(e => { throw new Error(name + ' phone never reached the shove line: ' + e.message); });
+    const go = P.locator('#surprise-go button');
+    if (await go.count()) await go.click();
+    await P.waitForFunction(t => (document.getElementById('badgerline') || {}).textContent === t, BL.LINES.shove, { timeout: 20000 }).catch(e => { throw new Error(name + ' phone never showed the shove line: ' + e.message); });
+  }
   assert.equal(room.g.hunt.rival && room.g.hunt.rival.by, 'badger', 'the badger shoved the hyena');
   await shot(A, '2-shove-badger'); await shot(Y, '3-shove-hyena');
   console.log('errors', errs); assert.equal(errs.length, 0);

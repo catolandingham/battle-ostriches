@@ -45,6 +45,11 @@
 #roomLobby #botCount{min-width:1.2em;text-align:center;font-size:1.4rem;color:#1a2a3a!important;-webkit-text-fill-color:#1a2a3a!important;background:#fff!important}
 #roomLobby .row{display:flex;gap:8px;justify-content:center;margin-top:8px}
 #roomLobby .row button{flex:1}
+#roomLobby .hunterkind button{display:flex!important;flex-direction:column;align-items:center;justify-content:center;gap:2px;height:auto!important;min-height:88px;padding:8px 6px;white-space:normal;line-height:1.15;overflow:visible!important}
+#roomLobby .hunterkind button small{display:block!important;font-size:13px!important;font-weight:700!important;letter-spacing:0!important;text-transform:none!important;line-height:1.25!important;white-space:normal!important;height:auto!important;overflow:visible!important;background:transparent!important}
+#roomLobby .hunterkind button.on,#roomLobby .hunterkind button.on small{color:#fff!important;-webkit-text-fill-color:#fff!important}
+html[data-theme="bw"] #roomLobby .hunterkind button.on small:not(#_a):not(#_b),
+html[data-theme="bw"] #roomLobby .hunterkind button[aria-pressed="true"] small:not(#_a):not(#_b){color:#fff!important;-webkit-text-fill-color:#fff!important}
 #roomLobby .infer,#roomLobby .choose{border-radius:12px;padding:8px 10px;font-size:14px;font-weight:700;margin:8px 0}
 #roomLobby .infer{background:#eef8f0;border:2px solid #b7dcc0;color:#1a2a3a}
 #roomLobby .choose{background:#fff8ee;border:2px solid #e8c792;color:#1a2a3a}
@@ -105,3 +110,8 @@
 #roomLobby .who.seats .openseat .opentxt{margin:0;opacity:.6;font-weight:700;color:inherit}
 #roomLobby .who.seats .addcomp{width:auto;flex:none;margin:0;padding:8px 14px;font-size:16px;font-weight:800}
 #roomLobby .who.seats .seatwho{margin:0;color:inherit;font-weight:400}
+
+#roomLobby .rejoinlist{display:flex;flex-direction:column;gap:8px;margin:12px 0}
+#roomLobby .rejoinlist .rejoin{width:100%}
+#roomLobby .rejoinrow{margin:12px 0 8px}
+#roomLobby .rejoinrow .big{flex:1}

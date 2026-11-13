@@ -65,7 +65,7 @@ body.red button{background:#7a2626}button.on{background:#38d6f0;color:#000}body.
 .card{color:#111}
 /* original savanna twist */
 #hud{background:linear-gradient(180deg,#f6a93b,#e2672e);border:4px solid #000;border-radius:16px;padding:8px 12px;color:#1a1208;box-shadow:0 4px 0 #000}
-.logo::before{content:"☀️ "}.ctr .cy{color:#0d2a5c}.ctr .or{color:#fff;text-shadow:0 2px 0 #000}
+.ctr .cy{color:#0d2a5c}.ctr .or{color:#fff;text-shadow:0 2px 0 #000}
 .cell{border-radius:4px}
 #board{border-bottom:10px solid #c9a15a}
 body.red #board{border-bottom-color:#a86d3a}
@@ -165,6 +165,24 @@ body.coaching::before{content:"";position:fixed;inset:0;background:#000a;z-index
 /* invite chip + popover (only after the opponent joined) */
 #hud #inviteBtn{height:30px;padding:0 8px!important;font-size:12px!important;font-weight:800;border-radius:15px!important;min-width:0!important;width:auto!important;margin:0!important;white-space:nowrap;letter-spacing:1px}
 #hud #inviteBtn.hidden{display:none!important}
+#hud #moreBtn{width:32px!important;min-width:32px!important;max-width:32px!important;height:32px!important;flex:0 0 32px!important;padding:0!important;font:800 22px/1 system-ui,sans-serif!important;border-radius:50%!important}
+#hud #helpBtn,#hud #muteBtn,#hud #themeBtn,#hud #timerToggle{position:absolute!important;width:1px!important;height:1px!important;min-width:0!important;max-width:1px!important;padding:0!important;margin:0!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;border:0!important}
+#gameMenu{position:fixed;top:calc(env(safe-area-inset-top) + 96px);right:8px;z-index:80;min-width:180px}
+#gameMenu #menuLeave{background:#fff!important;color:#111!important;-webkit-text-fill-color:#111!important}
+#leaveAsk,#rejoinAsk{position:fixed;inset:0;z-index:220;background:rgba(10,15,25,.92);display:flex;align-items:center;justify-content:center;padding:20px}
+#rejoinAsk{z-index:9300}
+#leaveAsk.hidden,#rejoinAsk.hidden{display:none}
+#leaveAsk .gbox,#rejoinAsk .gbox{background:#fff;color:#111;border:5px solid #111;border-radius:20px;padding:22px;max-width:360px;width:100%;text-align:center}
+#leaveAsk .gt,#rejoinAsk .gt{font:900 30px/1.1 system-ui,sans-serif;margin:0 0 8px;color:#111}
+#leaveAsk p,#rejoinAsk p{font-weight:600;margin:0 0 14px;color:#111}
+#leaveAsk .big,#rejoinAsk .big{width:100%;margin:0 0 8px}
+#leaveAsk #leaveYes,#rejoinAsk #rejoinAskYes{background:#111;color:#fff;-webkit-text-fill-color:#fff}
+#leaveAsk #leaveNo,#rejoinAsk #rejoinAskNo{background:#fff;color:#111;-webkit-text-fill-color:#111;border:2px solid #111}
+html[data-theme="bw"] #leaveAsk #leaveYes:not(#_a):not(#_b),html[data-theme="bw"] #rejoinAsk #rejoinAskYes:not(#_a):not(#_b){background-color:#111!important;color:#fff!important;-webkit-text-fill-color:#fff!important}
+html[data-theme="bw"] #leaveAsk #leaveNo:not(#_a):not(#_b),html[data-theme="bw"] #rejoinAsk #rejoinAskNo:not(#_a):not(#_b){background-color:#fff!important;color:#111!important;-webkit-text-fill-color:#111!important}
+html[data-theme="bw"] #rejoinAsk:not(#_a):not(#_b){background-color:rgba(10,15,25,.92)!important}
+html[data-theme="bw"] #rejoinAsk .gbox:not(#_a):not(#_b){background-color:#fff!important;color:#111!important;border:5px solid #111!important;border-radius:20px!important}
+html[data-theme="bw"] #rejoinAsk .gt:not(#_a):not(#_b),html[data-theme="bw"] #rejoinAsk p:not(#_a):not(#_b){color:#111!important;-webkit-text-fill-color:#111!important;background-color:transparent!important}
 #wait.sheet{position:fixed!important;left:auto!important;right:8px!important;top:calc(env(safe-area-inset-top) + 100px)!important;bottom:auto!important;width:min(300px,calc(100vw - 16px))!important;z-index:70!important;padding:10px!important;gap:6px!important;box-shadow:0 8px 28px #000a!important}
 #wait.sheet #shareCode{font-size:22px!important}#wait.sheet #shareLink{font-size:12px}
 #wait.sheet #waitClose{display:block}

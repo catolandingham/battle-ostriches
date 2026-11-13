@@ -27,13 +27,9 @@ const R = require('./public/roles.js'), THEMES = fs.readFileSync('./public/theme
   await A.click('[data-role="blue"]'); await V.click('[data-role="red"]'); await H.click('[data-role="hyena"]');
   await H.waitForFunction(() => /YOU ARE Hyena/.test(document.body.innerText));
   await A.click('#startGame'); await A.waitForSelector('#board .cell'); await V.waitForSelector('#board .cell'); await H.waitForSelector('#board .cell');
-  // setup first: nobody has a card yet (the ostrich is still hiding eggs)
-  assert.equal(await shown(A).count(), 0, 'no card while the ostrich is still hiding eggs');
-  assert.equal(await shown(V).count(), 0); assert.equal(await shown(H).count(), 0);
-  for (const [x, y] of [[2, 1], [6, 1], [2, 5], [7, 6]]) { await cell(A, x, y).click(); await A.waitForTimeout(120); }
-
-  // the first play state: each phone shows its own card
+  // the card is up at Start, before the ostrich hides eggs and before any shot clock
   for (const p of [A, V, H]) await p.waitForSelector('#rolecard:not(.hidden)');
+  assert.equal(await A.evaluate(() => UI._S().phase), 'setupEggs', 'the ostrich card is up while the eggs are still hidden');
   const [ta, tv, th] = [await cardText(A), await cardText(V), await cardText(H)];
   const want = (role, kind, mode) => R.roleCard(role, kind, mode);
   const lines = (c) => [c.title, c.goal, ...c.moves];
@@ -51,9 +47,10 @@ const R = require('./public/roles.js'), THEMES = fs.readFileSync('./public/theme
 
   // a tap closes it and the game keeps going
   await V.click('#rolecard'); assert.equal(await shown(V).count(), 0, 'a tap closes the card');
-  assert.equal(await V.evaluate(() => localStorage.getItem('bo_card_vulture_hyena_3')), '1', 'the phone remembers this card');
+  assert.equal(await V.evaluate(() => localStorage.getItem('bo_card_vulture_hyena_3_p2')), '1', 'the phone remembers this card');
   await H.click('#rolecard .rok'); await A.click('#rolecard .rc');
   assert.equal(await shown(H).count() + await shown(A).count(), 0);
+  for (const [x, y] of [[2, 1], [6, 1], [2, 5], [7, 6]]) { await cell(A, x, y).click(); await A.waitForTimeout(120); }
   await V.waitForSelector('#actions.mine', { state: 'attached' }); await cell(V, 4, 1).click();
   await A.waitForSelector('#actions.mine', { state: 'attached' }); await cell(A, 7, 5).click();
   await H.waitForSelector('#actions.mine', { state: 'attached' }); await H.waitForTimeout(500); await H.locator('#actions button').click({ force: true });
@@ -63,7 +60,7 @@ const R = require('./public/roles.js'), THEMES = fs.readFileSync('./public/theme
   await V.reload(); await V.waitForSelector('#board .cell'); await V.waitForTimeout(500); assert.equal(await shown(V).count(), 0, 'not after a reload');
 
   // How to play has "Your animal" while in a game, and it reopens the same card
-  await H.click('#helpBtn'); await H.waitForSelector('#roleCardBtn:not(.hidden)'); await H.click('#roleCardBtn');
+  await H.click('#moreBtn'); await H.click('#menuHelp'); await H.waitForSelector('#roleCardBtn:not(.hidden)'); await H.click('#roleCardBtn');
   await H.waitForSelector('#rolecard:not(.hidden)'); has(await cardText(H), want('hunter', 'hyena', '3')); assert.equal(await H.locator('#rules:not(.hidden)').count(), 0, 'How to play closed behind it');
   await H.click('#rolecard'); assert.equal(await shown(H).count(), 0);
   console.log('ok 3 phones: own card only, tap closes, once, How to play reopens');
@@ -79,11 +76,12 @@ const R = require('./public/roles.js'), THEMES = fs.readFileSync('./public/theme
   const F = await mk(); await F.goto(U); await F.click('#playFriend'); await F.waitForSelector('#botPlus');
   await F.evaluate(() => UI.send({ t: 'lobby', a: 'bots', n: 1 })); await F.waitForFunction(() => LobbyUI.get().canStart);
   assert.equal(await F.textContent('#startGame'), "Start · you'll be the Ostrich"); await F.click('#startGame'); await F.waitForSelector('#board .cell');
-  for (const [x, y] of [[2, 1], [6, 1], [2, 5], [7, 6]]) { await cell(F, x, y).click(); await F.waitForTimeout(150); }
   await F.waitForSelector('#rolecard:not(.hidden)', { timeout: 15000 });
   const tf = await cardText(F); has(tf, want('blue', null, '2')); assert.ok(tf.includes('We picked this animal for you.'), 'Start chose it, and the card says so\n' + tf);
   await fits(F, 'picked ostrich'); await F.screenshot({ path: OUT + '7-picked-ostrich.png' });
   await F.click('#rolecard'); assert.equal(await shown(F).count(), 0);
+  for (const [x, y] of [[2, 1], [6, 1], [2, 5], [7, 6]]) { await cell(F, x, y).click(); await F.waitForTimeout(150); }
+  assert.equal(await shown(F).count(), 0, 'the card does not come back after the eggs are hidden');
   console.log('ok solo pick: no "We picked" line; Start-chosen animal: the line shows');
 
   // Hunters mode (solo, hyena + badger rivals + two computer birds): the Hyena card, with the other hunter named in the goal
@@ -98,15 +96,8 @@ const R = require('./public/roles.js'), THEMES = fs.readFileSync('./public/theme
   await O.waitForSelector('[data-role="ostrich"]'); await O.click('[data-role="ostrich"]'); await W.click('[data-role="vulture"]');
   await W.waitForFunction(() => { const s = LobbyUI.get(); return s && s.roles.some(r => r.id === 'vulture' && r.mine); });
   await O.click('#startGame'); await O.waitForSelector('#board .cell'); await W.waitForSelector('#board .cell');
-  assert.equal(await shown(W).count(), 0, 'no team card during setup');
-  // Computer nests are randomized: choose currently legal hide/start squares, not fixed coordinates that can belong to the other ostrich.
-  for (let i=0;i<3;i++) {
-    await O.waitForFunction(()=>UI._legal().length>0);
-    const before=await O.evaluate(()=>JSON.stringify([UI._S().phase,UI._S().eggs.filter(e=>e.mine!==false),UI._S().ostrich,UI._S().h3.teamSetup]));
-    const p=await O.evaluate(()=>UI._legal()[0]);await cell(O,...p).click();
-    await O.waitForFunction(old=>JSON.stringify([UI._S().phase,UI._S().eggs.filter(e=>e.mine!==false),UI._S().ostrich,UI._S().h3.teamSetup])!==old,before);await O.waitForTimeout(150);
-  }
   await O.waitForSelector('#rolecard:not(.hidden)', { timeout: 15000 }); await W.waitForSelector('#rolecard:not(.hidden)', { timeout: 15000 });
+  assert.ok(/setup/.test(await O.evaluate(() => UI._S().phase)), 'the team card is up during setup');
   const [to, tw] = [await cardText(O), await cardText(W)];
   has(to, want('o1', null, '4')); has(tw, want('v1', null, '4')); assert.ok(/You are an Ostrich/.test(to) && /teammate/.test(to) && /You are a Vulture/.test(tw) && /teammate/.test(tw));
   assert.ok(!/We picked/.test(to + tw)); await fits(O, 'team ostrich'); await fits(W, 'team vulture');

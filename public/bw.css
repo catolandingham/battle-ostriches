@@ -113,3 +113,14 @@ html[data-theme="bw"] #rolecard h2:not(#_a):not(#_b){text-transform:none!importa
 html[data-theme="bw"] #rolecard .rmoves li:not(#_a):not(#_b)::before{background:#111!important;border-radius:50%!important;box-shadow:none!important}
 html[data-theme="bw"] #rolecard .rok:not(#_a):not(#_b),html[data-theme="bw"] #rolecard button.rok:not(#_a):not(#_b){background:#111!important;background-color:#111!important;color:#fff!important;-webkit-text-fill-color:#fff!important;border:0!important;border-radius:12px!important;box-shadow:none!important;text-transform:none!important;letter-spacing:0!important;font-weight:800!important}
 html[data-theme="bw"] #rolecard .rok:not(#_a):not(#_b) *,html[data-theme="bw"] #rolecard button.rok *:not(#_a):not(#_b){color:#fff!important;-webkit-text-fill-color:#fff!important}
+
+/* Anything drawn inside a black-filled (selected) button is white. The rule above only covered a few buttons by name, so a selected button with a name and a
+   caption inside it (b, small, span) got black text on its black fill. */
+html[data-theme="bw"] :is(button.on,button[aria-pressed="true"]) *:not(#_a):not(#_b){color:var(--bg)!important}
+
+/* Lobby picks (your animal, a setup choice): a thick black edge on white, never a black fill.
+   The general "selected = black fill, white text" rule above is for buttons whose text and art follow it; these cards keep their own dark text and art,
+   so on black they vanished (2026-11-11). Same look in every mode. */
+html[data-theme="bw"] :is(#roomLobby .rolecard.mine,#roomLobby .setup-opt.on):not(#_a):not(#_b){background-color:var(--bg)!important;color:var(--fg)!important;outline:4px solid var(--fg)!important;outline-offset:0!important;font-weight:700!important}
+html[data-theme="bw"] :is(#roomLobby .rolecard.mine,#roomLobby .setup-opt.on) :is(b,small,span):not(#_a):not(#_b){color:var(--fg)!important;-webkit-text-fill-color:var(--fg)!important;background-color:transparent!important}
+html[data-theme="bw"] :is(#roomLobby .rolecard.mine,#roomLobby .setup-opt.on) svg *:not(#_a):not(#_b){stroke:var(--fg)!important}

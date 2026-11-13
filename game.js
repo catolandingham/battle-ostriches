@@ -112,19 +112,28 @@ const sgn = Math.sign;
 function slide(cfg, from, dir, n, blocked, marks, wrap) { return slideN(cfg, from, dir, n, blocked, marks, wrap).to; }
 function slideN(cfg, from, dir, n, blocked, marks, wrap) {
   let q = from.slice(), moved = 0;
+  const points = [from.slice()];
   for (let i = 0; i < n; i++) {
     let m = [q[0] + dir[0], q[1] + dir[1]];
     if (wrap) m = [(m[0] + cfg.cols) % cfg.cols, (m[1] + cfg.rows) % cfg.rows]; else if (!inB(m, cfg)) break;
     if (key(m) === key(from) || (blocked && blocked(m)) || (marks && (marks[key(m)] === 'hit' || marks[key(m)] === 'stone'))) break;
-    q = m; moved++;
+    q = m; moved++; points.push(q.slice());
   }
-  return { to: q, moved };
+  return { to: q, moved, points };
 }
 const awayFrom = (from, p) => [sgn(p[0] - from[0]), sgn(p[1] - from[1])];
 function canKick(g) { return myTurn(g, 'blue') && g.carrying === null; }
 // Animals next to the ostrich that it can see (classic: the vulture, always in sight), and the squares it may kick now.
 function kickable(g) { return g.ostrich && g.ostrich[0] >= 0 && g.vulture && g.vulture[0] >= 0 && dist(g.vulture, g.ostrich) === 1 ? [g.vulture.slice()] : []; }
 function kickTargets(g) { return canKick(g) ? kickable(g) : []; }
+// One plan per animal the ostrich can kick. `at` is the animal now (what a kick action sends). `to` is the landing the player taps.
+function kickPlans(g) {
+  if (!canKick(g)) return [];
+  return kickable(g).map(at => {
+    const path = slideN(g.cfg, at, awayFrom(g.ostrich, at), g.cfg.kickPush, null, g.marks, true);
+    return { at: at.slice(), to: path.to.slice(), points: path.points, who: 'vulture', key: 'red' };
+  });
+}
 // Records the kick, then the ostrich's turn ends like a stay that still warms an egg under it and still counts for hunger.
 function kickDone(g, who, from, to, n) {
   g.sitting = false;
@@ -311,6 +320,6 @@ function sniffAnnounce(v, role) {
   return sn.yes ? 'Egg nearby!' : 'No egg nearby';
 }
 
-const API = { slideN, CONFIG, HUNTER_GOAL, hunterUpAt, scrambleTo, DIRS8, resolveThrow, wrecked, nearLeaf, myTurn, slide, awayFrom, canKick, kickable, kickTargets, kickDone, ostrichKick, newGame, canPlaceEgg, placeEgg, placeOstrich, ostrichMoves, ostrichStep, ostrichSit, canSit, canCarry, mustLeave, onEgg, dropCarried,
+const API = { slideN, CONFIG, HUNTER_GOAL, hunterUpAt, scrambleTo, DIRS8, resolveThrow, wrecked, nearLeaf, myTurn, slide, awayFrom, canKick, kickable, kickTargets, kickPlans, kickDone, ostrichKick, newGame, canPlaceEgg, placeEgg, placeOstrich, ostrichMoves, ostrichStep, ostrichSit, canSit, canCarry, mustLeave, onEgg, dropCarried,
   endRound, walkSquares, smellsEgg, flyTargets, throwTargets, vultureFly, vultureThrow, eggAt, aliveEggs, coldIn, sniffFresh, sniffAnnounce, key, dist, visible, isFood, isRock, parkEliminated, ostrichGuards, foodRoute };
 if (typeof module !== 'undefined') module.exports = API; else window.BO = API;

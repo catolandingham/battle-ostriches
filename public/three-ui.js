@@ -9,8 +9,10 @@ const BADGER=ART.badger;
 const MOUND='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" aria-hidden="true"><path d="M2 36 Q8 8 20 6 Q32 8 38 36 Z" fill="#f6e2a8" stroke="#1a1008" stroke-width="3.2" stroke-linejoin="round"/><path d="M10 26 q3-2 6 0M24 22 q3-2 6 0M16 32 q3-2 6 0" stroke="#6b4420" stroke-width="2.2" fill="none" stroke-linecap="round"/><circle cx="17" cy="20" r="2.6" fill="#fff" stroke="#111" stroke-width="1"/><circle cx="23" cy="20" r="2.6" fill="#fff" stroke="#111" stroke-width="1"/><circle cx="17" cy="20.6" r="1.2" fill="#111"/><circle cx="23" cy="20.6" r="1.2" fill="#111"/></svg>';
 const OSTI=ART.ostrich;
 const VULI=ART.vulture;
-const KIND={hyena:{n:'Hyena',art:HYENA,pw:'Pounce',pwTxt:'Pounce: missed? Move 1 more.'},
+const KIND={hyena:{n:'Hyena',art:HYENA,pw:'Pounce',pwTxt:'When you miss, move 1 more.'},
  badger:{n:'Badger',art:BADGER,pw:'Burrow',pwTxt:'Burrow: stay still to hide.'}};
+// The small line is the sentence once. Prefixing the short name doubled a sentence that already started with that name.
+const kindLine=k=>KIND[k].pwTxt;
 const BN={blue:'Ostrich',red:'Vulture',hunter:'Hunter'};
 const hName=S=>S.h3&&S.h3.kind?KIND[S.h3.kind].n:'Hunter';
 const tname=(S,r)=>r==='hunter'?hName(S):r==='hyena'||r==='badger'?KIND[r].n:(S&&S.h3&&S.h3.team?{o1:'Ostrich 1',o2:'Ostrich 2',v1:'Vulture 1',v2:'Vulture 2'}[r]:0)||BN[r];
@@ -71,7 +73,7 @@ function draw3(){const S3=SEATS[mode],np=S3.length;
  const note=mode==='4'||mode==='5'?'<p class="t3note">Ostriches 1 + 2 team up (each has its own 2-egg nest, either can warm any egg). Vultures 1 + 2 share every sniff.</p>':mode==='4h'?'<p class="t3note">Hyena and badger are rivals: both hunt the birds. Most knock-outs wins once both birds are out.</p>':'';
  $('t3seats').innerHTML=note+others.map(r=>`<div class="t3row"><span class="t3who">${sp(seatArt(r,kind),26)} ${SN[r]}</span><span class="seg"><button data-seat="${r}" data-v="friend" class="${seat[r]==='friend'?'on':''}">👤 Friend</button><button data-seat="${r}" data-v="bot" class="${seat[r]==='bot'?'on':''}">🤖 Computer</button></span></div>`).join('');
  const hasH=S3.includes('hunter'),pick=hasH&&(myRole==='hunter'||seat.hunter==='bot');
- $('t3kind').innerHTML=!hasH?'':pick?`<div class="t3lbl">${myRole==='hunter'?'Your hunter':'Computer hunter'}</div><div class="kindrow">${['hyena','badger'].map(k=>`<button class="kindbtn${kind===k?' on':''}" data-k="${k}"><span class="ka">${KIND[k].art}</span><b>${KIND[k].n}</b><small>${KIND[k].pw}: ${KIND[k].pwTxt}</small></button>`).join('')}</div>`:'<p class="t3note">The hunter player picks hyena or badger when they join.</p>';}
+ $('t3kind').innerHTML=!hasH?'':pick?`<div class="t3lbl">${myRole==='hunter'?'Your hunter':'Computer hunter'}</div><div class="kindrow">${['hyena','badger'].map(k=>`<button class="kindbtn${kind===k?' on':''}" data-k="${k}"><span class="ka">${KIND[k].art}</span><b>${KIND[k].n}</b><small>${kindLine(k)}</small></button>`).join('')}</div>`:'<p class="t3note">The hunter player picks hyena or badger when they join.</p>';}
 // --- 4/5 players (2v2, + hunter): numbered birds, teammates, shared sniffs ---
 const NUM=r=>/\d/.test(r)?r[1]:'';
 function tTag(S){const r=S.h3.mySeat;if(r==='hunter')return tag(S);return `<span style="display:inline-block;width:26px;height:26px;vertical-align:middle">${isOs(r)?OSTI:VULI}</span> ${SN[r].toUpperCase()}`;}
@@ -80,7 +82,6 @@ function tHint(S,a){const r=S.h3.mySeat,t=S.turn,h=S.h3;
  if(!h.ready)return h.needKind?'Pick your hunter.':`Waiting for all ${h.n} players…`;
  if(h.setupStep==='done'&&h.teamSetup&&h.teamSetup!=='done')return h.teamSetup==='eggs'?'Partner is hiding eggs…':'Partner is placing…';
  const me=h.birds[r];if(me&&me.out)return 'You\'re out. Watching.';
- if(h.lost&&h.lost.bird===r&&h.lost.round>=S.round-1&&t!==r)return 'Caught! Turn lost.';
  if((r==='blue'||r==='o1'||r==='o2')&&window.UI&&UI._S()&&UI._S().sittingAt&&UI._S().ostrich&&UI._S().sittingAt.some(q=>q[0]===UI._S().ostrich[0]&&q[1]===UI._S().ostrich[1]))return 'The vulture sees you sit.';return `${tname(S,t)}'s turn…`;}
 function tChips(S){let bar=$('h3bar');if(!bar){bar=document.createElement('div');bar.id='h3bar';$('hud').after(bar);
   bar.addEventListener('click',e=>{const c=e.target.closest('[data-tip]');if(c&&UI._tip)UI._tip(c.dataset.tip);});}
@@ -122,7 +123,8 @@ function hChips(S){let bar=$('h3bar');if(!bar){bar=document.createElement('div')
   const tip=`${BN[r]}${r===me?' (you)':''}: ${b.out?'out.':b.catches?b.catches+' of '+(h.ko.hyena===h.ko.badger?h.ko.hyena:h.ko.hyena)+' catches.':'not caught.'}`;
   return `<span class="bchip ${r}${b.out?' out':''}${b.catches&&!b.out?' injured':''}${live&&S.turn===r?' now':''}${r===me?' me':''}" data-tip="${tip}" data-b="${r}">${sp(r==='blue'?OSTI:VULI,22)}<span class="pips">${pips}</span>${b.out?'<b class="ko">OUT</b>':''}</span>`;};
  const hun=k=>{const now=live&&(S.turn===k||(S.turn==='hunter'&&me===k)),n=h.hkos[k];
-  return `<span class="bchip hunter h${k}${now?' now':''}${k===me?' me':''}" data-b="${k}" data-tip="${KIND[k].n}${k===me?' (you)':''}: ${KIND[k].pw}. ${h.ko[k]} catches knock a bird out. Knock-outs: ${n}.">${sp(KIND[k].art,24)}${claws(h.hcatches?h.hcatches[k]|0:0,4)}</span>`;};
+  const tip=k==='hyena'?`${KIND[k].n}${k===me?' (you)':''}: Pounce. When you miss, move 1 more square. ${h.ko[k]} catches knock a bird out. Knock-outs: ${n}.`:`${KIND[k].n}${k===me?' (you)':''}: ${KIND[k].pw}. ${h.ko[k]} catches knock a bird out. Knock-outs: ${n}.`;
+  return `<span class="bchip hunter h${k}${now?' now':''}${k===me?' me':''}" data-b="${k}" data-tip="${tip}">${sp(KIND[k].art,24)}${claws(h.hcatches?h.hcatches[k]|0:0,4)}</span>`;};
  bar.innerHTML=bird('red')+bird('blue')+hun('hyena')+hun('badger');}
 function hPieces(S,board,prev){const h=S.h3,me=h.mySeat;
  for(const x of h.hunters||[]){const c=cellAt(board,S,x.p);if(!c)continue;const bur=x.burrowed;const pc=document.createElement('div');
@@ -155,13 +157,12 @@ function waitMsg(S){return `Wait, it's the ${tname(S,S.turn)}'s turn.`;}
 function nopeMsg(S){return `Move up to ${S.h3.range} square${S.h3.range>1?'s':''}: tap a glowing square.`;}
 function hint(S,a){if(S.h3.team&&!hint.in){hint.in=1;try{return tHint(S,a);}finally{hint.in=0;}}const r=S.role,t=S.turn;
  if(r==='hunter'&&S.myTurn){const k=S.h3.kind;
-  a.innerHTML=S.pounce?'<button class="on" title="Skip this extra move. You will not catch the bird." onclick="UI.send({t:\'act\',a:\'hstay\'})">Stop</button>':`<button title="${k==='badger'?(S.burrowed?'Stay burrowed. Birds still cannot see you.':'Stay still to burrow.'):'Stay put and end your turn.'}" onclick="UI.send({t:'act',a:'hstay'})">${k==='badger'?(S.burrowed?'Stay':'Burrow'):'Stay'}</button>${S.canBurst?`<button title="Come up and shove the hyena back." onclick="UI.send({t:'act',a:'hburst'})">Burst out</button>`:''}`;
-  if(S.pounce)return 'Pounce: 1 more square.';
+  a.innerHTML=S.pounce?'<button class="on" title="Skip this extra move. You will not catch the bird." onclick="UI.send({t:\'act\',a:\'hstay\'})">Stay</button>':`<button title="${k==='badger'?(S.burrowed?'Stay burrowed. Birds still cannot see you.':'Stay still to burrow.'):'Stay put and end your turn.'}" onclick="UI.send({t:'act',a:'hstay'})">${k==='badger'?(S.burrowed?'Stay':'Burrow'):'Stay'}</button>${S.canBurst?`<button title="Come up and shove the hyena back." onclick="UI.send({t:'act',a:'hburst'})">Burst out</button>`:''}`;
+  if(S.pounce)return 'When you miss, move 1 more square.';
   if(S.h3.extra)return 'Your turn again. Tap to move.';
   const burrowNote=k==='badger'&&!S.burrowed?'Tap to move, or Burrow. ':'Your turn. Tap to move. ';
   return burrowNote+(S.sense?'':'No bird near.');}
  if(!S.h3.ready)return S.h3.needKind?'Pick your hunter.':`Waiting for all ${S.h3.hunt?4:3} players…`;
- const lost=S.h3.lost;if(r!=='hunter'&&lost&&lost.bird===r&&lost.round>=S.round-1&&t!==r)return 'Caught! Turn lost.';
  if(r!=='hunter'&&S.h3.birds[r]&&S.h3.birds[r].out)return 'You\'re out. Watching.';
  if(r==='blue'&&window.UI&&UI._S()&&UI._S().sittingAt&&UI._S().ostrich&&UI._S().sittingAt.some(q=>q[0]===UI._S().ostrich[0]&&q[1]===UI._S().ostrich[1]))return 'The vulture sees you sit.';
  if(t==='hunter'&&S.h3&&S.h3.extra)return tname(S,t)+"'s turn again.";
@@ -182,7 +183,7 @@ function clock(S){let c=$('clock3');if(!c){c=document.createElement('div');c.id=
   c.lastChild.innerHTML='<svg class="clk" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 7.5V12l3 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> '+s+'s';c.classList.toggle('low',left<=4000);c.setAttribute('aria-label','Shot clock, '+s+' seconds');if(left>0)raf=requestAnimationFrame(tick);};
  cancelAnimationFrame(raf);tick();}
 function cellAt(board,S,p){return p&&p[0]>=0?board.children[p[1]*S.cfg.cols+p[0]]:null;}
-function noteBanner(cls,txt,force){const bn=$('banner');if(!bn)return;if(!force&&bn.textContent&&!bn.classList.contains('hidden'))return;bn.textContent=txt;bn.className=cls;}
+function noteBanner(cls,txt,force){const bn=$('banner');if(!bn)return;if(!force&&bn.textContent&&!bn.classList.contains('hidden'))return;if(window.BO_BANNER)BO_BANNER.set(txt,cls);else{bn.textContent=txt;bn.className=cls;}}
 // "The ostrich is out." once per elimination, for everyone still playing. outSeen remembers which birds were already out (a re-render, or opening
 // the page mid-game, never repeats it; a new game clears it). The line stays up a few seconds and is re-applied if the next state redraws the banner.
 const outSeen={};let outNote=null;
@@ -226,23 +227,30 @@ function marksAround(board,S,cx,cy,range,kind,cls){const C=S.cfg;let n=0;
 function isNearLine(item){const t=(item&&item.text||'').trim(),c=item&&item.className||'';return /\bnear[!.]?$/i.test(t)||/(^|\s)near(\s|$)/.test(c);}
 function pop(board,txt,cls){if(Date.now()<lookoutUntil)return;window.STATUS_QUEUE.add({className:'h3pop '+cls,text:txt,priority:10});}
 // Shared with sniff/fact notices: one one-second message, personal events before background facts.
-function announce(txt,priority,hold,preempt){window.STATUS_QUEUE.add({id:'announce',className:'show'+(/you/i.test(txt)?' bad':''),text:txt,priority:priority==null?(/\byou\b/i.test(txt)?100:50):priority,hold:hold||undefined,preempt:!!preempt});}
-let lookoutKey='',lookoutUntil=0;
+function announce(txt,priority,hold,preempt,heldEvent){window.STATUS_QUEUE.add({id:'announce',className:'show'+(/you/i.test(txt)?' bad':''),text:txt,priority:priority==null?(/\byou\b/i.test(txt)?100:50):priority,hold:hold||undefined,preempt:!!preempt,heldEvent:!!heldEvent});}
+let lookoutKey='',lookoutUntil=0,lineGen=0;
+function releaseHeldLine(){
+ lineGen++;
+ if(window.STATUS_QUEUE&&STATUS_QUEUE.drop)STATUS_QUEUE.drop(item=>item.heldEvent);
+}
 function speak(S,prev,txt,priority,preempt){
  const pol=window.SURPRISE&&SURPRISE.policy&&S&&prev?SURPRISE.policy(S,prev):null;
- const hold=pol&&pol.affected?pol.lineHold:(window.SURPRISE?SURPRISE.holdFor(txt):undefined);
+ const ended=S&&S.phase==='over';
+ const held=!!(pol&&pol.affected&&!ended);
+ const hold=held?pol.lineHold:(window.SURPRISE?SURPRISE.holdFor(txt):undefined);
  if(pol&&pol.lookout&&pol.ev){
-  const k=pol.ev.event+':'+pol.ev.seq;
+  const k=pol.ev.event+':'+pol.ev.seq,gen=lineGen;
   // The beat owns the status line. Drop a near warning that is waiting, and
   // refuse a new one until the beat (and the line that follows it) is up.
   lookoutUntil=Date.now()+SURPRISE.LOOKOUT_MS+400;
   if(window.STATUS_QUEUE.drop)STATUS_QUEUE.drop(isNearLine);
   document.querySelectorAll('#msgslot .h3pop.near').forEach(el=>el.remove());
   if(lookoutKey!==k){lookoutKey=k;announce(SURPRISE.LOOKOUT_LINE,120,SURPRISE.LOOKOUT_MS,true);}
-  setTimeout(()=>{if(window.STATUS_QUEUE.drop)STATUS_QUEUE.drop(isNearLine);announce(txt,priority,hold,true);},SURPRISE.LOOKOUT_MS);return;
+  setTimeout(()=>{if(gen!==lineGen)return;if(window.STATUS_QUEUE.drop)STATUS_QUEUE.drop(isNearLine);announce(txt,priority,hold,true,held);},SURPRISE.LOOKOUT_MS);return;
  }
- announce(txt,priority,hold,preempt);
+ announce(txt,priority,hold,preempt,held);
 }
+if(window.CUTAWAYS)CUTAWAYS.onDone=releaseHeldLine;
 const evSeen={kick:0,pop:0,rival:0,stone:0,dug:0,burst:0};
 function events(S,prev,board){
  if(!S)return;if(!S.three)rulesMode('2');
@@ -315,7 +323,7 @@ function after(S,prev,board){
  if(!S.joined){const w=$('wait');const open=Object.entries(h.seats).filter(([,v])=>v==='open').map(([r])=>SN[r]);if(w)w.firstElementChild.nextElementSibling.textContent=`Waiting for: ${open.join(', ')}. Send them this link:`;}}
 function kindPick(S){let k=$('kindPick');if(!S.h3.needKind){k&&k.classList.add('hidden');return;}
  if(!k){k=document.createElement('div');k.id='kindPick';document.body.appendChild(k);}
- k.className='';k.innerHTML=`<div class="hbox"><h1>You're the hunter</h1><p>Pick your animal</p><div class="kindrow">${['hyena','badger'].map(x=>`<button class="kindbtn" id="pick-${x}" onclick="UI.send({t:'act',a:'kind',kind:'${x}'})"><span class="ka">${KIND[x].art}</span><b>${KIND[x].n}</b><small>${KIND[x].pw}: ${KIND[x].pwTxt}</small></button>`).join('')}</div></div>`;}
+ k.className='';k.innerHTML=`<div class="hbox"><h1>You're the hunter</h1><p>Pick your animal</p><div class="kindrow">${['hyena','badger'].map(x=>`<button class="kindbtn" id="pick-${x}" onclick="UI.send({t:'act',a:'kind',kind:'${x}'})"><span class="ka">${KIND[x].art}</span><b>${KIND[x].n}</b><small>${kindLine(x)}</small></button>`).join('')}</div></div>`;}
 function over(S){if(S.h3.hunt)return hOver(S);if(S.h3.team)return tOver(S);const h=S.h3,w=S.winner,me=S.role,C=S.cfg;
  const art=w==='hunter'?KIND[h.kind||'hyena'].art:w==='blue'?OSTI:w==='red'?VULI:'';
  const title=w===me?'You win!':`${tname(S,w)} wins!`;

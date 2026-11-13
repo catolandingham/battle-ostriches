@@ -37,6 +37,10 @@ const OUT = 'shots/balanced/'; fs.mkdirSync(OUT + 'frames', { recursive: true })
   await A.waitForSelector('#actions.mine', { state: 'attached' }); await A.waitForTimeout(900);
   assert.ok(await A.locator('.cell.hit').count() === 1 && await V.locator('.cell.hit').count() === 1, 'hit mark on both');
   assert.equal(await A.textContent('#eggsLeft'), '2'); assert.equal(await V.textContent('#stonesLeft'), '0/1');
+  // The smash hold covers the board. Go on before the next sit, the way a player would.
+  const go = A.locator('#surprise-go button');
+  if (await go.count()) await go.click();
+  if (await A.evaluate(() => !!(window.CUTAWAYS && CUTAWAYS.busy()))) await A.waitForFunction(() => !CUTAWAYS.busy(), null, { timeout: 15000 });
   // ostrich: sit 3x then must step off
   for (let k = 0; k < 3; k++) { await A.click('#actions button:has-text("Sit")', { force: true }); await V.waitForSelector('#actions.mine', { state: 'attached' });
     assert.ok(await V.locator('#actions button:has-text("Throw")').isDisabled(), 'no stone = no throw');

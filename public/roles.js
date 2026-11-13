@@ -98,7 +98,7 @@
       `If a hunter gets to your square, they catch you. ${ko} catches knock you out.`,
       'You lose if every egg is broken or goes cold, or if you don\'t eat in time.',
       `The hunter wins at ${n} catches.`,
-      `After the hunter knocks a bird out, they always take ${d} turns in a row.`,
+      `When the hunter knocks a bird out, they always take ${d} turns in a row. The hyena can pounce only on the first.`,
     ]);
     return cardOf('You are the Ostrich.', 'ostrich', [
       `Keep at least 1 egg alive for ${c.rounds} rounds.`,
@@ -130,7 +130,7 @@
       `If a hunter gets to your square, they catch you. ${ko} catches knock you out.`,
       `You lose if an egg lasts ${c.rounds} rounds.`,
       `The hunter wins at ${n} catches.`,
-      `After the hunter knocks a bird out, they always take ${d} turns in a row.`,
+      `When the hunter knocks a bird out, they always take ${d} turns in a row. The hyena can pounce only on the first.`,
     ]);
     return cardOf('You are the Vulture.', 'vulture', [
       'You win if every egg is broken or goes cold.',
@@ -145,17 +145,29 @@
     const other = who === 'hyena' ? 'badger' : 'hyena';
     const n = (m.goal && m.goal.n) || hunterGoalObj(mode, R).n;
     const d = doubleTurns(mode, R);
+    const step = m.pounce === 1 ? '1 more square' : (m.pounce || 1) + ' more squares';
+    const pounceLine = `When you smell a bird and miss, you smell again and may move ${step}.`;
     let lines;
     if (mode === '4h') {
       lines = [
         `Hunters win when both birds are out. You win if you knocked out more birds than the ${other}.`,
-        `${ko} catches knock a bird out. If you have the same number of knock-outs, whoever got more catches wins. Same catches? You tie.`,
-        `You lose if an egg lasts ${c.rounds} rounds, or every egg is broken.`,
       ];
+      if (who === 'hyena') lines.push(pounceLine);
+      lines.push(`${ko} catches knock a bird out. If you have the same number of knock-outs, whoever got more catches wins. Same catches? You tie.`);
+      lines.push(`You lose if an egg lasts ${c.rounds} rounds, or every egg is broken.`);
     } else if (mode === '5') {
       lines = [
         'You win by knocking out 1 ostrich and 1 vulture.',
+      ];
+      if (who === 'hyena') lines.push(pounceLine);
+      lines.push(`${ko} catches knock a bird out.`);
+      lines.push(`You lose if an egg lasts ${c.rounds} rounds, or every egg is broken.`);
+    } else if (who === 'hyena') {
+      lines = [
+        `You win at ${n} catches.`,
         `${ko} catches knock a bird out.`,
+        pounceLine,
+        `When you knock a bird out, you always take ${d} turns in a row. You can pounce only on the first.`,
         `You lose if an egg lasts ${c.rounds} rounds, or every egg is broken.`,
       ];
     } else {
@@ -181,7 +193,10 @@
   function cardId(role, kind, mode) {
     const a = animal(role, kind);
     const m = String(mode || '2'), bird = a === 'ostrich' || a === 'vulture';
-    return [a, bird && m === '3' && HUNTERS[kind] ? kind : '', m].join('_'); // only the 3-player bird cards change with the hunter
+    const base = [a, bird && m === '3' && HUNTERS[kind] ? kind : '', m].join('_'); // only the 3-player bird cards change with the hunter
+    // P2 wording: a phone that already closed the old card should be shown this one.
+    const revised = (a === 'hyena' && (m === '3' || m === '4h' || m === '5')) || (bird && m === '3');
+    return revised ? base + '_p2' : base;
   }
 
   const API = { roleCard, cardId, huntLine, kickList, animal, rulesFromModules, PICKED };

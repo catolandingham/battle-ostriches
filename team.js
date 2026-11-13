@@ -80,6 +80,18 @@ function kickable(g, s) {
   return r;
 }
 const kickTargets = (g, s) => canKick(g, s) ? kickable(g, s) : [];
+function kickPlans(g, s) {
+  if (!canKick(g, s)) return [];
+  const at0 = g.b[s].pos;
+  return kickable(g, s).map(at => {
+    const hunter = !!(g.h && K(g.h.p) === K(at)), v = VS.find(x => live(g, x) && K(g.b[x].pos) === K(at));
+    const n = hunter && g.h.kind === 'badger' ? g.cfg.kickPushBadger : g.cfg.kickPush;
+    const blocked = m => (g.h && K(g.h.p) === K(m) && !g.h.burrowed && !hunter) || birdsIn(g).some(o => o !== v && K(g.b[o].pos) === K(m));
+    const path = B.slideN(g.cfg, at, B.awayFrom(at0, at), n, blocked, g.marks, true);
+    const who = hunter ? (g.h.kind || 'hyena') : 'vulture';
+    return { at: at.slice(), to: path.to.slice(), points: path.points, who, key: hunter ? who : 'red' };
+  });
+}
 function ostrichKick(g, s, p) {
   if (!kickTargets(g, s).some(q => K(q) === K(p))) return false;
   const b = g.b[s]; b.sitting = false; const from = p.slice(), hunter = !!(g.h && K(g.h.p) === K(from)), v = VS.find(x => live(g, x) && K(g.b[x].pos) === K(from));
@@ -245,6 +257,6 @@ function status(g) {
   return { n: g.n, order: g.order, kind: g.h ? g.h.kind : null, ko: koAt(g), hkos: g.h ? { ...g.h.kos } : null,
     birds: Object.fromEntries(OS.concat(VS).map(s => [s, { out: g.b[s].out, why: g.b[s].why, catches: g.b[s].catches, skip: g.b[s].skip }])) };
 }
-module.exports = { TM, OFF, OS, VS, isO, isV, mate, newTeam, place, canPlaceEgg, setupStep, nestOf, ostrichMoves, ostrichAct, canKick, kickable, kickTargets, ostrichKick, canSit, canCarry, mustLeave, onEgg,
+module.exports = { TM, OFF, OS, VS, isO, isV, mate, newTeam, place, canPlaceEgg, setupStep, nestOf, ostrichMoves, ostrichAct, canKick, kickable, kickTargets, kickPlans, ostrichKick, canSit, canCarry, mustLeave, onEgg,
   flyTargets, throwTargets, vultureFly, vultureThrow, hunterMoves, hunterMove, hunterStay, hunterRange, hunterReach, hunterSeenBy, ambushSight, senses, timeout, status, alive, eggAt,
   eggPos, live, catchBird, knockout, next, checkEnd, endRound };

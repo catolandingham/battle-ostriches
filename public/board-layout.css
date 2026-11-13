@@ -6,13 +6,14 @@
 #fx .spr .aimg{image-rendering:auto}
 .h3i>.aimg,#turnTag .aimg,.rolebtn .aimg,.kindbtn .aimg,.ra .aimg,.ka .aimg{width:100%;height:100%}
 
-/* Eggs: shape B, small, in the top-left corner, one fixed size whether alone or sharing the square (approved full-board layout). */
-html[data-theme] :is(#board,.mini) .cell .cmark.cm-egg:not(#_a):not(#_b):not(#_c):not(#_d){left:5%!important;top:6%!important;width:24%!important;height:29.5%!important}
+/* Eggs: shape B, S2 size, in the top-left corner, one fixed size whether alone or sharing the square.
+   Inset is 6% so the painted egg (the fill plus the 4.5-unit stroke, which sits slightly outside the path) stays fully inside the square. The nearly-cold filled egg uses this same box, so its solid body is not tighter against the edge than a normal egg. */
+html[data-theme] :is(#board,.mini) .cell .cmark.cm-egg:not(#_a):not(#_b):not(#_c):not(#_d){left:6%!important;top:6%!important;width:32%!important;height:39.5%!important}
 html[data-theme] :is(#board,.mini) .cell .cmark.cm-egg .mk:not(#_a):not(#_b):not(#_c):not(#_d){stroke-width:4.5px!important}
 /* The egg sits inside the warmth ring on your own square (the same spot on every square), above it, so the ring never cuts it. */
 html[data-theme] :is(#board,.mini) .cell .ic:has(.cm-egg):not(#_a):not(#_b):not(#_c):not(#_d){z-index:43!important}
 /* The countdown number sits inside the egg; the egg body takes the square's own colour so the number reads. */
-html[data-theme] :is(#board,#boardhold,.mini) .cell .wnum:not(#_a):not(#_b):not(#_c):not(#_d){letter-spacing:-.2px!important;position:absolute!important;inset:auto!important;left:5%!important;top:18%!important;right:auto!important;bottom:auto!important;width:24%!important;height:15%!important;max-width:none!important;display:flex!important;align-items:center!important;justify-content:center!important;margin:0!important;padding:0!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;transform:none!important;font:800 7px/1 -apple-system,"Helvetica Neue",Helvetica,Arial,sans-serif!important;letter-spacing:-.3px!important;text-align:center!important;color:#111!important;-webkit-text-fill-color:#111!important;z-index:48!important;pointer-events:none;overflow:hidden!important}
+html[data-theme] :is(#board,#boardhold,.mini) .cell .wnum:not(#_a):not(#_b):not(#_c):not(#_d){letter-spacing:-.2px!important;position:absolute!important;inset:auto!important;left:6%!important;top:22%!important;right:auto!important;bottom:auto!important;width:32%!important;height:20%!important;max-width:none!important;display:flex!important;align-items:center!important;justify-content:center!important;margin:0!important;padding:0!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;transform:none!important;font:800 10px/1 -apple-system,"Helvetica Neue",Helvetica,Arial,sans-serif!important;letter-spacing:-.3px!important;text-align:center!important;color:#111!important;-webkit-text-fill-color:#111!important;z-index:48!important;pointer-events:none;overflow:hidden!important}
 html[data-theme] :is(#board,#boardhold,.mini) .cell:has(.wnum) .cmark.cm-egg.is svg .mk:not(#_a):not(#_b):not(#_c):not(#_d){fill:#fff!important;stroke:#111!important}
 /* Nearly cold (2 or less): the egg fills in and the number turns light, as the old pill did. */
 html[data-theme] :is(#board,#boardhold,.mini) .cell:has(.wnum.low) .cmark.cm-egg.is svg .mk:not(#_a):not(#_b):not(#_c):not(#_d){fill:#111!important}
@@ -20,8 +21,9 @@ html[data-theme] :is(#board,#boardhold,.mini) .cell .wnum.low:not(#_a):not(#_b):
 /* The warmth ring round a carried egg is replaced by the number in the egg. */
 html[data-theme] #board .cell>.wring:not(.sq):not(#_a):not(#_b):not(#_c):not(#_d){display:none!important}
 
-/* Leaf and rock squares: a small leaf or rock always in the bottom-right corner, the same size with or without an animal. */
-html[data-theme] :is(#board,.mini) .cell>.ic:is(.ic-food,.ic-rock):not(#_a):not(#_b):not(#_c):not(#_d){position:absolute!important;inset:auto!important;left:auto!important;top:auto!important;right:3%!important;bottom:3%!important;width:18%!important;height:18%!important;margin:0!important;padding:0!important;transform:none!important;z-index:47!important;display:block!important;opacity:1!important;filter:none!important;animation:none!important}
+/* Leaf and rock: large and centred when the square is empty; tucked into the bottom-right corner when an animal is there. */
+html[data-theme] :is(#board,.mini) .cell:not(:has(>.pc))>.ic:is(.ic-food,.ic-rock):not(#_a):not(#_b):not(#_c):not(#_d){position:absolute!important;inset:auto!important;left:15%!important;top:15%!important;right:auto!important;bottom:auto!important;width:70%!important;height:70%!important;margin:0!important;padding:0!important;transform:none!important;z-index:47!important;display:block!important;opacity:1!important;filter:none!important;animation:none!important}
+html[data-theme] :is(#board,.mini) .cell:has(>.pc)>.ic:is(.ic-food,.ic-rock):not(#_a):not(#_b):not(#_c):not(#_d){position:absolute!important;inset:auto!important;left:auto!important;top:auto!important;right:2%!important;bottom:2%!important;width:30%!important;height:30%!important;margin:0!important;padding:0!important;transform:none!important;z-index:47!important;display:block!important;opacity:1!important;filter:none!important;animation:none!important}
 html[data-theme] :is(#board,.mini) .cell>.ic:is(.ic-food,.ic-rock) svg:not(#_a):not(#_b):not(#_c):not(#_d){display:block;width:100%!important;height:100%!important;transform:none!important}
 /* In the black-and-white look the corner mark gets a solid body, so an animal's lines never show through it. */
 html[data-theme="bw"] :is(#board,.mini) .cell>.ic:is(.ic-food,.ic-rock) svg path:not([d^="M10 30"]):not(#_a):not(#_b):not(#_c):not(#_d){fill:var(--tile,#fff)!important;stroke-width:3.4px!important}
@@ -45,17 +47,16 @@ html[data-theme] #h3bar .claw.on svg path:not(#_a):not(#_b):not(#_c):not(#_d){st
 /* Header turn button: the animal fills its box. */
 #hud #turnTag:not(#_a):not(#_b){padding:2px!important}
 #hud #turnTag>span:first-child:not(#_a):not(#_b){width:30px!important;height:30px!important}
-/* Brian (approved full-board layout): animal stays centred and as big as it can be. The egg tucks into the empty
-   corner of the animal's box; we only care that the drawn lines (ink) do not touch, with a small gap (~2% of the square).
-   With an egg: about 60%. On a leaf or rock (small bottom-right mark): about 76%, nearly full size. Alone: normal size. */
-html[data-theme] :is(#board,.mini) .cell:has(.cm-egg)>.pc:not(#_a):not(#_b):not(#_c):not(#_d){inset:auto!important;left:21%!important;top:21%!important;width:58%!important;height:58%!important;transform:none!important}
-html[data-theme] :is(#board,.mini) .cell:is(:has(>.ic-food),:has(>.ic-rock))>.pc:not(#_a):not(#_b):not(#_c):not(#_d){inset:auto!important;left:15%!important;top:15%!important;width:70%!important;height:70%!important;transform:none!important}
+/* S2: the animal stays as big as it can be without covering a corner mark. Ink does not touch, with a small gap.
+   With an egg: about 60%. On a leaf or rock that has tucked into the corner: about 64%. Alone: normal size. */
+html[data-theme] :is(#board,.mini) .cell:has(.cm-egg)>.pc:not(#_a):not(#_b):not(#_c):not(#_d){inset:auto!important;left:34%!important;top:36%!important;width:60%!important;height:60%!important;transform:none!important}
+html[data-theme] :is(#board,.mini) .cell:is(:has(>.ic-food),:has(>.ic-rock)):not(:has(.pc~.pc))>.pc:not(#_a):not(#_b):not(#_c):not(#_d){inset:auto!important;left:6%!important;top:6%!important;width:64%!important;height:64%!important;transform:none!important}
 /* Two animals sharing a square with an egg or a leaf or rock: as big as possible in the free corners (top-right and bottom-left). */
-html[data-theme] :is(#board,.mini) .cell:has(.cm-egg):has(.pc~.pc)>.pc:not(#_a):not(#_b):not(#_c):not(#_d){width:50%!important;height:50%!important;inset:auto!important;transform:none!important}
-html[data-theme] :is(#board,.mini) .cell:has(.cm-egg):has(.pc~.pc)>.pc.pv:not(#_a):not(#_b):not(#_c):not(#_d){left:48%!important;top:2%!important;z-index:5!important}
-html[data-theme] :is(#board,.mini) .cell:has(.cm-egg):has(.pc~.pc)>.pc.po:not(#_a):not(#_b):not(#_c):not(#_d){left:2%!important;top:48%!important;z-index:6!important}
-html[data-theme] :is(#board,.mini) .cell:is(:has(>.ic-food),:has(>.ic-rock)):has(.pc~.pc)>.pc:not(#_a):not(#_b):not(#_c):not(#_d){width:56%!important;height:56%!important;inset:auto!important;transform:none!important}
-html[data-theme] :is(#board,.mini) .cell:is(:has(>.ic-food),:has(>.ic-rock)):has(.pc~.pc)>.pc.pv:not(#_a):not(#_b):not(#_c):not(#_d){left:42%!important;top:4%!important;z-index:5!important}
-html[data-theme] :is(#board,.mini) .cell:is(:has(>.ic-food),:has(>.ic-rock)):has(.pc~.pc)>.pc.po:not(#_a):not(#_b):not(#_c):not(#_d){left:4%!important;top:42%!important;z-index:6!important}
+html[data-theme] :is(#board,.mini) .cell:has(.cm-egg):has(.pc~.pc)>.pc:not(#_a):not(#_b):not(#_c):not(#_d){width:48%!important;height:48%!important;inset:auto!important;transform:none!important}
+html[data-theme] :is(#board,.mini) .cell:has(.cm-egg):has(.pc~.pc)>.pc.pv:not(#_a):not(#_b):not(#_c):not(#_d){left:50%!important;top:2%!important;z-index:5!important}
+html[data-theme] :is(#board,.mini) .cell:has(.cm-egg):has(.pc~.pc)>.pc.po:not(#_a):not(#_b):not(#_c):not(#_d){left:2%!important;top:50%!important;z-index:6!important}
+html[data-theme] :is(#board,.mini) .cell:is(:has(>.ic-food),:has(>.ic-rock)):has(.pc~.pc)>.pc:not(#_a):not(#_b):not(#_c):not(#_d){width:52%!important;height:52%!important;inset:auto!important;transform:none!important}
+html[data-theme] :is(#board,.mini) .cell:is(:has(>.ic-food),:has(>.ic-rock)):has(.pc~.pc)>.pc.pv:not(#_a):not(#_b):not(#_c):not(#_d){left:44%!important;top:3%!important;z-index:5!important}
+html[data-theme] :is(#board,.mini) .cell:is(:has(>.ic-food),:has(>.ic-rock)):has(.pc~.pc)>.pc.po:not(#_a):not(#_b):not(#_c):not(#_d){left:3%!important;top:44%!important;z-index:6!important}
 /* An ostrich carrying an egg uses the carry drawing: beak open a little, the egg lying sideways inside, medium, no number. Same in every theme. */
 html[data-theme] :is(#board,.mini) .cell>.pc.po.carrying:not(#_a):not(#_b):not(#_c):not(#_d){inset:auto!important;left:14%!important;top:14%!important;width:72%!important;height:72%!important;transform:none!important}

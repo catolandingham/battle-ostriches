@@ -22,7 +22,16 @@ const THEMES = ['classic', 'nature', 'notes', 'golden', 'paper', 'arcade', 'toyb
   await P.waitForSelector('#board .cell');
   const game = () => [...server.rooms.values()].find(r => r.g && !r.three && !r.hunt && !r.team).g;
   const key = p => p[0] + ',' + p[1];
-  const myTurn = async () => { await P.waitForFunction(() => { const S = UI._S(); return S && (S.phase === 'over' || (S.myTurn && S.phase === 'play' && !UI._locked())); }, null, { timeout: 20000 }); await P.waitForTimeout(150); const S = await P.evaluate(() => UI._S()); assert.notEqual(S.phase, 'over', 'game ended early'); return S; };
+  const myTurn = async () => {
+    await P.waitForFunction(() => { const S = UI._S(); return S && (S.phase === 'over' || (S.myTurn && S.phase === 'play' && !UI._locked())); }, null, { timeout: 20000 });
+    const go = P.locator('#surprise-go button');
+    if (await go.count()) await go.click();
+    if (await P.evaluate(() => !!(window.CUTAWAYS && CUTAWAYS.busy()))) await P.waitForFunction(() => !CUTAWAYS.busy(), null, { timeout: 15000 });
+    await P.waitForTimeout(150);
+    const S = await P.evaluate(() => UI._S());
+    assert.notEqual(S.phase, 'over', 'game ended early');
+    return S;
+  };
   const cellAt = (S, p) => P.locator('#board .cell').nth(p[1] * S.cfg.cols + p[0]);
   const hint = () => P.evaluate(() => document.getElementById('hint').textContent.trim());
   // every own-turn hint carries the app's 'YOUR TURN · ' lead; the line under test is what follows it
