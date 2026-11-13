@@ -50,6 +50,8 @@ const OUT = 'shots/pass/'; fs.mkdirSync(OUT, { recursive: true });
   await ostrichTurn(true);
   assert.equal(await P.textContent('#eggsLeft'), '2'); assert.equal(await P.locator('.cell.hit').count(), 1);
   await P.screenshot({ path: OUT + 'ostrich-view.jpg', type: 'jpeg', quality: 85 });
+  // Since 2026-11-11 the ostrich is shown the smash on its own turn and has to tap "Tap to go on." before it can move (taps on the board are ignored until then).
+  await P.click('#surprise-go button', { timeout: 8000 });
   // play out: ostrich alternates step on/off, vulture flies around; game must end
   let rounds = 0;
   while (!(await P.locator('#over:not(.hidden)').count()) && rounds < 60) {

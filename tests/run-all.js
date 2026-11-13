@@ -9,7 +9,6 @@ const LONG = { 'e2e-consistency.js': 30 * 60 * 1000 }, EXTRA = { 'e2e-invite.js'
 const SKIP = new Set(['e2e-live.js']); // e2e-live.js plays against the live site, not a local server
 const KNOWN_FAILURES = {
   // These four fail on a clean Linux machine with the same WebKit the check uses. None was fixed or weakened here; each is on Brian's problem list.
-  'e2e-pass.js': 'Pass-and-play: after the vulture smashes an egg the screen waits on "Tap to go on." and the test never taps it (the test looks out of date with the 2026-11-11 flow, not confirmed)',
   'e2e-motion-views.js': 'Kick: the ostrich\'s slide animation is gone 300 ms after a repeated update arrives ("duplicate packet interrupted full kicker slide"); either the animation really is cut short or the test is out of date (not confirmed)',
   'e2e-cause.js': 'Fails on GitHub (WebKit) but passes in Chromium on the machine used to look at it; it waits for the "egg went cold" animation and the next turn and times out. Cause not found',
   'e2e-three.js': 'Fails on GitHub (WebKit) but passes in Chromium on the machine used to look at it; the hyena\'s second (pounce) tap does not produce the catch line within 15 seconds. Cause not found',
