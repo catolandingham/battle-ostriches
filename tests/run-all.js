@@ -8,9 +8,7 @@ const ROOT = path.join(__dirname, '..'), LOGS = path.join(ROOT, 'shots', 'test-l
 const LONG = { 'e2e-consistency.js': 30 * 60 * 1000 }, EXTRA = { 'e2e-invite.js': 12 * 60 * 1000 };
 const SKIP = new Set(['e2e-live.js']); // e2e-live.js plays against the live site, not a local server
 const KNOWN_FAILURES = {
-  // These fail on a clean Linux machine with the same WebKit the check uses. None was fixed or weakened here; each is on Brian's problem list.
-  'e2e-pass.js': 'Pass-and-play: after the vulture smashes an egg the screen waits on "Tap to go on." and the test never taps it (the test looks out of date with the 2026-11-11 flow, not confirmed)',
-  'e2e-cause.js': 'Fails on GitHub (WebKit) but passes in Chromium on the machine used to look at it; it waits for the "egg went cold" animation and the next turn and times out. Cause not found',
+  // Empty on purpose. The four suites that used to be here were test mistakes, not game bugs, and are fixed. Never add a suite here to hide a failure you have not written down.
 };
 const flags = process.argv.slice(2).filter(a => a.startsWith('--')), filters = process.argv.slice(2).filter(a => !a.startsWith('--'));
 const shard = (flags.find(a => a.startsWith('--shard=')) || '').slice(8).split('/').map(Number); // --shard=2/3 runs every 3rd suite, starting at the 2nd (the GitHub check splits the work this way)
