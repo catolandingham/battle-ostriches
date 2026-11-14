@@ -30,7 +30,7 @@ const shot = (p, n) => p.screenshot({ path: OUT + n + '.jpg', type: 'jpeg', qual
   await cell(H, 8, 4).click(); await H.waitForFunction(() => /When you miss, move 1 more square/.test(document.getElementById('hint').textContent)); // hyena pounce: extra square
   await H.waitForTimeout(1200); await cell(H, 7, 5).click();
   const said = () => /caught|knocked/i.test((document.getElementById('announce') || {}).textContent || ''); // the catch line (the start-of-game line may be up first)
-  await A.waitForFunction(said, null, { timeout: 15000 }); await H.waitForFunction(said, null, { timeout: 15000 }); await A.waitForTimeout(250); await shot(A, '5-catch-ostrich'); await shot(H, '5-catch-hunter');
+  await Promise.all([A.waitForFunction(said, null, { timeout: 15000 }), H.waitForFunction(said, null, { timeout: 15000 })]); // both at once: the hunter's line is up for only about 1.2 s and comes 0.6 s before the ostrich's, so waiting on the ostrich first can miss it await A.waitForTimeout(250); await shot(A, '5-catch-ostrich'); await shot(H, '5-catch-hunter');
   assert.equal(await A.locator('#h3bar .bchip.blue .heart.lost').count(), 1, 'header shows catch (one lost heart)');
   const os = await A.evaluate(() => UI._S().ostrich); assert.equal(Math.max(Math.abs(os[0] - 7), Math.abs(os[1] - 5)), 2, 'the caught ostrich scrambled exactly 2 squares: ' + os);
   // round 2: vulture lets the clock run out -> pass; ostrich lost its turn -> hunter
