@@ -26,6 +26,8 @@ Actions (Carry, Sit, Kick, Throw, Stay, Burrow) are buttons under the board. Wal
 
 Hyena sense is still only yes or no inside a 2-square box, diagonals included. The hunter sees where a bird may be. Nothing points at a bird. When a living bird first sees a hunter, the board says "Hyena near!" or "Badger near!" once. A burrowed badger does not trigger it and stays hidden from the birds. The player who is the badger still gets their own graphic on the board before burrow and while burrowed, on every theme.
 
+Before the badger digs in, its Burrow button and hint say "A bird will see you dig in." or "No bird will see you dig in." Its "bird near" check reaches 2 squares, the same as bird sight, so the warning is always right without naming the bird. If a bird saw it dig, only the badger's phone says "A bird saw you dig in."; everyone else still gets "The badger dug in!" and birds that saw it get the mound. The badger's role card and hunter pick say "Tap Burrow to hide. Birds within 2 squares see where." (Brian, 2026-11-15; test: `testv2.js`).
+
 An eliminated bird is off the board. A stone on the egg it was covering smashes that egg. A stone thrown at a living ostrich is kicked back.
 
 A catch that does not knock a bird out shows HURT on that animal. OUT means eliminated. An eliminated human bird then gets a read-only view of every animal and the eggs (`god: true`) and is sent no actions. Until that moment the old visibility rules apply, including a living hunter seeing no birds or eggs. Hunters are not eliminated mid-game, so they do not get that view before the game ends.

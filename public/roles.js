@@ -147,19 +147,20 @@
     const d = doubleTurns(mode, R);
     const step = m.pounce === 1 ? '1 more square' : (m.pounce || 1) + ' more squares';
     const pounceLine = `When you smell a bird and miss, you smell again and may move ${step}.`;
+    const burrowLine = `Tap Burrow to hide. Birds within ${m.see || 2} squares see where.`; // Brian, 2026-11-15
     let lines;
     if (mode === '4h') {
       lines = [
         `Hunters win when both birds are out. You win if you knocked out more birds than the ${other}.`,
       ];
-      if (who === 'hyena') lines.push(pounceLine);
+      lines.push(who === 'hyena' ? pounceLine : burrowLine);
       lines.push(`${ko} catches knock a bird out. If you have the same number of knock-outs, whoever got more catches wins. Same catches? You tie.`);
       lines.push(`You lose if an egg lasts ${c.rounds} rounds, or every egg is broken.`);
     } else if (mode === '5') {
       lines = [
         'You win by knocking out 1 ostrich and 1 vulture.',
       ];
-      if (who === 'hyena') lines.push(pounceLine);
+      lines.push(who === 'hyena' ? pounceLine : burrowLine);
       lines.push(`${ko} catches knock a bird out.`);
       lines.push(`You lose if an egg lasts ${c.rounds} rounds, or every egg is broken.`);
     } else if (who === 'hyena') {
@@ -175,6 +176,7 @@
         `You win at ${n} catches.`,
         `${ko} catches knock a bird out.`,
         `After you knock a bird out, you always take ${d} turns in a row.`,
+        burrowLine,
         `You lose if an egg lasts ${c.rounds} rounds, or every egg is broken.`,
       ];
     }
