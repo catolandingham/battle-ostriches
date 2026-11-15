@@ -186,6 +186,7 @@ function timeout(g) {
   if (g.phase !== 'play') return false;
   if (g.turn === 'hunter') return hunterStay(g);
   if (g.turn === 'red') { g.sniff = null; g.lastAction = { type: 'pass', timeout: true }; g.turn = 'blue'; B.dropCarried(g); advance(g); return true; }
+  const e = g.carrying === null && g.ostrich && g.ostrich[0] >= 0 ? B.eggAt(g, g.ostrich) : null; if (e) e.lastWarm = g.round; // time ran out on an egg: it is still warmed (Brian, 2026-11-15)
   ostrichStay(g); if (g.lastAction) g.lastAction.timeout = true; afterOstrich(g); return true;
 }
 // Public 3-player status every seat may see (no positions).

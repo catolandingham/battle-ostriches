@@ -245,11 +245,11 @@ function next(g) {
     g.turn = s; return;
   }
 }
-function timeout(g) { // shot clock ran out: vulture passes, ostrich stays put (no warmth, still hungry), hunter stays put
+function timeout(g) { // shot clock ran out: vulture passes, ostrich stays put (an egg under it is warmed, still hungry), hunter stays put
   if (g.phase !== 'play') return false; const s = g.turn;
   if (s === 'hunter') return hunterStay(g);
   if (isV(s)) { g.sniffs[s] = null; g.lastAction = { seat: s, type: 'pass', timeout: true }; dropAll(g); }
-  else ostrichStay(g, s, 'timeout');
+  else { const b = g.b[s], e = b.carrying === null && b.pos ? eggAt(g, b.pos) : null; if (e) e.lastWarm = g.round; ostrichStay(g, s, 'timeout'); } // time ran out on an egg: it is still warmed (Brian, 2026-11-15)
   next(g); return true;
 }
 // public status every seat may see: no positions
