@@ -80,6 +80,8 @@ function ostrichStay(g) {
 }
 function afterOstrich(g) {
   if (g.phase === 'over' && g.winBy === 'starved' && !g.hunt.final) { g.phase = 'play'; g.winner = g.winBy = null; knockout(g, 'blue', 'starved'); if (g.phase === 'over') return; B.endRound(g); }
+  // Round 30: the eggs survived the ostrich's turn, but both hunters still take their last move before anyone wins (Brian, 2026-11-15).
+  if (g.phase === 'over' && g.winBy === 'survived' && !g.hunt.final) { g.phase = 'play'; g.winner = g.winBy = null; g.hunt.lastRound = true; }
   if (finish(g)) return;
   startHunter(g, 'hyena');
 }
@@ -95,7 +97,9 @@ function advance(g) {
     return; // hunters never lose a turn
   }
 }
-function endHunter(g, h) { g.hunt.hs[h].pounce = false; if (h === 'hyena') return startHunter(g, 'badger'); g.turn = 'red'; advance(g); }
+function endHunter(g, h) { g.hunt.hs[h].pounce = false; if (h === 'hyena') return startHunter(g, 'badger');
+  if (g.hunt.lastRound && g.phase === 'play') { g.phase = 'over'; g.winner = 'blue'; g.winBy = 'survived'; finish(g); return; } // both hunters moved in round 30: time is up
+  g.turn = 'red'; advance(g); }
 // --- actions ---
 function placeOstrichH(g, p) { if (p && hunterAt(g, p)) return false; return B.placeOstrich(g, p); }
 function vultureFlyH(g, p) {
