@@ -166,7 +166,7 @@ body.coaching::before{content:"";position:fixed;inset:0;background:#000a;z-index
 #hud #inviteBtn{height:30px;padding:0 8px!important;font-size:12px!important;font-weight:800;border-radius:15px!important;min-width:0!important;width:auto!important;margin:0!important;white-space:nowrap;letter-spacing:1px}
 #hud #inviteBtn.hidden{display:none!important}
 #hud #moreBtn{width:32px!important;min-width:32px!important;max-width:32px!important;height:32px!important;flex:0 0 32px!important;padding:0!important;font:800 22px/1 system-ui,sans-serif!important;border-radius:50%!important}
-#hud #helpBtn,#hud #muteBtn,#hud #themeBtn,#hud #timerToggle{position:absolute!important;width:1px!important;height:1px!important;min-width:0!important;max-width:1px!important;padding:0!important;margin:0!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;border:0!important}
+#hud #helpBtn,#hud #muteBtn,#hud #themeBtn{position:absolute!important;width:1px!important;height:1px!important;min-width:0!important;max-width:1px!important;padding:0!important;margin:0!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;border:0!important}
 #gameMenu{position:fixed;top:calc(env(safe-area-inset-top) + 96px);right:8px;z-index:80;min-width:180px}
 #gameMenu #menuLeave{background:#fff!important;color:#111!important;-webkit-text-fill-color:#111!important}
 #leaveAsk,#rejoinAsk{position:fixed;inset:0;z-index:220;background:rgba(10,15,25,.92);display:flex;align-items:center;justify-content:center;padding:20px}
