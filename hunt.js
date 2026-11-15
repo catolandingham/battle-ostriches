@@ -190,17 +190,17 @@ function hunterBurst(g) {
   t.burst = { seq: t.burstSeq = (t.burstSeq || 0) + 1, round: g.round, n, at, to: to.slice() }; x.last = { type: 'burst', at };
   endHunter(g, 'badger'); return true;
 }
-function hunterStay(g) {
+function hunterStay(g, timedOut) { // timedOut: the shot clock ran out, so a badger that is not yet buried just loses its turn (Brian, 2026-11-15)
   const h = g.turn; if (g.phase !== 'play' || !isH(h)) return false;
   g.hunt.popout = null; const x = g.hunt.hs[h];
-  if (!x.pounce && h === 'badger') { // one still turn always burrows, on any square
+  if (!x.pounce && h === 'badger' && !(timedOut && !x.burrowed)) { // one still turn always burrows, on any square
     if (!x.burrowed) { const t = g.hunt; t.dug = { seq: t.digSeq = (t.digSeq || 0) + 1, round: g.round }; t.mound = { at: x.p.slice(), seenBy: BIRDS.filter(b => seen(g, b, 'badger')) }; } // the birds that could see it dig see the spot
     x.dig = 2; x.burrowed = true; }
   x.last = { type: x.pounce ? 'skip' : 'stay' }; endHunter(g, h); return true;
 }
 function timeout(g) {
   if (g.phase !== 'play') return false;
-  if (isH(g.turn)) return hunterStay(g);
+  if (isH(g.turn)) return hunterStay(g, true);
   if (g.turn === 'red') { g.sniff = null; g.lastAction = { type: 'pass', timeout: true }; g.turn = 'blue'; B.dropCarried(g); advance(g); return true; }
   const e = g.carrying === null && g.ostrich && g.ostrich[0] >= 0 ? B.eggAt(g, g.ostrich) : null; if (e) e.lastWarm = g.round; // time ran out on an egg: it is still warmed (Brian, 2026-11-15)
   ostrichStay(g); if (g.lastAction) g.lastAction.timeout = true; afterOstrich(g); return true;

@@ -173,10 +173,10 @@ function hunterMove(g, p) {
   if (!caught && !wasP && !t.extra && t.kind === 'hyena' && t.sense && nowSense) { t.pounce = true; t.first = t.sense; t.firstAt = from.slice(); t.sense = nowSense; t.senseSeq++; t.senseAt = t.h.slice(); return true; }
   endHunter(g); return true;
 }
-function hunterStay(g) { // badger: staying still burrows it (invisible to birds). During a pounce: skip the extra move.
+function hunterStay(g, timedOut) { // timedOut: the shot clock ran out, so a badger that is not yet buried just loses its turn (Brian, 2026-11-15) // badger: staying still burrows it (invisible to birds). During a pounce: skip the extra move.
   if (g.phase !== 'play' || g.turn !== 'hunter') return false;
   const t = g.three; t.popout = null;
-  if (!t.pounce && t.kind === 'badger') { // one still turn always burrows, on any square
+  if (!t.pounce && t.kind === 'badger' && !(timedOut && !t.burrowed)) { // one still turn always burrows, on any square
     if (!t.burrowed) { t.dug = { seq: t.digSeq = (t.digSeq || 0) + 1, round: g.round }; t.mound = { at: t.h.slice(), seenBy: BIRDS.filter(b => hunterSeenBy(g, b)) }; } // the birds that could see it dig see the spot
     t.dig = 2; t.burrowed = true; }
   t.lastHunter = { type: t.pounce ? 'skip' : 'stay' }; endHunter(g); return true;
@@ -184,7 +184,7 @@ function hunterStay(g) { // badger: staying still burrows it (invisible to birds
 // shot clock ran out: the current player's turn ends (vulture passes, ostrich stays put, hunter stays put)
 function timeout(g) {
   if (g.phase !== 'play') return false;
-  if (g.turn === 'hunter') return hunterStay(g);
+  if (g.turn === 'hunter') return hunterStay(g, true);
   if (g.turn === 'red') { g.sniff = null; g.lastAction = { type: 'pass', timeout: true }; g.turn = 'blue'; B.dropCarried(g); advance(g); return true; }
   const e = g.carrying === null && g.ostrich && g.ostrich[0] >= 0 ? B.eggAt(g, g.ostrich) : null; if (e) e.lastWarm = g.round; // time ran out on an egg: it is still warmed (Brian, 2026-11-15)
   ostrichStay(g); if (g.lastAction) g.lastAction.timeout = true; afterOstrich(g); return true;

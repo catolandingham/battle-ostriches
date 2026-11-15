@@ -44,7 +44,7 @@ t('time runs out: no winner if the lone bird missed its goal; ostrich wins if it
   const h = setup('hyena', [0, 3]); h.round = 30; h.eggs.forEach(e => e.lastWarm = 29); T.vultureFly3(h, [4, 1]); T.ostrichAct3(h, 'step', [5, 5]); assert.equal(h.turn, 'hunter'); T.hunterStay(h); assert.equal(h.winner, 'blue'); });
 t('shot clock timeout ends each turn (pass / stay put)', () => { const g = setup('badger'); assert(T.timeout(g)); assert.equal(g.turn, 'blue'); assert.equal(g.sniff, null);
   const hl = g.hungerLeft; assert(T.timeout(g)); assert.equal(g.turn, 'hunter'); assert.deepEqual(g.ostrich, [6, 5]); assert.equal(g.hungerLeft, hl - 1);
-  assert(T.timeout(g)); assert.equal(g.turn, 'red'); assert(g.three.burrowed, 'one still turn always burrows'); assert.equal(g.three.dig, 2); });
+  assert(T.timeout(g)); assert.equal(g.turn, 'red'); assert(!g.three.burrowed, 'a badger out of time just loses its turn (Brian, 2026-11-15, rule clash R3)'); assert.equal(g.three.dug, undefined); });
 t('server views: hunter sees no bird or egg positions; birds see the hunter only within 2', () => {
   process.env.PORT = 3989; const S = require('./server.js'); const { room } = S.create3({ role: 'blue', bots: ['red', 'hunter'], kind: 'hyena' }, null);
   room.g = setup('hyena', [8, 3]); const hv = S.view3(room, 'hunter'), js = JSON.stringify(hv);
