@@ -13,7 +13,7 @@ t('lobby role lines say the catch counts the rules use (both hunters 2)', () => 
   const T3 = require('./three.js').T3, TH = require('./hunt.js').TH, TM = require('./team.js').TM;
   for (const ko of [T3.ko, TH.ko, TM.ko]) assert.equal(ko.badger, ko.hyena);
   assert.equal(LB.META.badger.sub, 'Burrow · ' + T3.ko.badger + ' catches'); assert.equal(LB.ANIMAL.badger.sub, 'Burrow · ' + T3.ko.badger + ' catches');
-  assert.equal(LB.META.hyena.sub, '1 more when you miss'); assert.equal(LB.ANIMAL.hyena.sub, '1 more when you miss');
+  assert.equal(LB.META.hyena.sub, 'Pounce · 2 catches'); assert.equal(LB.ANIMAL.hyena.sub, 'Pounce · 2 catches');
 });
 t('one friend previews 2p roles and cannot start', () => {
   const r = humans(1); LB.reconcile(r);
