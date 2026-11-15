@@ -36,7 +36,7 @@ function winHunters(g, by, why) {
   const nm = h => h === 'badger' ? 'badger' : 'hyena';
   g.endWhy = w
     ? (why || 'Both birds are out.') + ` The ${nm(w.kind)} wins with ${w.kos > (w === a ? b : a).kos ? 'more knock-outs' : 'more catches'}.`
-    : 'Both birds are out. The hunters tie: you have the same number of knock-outs, and the same number of catches.';
+    : (by === 'last' ? why : 'Both birds are out.') + ' The hunters tie: you have the same number of knock-outs, and the same number of catches.'; // "last": the vulture is out and the eggs went cold (rule clash R4)
 }
 // Endings (rules 9). A side is out when all its birds are knocked out or it can no longer meet its goal; the hunters are never out.
 function settle(g) {
@@ -46,7 +46,7 @@ function settle(g) {
   let w = null, by = null, why = null;
   if (eggs === 0 && vIn) { w = 'red'; by = g.winBy === 'cold' ? 'cold' : 'smashed'; why = g.winBy === 'cold' ? 'The last egg went cold, so the vulture wins.' : 'The vulture smashed every egg.'; }
   else if (timeUp && oIn) { w = 'blue'; by = 'survived'; why = `An egg was still alive after round ${g.cfg.rounds}, so the ostrich wins.`; }
-  else if (!vIn && !oIn) { winHunters(g, 'last', 'Both birds are out of the game.'); return true; }
+  else if (!vIn && !oIn) { winHunters(g, 'last', 'The vulture is out and the eggs went cold.'); return true; } // the ostrich is still on the board (Brian, 2026-11-15, rule clash R4)
   else if (timeUp) { w = 'none'; by = 'time'; why = 'Time ran out and nobody met their goal.'; }
   if (!w) return false;
   g.phase = 'over'; g.winner = w; g.winBy = by; g.endWhy = why; t.final = true; return true;

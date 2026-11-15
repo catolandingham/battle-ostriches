@@ -33,7 +33,7 @@ function settle(g) {
   if (all || first || many) { w = 'hunter'; by = 'ko'; why = all ? `The ${nm} knocked out both birds.` : first ? `The ${nm} knocked out a bird.` : `The ${nm} made ${HG.n} catches.`; }
   else if (eggs === 0 && vIn) { w = 'red'; by = g.winBy === 'cold' ? 'cold' : 'smashed'; why = g.winBy === 'cold' ? 'The last egg went cold, so the vulture wins.' : 'The vulture smashed every egg.'; }
   else if (timeUp && oIn) { w = 'blue'; by = 'survived'; why = `An egg was still alive after round ${g.cfg.rounds}, so the ostrich wins.`; }
-  else if (!vIn && !oIn) { w = 'hunter'; by = 'last'; why = `Both birds are out of the game, so the ${nm} wins.`; }
+  else if (!vIn && !oIn) { w = 'hunter'; by = 'last'; why = `The vulture is out and the eggs went cold, so the ${nm} wins.`; } // the ostrich is still on the board; only its eggs are gone (Brian, 2026-11-15, rule clash R4)
   else if (timeUp) { w = 'none'; by = 'time'; why = 'Time ran out and nobody met their goal.'; }
   if (!w) return false;
   g.phase = 'over'; g.winner = w; g.winBy = by; g.endWhy = why; t.final = true; return true;
