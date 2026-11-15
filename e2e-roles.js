@@ -107,9 +107,15 @@ const R = require('./public/roles.js'), THEMES = fs.readFileSync('./public/theme
 
   // the card reads in every theme: dark text on the white card, the button readable, the card still on a 390 x 664 screen
   const themes = THEMES.match(/var T=\[([^\]]+)\]/)[1].split(',').map(x => x.replace(/'/g, '')); assert.equal(themes.length, 14);
+  // WebKit can stop drawing frames on a phone page that has sat idle while seven others ran, and then a click
+  // waits forever for the card to hold still (PR 36, test 3 of 3). Close the finished phones and use a fresh one.
+  for (const p of [A, V, H, P, F, K, O, W]) await p.context().close();
+  const T = await mk(); await T.goto(U); await T.click('#playFriend'); await T.waitForSelector('#botPlus');
+  await T.evaluate(() => UI.send({ t: 'lobby', a: 'bots', n: 1 })); await T.waitForFunction(() => LobbyUI.get().canStart);
+  await T.click('#startGame'); await T.waitForSelector('#rolecard:not(.hidden)', { timeout: 15000 }); await T.click('#rolecard');
   for (const t of themes) {
-    await F.evaluate(x => { THEME.set(x); UI.card(); }, t); await F.waitForSelector('#rolecard:not(.hidden)');
-    const c = await F.evaluate(() => {
+    await T.evaluate(x => { THEME.set(x); UI.card(); }, t); await T.waitForSelector('#rolecard:not(.hidden)');
+    const c = await T.evaluate(() => {
       const L = (rgb) => { const [r, g, b] = rgb.match(/[\d.]+/g).slice(0, 3).map(Number).map(v => { v /= 255; return v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); }); return .2126 * r + .7152 * g + .0722 * b; };
       const ratio = (a, b) => { const [x, y] = [L(a), L(b)].sort((p, q) => q - p); return (x + .05) / (y + .05); };
       const card = document.querySelector('#rolecard .rc'), bg = getComputedStyle(card).backgroundColor, out = {};
@@ -118,7 +124,7 @@ const R = require('./public/roles.js'), THEMES = fs.readFileSync('./public/theme
       return out; });
     assert.equal(c.bg, 'rgb(255, 255, 255)', t + ' card background'); delete c.bg;
     for (const [sel, r] of Object.entries(c)) assert.ok(r >= 4.5, `${t}: ${sel} contrast ${r.toFixed(2)} is under 4.5`);
-    await fits(F, 'theme ' + t); await F.click('#rolecard');
+    await fits(T, 'theme ' + t); await T.click('#rolecard');
   }
   console.log('ok card readable and on screen in all 13 themes');
 
