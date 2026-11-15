@@ -40,8 +40,8 @@ t('starved ostrich counts as out; vulture alone must still smash/outlast the egg
   assert(T.isOut(g, 'blue')); assert.equal(g.three.birds.blue.why, 'starved'); assert.equal(g.phase, 'play'); assert.equal(g.turn, 'hunter'); assert(T.isOut(g, 'blue')); T.hunterStay(g);
   assert.equal(g.turn, 'red'); T.vultureFly3(g, [4, 3]); assert.equal(g.turn, 'hunter', 'out ostrich is skipped'); });
 t('time runs out: no winner if the lone bird missed its goal; ostrich wins if it survives', () => { const g = setup('hyena', [0, 3]); g.round = 30; g.eggs.forEach(e => e.lastWarm = 29); g.hungerLeft = 1; T.vultureFly3(g, [4, 1]); T.ostrichAct3(g, 'step', [5, 5]);
-  assert.equal(g.phase, 'over'); assert.equal(g.winner, 'none');
-  const h = setup('hyena', [0, 3]); h.round = 30; h.eggs.forEach(e => e.lastWarm = 29); T.vultureFly3(h, [4, 1]); T.ostrichAct3(h, 'step', [5, 5]); assert.equal(h.winner, 'blue'); });
+  assert.equal(g.phase, 'play', 'round 30: the hunter still takes its last move (Brian, 2026-11-15)'); T.hunterStay(g); assert.equal(g.phase, 'over'); assert.equal(g.winner, 'none');
+  const h = setup('hyena', [0, 3]); h.round = 30; h.eggs.forEach(e => e.lastWarm = 29); T.vultureFly3(h, [4, 1]); T.ostrichAct3(h, 'step', [5, 5]); assert.equal(h.turn, 'hunter'); T.hunterStay(h); assert.equal(h.winner, 'blue'); });
 t('shot clock timeout ends each turn (pass / stay put)', () => { const g = setup('badger'); assert(T.timeout(g)); assert.equal(g.turn, 'blue'); assert.equal(g.sniff, null);
   const hl = g.hungerLeft; assert(T.timeout(g)); assert.equal(g.turn, 'hunter'); assert.deepEqual(g.ostrich, [6, 5]); assert.equal(g.hungerLeft, hl - 1);
   assert(T.timeout(g)); assert.equal(g.turn, 'red'); assert(g.three.burrowed, 'one still turn always burrows'); assert.equal(g.three.dig, 2); });

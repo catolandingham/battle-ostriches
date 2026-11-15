@@ -67,6 +67,8 @@ function ostrichStay(g) { // shot clock ran out or turn lost: the ostrich stays 
 }
 function afterOstrich(g) {
   if (g.phase === 'over' && g.winBy === 'starved' && !g.three.final) { g.phase = 'play'; g.winner = g.winBy = null; knockout(g, 'blue', 'starved'); if (g.phase === 'over') return; B.endRound(g); }
+  // Round 30: the eggs survived the ostrich's turn, but the hunter still takes its last move before anyone wins (Brian, 2026-11-15).
+  if (g.phase === 'over' && g.winBy === 'survived' && !g.three.final) { g.phase = 'play'; g.winner = g.winBy = null; g.three.lastRound = true; }
   if (finish(g)) return;
   g.turn = 'hunter'; startHunter(g);
 }
@@ -87,7 +89,9 @@ function startHunter(g) { const t = g.three; t.pounce = false; t.first = null; t
 function endHunter(g) {
   const t = g.three; t.pounce = false;
   if (g.phase === 'play' && firstCaughtKo(g) && !t.extra) { t.extra = true; startHunter(g); return; }
-  t.extra = false; g.turn = 'red'; advance(g);
+  t.extra = false;
+  if (t.lastRound && g.phase === 'play') { g.phase = 'over'; g.winner = 'blue'; g.winBy = 'survived'; finish(g); return; } // the hunter's last move is done: time is up
+  g.turn = 'red'; advance(g);
 }
 // --- actions ---
 function placeOstrich3(g, p) { if (p && K(p) === K(g.three.h)) return false; return B.placeOstrich(g, p); }
