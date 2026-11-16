@@ -36,7 +36,7 @@ function winHunters(g, by, why) {
   const nm = h => h === 'badger' ? 'badger' : 'hyena';
   g.endWhy = w
     ? (why || 'Both birds are out.') + ` The ${nm(w.kind)} wins with ${w.kos > (w === a ? b : a).kos ? 'more knock-outs' : 'more catches'}.`
-    : 'Both birds are out. The hunters tie: you have the same number of knock-outs, and the same number of catches.';
+    : (by === 'last' ? why : 'Both birds are out.') + ' The hunters tie: you have the same number of knock-outs, and the same number of catches.'; // "last": the vulture is out and the eggs went cold (rule clash R4)
 }
 // Endings (rules 9). A side is out when all its birds are knocked out or it can no longer meet its goal; the hunters are never out.
 function settle(g) {
@@ -46,7 +46,7 @@ function settle(g) {
   let w = null, by = null, why = null;
   if (eggs === 0 && vIn) { w = 'red'; by = g.winBy === 'cold' ? 'cold' : 'smashed'; why = g.winBy === 'cold' ? 'The last egg went cold, so the vulture wins.' : 'The vulture smashed every egg.'; }
   else if (timeUp && oIn) { w = 'blue'; by = 'survived'; why = `An egg was still alive after round ${g.cfg.rounds}, so the ostrich wins.`; }
-  else if (!vIn && !oIn) { winHunters(g, 'last', 'Both birds are out of the game.'); return true; }
+  else if (!vIn && !oIn) { winHunters(g, 'last', 'The vulture is out and the eggs went cold.'); return true; } // the ostrich is still on the board (Brian, 2026-11-15, rule clash R4)
   else if (timeUp) { w = 'none'; by = 'time'; why = 'Time ran out and nobody met their goal.'; }
   if (!w) return false;
   g.phase = 'over'; g.winner = w; g.winBy = by; g.endWhy = why; t.final = true; return true;
@@ -80,6 +80,8 @@ function ostrichStay(g) {
 }
 function afterOstrich(g) {
   if (g.phase === 'over' && g.winBy === 'starved' && !g.hunt.final) { g.phase = 'play'; g.winner = g.winBy = null; knockout(g, 'blue', 'starved'); if (g.phase === 'over') return; B.endRound(g); }
+  // Round 30: the eggs survived the ostrich's turn, but both hunters still take their last move before anyone wins (Brian, 2026-11-15).
+  if (g.phase === 'over' && g.winBy === 'survived' && !g.hunt.final) { g.phase = 'play'; g.winner = g.winBy = null; g.hunt.lastRound = true; }
   if (finish(g)) return;
   startHunter(g, 'hyena');
 }
@@ -95,7 +97,9 @@ function advance(g) {
     return; // hunters never lose a turn
   }
 }
-function endHunter(g, h) { g.hunt.hs[h].pounce = false; if (h === 'hyena') return startHunter(g, 'badger'); g.turn = 'red'; advance(g); }
+function endHunter(g, h) { g.hunt.hs[h].pounce = false; if (h === 'hyena') return startHunter(g, 'badger');
+  if (g.hunt.lastRound && g.phase === 'play') { g.phase = 'over'; g.winner = 'blue'; g.winBy = 'survived'; finish(g); return; } // both hunters moved in round 30: time is up
+  g.turn = 'red'; advance(g); }
 // --- actions ---
 function placeOstrichH(g, p) { if (p && hunterAt(g, p)) return false; return B.placeOstrich(g, p); }
 function vultureFlyH(g, p) {
@@ -186,18 +190,19 @@ function hunterBurst(g) {
   t.burst = { seq: t.burstSeq = (t.burstSeq || 0) + 1, round: g.round, n, at, to: to.slice() }; x.last = { type: 'burst', at };
   endHunter(g, 'badger'); return true;
 }
-function hunterStay(g) {
+function hunterStay(g, timedOut) { // timedOut: the shot clock ran out, so a badger that is not yet buried just loses its turn (Brian, 2026-11-15)
   const h = g.turn; if (g.phase !== 'play' || !isH(h)) return false;
   g.hunt.popout = null; const x = g.hunt.hs[h];
-  if (!x.pounce && h === 'badger') { // one still turn always burrows, on any square
+  if (!x.pounce && h === 'badger' && !(timedOut && !x.burrowed)) { // one still turn always burrows, on any square
     if (!x.burrowed) { const t = g.hunt; t.dug = { seq: t.digSeq = (t.digSeq || 0) + 1, round: g.round }; t.mound = { at: x.p.slice(), seenBy: BIRDS.filter(b => seen(g, b, 'badger')) }; } // the birds that could see it dig see the spot
     x.dig = 2; x.burrowed = true; }
   x.last = { type: x.pounce ? 'skip' : 'stay' }; endHunter(g, h); return true;
 }
 function timeout(g) {
   if (g.phase !== 'play') return false;
-  if (isH(g.turn)) return hunterStay(g);
+  if (isH(g.turn)) return hunterStay(g, true);
   if (g.turn === 'red') { g.sniff = null; g.lastAction = { type: 'pass', timeout: true }; g.turn = 'blue'; B.dropCarried(g); advance(g); return true; }
+  const e = g.carrying === null && g.ostrich && g.ostrich[0] >= 0 ? B.eggAt(g, g.ostrich) : null; if (e) e.lastWarm = g.round; // time ran out on an egg: it is still warmed (Brian, 2026-11-15)
   ostrichStay(g); if (g.lastAction) g.lastAction.timeout = true; afterOstrich(g); return true;
 }
 function statusH(g) { const t = g.hunt;

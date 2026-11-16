@@ -66,11 +66,11 @@ ok('approved wording, with numbers from the rules constants', () => {
     `Keep at least 1 egg alive for ${C.rounds} rounds.`,
     `If a hunter gets to your square, they catch you. ${T.T3.ko.hyena} catches knock you out.`,
     'You lose if every egg is broken or goes cold, or if you don\'t eat in time.',
-    `The hunter wins at ${B.HUNTER_GOAL('3').n} catches.`,
+    'The hunter wins when both birds are out.',
     `When the hunter knocks a bird out, they always take ${T.T3.double} turns in a row. The hyena can pounce only on the first.`,
   ]);
   assert.deepEqual(h3.lines, [
-    `You win at ${B.HUNTER_GOAL('3').n} catches.`,
+    'You win when both birds are out.',
     `${T.T3.ko.hyena} catches knock a bird out.`,
     'When you smell a bird and miss, you smell again and may move 1 more square.',
     `When you knock a bird out, you always take ${T.T3.double} turns in a row. You can pounce only on the first.`,
@@ -122,9 +122,9 @@ ok('the start-of-game line names only the animals in the game', () => {
 ok('card ids: one per animal, hunter and mode (a bird card only changes with the hunter in 3 players)', () => {
   const id = R.cardId;
   assert.equal(id('blue', null, '2'), 'ostrich__2'); assert.equal(id('blue', 'hyena', '2'), 'ostrich__2');
-  assert.equal(id('blue', 'hyena', '3'), 'ostrich_hyena_3_p2'); assert.equal(id('blue', 'badger', '3'), 'ostrich_badger_3_p2');
+  assert.equal(id('blue', 'hyena', '3'), 'ostrich_hyena_3_r5'); assert.equal(id('blue', 'badger', '3'), 'ostrich_badger_3_r5');
   assert.equal(id('o1', null, '4'), id('o2', null, '4'), 'both 2 vs 2 ostriches share a card');
-  assert.equal(id('hunter', 'hyena', '3'), 'hyena__3_p2'); assert.equal(id('hunter', 'badger', '3'), 'badger__3'); assert.equal(id('badger', null, '4h'), 'badger__4h');
+  assert.equal(id('hunter', 'hyena', '3'), 'hyena__3_r5'); assert.equal(id('hunter', 'badger', '3'), 'badger__3_r5'); assert.equal(id('badger', null, '4h'), 'badger__4h');
   assert.equal(id('hyena', null, '4h'), 'hyena__4h_p2'); assert.equal(id('hunter', 'hyena', '5'), 'hyena__5_p2');
   const ids = ALL.map(([r, k, m]) => R.roleCard(r, k, m).id); assert.ok(new Set(ids).size >= 14);
   assert.equal(R.roleCard('red', 'badger', '3').id, id('red', 'badger', '3'));
@@ -132,7 +132,8 @@ ok('card ids: one per animal, hunter and mode (a bird card only changes with the
 
 ok('hunter cards follow the goal number in 3 players; other modes use the approved lines', () => {
   const withGoal = (m, goal) => Object.assign(R.rulesFromModules(), { modes: Object.assign({}, R.rulesFromModules().modes, { [m]: Object.assign({}, R.rulesFromModules().modes[m], { goal }) } ) });
-  assert.equal(R.roleCard('hunter', 'hyena', '3').goal, 'You win at 4 catches.');
+  assert.equal(R.roleCard('hunter', 'hyena', '3').goal, 'You win when both birds are out.'); // Brian, rule clash R5
+  assert.equal(R.roleCard('red', 'badger', '3').lines[3], 'The hunter wins when both birds are out.');
   assert.equal(R.roleCard('hunter', 'hyena', '3', withGoal('3', { kind: 'catches', n: 7 })).goal, 'You win at 7 catches.');
   assert.equal(R.roleCard('hunter', 'hyena', '5').goal, 'You win by knocking out 1 ostrich and 1 vulture.');
   assert.equal(R.roleCard('hyena', null, '4h').goal, 'Hunters win when both birds are out. You win if you knocked out more birds than the badger.');

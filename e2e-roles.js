@@ -35,7 +35,7 @@ const R = require('./public/roles.js'), THEMES = fs.readFileSync('./public/theme
   const lines = (c) => [c.title, c.goal, ...c.moves];
   const has = (t, c) => lines(c).forEach(l => assert.ok(t.includes(l), `card is missing: ${l}\n--- got ---\n${t}`));
   has(ta, want('blue', 'hyena', '3')); has(tv, want('red', 'hyena', '3')); has(th, want('hunter', 'hyena', '3'));
-  assert.ok(th.includes('You win at 4 catches.'), 'the hyena card states the 4-catch goal');
+  assert.ok(th.includes('You win when both birds are out.'), 'the hyena card states the both-birds goal (R5)');
   assert.ok(th.includes('you always take 2 turns in a row'), 'the hyena card states the double turn');
   // only its own: no other animal's title, and nobody was told "We picked" (all three chose)
   assert.ok(/You are the Ostrich/.test(ta) && !/You are the (Vulture|Hyena|Badger)/.test(ta), 'ostrich card is the ostrich card');
@@ -47,7 +47,7 @@ const R = require('./public/roles.js'), THEMES = fs.readFileSync('./public/theme
 
   // a tap closes it and the game keeps going
   await V.click('#rolecard'); assert.equal(await shown(V).count(), 0, 'a tap closes the card');
-  assert.equal(await V.evaluate(() => localStorage.getItem('bo_card_vulture_hyena_3_p2')), '1', 'the phone remembers this card');
+  assert.equal(await V.evaluate(() => localStorage.getItem('bo_card_vulture_hyena_3_r5')), '1', 'the phone remembers this card');
   await H.click('#rolecard .rok'); await A.click('#rolecard .rc');
   assert.equal(await shown(H).count() + await shown(A).count(), 0);
   for (const [x, y] of [[2, 1], [6, 1], [2, 5], [7, 6]]) { await cell(A, x, y).click(); await A.waitForTimeout(120); }
@@ -69,7 +69,7 @@ const R = require('./public/roles.js'), THEMES = fs.readFileSync('./public/theme
   const P = await mk(); await P.goto(U); await P.click('#playSolo'); await P.click('[data-bots="2"]'); await P.click('#soloGo'); await P.click('[data-role="badger"]'); await P.click('#startGame');
   await P.waitForSelector('#rolecard:not(.hidden)', { timeout: 15000 });
   const tp = await cardText(P); has(tp, want('hunter', 'badger', '3')); assert.ok(/You are the Badger/.test(tp)); assert.ok(!/We picked/.test(tp), 'the player picked: no "We picked" line');
-  assert.ok(!/Missed/.test(tp), 'no hyena words on the badger card'); assert.ok(tp.includes('You win at 4 catches.') && tp.includes('you always take 2 turns in a row'), 'badger card: 4 catches and the double turn'); assert.ok(!/tough ground|usually|one more still turn/i.test(tp), 'no tough-ground wording'); await fits(P, 'badger'); await P.screenshot({ path: OUT + '4-badger.png' });
+  assert.ok(!/Missed/.test(tp), 'no hyena words on the badger card'); assert.ok(tp.includes('You win when both birds are out.') && tp.includes('you always take 2 turns in a row'), 'badger card: both birds and the double turn'); assert.ok(!/tough ground|usually|one more still turn/i.test(tp), 'no tough-ground wording'); await fits(P, 'badger'); await P.screenshot({ path: OUT + '4-badger.png' });
   await P.click('#rolecard'); assert.equal(await shown(P).count(), 0);
 
   // Start chose the animal: friends room, host never picked, one computer -> the ostrich, and the card says so
@@ -107,9 +107,15 @@ const R = require('./public/roles.js'), THEMES = fs.readFileSync('./public/theme
 
   // the card reads in every theme: dark text on the white card, the button readable, the card still on a 390 x 664 screen
   const themes = THEMES.match(/var T=\[([^\]]+)\]/)[1].split(',').map(x => x.replace(/'/g, '')); assert.equal(themes.length, 14);
+  // WebKit can stop drawing frames on a phone page that has sat idle while seven others ran, and then a click
+  // waits forever for the card to hold still (PR 36, test 3 of 3). Close the finished phones and use a fresh one.
+  for (const p of [A, V, H, P, F, K, O, W]) await p.context().close();
+  const T = await mk(); await T.goto(U); await T.click('#playFriend'); await T.waitForSelector('#botPlus');
+  await T.evaluate(() => UI.send({ t: 'lobby', a: 'bots', n: 1 })); await T.waitForFunction(() => LobbyUI.get().canStart);
+  await T.click('#startGame'); await T.waitForSelector('#rolecard:not(.hidden)', { timeout: 15000 }); await T.click('#rolecard');
   for (const t of themes) {
-    await F.evaluate(x => { THEME.set(x); UI.card(); }, t); await F.waitForSelector('#rolecard:not(.hidden)');
-    const c = await F.evaluate(() => {
+    await T.evaluate(x => { THEME.set(x); UI.card(); }, t); await T.waitForSelector('#rolecard:not(.hidden)');
+    const c = await T.evaluate(() => {
       const L = (rgb) => { const [r, g, b] = rgb.match(/[\d.]+/g).slice(0, 3).map(Number).map(v => { v /= 255; return v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); }); return .2126 * r + .7152 * g + .0722 * b; };
       const ratio = (a, b) => { const [x, y] = [L(a), L(b)].sort((p, q) => q - p); return (x + .05) / (y + .05); };
       const card = document.querySelector('#rolecard .rc'), bg = getComputedStyle(card).backgroundColor, out = {};
@@ -118,7 +124,7 @@ const R = require('./public/roles.js'), THEMES = fs.readFileSync('./public/theme
       return out; });
     assert.equal(c.bg, 'rgb(255, 255, 255)', t + ' card background'); delete c.bg;
     for (const [sel, r] of Object.entries(c)) assert.ok(r >= 4.5, `${t}: ${sel} contrast ${r.toFixed(2)} is under 4.5`);
-    await fits(F, 'theme ' + t); await F.click('#rolecard');
+    await fits(T, 'theme ' + t); await T.click('#rolecard');
   }
   console.log('ok card readable and on screen in all 13 themes');
 

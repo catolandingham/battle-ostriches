@@ -104,7 +104,7 @@ async function claimSeat(claimer, holder, seat) {
   const lostJoin = await wait(lost, m => m.t === 'joined' && m.lobby);
   const bench = await wait(lost, m => m.t === 'state' && m.lobby && m.state.between && (m.state.offline || []).some(o => o.seat === 'blue'));
   assert.equal(bench.state.note, LB.LATE_NOTE_REJOIN);
-  assert.equal(bench.state.note, 'Back in the game? Tap your animal.');
+  assert.equal(bench.state.note, 'This game already started. Tap your animal to come back.');
   assert.deepEqual(bench.state.offline.map(o => o.seat), ['blue']);
   assert.equal(bench.state.offline[0].action, 'Rejoin as the ostrich');
   assert.equal(bench.state.offline[0].confirm, 'Rejoin as the ostrich?');

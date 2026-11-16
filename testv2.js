@@ -1,7 +1,7 @@
 // Unit tests for rulebook v2 (sections 3 to 9), in all four engines: classic (game.js), 3 players (three.js), Hunters (hunt.js), 2 vs 2 (team.js).
 const assert = require('assert'), B = require('./game.js'), T = require('./three.js'), H = require('./hunt.js'), TT = require('./team.js'), HA = require('./huntai.js');
 let n = 0; const ok = (name, f) => { f(); n++; console.log('ok', name); };
-const DEF3 = 'catches:4'; const C = B.CONFIG, K = B.key, has = (list, p) => list.some(q => K(q) === K(p));
+const DEF3 = 'all'; const C = B.CONFIG, K = B.key, has = (list, p) => list.some(q => K(q) === K(p));
 
 function classic() { const g = B.newGame(); for (const p of [[2, 2], [6, 2], [2, 5]]) assert(B.placeEgg(g, p)); B.placeOstrich(g, [2, 2]); g.turn = 'red'; return g; }
 function three(kind, h, o, v) { const g = T.newGame3(kind, undefined, h); for (const p of [[2, 1], [6, 1], [2, 5]]) assert(B.placeEgg(g, p)); assert(T.placeOstrich3(g, [4, 2]));
@@ -13,7 +13,7 @@ function team(kind, pos) { const g = TT.newTeam(5, kind, undefined, [8, 3]);
   assert.equal(g.phase, 'play'); for (const s of Object.keys(pos)) if (s === 'h') g.h.p = pos[s].slice(); else g.b[s].pos = pos[s].slice(); g.turn = 'hunter'; g.h.pounce = false; return g; }
 
 // ---- 1 and 2: pounce and speed
-ok('HUNTER_GOAL defaults: 3 players catches:4, 2 vs 2 + hunter first', () => { assert.deepEqual(B.HUNTER_GOAL('3'), { kind: 'catches', n: 4 }); assert.equal(B.HUNTER_GOAL('5').kind, 'first'); });
+ok('HUNTER_GOAL defaults: 3 players all (rule clash R5), 2 vs 2 + hunter first', () => { assert.deepEqual(B.HUNTER_GOAL('3'), { kind: 'all', n: 0 }); assert.equal(B.HUNTER_GOAL('5').kind, 'first'); });
 ok('constants: everyone moves 2, the carried egg 1, the pounce step 1; food and warmth 15; no sit limit', () => {
   assert.equal(C.ostrichWalk, 2); assert.equal(C.carryWalk, 1); assert.equal(C.vultureFly, 2); assert.equal(T.T3.walk, 2); assert.equal(H.TH.walk, 2); assert.equal(TT.TM.walk, 2);
   assert.equal(T.T3.pounce, 1); assert.equal(C.food, 15); assert.equal(C.warmth, 15); assert.equal(C.maxSit, undefined); assert.equal(C.kickPush, 3); assert.equal(C.kickPushBadger, 2); });
@@ -189,6 +189,22 @@ ok('2 vs 2 + hunter: digging in is announced; the mound goes only to the birds t
   const room = roomT2('badger'), g = room.g = team('badger', { h: [4, 3], o1: [8, 6], o2: [8, 0], v1: [4, 5], v2: [0, 0] }); g.turn = 'hunter'; assert.ok(TT.hunterStay(g));
   for (const s of ['o1', 'o2', 'v1', 'v2', 'hunter']) assert.equal(S.viewT(room, s).h3.dug.seq, 1, s);
   assert.deepEqual(S.viewT(room, 'v1').h3.mound, [4, 3]); for (const s of ['o1', 'o2', 'v2', 'hunter']) assert.equal(S.viewT(room, s).h3.mound, null, s); });
+// Brian, 2026-11-15: the badger is told before it digs whether a bird will see it, and after, whether one did. Only the badger's phone learns this.
+ok('the badger is told whether a bird saw it dig in, in all three modes, and nobody else is', () => {
+  const room = room3('badger'), g = room.g = three('badger', [4, 3], [8, 0], [4, 5]); assert.ok(T.hunterStay(g));
+  assert.equal(S.view3(room, 'hunter').h3.dugSeen, true); for (const s of ['blue', 'red']) assert.equal(S.view3(room, s).h3.dugSeen, null, s);
+  g.vulture = [0, 6]; g.turn = 'hunter'; assert.ok(T.hunterMove(g, [5, 3])); g.turn = 'hunter'; assert.ok(T.hunterStay(g)); assert.equal(S.view3(room, 'hunter').h3.dugSeen, false, 'no bird near this time');
+  const rh = roomH2(), h = rh.g = hunters([5, 3], [4, 3], [8, 6], [4, 5]); h.turn = 'badger'; assert.ok(H.hunterStay(h));
+  assert.equal(S.viewH(rh, 'badger').h3.dugSeen, true); assert.equal(S.viewH(rh, 'hyena').h3.dugSeen, null, 'the hyena must not learn it');
+  const rt = roomT2('badger'), t = rt.g = team('badger', { h: [4, 3], o1: [8, 6], o2: [8, 0], v1: [0, 6], v2: [0, 0] }); t.turn = 'hunter'; assert.ok(TT.hunterStay(t));
+  assert.equal(S.viewT(rt, 'hunter').h3.dugSeen, false); for (const s of ['o1', 'v1']) assert.equal(S.viewT(rt, s).h3.dugSeen, null, s);
+  const seen = { dug: 0 }, mk = (seq, dugSeen) => ({ h3: { dug: seq ? { seq, round: 3 } : null, dugSeen } });
+  assert.equal(CT.newEvents(seen, mk(1, true), mk(0)).find(e => e.kind === 'dug').text, 'A bird saw you dig in.');
+  assert.equal(CT.newEvents(seen, mk(2, false), mk(1)).find(e => e.kind === 'dug').text, 'The badger dug in!'); });
+ok('before digging, the Burrow hint says whether a bird will see it', () => {
+  const src = require('fs').readFileSync('./public/three-ui.js', 'utf8') + require('fs').readFileSync('./public/ring.js', 'utf8');
+  for (const w of ['A bird will see you dig in.', 'No bird will see you dig in.']) assert.ok(src.split(w).length >= 3, w + ' is on the button and in the hint');
+  assert.ok(!/stay still to (burrow|hide)/i.test(src), 'the old "stay still" words are gone'); });
 ok('Hunters: the hyena that walks onto the buried badger shares its square; the badger may burst out and shoves the hyena 2 back the way it came', () => {
   const room = roomH2(), g = room.g = hunters([2, 3], [4, 3], [8, 6], [0, 0]); g.hunt.hs.badger.burrowed = true; g.turn = 'hyena';
   assert.ok(H.hunterMove(g, [4, 3])); assert.deepEqual(g.hunt.hs.hyena.p, [4, 3]); assert.equal(g.turn, 'badger'); assert.equal(H.canBurst(g), true);

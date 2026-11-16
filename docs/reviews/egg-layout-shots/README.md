@@ -1,5 +1,7 @@
 # One egg slot, padded countdown — follow-up to merged PR #21
 
+> Pictures named in this file are not in the working tree. Recover them from commit `548f054995d139568c4613e4db85ee2629ee3bee`. See [docs/reviews/README.md](../README.md).
+
 Based on `origin/main` at `559a847`, on the new `egg-fixes` branch. Nothing in this follow-up was pushed onto the old PR #21 branch. No merge or deployment is performed by this PR.
 
 ## Visible changes
@@ -25,21 +27,21 @@ Based on `origin/main` at `559a847`, on the new `egg-fixes` branch. Nothing in t
 
 ## Review images
 
-- [Kick on both phones: before / start / mid / after](kick-both-phones.png) · [ostrich strip](kick-ostrich-strip.png) · [hyena strip](kick-hyena-strip.png)
-- [Reduced-motion kick — ostrich](kick-ostrich-reduced.png) · [hyena](kick-hyena-reduced.png)
-- [Contact sheet — 67 phone screenshots](00-contact-sheet.png)
-- [Real YOU + egg + bird + 14, plus egg states](eggs-closeup.png)
-- [Enlarged real square with YOU + egg + bird + 14](you-egg-bird-14-closeup.png)
-- [All egg states at real size, 1/14 countdowns, plain/lit squares](eggs-real-size.png) — WebKit at 3× phone pixel density; contact-sheet/combined-sheet copies are scaled.
-- [Before / after](before-after-steer3.png)
-- [Carried egg in real play](ostrich-d-carried-egg.png)
-- [Hyena caption](howto-hyena-approved.png), [Badger caption](howto-badger-approved.png)
+- Kick on both phones: before / start / mid / after (`kick-both-phones.png`) · ostrich strip (`kick-ostrich-strip.png`) · hyena strip (`kick-hyena-strip.png`)
+- Reduced-motion kick — ostrich (`kick-ostrich-reduced.png`) · hyena (`kick-hyena-reduced.png`)
+- Contact sheet — 67 phone screenshots (`00-contact-sheet.png`)
+- Real YOU + egg + bird + 14, plus egg states (`eggs-closeup.png`)
+- Enlarged real square with YOU + egg + bird + 14 (`you-egg-bird-14-closeup.png`)
+- All egg states at real size, 1/14 countdowns, plain/lit squares (`eggs-real-size.png`) — WebKit at 3× phone pixel density; contact-sheet/combined-sheet copies are scaled.
+- Before / after (`before-after-steer3.png`)
+- Carried egg in real play (`ostrich-d-carried-egg.png`)
+- Hyena caption (`howto-hyena-approved.png`), Badger caption (`howto-badger-approved.png`)
 
 Full-screen shots use WebKit, a 390×664 CSS-pixel phone, 2× pixel density. The icon fixture uses real game classes, paths and stylesheet files at 38px square size; the separate fixture test verifies geometry in all 14 themes.
 
-- Catch scramble (caught bird): [before](catch-scramble-0-before.png), [start](catch-scramble-1-start.png), [mid](catch-scramble-2-mid.png), [after](catch-scramble-3-after.png), [reduced motion](catch-scramble-reduced-motion.png).
-- After a catch, no square mark: [bird phone](catch-bird-after-no-square-mark.png), [hunter phone](catch-hunter-after-no-square-mark.png).
-- [Long wrapping fact](status-long-fact.png).
+- Catch scramble (caught bird): before (`catch-scramble-0-before.png`), start (`catch-scramble-1-start.png`), mid (`catch-scramble-2-mid.png`), after (`catch-scramble-3-after.png`), reduced motion (`catch-scramble-reduced-motion.png`).
+- After a catch, no square mark: bird phone (`catch-bird-after-no-square-mark.png`), hunter phone (`catch-hunter-after-no-square-mark.png`).
+- Long wrapping fact (`status-long-fact.png`).
 
 ## Reproduce
 

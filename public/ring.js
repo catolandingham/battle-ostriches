@@ -34,7 +34,7 @@
       if (S.pounce) return [{ id: 'hstay', label: 'Stay', detail: 'Skip the extra move.', enabled: true, run: 'hstay' }];
       if (k === 'badger') {
         if (S.burrowed) return [{ id: 'hstay', label: 'Stay', detail: 'Stay hidden.', enabled: true, run: 'hstay' }].concat(S.canBurst ? [{ id: 'hburst', label: 'Burst out', detail: 'Come up and shove the hyena away.', enabled: true, run: 'hburst' }] : []);
-        return [{ id: 'hstay', label: 'Burrow', detail: 'Stay still to hide.', enabled: true, run: 'hstay' }];
+        return [{ id: 'hstay', label: 'Burrow', detail: S.sense ? 'A bird will see you dig in.' : 'No bird will see you dig in.', enabled: true, run: 'hstay' }];
       }
       return [{ id: 'hstay', label: 'Stay', detail: 'End your turn.', enabled: true, run: 'hstay' }];
     }

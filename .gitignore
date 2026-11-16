@@ -1,3 +1,17 @@
 node_modules
 shots
 data/
+
+# Review screenshots stay out of the repo. The old archive is in git history.
+# See docs/reviews/README.md. The one exception is the handover mockup.
+docs/reviews/**/*.[Jj][Pp][Gg]
+docs/reviews/**/*.[Jj][Pp][Ee][Gg]
+docs/reviews/**/*.[Pp][Nn][Gg]
+docs/reviews/**/*.[Ww][Ee][Bb][Pp]
+docs/reviews/**/*.[Gg][Ii][Ff]
+docs/reviews/*.[Jj][Pp][Gg]
+docs/reviews/*.[Jj][Pp][Ee][Gg]
+docs/reviews/*.[Pp][Nn][Gg]
+docs/reviews/*.[Ww][Ee][Bb][Pp]
+docs/reviews/*.[Gg][Ii][Ff]
+!docs/reviews/BW-THEME-MOCKUP-2026-11-08.png

@@ -50,6 +50,11 @@ const OUT = 'shots/pass/'; fs.mkdirSync(OUT, { recursive: true });
   await ostrichTurn(true);
   assert.equal(await P.textContent('#eggsLeft'), '2'); assert.equal(await P.locator('.cell.hit').count(), 1);
   await P.screenshot({ path: OUT + 'ostrich-view.jpg', type: 'jpeg', quality: 85 });
+  // Since 2026-11-11 the ostrich is shown the smash on its own turn and has to tap "Tap to go on." before it can move (taps on the board are ignored until then).
+  // The button comes after the cartoon and goes by itself after 8 s, so wait for it or for the end of the cartoon, and tap it if it is there.
+  await P.waitForFunction(() => !!document.querySelector('#surprise-go button') || !(window.CUTAWAYS && CUTAWAYS.busy()), null, { timeout: 20000 });
+  if (await P.locator('#surprise-go button').count()) await P.click('#surprise-go button', { timeout: 3000 }).catch(() => {});
+  await P.waitForFunction(() => !(window.CUTAWAYS && CUTAWAYS.busy()), null, { timeout: 12000 });
   // play out: ostrich alternates step on/off, vulture flies around; game must end
   let rounds = 0;
   while (!(await P.locator('#over:not(.hidden)').count()) && rounds < 60) {

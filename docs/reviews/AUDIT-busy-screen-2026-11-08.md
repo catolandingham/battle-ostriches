@@ -1,5 +1,7 @@
 # Busy screen, 2026-11-08
 
+> Pictures named in this file are not in the working tree. Recover them from commit `548f054995d139568c4613e4db85ee2629ee3bee`. See [docs/reviews/README.md](README.md).
+
 ## Decision update — Brian, 2026-11-08
 
 The original screenshots/observations below are historical. PR #23 now uses the approved personal and watcher kick/stone/meeting/burst lines, numbered partner-find and team-smash messages (see `egg-layout-shots/WORDS-FOR-APPROVAL.md`). The kicker sees the full actual kick slide/landing, including early stops outside normal sight; other watchers keep their normal rules. Ordinary movement stays about one second. Big-scene samples are still required: no duration or tap-to-skip design is approved or built here.
@@ -7,7 +9,7 @@ The original screenshots/observations below are historical. PR #23 now uses the 
 
 The start of a game puts too many things in front of the player at once. When a bird is caught, that player often cannot tell it was them. The same problem shows up in the other two-animal moments: a kick, a stone, the hunters meeting, the badger bursting out, and a stone kicked back.
 
-Pictures are iPhone size (390 by 664), from real games, the same setup as `tools/shots-real-play.js`. The tutorial, the role card and the tips were left off, so these are the boards a returning player gets. Every picture is in `docs/reviews/busy-2026-11-08/`. The clock in the pictures says 120 seconds because the test slowed it down so a turn would not expire. A real game uses that same bar with a 10-second clock.
+Pictures are iPhone size (390 by 664), from real games, the same setup as `tools/shots-real-play.js`. The tutorial, the role card and the tips were left off, so these are the boards a returning player gets. Every picture was in `docs/reviews/busy-2026-11-08/`. Those files are in the commit named above, not in the working tree. The clock in the pictures says 120 seconds because the test slowed it down so a turn would not expire. A real game uses that same bar with a 10-second clock.
 
 The animal is called the badger. A few pictures still show the old two-word name. That rename is a separate change.
 
@@ -34,9 +36,9 @@ No clock and no animal chips. Calmer than the other modes, and still crowded on 
 | Vulture's first landing | "Egg nearby!" for about 1.4 seconds, plus eight dashed eggs around the vulture. |
 | Ostrich's first turn | "Vulture sniffed an egg." The dashed eggs are still there, on top of the real eggs the ostrich already sees. Lit squares and a Walk button. |
 
-![Classic, the moment play starts, ostrich's phone.](busy-2026-11-08/classic-start-blue.jpg)
+Classic, the moment play starts, ostrich's phone. (`busy-2026-11-08/classic-start-blue.jpg`)
 
-![Classic, ostrich's first turn. The vulture's sniff is drawn on top of eggs the ostrich already knows.](busy-2026-11-08/classic-t2-ostrich-turn.jpg)
+Classic, ostrich's first turn. The vulture's sniff is drawn on top of eggs the ostrich already knows. (`busy-2026-11-08/classic-t2-ostrich-turn.jpg`)
 
 ### 3 players
 
@@ -46,7 +48,7 @@ No clock and no animal chips. Calmer than the other modes, and still crowded on 
 | After 2.6 seconds | The mode line leaves. The turn line shows. The clock keeps counting. |
 | Hyena's first turn, nothing near | "Nothing near.", lit squares, a Stay button. No birds and no eggs. This screen is the calm one. The header, chips and clock are still there. |
 
-![3 players, play just started, ostrich's phone. The mode line, the clock, the animal row and the eggs are all up together.](busy-2026-11-08/3p-start-blue.jpg)
+3 players, play just started, ostrich's phone. The mode line, the clock, the animal row and the eggs are all up together. (`busy-2026-11-08/3p-start-blue.jpg`)
 
 ### Hunters, 2 vs 2, and 5 players
 
@@ -62,7 +64,7 @@ Pictures: `5p-start-o1.jpg`, `2v2-start-o1.jpg`, `hunters-start-blue.jpg`, and t
 
 3 players. The hyena lands on the ostrich. The ostrich flees. The hyena does not learn the new square. That part is right. The ostrich still does not read it as "I was caught."
 
-![The caught ostrich. The words say "Caught!" but not who did it. The claws are on the hyena, not on you.](busy-2026-11-08/3p-catch-target-ostrich.jpg)
+The caught ostrich. The words say "Caught!" but not who did it. The claws are on the hyena, not on you. (`busy-2026-11-08/3p-catch-target-ostrich.jpg`)
 
 On that phone, at the same time:
 
@@ -77,7 +79,7 @@ The sentence does say "you're", but it never says the hyena caught you, and it n
 
 The hyena's own phone is clearer: "Caught the ostrich!" with claws on the hyena. "Bird near" is in the same bar, so the two lines cover each other. The ostrich is not shown on its new square.
 
-![The hyena who made the catch. The sentence is clear. The bird's landing is hidden, which is correct.](busy-2026-11-08/3p-catch-doer-hyena.jpg)
+The hyena who made the catch. The sentence is clear. The bird's landing is hidden, which is correct. (`busy-2026-11-08/3p-catch-doer-hyena.jpg`)
 
 ## Two animals, each phone
 
@@ -135,7 +137,7 @@ Classic has no hunters, so it has no catch, no kick of a hunter, no meeting and 
 | Stone kicked back, 3 players | Hyena | Hears the sentence. Does not see the birds if they are far, which is correct. | Words are clear | `3p-kickback-bystander-hyena.jpg` |
 | Stone kicked back, Hunters, 2 vs 2, 5 players | The two birds, and a hunter if there is one | Same sentence on every phone we checked. | Clear for the birds. The hunter gets the words and not a hidden square. | `hunters-kickback-*.jpg`, `2v2-kickback-*.jpg`, `5p-kickback-*.jpg` |
 
-![A stone hits the hyena. The phone says the badger popped up.](busy-2026-11-08/3p-stone-hunter-target-hyena.jpg)
+A stone hits the hyena. The phone says the badger popped up. (`busy-2026-11-08/3p-stone-hunter-target-hyena.jpg`)
 
 ## How to space it
 

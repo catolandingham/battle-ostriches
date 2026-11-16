@@ -45,7 +45,7 @@ ok('birds win by their own goals: vulture smashes every egg', () => { const g = 
   g.vulture = B.key(g.eggs[0].pos) === '4,1' ? [4, 2] : g.eggs[0].pos.map((v, i) => i ? v : v); g.stones = 1;
   const r = H.vultureThrowH(g, g.eggs[0].pos); assert.ok(r); if (r === 'hit') { assert.equal(g.winner, 'red'); } });
 ok('ostrich wins at round 30 with an egg alive', () => { const g = ready(); g.round = g.cfg.rounds; g.eggs.forEach(e => e.lastWarm = g.round); g.hungerLeft = 9; toTurn(g, 'blue');
-  H.timeout(g); assert.equal(g.winner, 'blue'); });
+  H.timeout(g); assert.equal(g.phase, 'play', 'round 30: both hunters still move (Brian, 2026-11-15)'); H.hunterStay(g); H.hunterStay(g); assert.equal(g.winner, 'blue'); });
 ok('starved ostrich is out; the others play on', () => { const g = ready(); toTurn(g, 'blue'); g.hungerLeft = 1; g.ostrich = [4, 6]; H.timeout(g);
   assert.equal(g.hunt.birds.blue.out, true); assert.equal(g.hunt.birds.blue.why, 'starved'); assert.equal(g.phase, 'play'); assert.equal(g.turn, 'hyena'); });
 ok('views: birds see a hunter only within 2 (never burrowed); hunters see the rival within 2', () => { const g = ready(); g.vulture = [2, 3];

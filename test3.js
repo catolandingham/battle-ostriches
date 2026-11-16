@@ -40,11 +40,11 @@ t('starved ostrich counts as out; vulture alone must still smash/outlast the egg
   assert(T.isOut(g, 'blue')); assert.equal(g.three.birds.blue.why, 'starved'); assert.equal(g.phase, 'play'); assert.equal(g.turn, 'hunter'); assert(T.isOut(g, 'blue')); T.hunterStay(g);
   assert.equal(g.turn, 'red'); T.vultureFly3(g, [4, 3]); assert.equal(g.turn, 'hunter', 'out ostrich is skipped'); });
 t('time runs out: no winner if the lone bird missed its goal; ostrich wins if it survives', () => { const g = setup('hyena', [0, 3]); g.round = 30; g.eggs.forEach(e => e.lastWarm = 29); g.hungerLeft = 1; T.vultureFly3(g, [4, 1]); T.ostrichAct3(g, 'step', [5, 5]);
-  assert.equal(g.phase, 'over'); assert.equal(g.winner, 'none');
-  const h = setup('hyena', [0, 3]); h.round = 30; h.eggs.forEach(e => e.lastWarm = 29); T.vultureFly3(h, [4, 1]); T.ostrichAct3(h, 'step', [5, 5]); assert.equal(h.winner, 'blue'); });
+  assert.equal(g.phase, 'play', 'round 30: the hunter still takes its last move (Brian, 2026-11-15)'); T.hunterStay(g); assert.equal(g.phase, 'over'); assert.equal(g.winner, 'none');
+  const h = setup('hyena', [0, 3]); h.round = 30; h.eggs.forEach(e => e.lastWarm = 29); T.vultureFly3(h, [4, 1]); T.ostrichAct3(h, 'step', [5, 5]); assert.equal(h.turn, 'hunter'); T.hunterStay(h); assert.equal(h.winner, 'blue'); });
 t('shot clock timeout ends each turn (pass / stay put)', () => { const g = setup('badger'); assert(T.timeout(g)); assert.equal(g.turn, 'blue'); assert.equal(g.sniff, null);
   const hl = g.hungerLeft; assert(T.timeout(g)); assert.equal(g.turn, 'hunter'); assert.deepEqual(g.ostrich, [6, 5]); assert.equal(g.hungerLeft, hl - 1);
-  assert(T.timeout(g)); assert.equal(g.turn, 'red'); assert(g.three.burrowed, 'one still turn always burrows'); assert.equal(g.three.dig, 2); });
+  assert(T.timeout(g)); assert.equal(g.turn, 'red'); assert(!g.three.burrowed, 'a badger out of time just loses its turn (Brian, 2026-11-15, rule clash R3)'); assert.equal(g.three.dug, undefined); });
 t('server views: hunter sees no bird or egg positions; birds see the hunter only within 2', () => {
   process.env.PORT = 3989; const S = require('./server.js'); const { room } = S.create3({ role: 'blue', bots: ['red', 'hunter'], kind: 'hyena' }, null);
   room.g = setup('hyena', [8, 3]); const hv = S.view3(room, 'hunter'), js = JSON.stringify(hv);
@@ -106,8 +106,7 @@ t('3 catches do not win; 4 catches do', () => {
   g.vulture = [5, 3]; g.three.h = [5, 2]; g.three.pounce = false;
   assert(T.hunterMove(g, [5, 3]));
   assert.equal(g.phase, 'over'); assert.equal(g.winner, 'hunter');
-  // With 2 catches per bird, 4 catches also knocks out both birds, so finish prefers that reason.
-  assert.ok(/made 4 catches|knocked out both birds/.test(g.endWhy), g.endWhy);
+  assert.equal(g.endWhy, 'The hyena knocked out both birds.'); // rule clash R5: the goal is both birds
   assert.equal(g.three.extra, true); // the game ended on the extra turn; endHunter did not run
 });
 t('after the first knock-out the hyena may still pounce on the first of its two turns', () => {
@@ -164,7 +163,7 @@ t('a knock-out on the pounce finishes this turn, then the extra turn starts', ()
 });
 t('a game-ending catch does not start an extra turn', () => {
   const g = setup('hyena', [5, 2]); atHunter(g, [5, 2], [6, 2], [0, 6]);
-  g.three.birds.red.catches = 2; g.three.birds.blue.catches = 1;
+  g.three.birds.red.catches = 2; g.three.birds.red.out = true; g.three.birds.red.why = 'caught'; g.vulture = T.OFF.slice(); g.three.birds.blue.catches = 1; // vulture already knocked out (R5: the goal is both birds)
   assert(T.hunterMove(g, [6, 2])); assert.equal(g.phase, 'over'); assert.equal(g.winner, 'hunter');
   assert.equal(g.turn, 'hunter'); // endHunter did not run, so extra stays off
   assert.equal(!!g.three.extra, false);

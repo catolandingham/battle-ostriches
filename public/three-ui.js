@@ -10,7 +10,7 @@ const MOUND='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" aria-hi
 const OSTI=ART.ostrich;
 const VULI=ART.vulture;
 const KIND={hyena:{n:'Hyena',art:HYENA,pw:'Pounce',pwTxt:'When you miss, move 1 more.'},
- badger:{n:'Badger',art:BADGER,pw:'Burrow',pwTxt:'Burrow: stay still to hide.'}};
+ badger:{n:'Badger',art:BADGER,pw:'Burrow',pwTxt:'Tap Burrow to hide. Birds within 2 squares see where.'}};
 // The small line is the sentence once. Prefixing the short name doubled a sentence that already started with that name.
 const kindLine=k=>KIND[k].pwTxt;
 const BN={blue:'Ostrich',red:'Vulture',hunter:'Hunter'};
@@ -157,11 +157,13 @@ function waitMsg(S){return `Wait, it's the ${tname(S,S.turn)}'s turn.`;}
 function nopeMsg(S){return `Move up to ${S.h3.range} square${S.h3.range>1?'s':''}: tap a glowing square.`;}
 function hint(S,a){if(S.h3.team&&!hint.in){hint.in=1;try{return tHint(S,a);}finally{hint.in=0;}}const r=S.role,t=S.turn;
  if(r==='hunter'&&S.myTurn){const k=S.h3.kind;
-  a.innerHTML=S.pounce?'<button class="on" title="Skip this extra move. You will not catch the bird." onclick="UI.send({t:\'act\',a:\'hstay\'})">Stay</button>':`<button title="${k==='badger'?(S.burrowed?'Stay burrowed. Birds still cannot see you.':'Stay still to burrow.'):'Stay put and end your turn.'}" onclick="UI.send({t:'act',a:'hstay'})">${k==='badger'?(S.burrowed?'Stay':'Burrow'):'Stay'}</button>${S.canBurst?`<button title="Come up and shove the hyena back." onclick="UI.send({t:'act',a:'hburst'})">Burst out</button>`:''}`;
+  a.innerHTML=S.pounce?'<button class="on" title="Skip this extra move. You will not catch the bird." onclick="UI.send({t:\'act\',a:\'hstay\'})">Stay</button>':`<button title="${k==='badger'?(S.burrowed?'Stay burrowed. Birds still cannot see you.':digWarn(S)):'Stay put and end your turn.'}" onclick="UI.send({t:'act',a:'hstay'})">${k==='badger'?(S.burrowed?'Stay':'Burrow'):'Stay'}</button>${S.canBurst?`<button title="Come up and shove the hyena back." onclick="UI.send({t:'act',a:'hburst'})">Burst out</button>`:''}`;
   if(S.pounce)return 'When you miss, move 1 more square.';
   if(S.h3.extra)return 'Your turn again. Tap to move.';
-  const burrowNote=k==='badger'&&!S.burrowed?'Tap to move, or Burrow. ':'Your turn. Tap to move. ';
-  return burrowNote+(S.sense?'':'No bird near.');}
+  if(k==='badger'&&!S.burrowed)return 'Tap to move, or Burrow. '+digWarn(S);
+  return 'Your turn. Tap to move. '+(S.sense?'':'No bird near.');}
+// Before the badger digs in, say whether a bird will see it (Brian, 2026-11-15). Its sense reaches as far as bird sight (2), so "Bird near" means seen.
+function digWarn(S){return S.sense?'A bird will see you dig in.':'No bird will see you dig in.';}
  if(!S.h3.ready)return S.h3.needKind?'Pick your hunter.':`Waiting for all ${S.h3.hunt?4:3} players…`;
  if(r!=='hunter'&&S.h3.birds[r]&&S.h3.birds[r].out)return 'You\'re out. Watching.';
  if(r==='blue'&&window.UI&&UI._S()&&UI._S().sittingAt&&UI._S().ostrich&&UI._S().sittingAt.some(q=>q[0]===UI._S().ostrich[0]&&q[1]===UI._S().ostrich[1]))return 'The vulture sees you sit.';
@@ -177,6 +179,9 @@ function chips(S){if(S.h3.hunt)return hChips(S);if(S.h3.team)return tChips(S);le
  bar.innerHTML=bird('red')+bird('blue')+`<span class="bchip hunter${live&&S.turn==='hunter'?' now':''}" data-tip="${KIND[k].n}: catches birds.">${sp(KIND[k].art,26)}${claws(caught(h),3)}</span>`;}
 function clock(S){let c=$('clock3');if(!c){c=document.createElement('div');c.id='clock3';c.innerHTML='<div class="cfill"></div><span class="ctxt"></span>';$('h3bar').after(c);}
  const on=S.phase==='play'&&S.h3.clockLeft!=null;c.classList.toggle('hidden',!on);if(!on){cancelAnimationFrame(raf);return;}
+ if(S.h3.clockMs)clockMs=S.h3.clockMs;
+ if(S.h3.clockPaused){cancelAnimationFrame(raf);lastTurnKey='';const left=Math.max(0,S.h3.clockLeft),s=Math.ceil(left/1000);c.firstChild.style.width=(100*left/clockMs)+'%';
+  c.lastChild.innerHTML='<svg class="clk" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 7.5V12l3 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> '+s+'s';c.classList.toggle('low',left<=4000);c.setAttribute('aria-label','Shot clock paused, '+s+' seconds');c.dataset.who=S.turn;c.classList.toggle('mine',!!S.myTurn);return;}
  const tk=S.round+':'+S.turn+':'+(S.h3.extra?'2':'1')+':'+S.h3.clockLeft,local=Math.max(0,deadline-Date.now());if(tk!==lastTurnKey||Math.abs(local-S.h3.clockLeft)>1500){lastTurnKey=tk;deadline=Date.now()+S.h3.clockLeft;clockMs=S.h3.clockMs;}
  c.dataset.who=S.turn;c.classList.toggle('mine',!!S.myTurn);
  const tick=()=>{const left=Math.max(0,deadline-Date.now()),s=Math.ceil(left/1000);c.firstChild.style.width=(100*left/clockMs)+'%';

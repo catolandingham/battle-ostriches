@@ -138,8 +138,9 @@ const near = (a, c) => Math.max(Math.abs(a[0] - c[0]), Math.abs(a[1] - c[1]));
       if(JSON.stringify(ka.to)!=='[7,3]'||ka.trail.filter(Boolean).length!==4||kh.trail.filter(Boolean).length!==4)throw new Error('kicker and kicked hunter must see all three steps and actual landing');
       if(await H.locator('#board .pc.po').count())throw new Error('hunter learned a hidden ostrich position');
       if(!await A.locator('#board .pc.po .kick-leg').count()||!await H.locator('#h3bar [data-b="blue"] .kick-leg').count())throw new Error('missing viewer-correct kick cause');
-      await shot(A,'kick-ostrich-1-start');await shot(H,'kick-hyena-1-start');bc();await sleep(300);
+      bc();await sleep(300); // the repeated update goes out first and the check is made 0.3 s into the 1.8 s slide; the screenshots below take longer than the slide on a slow machine
       if(!await A.locator('.push-motion .push-actor').count())throw new Error('duplicate packet interrupted full kicker slide');
+      await shot(A,'kick-ostrich-1-start');await shot(H,'kick-hyena-1-start');
       await shot(A,'kick-ostrich-2-mid');await shot(H,'kick-hyena-2-mid');await sleep(350);await shot(A,'kick-ostrich-2b-landing');await shot(H,'kick-hyena-2b-landing');await sleep(400);      await shot(A,'kick-ostrich-3-after');await shot(H,'kick-hyena-3-after');
       await A.waitForFunction(() => !document.querySelector('.push-motion,.partial-motion,#cutaway,#boardhold'), null, { timeout: 5000 });
       await H.waitForFunction(() => !document.querySelector('.push-motion,.partial-motion,#cutaway,#boardhold'), null, { timeout: 5000 });

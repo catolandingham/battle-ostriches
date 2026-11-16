@@ -61,7 +61,7 @@ async function clearSeatMemory(page) {
   await A.p.waitForSelector('#roomLobby');
   const early2 = await A.p.textContent('#roomLobby');
   if (/You'll play in the next one/.test(early2) && !/Rejoin as/.test(early2)) await shot(A.p, '2p-grace');
-  await A.p.waitForFunction(() => /Back in the game\? Tap your animal\./.test((document.getElementById('roomLobby') || {}).textContent || ''), null, { timeout: 8000 });
+  await A.p.waitForFunction(() => /This game already started\. Tap your animal to come back\./.test((document.getElementById('roomLobby') || {}).textContent || ''), null, { timeout: 8000 });
   const body2 = await A.p.textContent('#roomLobby');
   assert.ok(!/You're in[\s\S]*You're in/.test(body2), 'title is not repeated in the body');
   assert.ok(/Rejoin as the ostrich/.test(body2), body2);
@@ -114,7 +114,7 @@ async function clearSeatMemory(page) {
   await H3.p.goto('http://localhost:4021/?room=' + code3);
   await H3.p.waitForFunction(() => /Rejoin as the hyena/.test((document.getElementById('roomLobby') || {}).textContent || ''), null, { timeout: 8000 });
   const hTxt = await H3.p.textContent('#roomLobby');
-  assert.ok(/Back in the game\? Tap your animal\./.test(hTxt), hTxt);
+  assert.ok(/This game already started\. Tap your animal to come back\./.test(hTxt), hTxt);
   assert.ok(!/Rejoin as the ostrich/.test(hTxt) && !/Rejoin as the vulture/.test(hTxt), 'only the offline hyena');
   await shot(H3.p, '3p-rejoin');
   await H3.p.click('button[data-claim="hunter"]');
@@ -150,7 +150,7 @@ async function clearSeatMemory(page) {
   await A4.p.goto('http://localhost:4021/?room=' + code4);
   await A4.p.waitForFunction(() => /Rejoin as/.test((document.getElementById('roomLobby') || {}).textContent || ''), null, { timeout: 8000 });
   const tTxt = await A4.p.textContent('#roomLobby');
-  assert.ok(/Back in the game\? Tap your animal\./.test(tTxt), tTxt);
+  assert.ok(/This game already started\. Tap your animal to come back\./.test(tTxt), tTxt);
   assert.ok(/Rejoin as Ostrich 1|Rejoin as the ostrich/.test(tTxt), tTxt);
   assert.ok(!/Rejoin as Vulture/.test(tTxt) && !/Rejoin as the vulture/.test(tTxt), 'connected vulture not offered');
   await shot(A4.p, 'team-rejoin');

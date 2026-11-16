@@ -5,7 +5,7 @@ const assert = require('assert'), fs = require('fs'), path = require('path');
 const server = require('./server.js');
 const R = require('./public/roles.js');
 const U = 'http://localhost:3981/';
-const OUT = path.resolve('/workspace/bw/reminders/build2/shots');
+const OUT = path.join(__dirname, 'shots', 'e2e');
 fs.mkdirSync(OUT, { recursive: true });
 
 const TIE = 'Both birds are out. The hunters tie: you have the same number of knock-outs, and the same number of catches.';

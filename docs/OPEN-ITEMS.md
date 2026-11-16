@@ -1,5 +1,7 @@
 # Open items
 
+> Working list from 2026-11-08. It overlaps the state snapshot and was not folded into it. Current state is `docs/project/STATE-2026-11-08.md`. Later decisions are in `docs/project/DECISIONS-2026-11-11.md`.
+
 Dated 2026-11-08. This list does not approve any new words or any new look.
 
 The animal is called the badger.

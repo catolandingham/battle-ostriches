@@ -26,7 +26,8 @@ const COLS = 9;
           const r = window.__ct[k] || (window.__ct[k] = { first: t, last: t, n: 0, idx: -1, old: null });
           r.last = t; r.n++;
           const cell = el.closest('.cell'); if (cell) r.idx = [...cell.parentElement.children].indexOf(cell);
-          if (k === 'held') r.old = el.dataset.old;
+          if (k === 'held') { r.old = el.dataset.old; r.text = el.textContent; }
+          if (k === 'fill') r.an = getComputedStyle(el).animationName; // what the chip is doing while the mark is up
         }
       }, 10);
     });
@@ -70,8 +71,8 @@ const COLS = 9;
   await cell(V, 4, 0).click(); // fly onto the rock pile at (4,0)
 
   // (1) STONE PICKUP: V only. A stone leaves the pile and drops into the chip; the chip shows the old count until it lands.
-  await V.waitForFunction(() => window.__ct.pick && window.__ct.stone && document.querySelector('#stonesLeft.fxheld'), null, { timeout: 3000 });
-  const held = await V.evaluate(() => { const n = document.getElementById('stonesLeft'); return { text: n.textContent, old: n.dataset.old, chip: document.querySelector('#stats .hs').classList.contains('fxfill') }; });
+  await V.waitForFunction(() => window.__ct.pick && window.__ct.stone && window.__ct.held && window.__ct.fill, null, { timeout: 3000 }); // read what the 10 ms watcher recorded, not the screen now: the mark is up for under a second and WebKit can poll too late
+  const held = await V.evaluate(() => ({ text: window.__ct.held.text, old: window.__ct.held.old, chip: !!window.__ct.fill }));
   assert.deepEqual(held, { text: '1/1', old: '0/1', chip: true }, 'chip: new count in the text, old count shown until the stone lands');
   await V.screenshot({ path: OUT + '1-stone-flying.jpg', type: 'jpeg', quality: 80 });
   await V.waitForTimeout(1300);
@@ -110,8 +111,8 @@ const COLS = 9;
   const before = await S_(A); assert.equal(before.eggsLeft, 3);
   await reset(A, V);
   await A.evaluate(() => UI.act('sit'));
-  await A.waitForFunction(() => window.__ct.cold && window.__ct.ghost && document.querySelector('#eggsLeft.fxheld'), null, { timeout: 3000 });
-  const eh = await A.evaluate(() => { const n = document.getElementById('eggsLeft'); return { text: n.textContent, old: n.dataset.old }; });
+  await A.waitForFunction(() => window.__ct.cold && window.__ct.ghost && window.__ct.held, null, { timeout: 3000 }); // recorded by the watcher, see above
+  const eh = await A.evaluate(() => ({ text: window.__ct.held.text, old: window.__ct.held.old }));
   assert.deepEqual(eh, { text: '2', old: '3' }, 'egg count: new number in the text, old number shown until the egg has dimmed');
   await A.screenshot({ path: OUT + '3-egg-dimming.jpg', type: 'jpeg', quality: 80 });
   await A.waitForTimeout(1300);
@@ -199,7 +200,7 @@ const COLS = 9;
   await reset(RV);
   await cell(RV, 4, 0).click();
   await RV.waitForFunction(() => window.__ct.pick, null, { timeout: 3000 });
-  assert.equal(await RV.evaluate(() => getComputedStyle(document.querySelector('#stats .hs')).animationName), 'fxfade', 'reduced motion: a fade, not a pop');
+  assert.equal(await RV.evaluate(() => window.__ct.fill && window.__ct.fill.an), 'fxfade', 'reduced motion: a fade, not a pop');
   await RV.waitForTimeout(900);
   c = await ct(RV);
   assert.ok(life(c.pick) < 400, 'reduced motion: shortened to ' + life(c.pick) + ' ms');

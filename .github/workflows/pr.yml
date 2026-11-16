@@ -1,0 +1,55 @@
+# Runs every test suite (npm test) on GitHub for every pull request and every push to main.
+# A change is only "passing" when this check is green. See README "Tests".
+name: check
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: check-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: test (${{ matrix.part }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 50
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { part: "1 of 3", args: "--shard=1/3" }
+          - { part: "2 of 3", args: "--shard=2/3" }
+          - { part: "3 of 3", args: "--shard=3/3" }
+          - { part: "slow games", args: "--long" }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Phone browser (WebKit) and its system libraries
+        run: |
+          sudo env "PATH=$PATH" node node_modules/playwright-core/cli.js install-deps webkit
+          npm run setup:e2e
+      - name: Test suites (${{ matrix.part }})
+        run: set -o pipefail; node tests/run-all.js ${{ matrix.args }} 2>&1 | tee /tmp/test.log
+      - name: Failed suites, in short
+        if: always()
+        run: |
+          echo "### ${{ matrix.part }}" >> "$GITHUB_STEP_SUMMARY"
+          if [ -f shots/test-logs/summary.md ]; then cat shots/test-logs/summary.md >> "$GITHUB_STEP_SUMMARY";
+          else echo "The test run did not finish. See the full test output in the log." >> "$GITHUB_STEP_SUMMARY"; fi
+      - name: Test output (logs, screenshots)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-output-${{ strategy.job-index }}
+          path: |
+            shots/
+            /tmp/test.log
+          if-no-files-found: ignore
+          retention-days: 14

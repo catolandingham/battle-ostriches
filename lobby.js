@@ -15,7 +15,7 @@ const META = {
   o2: { name: 'Ostrich 2', sub: 'team ostrich' },
   v1: { name: 'Vulture 1', sub: 'team vulture' },
   v2: { name: 'Vulture 2', sub: 'team vulture' },
-  hyena: { name: 'Hyena', sub: '1 more when you miss' },
+  hyena: { name: 'Hyena', sub: 'Pounce · 2 catches' },
   badger: { name: 'Badger', sub: 'Burrow · 2 catches' },
 };
 const PREFER = {
@@ -34,7 +34,7 @@ function prefer(role, kind) {
 const ANIMAL = {
   ostrich: { name: 'Ostrich', sub: 'hide eggs', seats4: ['o1', 'o2'], seats4h: ['blue'] },
   vulture: { name: 'Vulture', sub: 'hunt eggs', seats4: ['v1', 'v2'], seats4h: ['red'] },
-  hyena: { name: 'Hyena', sub: '1 more when you miss', seats4: [], seats4h: ['hyena'] },
+  hyena: { name: 'Hyena', sub: 'Pounce · 2 catches', seats4: [], seats4h: ['hyena'] },
   badger: { name: 'Badger', sub: 'Burrow · 2 catches', seats4: [], seats4h: ['badger'] },
 };
 function animalOf(h) {
@@ -427,10 +427,11 @@ function view(room, hid) {
     needKind, canStart,
   };
 }
-// The title "You're in" stays. Brian approved the note above the Rejoin button, the button, the confirm, and the no-seat line.
+// The title "You're in" stays.
+// 2026-11-16 (Brian, 12:47 PM PT): the rejoin prompt is the line below. The Rejoin button, the confirm check, and the nobody-left message are still not approved.
 // waiting / askBody / askYes / askNo are the table-approval lines. They are new and still need his OK.
 const LATE_NOTE = "This game is already running. You'll play in the next one.";
-const LATE_NOTE_REJOIN = "Back in the game? Tap your animal.";
+const LATE_NOTE_REJOIN = "This game already started. Tap your animal to come back.";
 const REJOIN_WORDS = {
   confirmBody: 'Only pick this if this was you.',
   confirmYes: 'Rejoin',
