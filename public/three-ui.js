@@ -177,12 +177,13 @@ function chips(S){if(S.h3.hunt)return hChips(S);if(S.h3.team)return tChips(S);le
   return `<span class="bchip ${r}${b.out?' out':''}${b.catches&&!b.out?' injured':''}${live&&S.turn===r?' now':''}" data-tip="${tip}" data-b="${r}">${sp(r==='blue'?OSTI:VULI,24)}<span class="pips">${pips}</span>${b.out?'<b class="ko">OUT</b>':''}</span>`;};
  const k=h.kind||'hyena';
  bar.innerHTML=bird('red')+bird('blue')+`<span class="bchip hunter${live&&S.turn==='hunter'?' now':''}" data-tip="${KIND[k].n}: catches birds.">${sp(KIND[k].art,26)}${claws(caught(h),3)}</span>`;}
-function clock(S){let c=$('clock3');if(!c){c=document.createElement('div');c.id='clock3';c.innerHTML='<div class="cfill"></div><span class="ctxt"></span>';$('h3bar').after(c);}
- const on=S.phase==='play'&&S.h3.clockLeft!=null;c.classList.toggle('hidden',!on);if(!on){cancelAnimationFrame(raf);return;}
- if(S.h3.clockMs)clockMs=S.h3.clockMs;
- if(S.h3.clockPaused){cancelAnimationFrame(raf);lastTurnKey='';const left=Math.max(0,S.h3.clockLeft),s=Math.ceil(left/1000);c.firstChild.style.width=(100*left/clockMs)+'%';
+function clock(S){let c=$('clock3');if(!c){c=document.createElement('div');c.id='clock3';c.innerHTML='<div class="cfill"></div><span class="ctxt"></span>';const anchor=$('h3bar')||$('turnTag')||$('board');if(anchor&&anchor.parentNode)anchor.parentNode.insertBefore(c,anchor.nextSibling);}
+ const src=S.h3&&S.h3.clockLeft!=null?S.h3:(S.clockLeft!=null?S:null);
+ const on=S.phase==='play'&&!!src;c.classList.toggle('hidden',!on);if(!on){cancelAnimationFrame(raf);return;}
+ if(src.clockMs)clockMs=src.clockMs;
+ if(src.clockPaused){cancelAnimationFrame(raf);lastTurnKey='';const left=Math.max(0,src.clockLeft),s=Math.ceil(left/1000);c.firstChild.style.width=(100*left/clockMs)+'%';
   c.lastChild.innerHTML='<svg class="clk" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 7.5V12l3 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> '+s+'s';c.classList.toggle('low',left<=4000);c.setAttribute('aria-label','Shot clock paused, '+s+' seconds');c.dataset.who=S.turn;c.classList.toggle('mine',!!S.myTurn);return;}
- const tk=S.round+':'+S.turn+':'+(S.h3.extra?'2':'1')+':'+S.h3.clockLeft,local=Math.max(0,deadline-Date.now());if(tk!==lastTurnKey||Math.abs(local-S.h3.clockLeft)>1500){lastTurnKey=tk;deadline=Date.now()+S.h3.clockLeft;clockMs=S.h3.clockMs;}
+ const tk=S.round+':'+S.turn+':'+(src.extra?'2':'1')+':'+src.clockLeft,local=Math.max(0,deadline-Date.now());if(tk!==lastTurnKey||Math.abs(local-src.clockLeft)>1500){lastTurnKey=tk;deadline=Date.now()+src.clockLeft;clockMs=src.clockMs||clockMs;}
  c.dataset.who=S.turn;c.classList.toggle('mine',!!S.myTurn);
  const tick=()=>{const left=Math.max(0,deadline-Date.now()),s=Math.ceil(left/1000);c.firstChild.style.width=(100*left/clockMs)+'%';
   c.lastChild.innerHTML='<svg class="clk" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 7.5V12l3 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> '+s+'s';c.classList.toggle('low',left<=4000);c.setAttribute('aria-label','Shot clock, '+s+' seconds');if(left>0)raf=requestAnimationFrame(tick);};
@@ -336,6 +337,6 @@ function over(S){if(S.h3.hunt)return hOver(S);if(S.h3.team)return tOver(S);const
   :w==='red'?(S.winBy==='cold'?`The last egg went cold in round ${S.round}.`:S.winBy==='starved'?'The ostrich was out and no eggs were left.':`The vulture smashed every egg by round ${S.round}.`)
   :S.winBy==='time'?'Time ran out: the ostrich was out and the vulture never got every egg.':'The eggs were lost, but the vulture was already out.';
  return endBox(S,endArt(S,art),endTitle(S,title),endWhyText(S,why));}
-window.T3UI={mark,markHTML,marksAround,after,events,startLine,preferEggLine,announce,hint,tag,waitMsg,nopeMsg,over,endBits,KIND};
+window.T3UI={mark,markHTML,marksAround,after,events,startLine,preferEggLine,announce,hint,tag,waitMsg,nopeMsg,over,endBits,KIND,clock};
 document.readyState==='loading'?document.addEventListener('DOMContentLoaded',lobby):lobby();
 })();

@@ -360,7 +360,7 @@ function youTag(board){
 // Kick preview (long-press tooltip): the direction and how far, nothing about what lies there. It wraps at the edge and may stop early.
 function kickTip(x,y){const o=S.ostrich,dx=Math.sign(x-o[0]),dy=Math.sign(y-o[1]),A={'0,-1':'up','0,1':'down','-1,0':'left','1,0':'right','-1,-1':'up and left','1,-1':'up and right','-1,1':'down and left','1,1':'down and right'};
  const h=S.h3||{},badgerHere=h.kind==='badger'||!!h.hunt; // only name an animal that is in this game
- return 'Kick it '+(A[dx+','+dy]||'away')+', up to '+S.cfg.kickPush+' squares'+(badgerHere?' ('+S.cfg.kickPushBadger+' for a badger)':'')+'. It may stop early.';}
+ return 'Kick it '+(A[dx+','+dy]||'away')+', up to '+S.cfg.kickPush+' squares'+(badgerHere?' ('+S.cfg.kickPushBadger+' for a badger)':'')+'.';}
 // How to play: four small pictures of the board, drawn with the real marks (the same classes and art the game uses), one short line each
 function howPics(){const box=$('howPics');if(!box)return;
  const mini=(cols,rows,cells,after)=>{const m=document.createElement('div');m.className='mini';m.style.gridTemplateColumns=`repeat(${cols},44px)`;m.style.gridTemplateRows=`repeat(${rows},44px)`;
@@ -536,6 +536,7 @@ function render(prev){
   if(an&&!an.disabled){an.classList.add('spot','pulse');}if(CM.at==='board'||(an&&!an.disabled))h=CM.txt+(h&&CM.at!=='board'?' — or '+h.charAt(0).toLowerCase()+h.slice(1):'');}
  (S.sittingAt||[]).forEach(q=>{const c=board.children[q[1]*C.cols+q[0]];if(c&&c.classList&&!c.querySelector('.sittag')){const t=document.createElement('span');t.className='sittag';t.innerHTML=EYE;t.setAttribute('aria-label','Seen by the vulture');c.appendChild(t);}});
  if(S.three)window.T3UI.after(S,prev,board);
+ else if(window.T3UI&&T3UI.clock)T3UI.clock(S);
  if(window.PUSH_MOTION)PUSH_MOTION.kickChoose(board,blue&&M==='kick'?(S.kickPlans||[]):[]);
  window.T3UI.events(S,prev,board);window.T3UI.startLine(S,prev,cardMode(S));
  if(/^(Missed\.|Miss\.)/.test(ev))setTimeout(()=>flashRight(),50); // a miss: the right option pulses
