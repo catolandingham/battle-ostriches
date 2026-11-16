@@ -29,8 +29,11 @@
 @keyframes fxpile{0%{transform:translate(-50%,-50%) scale(1)}25%{transform:translate(-50%,-50%) scale(.8,1.15)}55%{transform:translate(-50%,-50%) scale(1.08,.94)}100%{transform:translate(-50%,-50%) scale(1)}}
 #stats .hs.fxfill{animation:fxchip var(--fxd,.7s) ease-out var(--fxdel,0s) both}
 @keyframes fxchip{0%,80%{transform:scale(1);box-shadow:0 0 0 0 #ffd34d00}90%{transform:scale(1.28);box-shadow:0 0 0 3px #ffd34d}100%{transform:scale(1);box-shadow:0 0 0 0 #ffd34d00}}
-.fxheld{position:relative;color:transparent!important;text-shadow:none!important}
-.fxheld::after{content:attr(data-old);position:absolute;left:0;top:0;color:var(--held,#fff);text-shadow:var(--heldsh,none)}
+.fxheld{position:relative;color:transparent!important;-webkit-text-fill-color:transparent!important;text-shadow:none!important}
+.fxheld::after{content:attr(data-old);position:absolute;left:0;top:0;color:var(--held,#1a1208);-webkit-text-fill-color:var(--held,#1a1208);text-shadow:var(--heldsh,none)}
+/* Theme rules set color on every header digit with !important. Without these, the live number stays visible under the old number, so a redraw paints the count twice. */
+html[data-theme] #hud :is(#eggsLeft,#stonesLeft).fxheld,#hud :is(#eggsLeft,#stonesLeft).fxheld{color:transparent!important;-webkit-text-fill-color:transparent!important;text-shadow:none!important}
+html[data-theme] #hud :is(#eggsLeft,#stonesLeft).fxheld::after,#hud :is(#eggsLeft,#stonesLeft).fxheld::after{color:var(--held,#1a1208)!important;-webkit-text-fill-color:var(--held,#1a1208)!important}
 .cell.fxslide>.carry,.cell.fxslide .ic-myegg,.cell.fxslide>.wring,.cell.fxslide>.wnum{visibility:hidden}
 .cell.fxslideo .pc.po{visibility:hidden}
 .cell .fxghost{position:absolute;inset:8%;z-index:5;pointer-events:none;animation:fxdim var(--fxd,.7s) ease-in var(--fxdel,0s) both}

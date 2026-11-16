@@ -36,6 +36,8 @@ An eliminated bird is off the board. A stone on the egg it was covering smashes 
 
 A catch that does not knock a bird out shows HURT on that animal. OUT means eliminated. An eliminated human bird then gets a read-only view of every animal and the eggs (`god: true`) and is sent no actions. Until that moment the old visibility rules apply, including a living hunter seeing no birds or eggs. Hunters are not eliminated mid-game, so they do not get that view before the game ends.
 
+The header EGGS number is drawn once, in every mode and every theme. It is the public count of eggs still alive, the same number on every phone, and it does not say where an egg is. A white digit with a hard black copy 2 pixels under it read as two numbers on a phone; that copy is gone, and on the classic and nature bars the digit uses the header's own dark ink so it still reads. While an egg goes cold, or a stone is picked up, the count holds the old number for a moment and does not also paint the new one (2026-11-16; test: `e2e-eggcount.js`).
+
 The ⏱ control shows the round counter and the shot clock. It is its own clock button in the top bar, just left of the ⋯ menu, in every game with a shot clock (Brian, 2026-11-15: "Timer needs its own button"); it is no longer a line inside the ⋯ menu. It defaults on. `room.settings.showTimers` (set from create `showTimers`, default true) is copied onto each view as `showTimers`. A phone can override it with localStorage `bo_timers` (`1` or `0`). Rounds left is still `rounds - round + 1`, counting the current round. Hiding the clock does not stop it: the turn still ends after 10 seconds. Catch counts, movement, hunter visibility for living players, the badger speed boost, and win conditions are unchanged.
 
 ## Themes
