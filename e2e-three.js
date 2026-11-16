@@ -24,7 +24,7 @@ const shot = (p, n) => p.screenshot({ path: OUT + n + '.jpg', type: 'jpeg', qual
   assert.equal(await H.locator('.pc.po, .pc.pv').count(), 0, 'hunter sees no birds');
   await cell(V, 4, 1).click(); await A.waitForSelector('#actions.mine', { state: 'attached' }); await cell(A, 7, 5).click();
   await A.waitForSelector('.pc.ph'); // hunter now within 2 of the ostrich
-  await H.waitForSelector('#actions.mine', { state: 'attached' }); await H.waitForSelector('.cell.maybird', { state: 'attached' }); await H.waitForSelector('.h3pop.yes', { state: 'attached' }); await H.waitForTimeout(400); await shot(H, '3-sense');
+  await H.waitForSelector('#actions.mine', { state: 'attached' }); await H.waitForSelector('.cell.maybird', { state: 'attached' }); await H.waitForSelector('.h3pop.good', { state: 'attached' }); await H.waitForTimeout(400); await shot(H, '3-sense');
   console.log('maybird', await H.locator('.cell.maybird').count()); assert.ok(await H.locator('.cell.maybird').count() >= 9, 'sense zone: rose "Bird may be here" dots'); 
   await H.waitForTimeout(800); await shot(H, '4-hunter-view');
   await cell(H, 8, 4).click(); await H.waitForFunction(() => /When you miss, move 1 more square/.test(document.getElementById('hint').textContent)); // hyena pounce: extra square

@@ -7,7 +7,7 @@ Which file to open, and which one wins when two of them disagree.
 | Question | File |
 |---|---|
 | What are the rules? | [reviews/RULEBOOK-v2-2026-11-07.md](reviews/RULEBOOK-v2-2026-11-07.md) |
-| What has Brian decided? | [project/DECISIONS-2026-11-08.md](project/DECISIONS-2026-11-08.md), then the later lines in [project/DECISIONS-2026-11-11.md](project/DECISIONS-2026-11-11.md) |
+| What has Brian decided? | [project/DECISIONS-2026-11-08.md](project/DECISIONS-2026-11-08.md), then the later lines in [project/DECISIONS-2026-11-11.md](project/DECISIONS-2026-11-11.md). [project/DECISIONS-2026-11-16.md](project/DECISIONS-2026-11-16.md) is a proposal waiting on Brian, not an approval. |
 | What is the state of the project? | [project/STATE-2026-11-08.md](project/STATE-2026-11-08.md) |
 | Handover for the next builder | [HANDOVER-FOR-GROK-2026-11-08.md](HANDOVER-FOR-GROK-2026-11-08.md) |
 
