@@ -1,7 +1,7 @@
 // Unit tests for rulebook v2 (sections 3 to 9), in all four engines: classic (game.js), 3 players (three.js), Hunters (hunt.js), 2 vs 2 (team.js).
 const assert = require('assert'), B = require('./game.js'), T = require('./three.js'), H = require('./hunt.js'), TT = require('./team.js'), HA = require('./huntai.js');
 let n = 0; const ok = (name, f) => { f(); n++; console.log('ok', name); };
-const DEF3 = 'catches:4'; const C = B.CONFIG, K = B.key, has = (list, p) => list.some(q => K(q) === K(p));
+const DEF3 = 'all'; const C = B.CONFIG, K = B.key, has = (list, p) => list.some(q => K(q) === K(p));
 
 function classic() { const g = B.newGame(); for (const p of [[2, 2], [6, 2], [2, 5]]) assert(B.placeEgg(g, p)); B.placeOstrich(g, [2, 2]); g.turn = 'red'; return g; }
 function three(kind, h, o, v) { const g = T.newGame3(kind, undefined, h); for (const p of [[2, 1], [6, 1], [2, 5]]) assert(B.placeEgg(g, p)); assert(T.placeOstrich3(g, [4, 2]));
@@ -13,7 +13,7 @@ function team(kind, pos) { const g = TT.newTeam(5, kind, undefined, [8, 3]);
   assert.equal(g.phase, 'play'); for (const s of Object.keys(pos)) if (s === 'h') g.h.p = pos[s].slice(); else g.b[s].pos = pos[s].slice(); g.turn = 'hunter'; g.h.pounce = false; return g; }
 
 // ---- 1 and 2: pounce and speed
-ok('HUNTER_GOAL defaults: 3 players catches:4, 2 vs 2 + hunter first', () => { assert.deepEqual(B.HUNTER_GOAL('3'), { kind: 'catches', n: 4 }); assert.equal(B.HUNTER_GOAL('5').kind, 'first'); });
+ok('HUNTER_GOAL defaults: 3 players all (rule clash R5), 2 vs 2 + hunter first', () => { assert.deepEqual(B.HUNTER_GOAL('3'), { kind: 'all', n: 0 }); assert.equal(B.HUNTER_GOAL('5').kind, 'first'); });
 ok('constants: everyone moves 2, the carried egg 1, the pounce step 1; food and warmth 15; no sit limit', () => {
   assert.equal(C.ostrichWalk, 2); assert.equal(C.carryWalk, 1); assert.equal(C.vultureFly, 2); assert.equal(T.T3.walk, 2); assert.equal(H.TH.walk, 2); assert.equal(TT.TM.walk, 2);
   assert.equal(T.T3.pounce, 1); assert.equal(C.food, 15); assert.equal(C.warmth, 15); assert.equal(C.maxSit, undefined); assert.equal(C.kickPush, 3); assert.equal(C.kickPushBadger, 2); });

@@ -67,6 +67,12 @@
   function hunterGoalObj(mode, R) {
     return (R.modes[mode] && R.modes[mode].goal) || { kind: 'all', n: 0 };
   }
+  // 3-player goal line: 'all' (Brian, 2026-11-15, rule clash R5: "you win when knocking out both birds") or 'catches:N'.
+  function goalLine(mode, R, you) {
+    const g = hunterGoalObj(mode, R);
+    if (g.kind === 'catches') return you ? `You win at ${g.n} catches.` : `The hunter wins at ${g.n} catches.`;
+    return you ? 'You win when both birds are out.' : 'The hunter wins when both birds are out.';
+  }
   function doubleTurns(mode, R) {
     const n = R.modes[mode] && R.modes[mode].double;
     return n != null ? n : 2;
@@ -97,7 +103,7 @@
       `Keep at least 1 egg alive for ${c.rounds} rounds.`,
       `If a hunter gets to your square, they catch you. ${ko} catches knock you out.`,
       'You lose if every egg is broken or goes cold, or if you don\'t eat in time.',
-      `The hunter wins at ${n} catches.`,
+      goalLine(mode, R, false),
       `When the hunter knocks a bird out, they always take ${d} turns in a row. The hyena can pounce only on the first.`,
     ]);
     return cardOf('You are the Ostrich.', 'ostrich', [
@@ -129,7 +135,7 @@
       'You win if every egg is broken or goes cold.',
       `If a hunter gets to your square, they catch you. ${ko} catches knock you out.`,
       `You lose if an egg lasts ${c.rounds} rounds.`,
-      `The hunter wins at ${n} catches.`,
+      goalLine(mode, R, false),
       `When the hunter knocks a bird out, they always take ${d} turns in a row. The hyena can pounce only on the first.`,
     ]);
     return cardOf('You are the Vulture.', 'vulture', [
@@ -165,7 +171,7 @@
       lines.push(`You lose if an egg lasts ${c.rounds} rounds, or every egg is broken.`);
     } else if (who === 'hyena') {
       lines = [
-        `You win at ${n} catches.`,
+        goalLine(mode, R, true),
         `${ko} catches knock a bird out.`,
         pounceLine,
         `When you knock a bird out, you always take ${d} turns in a row. You can pounce only on the first.`,
@@ -173,7 +179,7 @@
       ];
     } else {
       lines = [
-        `You win at ${n} catches.`,
+        goalLine(mode, R, true),
         `${ko} catches knock a bird out.`,
         `After you knock a bird out, you always take ${d} turns in a row.`,
         burrowLine,
@@ -198,7 +204,7 @@
     const base = [a, bird && m === '3' && HUNTERS[kind] ? kind : '', m].join('_'); // only the 3-player bird cards change with the hunter
     // P2 wording: a phone that already closed the old card should be shown this one.
     const revised = (a === 'hyena' && (m === '3' || m === '4h' || m === '5')) || (bird && m === '3');
-    return revised ? base + '_p2' : base;
+    return m === '3' ? base + '_r5' : revised ? base + '_p2' : base; // R5 changed every 3-player card: show it once more
   }
 
   const API = { roleCard, cardId, huntLine, kickList, animal, rulesFromModules, PICKED };

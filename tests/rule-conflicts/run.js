@@ -70,7 +70,7 @@ probe('R5', 'The 3-player hunter goal "4 catches" can only happen when both bird
   t.birds.red.catches = 2; t.birds.red.out = true; t.birds.red.why = 'caught'; g.vulture = T.OFF.slice(); t.birds.blue.catches = 1; g.phase = 'play'; T.finish(g);
   const at3 = g.phase;
   const out = [`goal in code: ${HG.kind} ${HG.n}; with 2 + 1 = 3 catches the game is: ${at3}; the most one bird can take is ${T.T3.ko.hyena} catches, so 4 total means both birds are out`];
-  return { conflict: HG.kind === 'catches' && HG.n === 4 && at3 === 'play' && 2 * T.T3.ko.hyena === 4, out };
+  return { conflict: HG.kind === 'catches' && HG.n === 4 && at3 === 'play' && 2 * T.T3.ko.hyena === 4, out }; // resolved 2026-11-15 (Brian, R5): the goal is now 'all'
 });
 
 // 6. Boxed in ------------------------------------------------------------------------------------------------------
@@ -80,7 +80,8 @@ probe('R6', 'An ostrich in a corner with every square around it wrecked has no l
   for (const p of B.walkSquares(g.cfg, {}, g.ostrich, 2)) g.marks[B.key(p)] = 'stone';
   const moves = B.ostrichMoves(g).length, sit = B.canSit(g), kick = B.kickTargets(g).length;
   const out = [`wrecked squares around (0,6): ${Object.keys(g.marks).length}; legal steps: ${moves}; can sit: ${sit}; can kick: ${kick}`];
-  return { conflict: moves === 0 && !sit && kick === 0, out };
+  out.push('left as is: Brian, 2026-11-15: "Leave the boxed-in ostrich rule out"');
+  return { conflict: false, boxedIn: moves === 0 && !sit && kick === 0, out };
 });
 
 // Run ----------------------------------------------------------------------------------------------------------------
