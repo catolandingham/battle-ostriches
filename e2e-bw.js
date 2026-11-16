@@ -39,8 +39,8 @@ const server = require('./server');
     document.querySelector('#hint').textContent=BadgerLines.LINES.firstBurrow;
     const fact=document.createElement('div');fact.id='badgerline';fact.className='h3pop';fact.textContent=BadgerLines.LINES.firstBurrow;document.querySelector('#msgslot').appendChild(fact);
   });
-  const fact=await page.locator('#badgerline').evaluate(e=>{const r=e.getBoundingClientRect(),s=document.querySelector('#msgslot').getBoundingClientRect(),range=document.createRange();range.selectNodeContents(e);const t=range.getBoundingClientRect();return {fits:e.scrollHeight<=e.clientHeight+1,padded:t.top>=r.top+5&&t.bottom<=r.bottom-5,inSlot:r.top>=s.top&&r.bottom<=s.bottom+1};});
-  assert.ok(fact.fits&&fact.padded&&fact.inSlot,'long fact wraps with top/bottom padding '+JSON.stringify(fact));
+  const fact=await page.locator('#badgerline').evaluate(e=>{const r=e.getBoundingClientRect(),s=document.querySelector('#msgslot').getBoundingClientRect(),range=document.createRange();range.selectNodeContents(e);const t=range.getBoundingClientRect();const rects=[...range.getClientRects()].filter(x=>x.width>0&&x.height>0);const onScreen=rects.every(x=>x.top>=-0.5&&x.bottom<=innerHeight+0.5&&x.left>=-0.5&&x.right<=innerWidth+0.5);return {fits:e.scrollHeight<=e.clientHeight+1,padded:t.top>=r.top+5&&t.bottom<=r.bottom-5,onScreen,anchored:Math.abs(r.bottom-s.bottom)<=1,row:s.height<=57,lines:rects.length,full:e.textContent===BadgerLines.LINES.firstBurrow};});
+  assert.ok(fact.fits&&fact.padded&&fact.onScreen&&fact.anchored&&fact.row&&fact.full&&fact.lines>=3,'long fact stays whole, with padding, and the message row does not grow '+JSON.stringify(fact));
   assert.equal(await page.locator('#hint').evaluate(e=>getComputedStyle(e).visibility),'hidden','a fading fact never overlays the hint text');
   assert.equal(await page.locator('#badgerline').evaluate(e=>getComputedStyle(e).backgroundColor),'rgb(255, 255, 255)','fact has an opaque white backing');
 

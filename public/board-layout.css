@@ -60,3 +60,10 @@ html[data-theme] :is(#board,.mini) .cell:is(:has(>.ic-food),:has(>.ic-rock)):has
 html[data-theme] :is(#board,.mini) .cell:is(:has(>.ic-food),:has(>.ic-rock)):has(.pc~.pc)>.pc.po:not(#_a):not(#_b):not(#_c):not(#_d){left:3%!important;top:44%!important;z-index:6!important}
 /* An ostrich carrying an egg uses the carry drawing: beak open a little, the egg lying sideways inside, medium, no number. Same in every theme. */
 html[data-theme] :is(#board,.mini) .cell>.pc.po.carrying:not(#_a):not(#_b):not(#_c):not(#_d){inset:auto!important;left:14%!important;top:14%!important;width:72%!important;height:72%!important;transform:none!important}
+
+/* A long quote, hint or banner stays whole. The row keeps its resting height (44px, 56px in black and white)
+   so the board does not move or shrink. Extra lines grow upward, over the gap above the row, and stay clear of the board.
+   The words are not shortened. (2026-11-16) */
+html[data-theme] #app #msgslot:not(#_a):not(#_b){height:44px!important;min-height:44px!important;max-height:44px!important;flex:0 0 44px!important;overflow:visible!important}
+html[data-theme="bw"] #app #msgslot:not(#_a):not(#_b){height:56px!important;min-height:56px!important;max-height:56px!important;flex:0 0 56px!important}
+html[data-theme] #app #msgslot>:is(#hint,#banner,#tipbar,#announce,#snpop,.h3pop,#badgerline):not(#_a):not(#_b){position:absolute!important;left:0!important;right:0!important;top:auto!important;bottom:0!important;width:auto!important;max-width:none!important;height:auto!important;min-height:100%!important;max-height:none!important;margin:0!important;overflow:visible!important;white-space:normal!important;overflow-wrap:break-word;text-overflow:clip!important}
