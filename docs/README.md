@@ -2,6 +2,8 @@
 
 Which file to open, and which one wins when two of them disagree.
 
+Standing rules, and which of them a script can check, are in [RULES-CHECKLIST.md](RULES-CHECKLIST.md).
+
 ## Source of truth
 
 | Question | File |

@@ -8,7 +8,8 @@
     "setup:e2e": "node tests/setup-e2e.js",
     "test": "node tests/run-all.js",
     "test:unit": "node tests/run-all.js test ai-test",
-    "test:consistency": "node tests/run-all.js e2e-consistency"
+    "test:consistency": "node tests/run-all.js e2e-consistency",
+    "robots": "node robots/guard-balance.js && node robots/run.js"
   },
   "keywords": [],
   "author": "",

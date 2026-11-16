@@ -1,6 +1,7 @@
 node_modules
 shots
 data/
+robots-out/
 
 # Review screenshots stay out of the repo. The old archive is in git history.
 # See docs/reviews/README.md. The one exception is the handover mockup.
