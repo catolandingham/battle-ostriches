@@ -64,6 +64,32 @@ const phone = { viewport: { width: 390, height: 844 } };
       overlap: document.getElementById('hud').getBoundingClientRect().bottom > br.top + 1
     };
   });
+  // A tap is ignored while a cartoon or "Tap to go on." is up (ui.js inHold), and a
+  // point measured before a viewport change is not the cell after the board scrolls.
+  const waitStep = (page, point) => page.waitForFunction(p => {
+    const S = UI._S();
+    if (!S || !S.myTurn || S.phase !== 'play') return false;
+    if (window.CUTAWAYS && CUTAWAYS.busy && CUTAWAYS.busy()) return false;
+    if (document.getElementById('cutaway') || document.getElementById('surprise-go')) return false;
+    const card = document.getElementById('rolecard');
+    if (card && !card.classList.contains('hidden')) return false;
+    if (!(S.hmoves || []).some(q => q[0] === p[0] && q[1] === p[1])) return false;
+    const board = document.getElementById('board');
+    const cell = board.querySelectorAll('.cell')[p[1] * S.cfg.cols + p[0]];
+    if (!cell) return false;
+    const br = board.getBoundingClientRect();
+    let b = cell.getBoundingClientRect();
+    if (b.bottom > br.bottom - 1) board.scrollTop += b.bottom - br.bottom + 2;
+    if (b.top < br.top + 1) board.scrollTop -= br.top + 2 - b.top;
+    b = cell.getBoundingClientRect();
+    const top = document.elementFromPoint(b.left + b.width / 2, b.top + b.height / 2);
+    return !!(top && top.closest('.cell') === cell && b.top >= br.top - 1 && b.bottom <= br.bottom + 1);
+  }, point);
+  const tapStep = async (page, point) => {
+    await waitStep(page, point);
+    const idx = await page.evaluate(p => p[1] * UI._S().cfg.cols + p[0], point);
+    await page.locator('#board .cell').nth(idx).click();
+  };
   const assertFit = (label, box) => {
     assert.ok(box.overflowX === 'clip' || box.overflowX === 'hidden', label + ' board can still scroll sideways ' + box.overflowX);
     assert.ok(box.lastInside && box.hits.every(h => h.inX), label + ' a column is past the edge ' + JSON.stringify(box));
@@ -91,8 +117,13 @@ const phone = { viewport: { width: 390, height: 844 } };
   await H.screenshot({ path: OUT + '/hunter-phone-544.png' });
   await H.setViewportSize({ width: 390, height: 844 });
   const before = await H.evaluate(() => UI._S().hunter.slice());
-  await H.mouse.click(tall.hits[0].x, tall.hits[0].y);
-  await H.waitForFunction(p => { const h = UI._S() && UI._S().hunter; return h && (h[0] !== p[0] || h[1] !== p[1]); }, before, { timeout: 8000 });
+  const step = await H.evaluate(() => {
+    const S = UI._S();
+    return (S && S.hmoves && S.hmoves[0]) || null;
+  });
+  assert.ok(step, 'hunter has a step to tap');
+  await tapStep(H, step);
+  await H.waitForFunction(p => { const h = UI._S() && UI._S().hunter; return h && (h[0] !== p[0] || h[1] !== p[1]); }, before);
   const roomCode = await H.evaluate(() => UI._S().code);
   const room = server.rooms.get(roomCode);
   clearTimeout(room.aiT); clearTimeout(room.clockT);
@@ -104,19 +135,10 @@ const phone = { viewport: { width: 390, height: 844 } };
   if (g.vulture[0] === nbr[0] && g.vulture[1] === nbr[1]) g.vulture = [0, 0];
   g.three.pounce = false; g.three.sense = T.senses(g); g.three.senseSeq++;
   server.broadcast(room);
-  await H.waitForFunction(p => { const S = UI._S(); return S && S.myTurn && S.hmoves.some(q => q[0] === p[0] && q[1] === p[1]); }, nbr, { timeout: 8000 });
+  await waitStep(H, nbr);
   await H.screenshot({ path: OUT + '/hunter-before-catch.png' });
-  const hit = await H.evaluate(p => {
-    const S = UI._S();
-    const cell = document.querySelectorAll('#board .cell')[p[1] * S.cfg.cols + p[0]];
-    const b = cell.getBoundingClientRect();
-    const x = b.left + b.width / 2, y = b.top + b.height / 2;
-    const top = document.elementFromPoint(x, y);
-    return { x, y, ok: !!(top && top.closest('.cell') === cell) };
-  }, nbr);
-  assert.equal(hit.ok, true, 'the catch square is on screen');
-  await H.mouse.click(hit.x, hit.y);
-  await H.waitForFunction(() => UI._S().h3.birds.blue.catches === 1, null, { timeout: 8000 });
+  await tapStep(H, nbr);
+  await H.waitForFunction(() => UI._S().h3 && UI._S().h3.birds.blue.catches === 1);
   const B = await open();
   await B.evaluate(() => UI.open({ t: 'create', solo: 1, bots: 2 }));
   await B.waitForFunction(() => LobbyUI.get() && LobbyUI.get().solo);
@@ -156,17 +178,9 @@ const phone = { viewport: { width: 390, height: 844 } };
   hg.three.birds.blue.out = false; hg.three.birds.blue.catches = 0; hg.three.birds.blue.skip = 0;
   hg.three.pounce = false; hg.three.sense = T.senses(hg); hg.three.senseSeq++;
   server.broadcast(huntRoom);
-  await host.waitForFunction(p => UI._S().myTurn && UI._S().hmoves.some(q => q[0] === p[0] && q[1] === p[1]), spot, { timeout: 8000 });
-  const tap = await host.evaluate(p => {
-    const S = UI._S();
-    const cell = document.querySelectorAll('#board .cell')[p[1] * S.cfg.cols + p[0]];
-    const b = cell.getBoundingClientRect();
-    const x = b.left + b.width / 2, y = b.top + b.height / 2;
-    return { x, y, ok: document.elementFromPoint(x, y).closest('.cell') === cell };
-  }, spot);
-  assert.equal(tap.ok, true, 'hyena catch square is on the phone');
-  await host.mouse.click(tap.x, tap.y);
-  await guest.waitForFunction(() => UI._S().h3.birds.blue.catches === 1, null, { timeout: 8000 });
+  await waitStep(host, spot);
+  await tapStep(host, spot);
+  await guest.waitForFunction(() => UI._S().h3 && UI._S().h3.birds.blue.catches === 1);
   const hurt = await guest.evaluate(() => {
     const pc = document.querySelector('.pc.po');
     const chip = document.querySelector('#h3bar .bchip.blue');
