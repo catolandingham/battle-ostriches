@@ -3,6 +3,7 @@
 # private repo on the account, including Space Snack Quest.
 # A cached run is capped at 12 minutes. The nightly run is the one that
 # plays main. Pull requests run only when the game or these robots change.
+# 2026-11-16: Brian's approved rules fixes are on this branch.
 name: Robot players
 
 on:
