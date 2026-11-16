@@ -68,6 +68,7 @@ html body #msgslot>#tipbar>span{flex:none}
 html body #msgslot>#announce{display:none!important;z-index:9;background:#1b2540!important;color:#fff!important}
 html body #msgslot>#announce.show{display:flex!important;align-items:center;justify-content:center}
 html body #msgslot>#announce.bad{background:#b3123f!important}
+/* The 44px height is the resting row. board-layout.css lets a longer line grow upward without moving the board. */
 html body #msgslot>#badgerline{position:absolute!important;left:0!important;top:0!important;right:0!important;transform:none!important;width:auto!important;max-width:none!important;height:44px!important;margin:0!important;display:flex;align-items:center;justify-content:center;box-sizing:border-box;border:0!important;border-radius:12px!important;padding:2px 10px!important;font:800 15px/1.15 system-ui,-apple-system,sans-serif!important;text-align:center;overflow:hidden;z-index:8;animation:slotin .18s ease-out!important;box-shadow:inset 0 0 0 2px rgba(255,210,31,.8)!important}
 html body #msgslot>#snpop{font-size:17px!important}
 @keyframes slotin{from{opacity:0}to{opacity:1}}
