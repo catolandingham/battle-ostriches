@@ -77,6 +77,12 @@
     const n = R.modes[mode] && R.modes[mode].double;
     return n != null ? n : 2;
   }
+  // 3-player bird cards. A badger cannot pounce, so those cards do not say the hyena can (Brian, 2026-11-16).
+  // A hyena game keeps the pounce limit. The number is the rules' double turn, which is 2.
+  function birdKnockoutLine(kind, d) {
+    const turn = `When the hunter knocks a bird out, they always take ${d} turns in a row.`;
+    return kind === 'badger' ? turn : `${turn} The hyena can pounce only on the first.`;
+  }
 
   // Start-of-game reminder: a mode title, "You are…", then the approved lines for that seat.
   // Numbers come from the rules; no word names a color or a look.
@@ -104,7 +110,7 @@
       `If a hunter gets to your square, they catch you. ${ko} catches knock you out.`,
       'You lose if every egg is broken or goes cold, or if you don\'t eat in time.',
       goalLine(mode, R, false),
-      `When the hunter knocks a bird out, they always take ${d} turns in a row. The hyena can pounce only on the first.`,
+      birdKnockoutLine(kind, d),
     ]);
     return cardOf('You are the Ostrich.', 'ostrich', [
       `Keep at least 1 egg alive for ${c.rounds} rounds.`,
@@ -136,7 +142,7 @@
       `If a hunter gets to your square, they catch you. ${ko} catches knock you out.`,
       `You lose if an egg lasts ${c.rounds} rounds.`,
       goalLine(mode, R, false),
-      `When the hunter knocks a bird out, they always take ${d} turns in a row. The hyena can pounce only on the first.`,
+      birdKnockoutLine(kind, d),
     ]);
     return cardOf('You are the Vulture.', 'vulture', [
       'You win if every egg is broken or goes cold.',
@@ -204,7 +210,9 @@
     const base = [a, bird && m === '3' && HUNTERS[kind] ? kind : '', m].join('_'); // only the 3-player bird cards change with the hunter
     // P2 wording: a phone that already closed the old card should be shown this one.
     const revised = (a === 'hyena' && (m === '3' || m === '4h' || m === '5')) || (bird && m === '3');
-    return m === '3' ? base + '_r5' : revised ? base + '_p2' : base; // R5 changed every 3-player card: show it once more
+    // R5 changed every 3-player card (_r5). Badger bird cards no longer say the hyena can pounce (Brian, 2026-11-16), so those two are _r6 and a phone shows them once more.
+    if (bird && m === '3' && kind === 'badger') return base + '_r6';
+    return m === '3' ? base + '_r5' : revised ? base + '_p2' : base;
   }
 
   const API = { roleCard, cardId, huntLine, kickList, animal, rulesFromModules, PICKED };
