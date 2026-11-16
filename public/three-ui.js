@@ -97,7 +97,7 @@ function tPieces(S,board){const h=S.h3,me=h.mySeat;
   d.innerHTML=q.type==='o'?(q.carrying&&window.ART&&ART.ostrichCarry?ART.ostrichCarry:OSTI):VULI;if(q.carrying)d.classList.add('carrying');c.appendChild(d);c.dataset.seat=q.seat;badge(c,q.seat,q.mate);
   c.dataset.tip=(c.dataset.tip?c.dataset.tip+' · ':'')+SN[q.seat]+(q.mate?' (your teammate)':'')+(q.carrying?', carrying an egg':'');}
  const mine=me==='hunter'?null:cellAt(board,S,isOs(me)?S.ostrich:S.vulture);if(mine)badge(mine,me,false);
- const ms=h.mateSniff;if(ms){const c=cellAt(board,S,ms.p);if(c){const r=document.createElement('div');r.className='msniff '+(ms.yes?'yes':'no');r.textContent=ms.yes?'Egg near':'No egg';c.appendChild(r);
+ const ms=h.mateSniff;if(ms){const c=cellAt(board,S,ms.p);if(c){const r=document.createElement('div');r.className='msniff '+(window.News?News.mark(News.tone(ms.yes?'Egg near':'No egg',S))||'plain':(ms.yes?'yes':'no'));r.textContent=ms.yes?'Egg near':'No egg';c.appendChild(r);
   c.dataset.tip=(c.dataset.tip?c.dataset.tip+' · ':'')+(isOs(me)?'':'Your teammate sniffed here: ')+(ms.yes?'an egg is on or next to this square':'no egg on or next to this square');}}
  if(isOs(me)&&S.eggs)S.eggs.forEach(e=>{if(!e.alive||!e.pos||e.mine)return;const c=cellAt(board,S,e.pos);c&&c.classList.add('mateegg');});}
 const HUNT_TIE_WHY='Both birds are out. The hunters tie: you have the same number of knock-outs, and the same number of catches.';
@@ -198,8 +198,8 @@ function outBanner(S,prev){const birds=S.h3.birds;if(!birds)return;
   if(!b.out){delete outSeen[r];continue;}
   if(outSeen[r])continue;outSeen[r]=1;
   const mine=r===(S.h3.mySeat||S.role);
-  if(!first&&!mine&&S.phase==='play'){const txt=window.CatchText.outLine(r);outNote={txt,until:Date.now()+4000};noteBanner('no',txt,true);setTimeout(()=>{const bn=$('banner');if(bn&&bn.textContent===txt){bn.textContent='';bn.className='hidden';}},4000);}}
- if(outNote&&Date.now()<outNote.until)noteBanner('no',outNote.txt);}
+  if(!first&&!mine&&S.phase==='play'){const txt=window.CatchText.outLine(r);outNote={txt,until:Date.now()+4000};noteBanner(newsLook(txt,S),txt,true);setTimeout(()=>{const bn=$('banner');if(bn&&bn.textContent===txt){bn.textContent='';bn.className='hidden';}},4000);}}
+ if(outNote&&Date.now()<outNote.until)noteBanner(newsLook(outNote.txt,S),outNote.txt);}
 // The badger's quotes (public/badgerlines.js): one line at a time near the badger's square, about 1 second each. They sit in their own
 // element, not in the board, so the next state redrawing the board does not wipe them. The words and who may see them live in badgerlines.js.
 const BL=window.BadgerLines;let bPicker=BL.createPicker(),bLastS=null;
@@ -230,9 +230,11 @@ function marksAround(board,S,cx,cy,range,kind,cls){const C=S.cfg;let n=0;
  for(let y=Math.max(0,cy-range);y<=Math.min(C.rows-1,cy+range);y++)for(let x=Math.max(0,cx-range);x<=Math.min(C.cols-1,cx+range);x++){if(x===cx&&y===cy)continue;if(kind==='egg'&&S.cfg&&noEgg(S,x,y))continue;const c=board.children[y*C.cols+x];if(c&&c.classList&&c.classList.contains('cell')&&mark(c,kind,cls))n++;}
  return n;}
 function isNearLine(item){const t=(item&&item.text||'').trim(),c=item&&item.className||'';return /\bnear[!.]?$/i.test(t)||/(^|\s)near(\s|$)/.test(c);}
-function pop(board,txt,cls){if(Date.now()<lookoutUntil)return;window.STATUS_QUEUE.add({className:'h3pop '+cls,text:txt,priority:10});}
+function newsLook(txt,S){const t=window.News?News.tone(txt,S==null&&window.UI&&UI._S?UI._S():S):'plain';return t==='good'||t==='bad'?t:'plain';}
+function pop(board,txt,cls){if(Date.now()<lookoutUntil)return;window.STATUS_QUEUE.add({className:'h3pop '+newsLook(txt),text:txt,priority:10});}
 // Shared with sniff/fact notices: one one-second message, personal events before background facts.
-function announce(txt,priority,hold,preempt,heldEvent){window.STATUS_QUEUE.add({id:'announce',className:'show'+(/you/i.test(txt)?' bad':''),text:txt,priority:priority==null?(/\byou\b/i.test(txt)?100:50):priority,hold:hold||undefined,preempt:!!preempt,heldEvent:!!heldEvent});}
+// The colour is good or bad for this phone (news.js), not whether the sentence says "you".
+function announce(txt,priority,hold,preempt,heldEvent){const look=newsLook(txt),extra=look==='plain'?'':' '+look;window.STATUS_QUEUE.add({id:'announce',className:'show'+extra,text:txt,priority:priority==null?(/\byou\b/i.test(txt)?100:50):priority,hold:hold||undefined,preempt:!!preempt,heldEvent:!!heldEvent});}
 let lookoutKey='',lookoutUntil=0,lineGen=0;
 function releaseHeldLine(){
  lineGen++;
@@ -306,9 +308,9 @@ function after(S,prev,board){
    const both=S.pounce&&S.firstAt&&Math.max(Math.abs(x-S.firstAt[0]),Math.abs(y-S.firstAt[1]))<=range;if(S.pounce&&!both)continue; // the Pounce marks only the squares inside both readings
    c.classList.add('maybird');mark(c,'bird',area?'cue':'');const had=c.getAttribute('aria-label')||'';if(!/Bird may be here/.test(had))c.setAttribute('aria-label',had?had+'. Bird may be here':'Bird may be here');}}
   const sk=S.round+':'+S.senseSeq;if(sk!==lastSense){lastSense=sk;UI.pause(1100);
-   pop(board,S.sense?(S.pounce?'Still near.':'Bird near.'):'Nothing near.',S.sense?'yes':'no');
+   pop(board,S.sense?(S.pounce?'Still near.':'Bird near.'):'Nothing near.',S.sense?'yes':'no'); // the words stay; newsLook picks green or navy for this hunter
    window.SFX&&SFX.play(S.sense?'sniffYes':'sniffNo');}
-  if(S.pounce)noteBanner('pounce','Pounce!',true);}
+  if(S.pounce)noteBanner(newsLook('Pounce!',S),'Pounce!',true);}
  if(false&&S.pounce&&S.myTurn&&me==='hunter'){const mine=board.querySelector('.pc.ph.mine');const cell=hc||(mine&&mine.closest('.cell'));
   if(cell&&!cell.querySelector('.pouncetag')){const t=document.createElement('span');t.className='pouncetag';t.textContent='';cell.appendChild(t);}}
  // catch + knockback feedback
@@ -336,6 +338,6 @@ function over(S){if(S.h3.hunt)return hOver(S);if(S.h3.team)return tOver(S);const
   :w==='red'?(S.winBy==='cold'?`The last egg went cold in round ${S.round}.`:S.winBy==='starved'?'The ostrich was out and no eggs were left.':`The vulture smashed every egg by round ${S.round}.`)
   :S.winBy==='time'?'Time ran out: the ostrich was out and the vulture never got every egg.':'The eggs were lost, but the vulture was already out.';
  return endBox(S,endArt(S,art),endTitle(S,title),endWhyText(S,why));}
-window.T3UI={mark,markHTML,marksAround,after,events,startLine,preferEggLine,announce,hint,tag,waitMsg,nopeMsg,over,endBits,KIND};
+window.T3UI={mark,markHTML,marksAround,after,events,startLine,preferEggLine,announce,newsLook,hint,tag,waitMsg,nopeMsg,over,endBits,KIND};
 document.readyState==='loading'?document.addEventListener('DOMContentLoaded',lobby):lobby();
 })();

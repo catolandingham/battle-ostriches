@@ -6,7 +6,8 @@ const src=fs.readFileSync(__dirname+'/public/ui.js','utf8');
 const fn=src.match(/function stoneHitAnimal\(S,prev,la\)\{.*\}\n/);A(fn,'ui.js has stoneHitAnimal');
 const stoneHitAnimal=new Function(fn[0]+';return stoneHitAnimal;')();
 // the two miss lines go through it, and the right-square pulse only follows a miss line
-A(/'Egg smashed\.':stoneHitAnimal\(S,prev,la\)\?'':'Missed\.'/.test(src),'the ostrich line checks for a hit animal');
+A(/la\.result==='hit'\?'':stoneHitAnimal\(S,prev,la\)\?'':'Missed\.'/.test(src),'a smashed egg is not called a miss, and a pushed animal is not either');
+A(!/bt='Smashed!'/.test(src)&&!/ev='Smashed!'/.test(src)&&!/'Egg smashed\.'/.test(src),'a smash is not also announced as Smashed! or Egg smashed.');
 A(/:stoneHitAnimal\(S,prev,la\)\?'':'Miss\.';/.test(src),'the vulture line checks for a hit animal');
 A(/if\(\/\^\(Missed\\\.\|Miss\\\.\)\/\.test\(ev\)\)setTimeout\(\(\)=>flashRight\(\)/.test(src),'the pulse only follows a miss line');
 const lineFor=(v,prev)=>{const la=v.lastAction;if(!la||la.type!=='throw')return null;return la.result==='bounce'?'bounce':la.result==='hit'?'hit':stoneHitAnimal(v,prev,la)?'':'Missed.';};
