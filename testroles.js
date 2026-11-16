@@ -69,6 +69,14 @@ ok('approved wording, with numbers from the rules constants', () => {
     'The hunter wins when both birds are out.',
     `When the hunter knocks a bird out, they always take ${T.T3.double} turns in a row. The hyena can pounce only on the first.`,
   ]);
+  const badgerTurn = `When the hunter knocks a bird out, they always take ${T.T3.double} turns in a row.`;
+  assert.equal(badgerTurn, 'When the hunter knocks a bird out, they always take 2 turns in a row.');
+  for (const role of ['blue', 'red']) {
+    const c = R.roleCard(role, 'badger', '3');
+    assert.equal(c.lines[c.lines.length - 1], badgerTurn, role + ' badger bird card');
+    assert.ok(!/hyena|pounce/i.test(text(c)), role + ' badger bird card mentions hyena or pounce');
+  }
+  assert.equal(R.roleCard('red', 'hyena', '3').lines.at(-1), `When the hunter knocks a bird out, they always take ${T.T3.double} turns in a row. The hyena can pounce only on the first.`);
   assert.deepEqual(h3.lines, [
     'You win when both birds are out.',
     `${T.T3.ko.hyena} catches knock a bird out.`,
@@ -104,6 +112,9 @@ ok('change every constant: every number on every card follows, and no other numb
   assert.ok(R.roleCard('hunter', 'hyena', '3', X).lines.includes('When you knock a bird out, you always take 8 turns in a row. You can pounce only on the first.'));
   assert.ok(R.roleCard('hunter', 'hyena', '3', X).lines.some(l => l.includes('26 more squares')));
   assert.ok(R.roleCard('hunter', 'badger', '3', X).lines.includes('After you knock a bird out, you always take 8 turns in a row.'));
+  assert.ok(R.roleCard('blue', 'badger', '3', X).lines.includes('When the hunter knocks a bird out, they always take 8 turns in a row.'));
+  assert.ok(!/hyena|pounce/i.test(text(R.roleCard('blue', 'badger', '3', X)) + '\n' + text(R.roleCard('red', 'badger', '3', X))));
+  assert.ok(R.roleCard('blue', 'hyena', '3', X).lines.includes('When the hunter knocks a bird out, they always take 8 turns in a row. The hyena can pounce only on the first.'));
   assert.ok(R.roleCard('blue', 'hyena', '3', X).lines[1].includes('12 catches knock you out.'));
   assert.ok(R.roleCard('blue', 'badger', '3', X).lines[1].includes('13 catches knock you out.'));
   assert.equal(R.roleCard('hunter', 'hyena', '5', X).goal, 'You win by knocking out 1 ostrich and 1 vulture.');
@@ -122,7 +133,8 @@ ok('the start-of-game line names only the animals in the game', () => {
 ok('card ids: one per animal, hunter and mode (a bird card only changes with the hunter in 3 players)', () => {
   const id = R.cardId;
   assert.equal(id('blue', null, '2'), 'ostrich__2'); assert.equal(id('blue', 'hyena', '2'), 'ostrich__2');
-  assert.equal(id('blue', 'hyena', '3'), 'ostrich_hyena_3_r5'); assert.equal(id('blue', 'badger', '3'), 'ostrich_badger_3_r5');
+  assert.equal(id('blue', 'hyena', '3'), 'ostrich_hyena_3_r5'); assert.equal(id('blue', 'badger', '3'), 'ostrich_badger_3_r6');
+  assert.equal(id('red', 'hyena', '3'), 'vulture_hyena_3_r5'); assert.equal(id('red', 'badger', '3'), 'vulture_badger_3_r6');
   assert.equal(id('o1', null, '4'), id('o2', null, '4'), 'both 2 vs 2 ostriches share a card');
   assert.equal(id('hunter', 'hyena', '3'), 'hyena__3_r5'); assert.equal(id('hunter', 'badger', '3'), 'badger__3_r5'); assert.equal(id('badger', null, '4h'), 'badger__4h');
   assert.equal(id('hyena', null, '4h'), 'hyena__4h_p2'); assert.equal(id('hunter', 'hyena', '5'), 'hyena__5_p2');
@@ -154,6 +166,29 @@ ok('no visible label repeats its own prefix', () => {
   const KIND = { hyena: { pw: 'Pounce', pwTxt: 'When you miss, move 1 more.' }, badger: { pw: 'Burrow', pwTxt: 'Burrow: stay still to hide.' } };
   for (const k of Object.keys(KIND)) assert.ok(!KIND[k].pwTxt.startsWith(KIND[k].pw + ': ' + KIND[k].pw), KIND[k].pwTxt);
   assert.equal(KIND.badger.pwTxt, 'Burrow: stay still to hide.');
+});
+
+ok('no badger-game card or badger How to play line mentions hyena or pounce', () => {
+  const fs = require('fs');
+  const seats = [
+    ['blue', 'badger', '3'], ['red', 'badger', '3'], ['hunter', 'badger', '3'], ['badger', null, '3'],
+    ['o1', 'badger', '5'], ['v1', 'badger', '5'], ['o2', 'badger', '5'], ['v2', 'badger', '5'], ['hunter', 'badger', '5'],
+  ];
+  for (const [role, kind, mode] of seats) {
+    const c = R.roleCard(role, kind, mode);
+    assert.ok(c, role + ' ' + mode);
+    assert.ok(!/hyena|pounce/i.test(text(c)), `${role}/${kind}/${mode} mentions hyena or pounce: ${text(c)}`);
+  }
+  const badgerHow = R.huntLine('3', 'badger');
+  assert.equal(badgerHow, 'The vulture hunts eggs. The badger hunts birds.');
+  assert.ok(!/hyena|pounce/i.test(badgerHow), 'badger How to play line: ' + badgerHow);
+  assert.ok(!/hyena|pounce/i.test(R.huntLine('5', 'badger')));
+  // The 3-player How to play block is one section for hyena games and badger games. It still states the hyena pounce limit.
+  const html = fs.readFileSync('public/index.html', 'utf8');
+  const block = html.match(/<div class="mrules hidden" data-m="3">[\s\S]*?<\/div>/);
+  assert.ok(block, '3-player How to play section');
+  assert.ok(/hyena or badger/.test(block[0]), 'the 3-player section names both hunters');
+  assert.ok(/The hyena can pounce only on the first\./.test(block[0]), 'shared section keeps the true hyena pounce sentence');
 });
 
 ok('the pounce extra move button says Stay and still sends hstay', () => {
