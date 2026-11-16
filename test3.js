@@ -97,18 +97,15 @@ function atHunter(g, h, o, v) {
   g.phase = 'play'; g.turn = 'hunter'; g.three.h = h.slice(); g.ostrich = o.slice(); g.vulture = v.slice();
   g.three.pounce = false; g.three.sense = false; g.three.extra = false;
 }
-t('3 catches do not win; 4 catches do', () => {
+t('2 catches do not win; 3 catches do', () => {
+  const early = setup('hyena', [5, 2]); atHunter(early, [5, 2], [6, 2], [0, 6]);
+  early.three.birds.red.catches = 1;
+  assert(T.hunterMove(early, [6, 2])); assert.equal(early.phase, 'play', '2 catches are not a win');
   const g = setup('hyena', [5, 2]); atHunter(g, [5, 2], [6, 2], [0, 6]);
-  g.three.birds.red.catches = 1; g.three.birds.blue.catches = 1;
-  assert(T.hunterMove(g, [6, 2])); assert.equal(g.phase, 'play', '3 catches are not a win');
-  assert.equal(g.three.birds.blue.catches, 2); assert.equal(g.three.birds.blue.out, true);
-  assert.equal(g.turn, 'hunter'); assert.equal(g.three.extra, true, 'the knock-out starts the extra turn');
-  g.vulture = [5, 3]; g.three.h = [5, 2]; g.three.pounce = false;
-  assert(T.hunterMove(g, [5, 3]));
+  g.three.birds.red.catches = 2; g.three.birds.red.out = true; g.three.birds.blue.catches = 0;
+  assert(T.hunterMove(g, [6, 2]));
   assert.equal(g.phase, 'over'); assert.equal(g.winner, 'hunter');
-  // With 2 catches per bird, 4 catches also knocks out both birds, so finish prefers that reason.
-  assert.ok(/made 4 catches|knocked out both birds/.test(g.endWhy), g.endWhy);
-  assert.equal(g.three.extra, true); // the game ended on the extra turn; endHunter did not run
+  assert.equal(g.endWhy, 'The hyena made 3 catches.');
 });
 t('after the first knock-out the hyena may still pounce on the first of its two turns', () => {
   const g = setup('hyena', [5, 2]); atHunter(g, [5, 2], [8, 6], [5, 4]);

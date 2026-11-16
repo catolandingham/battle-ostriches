@@ -57,6 +57,7 @@ function catchBird(g, b, back) {
   if (q) { if (b === 'blue') { g.ostrich = q; } else g.vulture = q; } else if (back) back();
   if (t.burrowed && K(t.h) === K(at)) { t.burrowed = false; t.dig = 0; }
   t.lastCatch = { bird: b, at, to: (q || pos(g, b)).slice(), ko: false, seq: ++t.seq, round: g.round };
+  settle(g);
 }
 // --- whose turn: skip birds that are out or knocked back (they lose their next turn) ---
 function ostrichStay(g) { // shot clock ran out or turn lost: the ostrich stays put (no sit, no warmth), still gets hungry

@@ -12,19 +12,19 @@ Standing rules for Battle Ostriches as of `main` on 2026-11-13. A later dated li
 | Automated (a named check exists) | 27 |
 | Judgment only | 21 |
 
-## Needs Brian's cleanup
+## Decided 2026-11-13
 
-These are standing rules that conflict, are stale, or are too vague for a robot to fail on.
+Brian answered the cleanup list. The code and the rulebook now follow these.
 
-1. **Hunter win in a 3-player game: 3 catches or 4.** The 2026-11-07 decision and an older state line say 3 catches. The live code, the role card, and the README use 4 (`CONFIG.hunterGoal['3']` is `catches:4`). The rulebook's "2nd catch knocks a bird out" is a different number (that is the knock-out, not the hunter's win). The code is pinned by `robots/guard-balance.js` so it cannot drift by accident. Brian still has to say which number is the rule.
-2. **How long a big moment lasts.** Decisions through 2026-11-09 say every big scene is 2 seconds. The 2026-11-11 decision says Look out! for 1 second, then the cartoon, then 0.6 seconds per square, then hold until "Tap to go on." The later line should win, and the earlier lines were not updated.
-3. **Kick preview words.** Rulebook 5.2 says the preview tells you the kick may stop early. A 2026-11-07 decision says drop "may stop early".
-4. **Hyena speed in old notes.** One 2026-11-07 decision says the hyena walks 1. Rulebook v2 and the code say walk 2, plus one extra square on a pounce. The walk-1 line is stale.
-5. **"Badger speed boost" is not defined.** The README says not to change it. The decisions say the hidden speed-up was removed, and the badger walks 2 like everyone else. Nothing names a boost number. The guard pins walk 2 and checks that knocking a bird out does not let the badger move farther.
-6. **The state file contradicts itself.** The top still says the badger work and PR #18 are unmerged. Later lines in the same file say those things shipped. Do not treat the top of `STATE-2026-11-08.md` as current.
-7. **The shot clock and rejoin are not in the rulebook.** The clock is 10 seconds (`T3.clockMs`). Hiding it does not stop it (README). While the table is asked to let someone back in, the clock pauses and then continues from the time that was left (`testrejoinclock.js`, PR #34). A person with their token sits back down. After a short grace, someone else can ask, and a person still in the game has to allow it (`e2e-rejoin.js`). The rulebook never mentions this.
-8. **Six, seven, and eight players are not a game.** The rulebook and the lobby stop at 5. A 6th person does not open a 6-player mode (`lobby.js` calls that unsupported).
-9. **Several look rules are real but only a person can judge them.** One look per meaning, no color names, a 1-second read, scenes not squashed, no "Missed." when a stone hits an animal, the carry drawing. A robot can see a crash. It cannot see whether the picture is the one Brian approved.
+1. A 3-player hunter wins at 3 catches. The live setting is `catches:3`.
+2. Big moments use the 2026-11-11 timing: Look out! for 1 second, then the cartoon, then 0.6 seconds per square, then "Tap to go on."
+3. The kick preview does not say "may stop early".
+4. The hyena walks 2, plus 1 more square on a pounce. The old "walks 1" line is marked superseded.
+5. "Badger speed boost" is not a separate rule. The guard locks a walk of 2. Old notes do define a related phrase: a hidden speed-up after a knock-out. The simulations and the 2026-11-07 decisions say that speed-up was removed, and the handover says the same. The README line that says not to change "the badger speed boost" was left as written, because those notes are what the phrase points at.
+6. The state file's opening note says which older "unmerged" paragraphs are history.
+7. The shot clock and rejoin are in rulebook section 13. A classic 2-player game uses the same clock as the bigger games.
+8. Five players is the maximum. Rulebook section 2 says there is no 6, 7, or 8 player game.
+9. The look rules are still judgment only.
 
 ## Standing rules
 
@@ -59,22 +59,22 @@ These are standing rules that conflict, are stale, or are too vague for a robot 
 | R27 | The vulture flies 2. On its own landing it learns whether an egg is on or next to that square, and it finds an egg it lands on. | Rulebook 7.2 | `robots/guard-balance.js` pins fly 2 and smell 1. The yes/no sniff is judgment only. |
 | R28 | The hyena walks 2. If it sensed a bird and did not catch, it may take 1 more square. The overlap of the two readings is the likely area. | Rulebook 7.3 | `testv2.js` (pounce step) |
 | R29 | The badger walks 2 and does not pounce. Staying still buries it. Buried, it sees a bird next to it. Coming up, or a push, brings it out. Under a hyena it may burst and push the hyena 2. | Rulebook 7.4 | `testv2.js` ("a badger does not pounce"). The burst and the announcement are judgment only. |
-| R30 | The badger does not move farther after a bird is knocked out. There is no hidden speed boost. | README ("do not change the badger speed boost"), decisions 2026-11-07 (speed-up removed) | `robots/guard-balance.js` |
+| R30 | The badger walks 2. Knocking a bird out does not let it move farther. There is no separate speed boost. | Decision 2026-11-13, `robots/guard-balance.js` | `robots/guard-balance.js` |
 | R31 | A hunter that moves onto the other hunter pushes it 2. A hyena that walks onto a buried badger shares the square. | Rulebook 8 | Judgment only. `pushHunters` is pinned at 2. The share-the-square case is not one named assertion in this checklist. |
 | R32 | A knocked-out bird is out and gets a read-only view of the whole board. Its side is out only when all of its birds are out. In 2 vs 2 the teammate can still win. | Rulebook 9.1 | Judgment only. |
-| R33 | In a 3-player game the live code says the hunter wins at 4 catches. A 2026-11-07 decision says 3. See cleanup item 1. | `game.js` `CONFIG.hunterGoal`, decision 2026-11-07, README | `robots/guard-balance.js` pins the live value `catches:4`. The conflict is for Brian. |
+| R33 | In a 3-player game the hunter wins at 3 catches in total. | Rulebook 9.2, decision 2026-11-13, `CONFIG.hunterGoal` | `robots/guard-balance.js` |
 | R34 | In 2 vs 2 plus a hunter, the hunter's goal is the first side to meet its goal (one ostrich and one vulture). | Rulebook 9, `CONFIG.hunterGoal['5']` | `robots/guard-balance.js` |
 | R35 | Hunters mode: more knock-outs, then more catches, then a tie. No eggs left while the vulture side is in: the vultures win. An egg alive after round 30 while the ostrich side is in: the ostriches win. Classic: a knocked-out bird ends the game. Time with no goal met is a draw. | Rulebook 9.2 to 9.6 | Judgment only. |
 | R36 | Every phone hears a big event. The square is shown only to someone who can see it. | Rulebook 11 | Judgment only. |
-| R37 | The shot clock is 10 seconds. Hiding the clock does not stop it. | README, `T3.clockMs` | `robots/guard-balance.js` pins 10000. `robots/run.js` checks that a short clock ends a turn with nobody tapping. Hiding the clock is judgment only. |
+| R37 | The shot clock is 10 seconds in every game, including classic 2 players. Hiding the clock does not stop it. | Rulebook 13, README | `robots/guard-balance.js` pins 10000. `robots/run.js` checks that a short clock ends a 2-player turn and a 3-player turn. Hiding the clock is judgment only. |
 | R38 | While the table is asked to let someone rejoin, the shot clock pauses and then continues from the time left. | `testrejoinclock.js`, PR #34 | `testrejoinclock.js` |
 | R39 | Rejoin does not take someone else's seat. Your own token sits you back down. After the grace, a person can ask, and someone still in the game has to allow it. The token is not in the link. | `e2e-rejoin.js`, `testrejoin.js` | `e2e-rejoin.js`. `robots/run.js` checks that the rejoin line appears for a new browser. |
 | R40 | Balance numbers stay put: eggs 3, warmth 15, food 15, stones 1, kick 3, badger kick 2, fly 2, throw 1, smell 1, scramble 2, hunter push 2, leaves and rocks on their fixed squares. | README, `docs/PLAN-2026-11-06.md`, `game.js` `CONFIG` | `robots/guard-balance.js` |
 | R41 | A merge to `main` restarts the live site and ends games in progress. Do not merge during a family game. | README, `docs/project/STATE-2026-11-08.md` | Judgment only. This is a process rule. |
 | R42 | On-screen words are short, do not name a color or a look, and a person should be able to read them in about a second. | Decision 2026-11-07, `docs/reviews/UX-WORDS-AND-VISUALS-2026-11-07.md` | Judgment only. |
 | R43 | "May be here" and "is here" are the same small corner mark, dashed or filled. Yellow means only "you can move here". | Decisions 2026-11-07 and 2026-11-08 | Judgment only. It is a look. |
-| R44 | The kick preview must not say "may stop early". The rulebook still says it does. | Decision 2026-11-07 versus rulebook 5.2 | Judgment only. Cleanup item 3. |
-| R45 | Big moments follow the 2026-11-11 Combined path: Look out! for 1 second, then the cartoon, then 0.6 seconds per square, then "Tap to go on." Older "everything is 2 seconds" lines are stale. | `docs/project/DECISIONS-2026-11-11.md` | Judgment only. Cleanup item 2. |
+| R44 | The kick preview shows direction and distance. It does not say "may stop early". | Rulebook 5.2, decision 2026-11-07 | Judgment only. The live tooltip no longer uses those words. |
+| R45 | Big moments follow the 2026-11-11 path: Look out! for 1 second, then the cartoon, then 0.6 seconds per square, then "Tap to go on." | Rulebook 14, `docs/project/DECISIONS-2026-11-11.md` | Judgment only. |
 | R46 | The ostrich can kick the vulture in every mode, not only hunters. | Decision 2026-11-09 | `testv2.js` kicks a vulture in the classic game. The other modes are judgment only. |
 | R47 | When a stone hits an animal, the game does not say "Missed." | Decision 2026-11-09 | Judgment only. |
 | R48 | There is no 6, 7, or 8 player game. The lobby stops at 5. | Rulebook 2, `lobby.js` | `robots/run.js` (eight browsers, no sixth seat started) |

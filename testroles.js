@@ -132,7 +132,7 @@ ok('card ids: one per animal, hunter and mode (a bird card only changes with the
 
 ok('hunter cards follow the goal number in 3 players; other modes use the approved lines', () => {
   const withGoal = (m, goal) => Object.assign(R.rulesFromModules(), { modes: Object.assign({}, R.rulesFromModules().modes, { [m]: Object.assign({}, R.rulesFromModules().modes[m], { goal }) } ) });
-  assert.equal(R.roleCard('hunter', 'hyena', '3').goal, 'You win at 4 catches.');
+  assert.equal(R.roleCard('hunter', 'hyena', '3').goal, 'You win at 3 catches.');
   assert.equal(R.roleCard('hunter', 'hyena', '3', withGoal('3', { kind: 'catches', n: 7 })).goal, 'You win at 7 catches.');
   assert.equal(R.roleCard('hunter', 'hyena', '5').goal, 'You win by knocking out 1 ostrich and 1 vulture.');
   assert.equal(R.roleCard('hyena', null, '4h').goal, 'Hunters win when both birds are out. You win if you knocked out more birds than the badger.');

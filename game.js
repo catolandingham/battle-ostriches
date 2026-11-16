@@ -17,7 +17,7 @@ const CONFIG = {
   stones: 1,           // stones the vulture can hold; refill by landing on a rock pile
   foods: [[0, 0], [8, 6]],   // fixed food spots (never run out)
   rocks: [[4, 0], [4, 6]],   // fixed rock piles (never run out)
-  hunterGoal: { '3': 'catches:4', '5': 'first' }, // HUNTER_GOAL per one-hunter mode (3 players, 5 = 2 vs 2 + hunter). 'all': knock out every bird. 'first': the first side to meet its goal wins (3 players: the hunter needs one bird; 2 vs 2 + hunter: one ostrich and one vulture). 'catches:N' (3 players): the hunter wins at N catches in total. The words on the hunter cards and the end screen follow this setting.
+  hunterGoal: { '3': 'catches:3', '5': 'first' }, // HUNTER_GOAL per one-hunter mode (3 players, 5 = 2 vs 2 + hunter). 'all': knock out every bird. 'first': the first side to meet its goal wins (3 players: the hunter needs one bird; 2 vs 2 + hunter: one ostrich and one vulture). 'catches:N' (3 players): the hunter wins at N catches in total. Brian, 2026-11-13: 3 catches. The words on the hunter cards and the end screen follow this setting.
   scramble: 2,         // a caught bird is pushed this many squares in a random direction
   pushHunters: 2,      // hunters meeting / a stone: the pushed animal goes this far
 };
@@ -266,6 +266,23 @@ function vultureThrow(g, p, mkW) {
   if (!aliveEggs(g).length) { g.winner = 'red'; g.winBy = 'smashed'; g.phase = 'over'; } else { g.turn = 'blue'; dropCarried(g); }
   return r.result;
 }
+// Shot clock ran out in a classic 2-player game. Same result as the bigger games: the vulture passes, the ostrich stays put.
+function timeout(g) {
+  if (!g || g.phase !== 'play' || g.three || g.hunt || g.team) return false;
+  if (g.turn === 'red') {
+    g.sniff = null;
+    g.lastAction = { type: 'pass', timeout: true };
+    g.turn = 'blue';
+    dropCarried(g);
+    return true;
+  }
+  if (g.turn !== 'blue') return false;
+  g.sitRun = 0; g.sitting = false; g.lastAction = { type: 'stay', timeout: true };
+  if (isFood(g, g.ostrich)) { g.hungerLeft = g.cfg.food; g.lastAction.ate = true; }
+  else if (--g.hungerLeft <= 0) { g.winner = 'red'; g.winBy = 'starved'; g.phase = 'over'; return true; }
+  endRound(g);
+  return true;
+}
 function endRound(g) {
   g.lastCold = [];
   for (const e of aliveEggs(g)) if (g.round - e.lastWarm >= g.cfg.warmth) {
@@ -321,5 +338,5 @@ function sniffAnnounce(v, role) {
 }
 
 const API = { slideN, CONFIG, HUNTER_GOAL, hunterUpAt, scrambleTo, DIRS8, resolveThrow, wrecked, nearLeaf, myTurn, slide, awayFrom, canKick, kickable, kickTargets, kickPlans, kickDone, ostrichKick, newGame, canPlaceEgg, placeEgg, placeOstrich, ostrichMoves, ostrichStep, ostrichSit, canSit, canCarry, mustLeave, onEgg, dropCarried,
-  endRound, walkSquares, smellsEgg, flyTargets, throwTargets, vultureFly, vultureThrow, eggAt, aliveEggs, coldIn, sniffFresh, sniffAnnounce, key, dist, visible, isFood, isRock, parkEliminated, ostrichGuards, foodRoute };
+  endRound, timeout, walkSquares, smellsEgg, flyTargets, throwTargets, vultureFly, vultureThrow, eggAt, aliveEggs, coldIn, sniffFresh, sniffAnnounce, key, dist, visible, isFood, isRock, parkEliminated, ostrichGuards, foodRoute };
 if (typeof module !== 'undefined') module.exports = API; else window.BO = API;

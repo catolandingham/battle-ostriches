@@ -17,7 +17,7 @@ assert.deepEqual(B.CONFIG.foods, [[0, 0], [8, 6]], 'leaf squares');
 assert.deepEqual(B.CONFIG.rocks, [[4, 0], [4, 6]], 'rock piles');
 assert.deepEqual(B.CONFIG.vultureStart, [4, 3], 'vulture start');
 // Live code. A 2026-11-07 decision says 3 catches. That conflict is in docs/RULES-CHECKLIST.md. Do not "fix" it here.
-assert.equal(B.CONFIG.hunterGoal['3'], 'catches:4', '3-player hunter goal');
+assert.equal(B.CONFIG.hunterGoal['3'], 'catches:3', '3-player hunter goal');
 assert.equal(B.CONFIG.hunterGoal['5'], 'first', '5-player hunter goal');
 assert.equal(T.T3.walk, 2);
 assert.equal(H.TH.walk, 2);
