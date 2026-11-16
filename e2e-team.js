@@ -11,8 +11,9 @@ const at = { state: 'attached' };
     p.on('pageerror', e => errs.push(e.message)); return p; };
   const cell = (p, x, y) => p.locator('.cell').nth(y * 9 + x);
   // A setup tap used to go out on a short timer, sometimes before the board
-  // existed and sometimes before the previous egg had landed. The ostrich then
-  // never finished hiding, and the next player's action bar never appeared.
+  // existed and sometimes before the previous egg had landed. The computer
+  // ostrich also hides eggs on a random open square, so a fixed square can
+  // already be taken. Tap a square the board still marks as legal.
   const readSetup = page => page.evaluate(() => {
     const S = UI._S();
     return S && S.h3 ? { left: S.h3.eggsToPlace, step: S.h3.setupStep, phase: S.phase, teamSetup: S.h3.teamSetup } : null;
@@ -26,27 +27,35 @@ const at = { state: 'attached' };
       if (S.phase === 'play' && !S.h3.teamSetup) return true;
       return S.h3.eggsToPlace !== b.left || S.h3.setupStep !== b.step;
     }, before, { timeout: 2500 }).then(() => true).catch(() => false);
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 6; i++) {
       const now = await readSetup(page);
       if (now && ((now.phase === 'play' && !now.teamSetup) || now.left !== before.left || now.step !== before.step)) return;
-      await page.waitForFunction(({ x, y }) => {
+      const idx = await page.evaluate(({ x, y }) => {
         const S = UI._S();
-        if (!S) return false;
-        if (window.CUTAWAYS && CUTAWAYS.busy && CUTAWAYS.busy()) return false;
-        if (document.getElementById('cutaway') || document.getElementById('surprise-go')) return false;
+        if (!S) return -1;
+        if (window.CUTAWAYS && CUTAWAYS.busy && CUTAWAYS.busy()) return -1;
+        if (document.getElementById('cutaway') || document.getElementById('surprise-go')) return -1;
         const card = document.getElementById('rolecard');
-        if (card && !card.classList.contains('hidden')) return false;
-        const el = document.querySelectorAll('#board .cell')[y * (S.cfg ? S.cfg.cols : 9) + x];
-        if (!el) return false;
-        const r = el.getBoundingClientRect();
-        if (r.width < 4) return false;
-        const top = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
-        return !!(top && el.contains(top));
+        if (card && !card.classList.contains('hidden')) return -1;
+        const cols = S.cfg ? S.cfg.cols : 9;
+        const cells = [...document.querySelectorAll('#board .cell')];
+        const open = el => {
+          if (!el || !el.classList.contains('legal')) return false;
+          const r = el.getBoundingClientRect();
+          if (r.width < 4) return false;
+          const top = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+          return !!(top && el.contains(top));
+        };
+        const want = cells[y * cols + x];
+        if (open(want)) return y * cols + x;
+        return cells.findIndex(open);
       }, { x, y });
-      await cell(page, x, y).click();
+      if (idx < 0) { await page.waitForTimeout(150); continue; }
+      await page.locator('#board .cell').nth(idx).click();
       if (await advanced()) return;
     }
-    throw new Error('setup tap did not land at ' + x + ',' + y);
+    const stuck = await readSetup(page);
+    throw new Error('setup tap did not land near ' + x + ',' + y + ' ' + JSON.stringify(stuck));
   };
   const myTurn = page => page.waitForFunction(() => {
     const S = UI._S();
