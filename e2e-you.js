@@ -97,7 +97,8 @@ const PIECE = { ostrich: '.pc.po', vulture: '.pc.pv', hyena: '.pc.ph.mine', badg
   await A4.waitForSelector('#actions.mine', { state: 'attached', timeout: 20000 }); await A4.waitForTimeout(250);
   assert.ok((await pulses(A4)).adds >= 1, 'badger: pulse at turn start'); await A4.waitForTimeout(900); const pb = await pulses(A4); assert.equal(pb.live, 0); assert.ok(pb.lastRem - pb.first <= 1000);
   await A4.locator('#actions button').first().click({ force: true }); // burrow
-  await A4.waitForSelector('.pc.ph.bur', { state: 'attached', timeout: 8000 }); await A4.waitForTimeout(300);
+  await A4.waitForSelector('.pc.ph.bur', { state: 'attached', timeout: 8000 });
+  await A4.waitForFunction(() => { const t = document.querySelector('.youtag'); if (!t) return false; const s = getComputedStyle(t), q = t.getBoundingClientRect(); return s.display !== 'none' && s.visibility !== 'hidden' && +s.opacity > 0.9 && q.width > 4 && q.height > 4; }, null, { timeout: 8000 });
   await check(A4, 'badger', 'burrowed'); await shot(A4, 'badger'); await allThemes([[A4, 'badger']], 'burrowed');
   await A4.context().close(); await Y.context().close();
 
