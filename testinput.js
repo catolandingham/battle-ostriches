@@ -47,10 +47,10 @@ const MODES = [
 
   await ok('a legal-looking square that is not a legal move is refused softly, and a real kick still works after the garbage', async () => {
     const ws = await create({ t: 'create', three: 1, role: 'blue', bots: ['red', 'hunter'], kind: 'hyena' }), room = roomOf(ws.msgs.find(x => x.t === 'joined').code);
-    room.g = three(); const before = JSON.stringify(room.g);
-    ws.send(JSON.stringify({ t: 'act', a: 'kick', p: [8, 6] })); ws.send(JSON.stringify({ t: 'act', a: 'kick', p: 'x' }));
+    room.g = three(); server.turnStamp(room); const before = JSON.stringify(room.g);
+    ws.send(JSON.stringify({ t: 'act', a: 'kick', p: [8, 6], stamp: server.turnStamp(room) })); ws.send(JSON.stringify({ t: 'act', a: 'kick', p: 'x' }));
     await until(() => ws.msgs.filter(x => x.t === 'error' && x.soft).length >= 2, 'two refusals'); assert.equal(JSON.stringify(room.g), before);
-    ws.send(JSON.stringify({ t: 'act', a: 'kick', p: [5, 2] })); await until(() => room.g.lastKick, 'the kick'); assert.equal(room.g.lastKick.who, 'hyena'); ws.close(); });
+    ws.send(JSON.stringify({ t: 'act', a: 'kick', p: [5, 2], stamp: server.turnStamp(room) })); await until(() => room.g.lastKick, 'the kick'); assert.equal(room.g.lastKick.who, 'hyena'); ws.close(); });
 
   console.log(`PASS testinput (${n} groups)`); process.exit(0);
 })().catch(e => { console.error(e); process.exit(1); });
