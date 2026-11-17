@@ -31,6 +31,7 @@ const tok = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
 // The 10s clock still expires the turn when it is hidden. Lobby code can set this at create time via settings.showTimers.
 function timersOn(room) { if (room && room.clock === false) return false; return !(room && room.settings && room.settings.showTimers === false); }
 // A big event is announced to every seat; where it happened goes only to a seat that can see that square.
+// The dig line is the exception: only the badger and a bird that saw the dig get it (Brian, 2026-11-16).
 // popout: the badger came out of its burrow without a catch. Every seat gets the event (seq, round); `seen` says whether this seat can see the badger.
 // how many squares a kick actually moved the animal (0 to 2); the words say "back 2 squares" only when it went that far
 const kickMoved = k => k.moved != null ? k.moved : Math.max(Math.abs(k.to[0] - k.from[0]), Math.abs(k.to[1] - k.from[1]));
@@ -602,11 +603,12 @@ function stamp(room, v, seat) {
     if (room.g.phase !== 'over' && v.kick && !v.kick.to && v.lastAction && v.lastAction.type === 'kick')
       v.lastAction = { ...v.lastAction, to: null };
   }
-  if (v && v.h3 && room && room.g) { // the badger digging in and bursting out (rule 7.4): the line goes to every seat; the mound only to a bird that could see it dig, only while it stays buried
+  if (v && v.h3 && room && room.g) { // the badger digging in and bursting out (rule 7.4): the dig line goes only to the badger and to a bird that saw the dig; the mound only to that bird, only while it stays buried (Brian, 2026-11-16)
     const g = room.g, t = g.three || g.hunt || (g.team && g.h ? g : null), over = g.phase === 'over';
     if (t) { const bur = g.three ? g.three.burrowed : g.hunt ? g.hunt.hs.badger.burrowed : g.h.burrowed, m = t.mound;
-      v.h3.dug = t.dug ? { seq: t.dug.seq, round: t.dug.round } : null; v.h3.mound = !over && bur && m && (m.seenBy || []).includes(seat) ? m.at.slice() : null;
       const isBadger = g.three ? seat === 'hunter' && g.three.kind === 'badger' : g.hunt ? seat === 'badger' : seat === 'hunter' && g.h.kind === 'badger'; // only the badger's own phone learns whether a bird saw it dig (Brian, 2026-11-15)
+      const saw = !!(m && (m.seenBy || []).includes(seat)); // three.js, hunt.js and team.js record who could see the dig
+      v.h3.dug = t.dug && (isBadger || saw) ? { seq: t.dug.seq, round: t.dug.round } : null; v.h3.mound = !over && bur && saw ? m.at.slice() : null;
       v.h3.dugSeen = isBadger && t.dug && m ? (m.seenBy || []).length > 0 : null;
       const bs = g.hunt && g.hunt.burst; v.h3.burst = bs ? { seq: bs.seq, round: bs.round, n: bs.n, to: over || v.god || ['hyena', 'badger'].includes(seat) || HU.seen(g, seat, 'hyena') ? bs.to : null } : null; } }
   if (v && room && room.g) { const g = room.g; v.endWhy = g.phase === 'over' ? g.endWhy || null : null; v.leftName = g.phase === 'over' && g.winBy === 'left' ? (g.leftName || null) : null; v.leftArt = g.phase === 'over' && g.winBy === 'left' ? (g.leftArt || null) : null; v.stoneNote = g.lastStone ? { seq: g.lastStone.seq, text: g.lastStone.text, by: g.lastStone.by, targets: g.lastStone.targets || [], kicker:g.lastStone.kicker||null } : null;
