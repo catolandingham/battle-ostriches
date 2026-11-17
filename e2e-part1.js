@@ -99,7 +99,7 @@ const hint = p => p.evaluate(() => document.getElementById('hint').textContent.t
   // A tap during the short sniff pause is applied when that pause ends, so wait for the hint.
   const far = [E[0] < 4 ? 8 : 0, E[1] < 3 ? 6 : 0]; await cell(V, ...far).click();
   await V.waitForFunction(() => document.getElementById('hint').textContent.trim() === 'Too far.', null, { timeout: 4000 });
-  const fixed = await V.evaluate(() => [...document.querySelectorAll('#board .cell.fix')].map(c => [...c.parentNode.children].indexOf(c))); assert.deepEqual(fixed, [idx(...E)], 'after a wrong tap the found egg pulses');
+  assert.equal(await hint(V), 'Too far.'); const fixed = await V.evaluate(() => [...document.querySelectorAll('#board .cell.fix')].map(c => [...c.parentNode.children].indexOf(c))); assert.deepEqual(fixed, [idx(...E)], 'after a wrong tap the found egg pulses');
   ok('every wrong tap shows the right move (the found egg pulses)');
   await cell(V, ...E).click(); await V.waitForFunction(() => UI._S().turn === 'blue', null, { timeout: 5000 }); ok('a throw at the found egg needs only one tap');
   // --- no stone: rock piles pulse, moves toward the nearest rock are bolder
