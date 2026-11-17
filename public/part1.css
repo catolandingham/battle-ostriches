@@ -103,6 +103,10 @@ html #board .cell.fix{outline:4px solid #fff;outline-offset:-4px;animation:fixou
 /* ===== 8. How to play: pictures of the real marks first, and the whole page scrolls from its top ===== */
 #rules{justify-content:flex-start!important;align-items:center!important;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
 #rules .card{margin:0 auto;flex:none;width:100%}
+#rules .simple-hold{display:none !important}
+#simpleRules p{margin:6px 0 12px}
+#simpleRules h3{margin:14px 0 4px}
+button .hidect{font-weight:800}
 #rules .pics{display:flex;flex-direction:column;gap:10px;margin:6px 0 12px}
 #rules .pic{display:flex;align-items:center;gap:12px;margin:0}
 #rules .pic figcaption{font-weight:800;font-size:15px;line-height:1.2;color:#111;flex:1}
