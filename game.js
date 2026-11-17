@@ -18,7 +18,7 @@ const CONFIG = {
   foods: [[0, 0], [8, 6]],   // fixed food spots (never run out)
   rocks: [[4, 0], [4, 6]],   // fixed rock piles (never run out)
   hunterGoal: { '3': 'all', '5': 'first' }, // HUNTER_GOAL per one-hunter mode (3 players, 5 = 2 vs 2 + hunter). 'all': knock out every bird. 'first': the first side to meet its goal wins (3 players: the hunter needs one bird; 2 vs 2 + hunter: one ostrich and one vulture). 'catches:N' (3 players): the hunter wins at N catches in total. The words on the hunter cards and the end screen follow this setting.
-  scramble: 2,         // a caught bird is pushed this many squares in a random direction
+  scramble: 3,         // a caught bird is set down this many squares away (king-move distance). See relocateCaught.
   pushHunters: 2,      // hunters meeting / a stone: the pushed animal goes this far
 };
 // HUNTER_GOAL(mode) -> { kind: 'all' | 'first' | 'catches', n }
@@ -39,13 +39,35 @@ function hunterUpAt(g, p) {
   return null;
 }
 const DIRS8 = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]];
-// A caught bird scrambles (rule 4.2): pushed along one of the 8 straight lines, chosen at random by the game, among those where it can travel the full 2 squares
-// (the landing square is open: in bounds, not wrecked, no animal that is up); else any line where it can travel 1; else null (the hunter's move is undone instead).
+// An 8-direction push that does not wrap (a badger bursting out when the hyena's arrival direction is unknown).
+// Among the 8 straight lines where the landing square is in bounds and open for the full n squares; else any such line of length 1; else null.
+// A caught bird does not use this. See relocateCaught.
 function scrambleTo(cfg, from, open, n = 2, rnd = Math.random) {
   for (let len = n; len >= 1; len--) {
     const c = DIRS8.map(d => [from[0] + d[0] * len, from[1] + d[1] * len]).filter(q => inB(q, cfg) && open(q));
     if (c.length) return c[Math.floor(rnd() * c.length)];
   }
+  return null;
+}
+// A caught bird is set down on a random open square at king-move distance exactly n (Chebyshev: the same
+// distance walking and the 2-square sense use). The board does not wrap. Only squares inside the rectangle
+// are candidates, which is the same bound scrambleTo already used. The catch square itself is never a landing.
+// If no square at exactly n is open, use the nearest distance above n that has an open square, then the nearest
+// distance below n. Returns null when no other square is open; the caller undoes the move that caught the bird.
+function relocateCaught(cfg, from, open, n = 3, rnd = Math.random) {
+  const buckets = [];
+  let maxD = 0;
+  for (let x = 0; x < cfg.cols; x++) for (let y = 0; y < cfg.rows; y++) {
+    const q = [x, y], d = dist(q, from);
+    if (d < 1 || !open(q)) continue;
+    (buckets[d] || (buckets[d] = [])).push(q);
+    if (d > maxD) maxD = d;
+  }
+  const choose = d => { const c = buckets[d]; return c && c.length ? c[Math.floor(rnd() * c.length)].slice() : null; };
+  const exact = choose(n);
+  if (exact) return exact;
+  for (let d = n + 1; d <= maxD; d++) { const q = choose(d); if (q) return q; }
+  for (let d = n - 1; d >= 1; d--) { const q = choose(d); if (q) return q; }
   return null;
 }
 function newGame(cfg = CONFIG) {
@@ -333,6 +355,6 @@ function outlineSniff(v) {
   return sn;
 }
 
-const API = { slideN, CONFIG, HUNTER_GOAL, hunterUpAt, scrambleTo, DIRS8, resolveThrow, wrecked, nearLeaf, myTurn, slide, awayFrom, canKick, kickable, kickTargets, kickPlans, kickDone, ostrichKick, newGame, canPlaceEgg, placeEgg, placeOstrich, ostrichMoves, ostrichStep, ostrichSit, canSit, canCarry, mustLeave, onEgg, dropCarried,
+const API = { slideN, CONFIG, HUNTER_GOAL, hunterUpAt, scrambleTo, relocateCaught, DIRS8, resolveThrow, wrecked, nearLeaf, myTurn, slide, awayFrom, canKick, kickable, kickTargets, kickPlans, kickDone, ostrichKick, newGame, canPlaceEgg, placeEgg, placeOstrich, ostrichMoves, ostrichStep, ostrichSit, canSit, canCarry, mustLeave, onEgg, dropCarried,
   endRound, walkSquares, smellsEgg, flyTargets, throwTargets, vultureFly, vultureThrow, eggAt, aliveEggs, coldIn, sniffFresh, sniffAnnounce, outlineSniff, key, dist, visible, isFood, isRock, parkEliminated, ostrichGuards, foodRoute };
 if (typeof module !== 'undefined') module.exports = API; else window.BO = API;

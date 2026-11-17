@@ -81,12 +81,12 @@ ok('Kick pushes a vulture 3 squares, wraps around the edge, and stops before a w
   const t = three('badger', [5, 3], [4, 3], [0, 6]); t.turn = 'blue'; assert.ok(T.ostrichKick3(t, [5, 3])); assert.deepEqual(t.three.h, [7, 3], 'the badger goes only 2'); });
 
 // ---- 5 and 6: catches and pushes
-ok('a caught bird scrambles exactly 2 squares in an open direction; no missed turn; the egg drops on the catch square; hunters get the scramble square only through the view rules', () => {
+ok('a caught bird lands exactly 3 squares away on an open square; no missed turn; the egg drops on the catch square; hunters get the landing square only through the view rules', () => {
   const g = three('hyena', [5, 2], [6, 2], [0, 6]); g.carrying = 0; g.eggs[0].pos = null; assert.ok(T.hunterMove(g, [6, 2]));
-  const lc = g.three.lastCatch; assert.equal(lc.ko, false); assert.equal(B.dist(g.ostrich, [6, 2]), 2); assert.equal(g.three.birds.blue.skip, 0, 'no missed turn'); assert.deepEqual(g.eggs[0].pos, [6, 2]); assert.equal(g.carrying, null);
-  const seen = new Set(); for (let i = 0; i < 60; i++) { const h = three('hyena', [5, 2], [6, 2], [0, 6]); assert.ok(T.hunterMove(h, [6, 2])); seen.add(K(h.ostrich)); } assert.ok(seen.size > 3, 'the direction is random'); });
+  const lc = g.three.lastCatch; assert.equal(lc.ko, false); assert.equal(B.dist(g.ostrich, [6, 2]), 3); assert.equal(g.three.birds.blue.skip, 0, 'no missed turn'); assert.deepEqual(g.eggs[0].pos, [6, 2]); assert.equal(g.carrying, null);
+  const seen = new Set(); for (let i = 0; i < 60; i++) { const h = three('hyena', [5, 2], [6, 2], [0, 6]); assert.ok(T.hunterMove(h, [6, 2])); seen.add(K(h.ostrich)); } assert.ok(seen.size > 3, 'the landing square varies'); });
 ok('scramble: never onto a wrecked square or an animal that is up; with no room the hunter goes back', () => {
-  const g = three('hyena', [0, 1], [0, 0], [8, 6]); for (const q of ['2,0', '0,2', '2,2', '1,0', '0,1', '1,1']) g.marks[q] = 'stone'; // every landing square at 1 or 2 from the corner is wrecked
+  const g = three('hyena', [0, 1], [0, 0], [8, 6]); for (let x = 0; x < g.cfg.cols; x++) for (let y = 0; y < g.cfg.rows; y++) if (x || y) g.marks[x + ',' + y] = 'stone'; // every square but the catch square is wrecked, so no distance has an open landing
   const before = g.three.h.slice(); assert.ok(T.hunterMove(g, [0, 0]));
   assert.deepEqual(g.ostrich, [0, 0], 'the bird could not move'); assert.deepEqual(g.three.h, before, 'the hunter that moved goes back to where it started'); });
 ok('Hunters meeting: the mover pushes the other 2; a hyena onto a buried badger shares; if the push cannot move the other, the mover goes back', () => {
