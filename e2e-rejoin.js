@@ -70,11 +70,13 @@ async function clearSeatMemory(page) {
   await A.p.click('button[data-claim="blue"]');
   await A.p.waitForSelector('#claimYes');
   assert.ok(/Rejoin as the ostrich\?/.test(await A.p.textContent('#roomLobby')));
-  assert.ok(/Only pick this if this was you/.test(await A.p.textContent('#roomLobby')));
+  assert.ok(!/Only pick this if this was you/.test(await A.p.textContent('#roomLobby')));
+  assert.equal(await A.p.locator('#roomLobby .statusline').count(), 0, 'the confirm has no body line');
   await shot(A.p, '2p-confirm');
   await A.p.click('#claimYes');
   await A.p.waitForFunction(() => /let you in/.test((document.getElementById('roomLobby') || {}).textContent || ''));
   await V.p.waitForSelector('#rejoinAsk:not(.hidden)');
+  assert.equal(await V.p.evaluate(() => { const p = document.getElementById('rejoinAskBody'); const s = p && getComputedStyle(p); return !p || p.hidden || s.display === 'none' || !p.textContent.trim(); }), true, 'the table ask has no body line');
   await shot(V.p, '2p-approve');
   await V.p.click('#rejoinAskYes');
   await A.p.waitForFunction(() => UI._S() && UI._S().role === 'blue' && document.querySelectorAll('#board .cell').length > 0);
@@ -157,7 +159,8 @@ async function clearSeatMemory(page) {
   const claimSeat = await A4.p.getAttribute('button[data-claim]', 'data-claim');
   await A4.p.click('button[data-claim]');
   await A4.p.waitForSelector('#claimYes');
-  assert.ok(/Only pick this if this was you/.test(await A4.p.textContent('#roomLobby')));
+  assert.ok(!/Only pick this if this was you/.test(await A4.p.textContent('#roomLobby')));
+  assert.equal(await A4.p.locator('#roomLobby .statusline').count(), 0, 'the confirm has no body line');
   await shot(A4.p, 'team-confirm');
   await A4.p.click('#claimYes');
   await V4.p.waitForSelector('#rejoinAsk:not(.hidden)');

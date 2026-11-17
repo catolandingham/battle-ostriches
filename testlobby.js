@@ -308,7 +308,8 @@ t('viewing the lobby never marks or seats anyone', () => {
 t('bench note no longer repeats You\'re in, and offers only offline human seats', () => {
   assert.equal(LB.LATE_NOTE_REJOIN, 'This game already started. Tap your animal to come back.');
   assert.equal(LB.LATE_NOTE, "This game is already running. You'll play in the next one.");
-  assert.equal(LB.REJOIN_WORDS.confirmBody, 'Only pick this if this was you.');
+  assert.equal(LB.REJOIN_WORDS.confirmBody, undefined);
+  assert.equal(LB.REJOIN_WORDS.askBody, undefined);
   assert.equal(LB.REJOIN_WORDS.confirmYes, 'Rejoin');
   assert.equal(LB.REJOIN_WORDS.confirmNo, 'Not me');
   const room = { code: 'AB', g: { phase: 'play' }, flow: 1, players: {

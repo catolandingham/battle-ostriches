@@ -428,16 +428,16 @@ function view(room, hid) {
   };
 }
 // The title "You're in" stays.
-// 2026-11-16 (Brian, 12:47 PM PT): the rejoin prompt is the line below. The Rejoin button, the confirm check, and the nobody-left message are still not approved.
-// waiting / askBody / askYes / askNo are the table-approval lines. They are new and still need his OK.
+// 2026-11-16 (Brian, 12:47 PM PT): the rejoin prompt is "This game already started. Tap your animal to come back."
+// 2026-11-16 (Brian, 4:04 PM PT): no body under the confirm or under the table's ask.
+// Approved as written: "Rejoin as ...", "Rejoin", "Not me", the nobody-left line, "Waiting for someone in the game to let you in.",
+// "Someone wants to rejoin as the ...", "Let them in", and "Not them".
 const LATE_NOTE = "This game is already running. You'll play in the next one.";
 const LATE_NOTE_REJOIN = "This game already started. Tap your animal to come back.";
 const REJOIN_WORDS = {
-  confirmBody: 'Only pick this if this was you.',
   confirmYes: 'Rejoin',
   confirmNo: 'Not me',
   waiting: 'Waiting for someone in the game to let you in.',
-  askBody: 'Only let them in if this was their seat.',
   askYes: 'Let them in',
   askNo: 'Not them',
 };
