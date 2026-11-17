@@ -47,6 +47,43 @@ ok('5p: badger burrows by staying; birds never see a burrowed badger', () => { c
   g.b.o2.pos = [7, 2]; assert.equal(T.hunterSeenBy(g, 'o2'), true); T.hunterStay(g); assert.equal(g.h.burrowed, true, 'one still turn always burrows'); assert.equal(T.hunterSeenBy(g, 'o2'), false); });
 ok('shot clock timeouts: vulture passes, ostrich stays put (no warmth, hungrier), hunter stays', () => { const g = ready(5, 'hyena'); const h = g.b.o1.hunger;
   T.timeout(g); assert.equal(g.turn, 'o1'); T.timeout(g); assert.equal(g.b.o1.hunger, h - 1); assert.deepEqual(g.b.o1.pos, [1, 1]); T.timeout(g); T.timeout(g); assert.equal(g.turn, 'hunter'); T.timeout(g); assert.equal(g.turn, 'v1'); });
+ok('vultures see a carried egg on the ostrich in 5p and 2v2; the hunter view does not change', () => {
+  const S = require('./server.js'); const ws = { readyState: 0, send() {} };
+  const freeze = v => { const c = JSON.parse(JSON.stringify(v)); if (c.h3) delete c.h3.clockLeft; return c; };
+  for (const np of [5, 4]) {
+    const bots = np === 5 ? ['o1', 'o2', 'v2', 'hunter'] : ['o1', 'o2', 'v2'];
+    const { room } = S.createT({ team: np, role: 'v1', bots, kind: 'hyena' }, ws);
+    clearTimeout(room.aiT); room.aiT = 1; room.clock = false;
+    const g = room.g;
+    for (const p of [[2, 1], [2, 3], [1, 1]]) T.place(g, 'o1', p);
+    for (const p of [[6, 1], [6, 3], [7, 1]]) T.place(g, 'o2', p);
+    assert.equal(g.phase, 'play');
+    const hunterBefore = np === 5 ? freeze(S.viewT(room, 'hunter')) : null;
+    g.b.o1.carrying = g.eggs[0].id; g.eggs[0].pos = null;
+    for (const seat of ['v1', 'v2']) {
+      const v = S.viewT(room, seat), o1 = v.h3.pieces.find(p => p.seat === 'o1'), o2 = v.h3.pieces.find(p => p.seat === 'o2');
+      assert.equal(o1 && o1.carrying, true, np + 'p ' + seat + ' sees the egg in Ostrich 1\'s beak');
+      assert.equal(o2 && o2.carrying, false, np + 'p ' + seat + ' does not mark an empty beak');
+      assert.equal(v.eggs, undefined, np + 'p ' + seat + ' still gets no egg list');
+      assert.equal(v.carried, false, np + 'p ' + seat + ' is not itself carrying');
+    }
+    const mate = S.viewT(room, 'o2'), own = S.viewT(room, 'o1');
+    assert.equal(mate.h3.pieces.find(p => p.seat === 'o1').carrying, true, 'the other ostrich still sees it');
+    assert.equal(own.carried, true); assert.equal(own.carrying, g.eggs[0].id);
+    if (np === 5) {
+      const hunterAfter = freeze(S.viewT(room, 'hunter'));
+      assert.deepEqual(hunterAfter, hunterBefore, 'hunter view is unchanged while an ostrich carries');
+      assert.equal(hunterAfter.h3.pieces.length, 0); assert.equal(hunterAfter.carried, false);
+      g.phase = 'over';
+      const overH = S.viewT(room, 'hunter');
+      assert.ok(overH.h3.pieces.length > 0 && overH.h3.pieces.every(p => p.carrying !== true), 'a finished hunter board still has no carry icon');
+      g.phase = 'play';
+    }
+    g.b.v2.out = true; g.b.v2.why = 'caught'; g.b.v2.pos = T.OFF.slice();
+    const dead = S.viewT(room, 'v2');
+    assert.equal(dead.god, true); assert.equal(dead.h3.pieces.find(p => p.seat === 'o1').carrying, true, 'a vulture who is out still sees the beak');
+  }
+});
 ok('server views: vultures see no eggs; ostriches see all eggs; hunter sees no birds; teammates sniff shared', () => {
   const S = require('./server.js'); const ws = { readyState: 0, send() {} };
   const { room } = S.createT({ team: 5, role: 'o1', bots: ['v1', 'v2', 'o2', 'hunter'], kind: 'hyena' }, ws); clearTimeout(room.aiT); room.aiT = 1;

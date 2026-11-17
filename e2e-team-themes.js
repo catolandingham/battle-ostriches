@@ -112,6 +112,100 @@ const THEMES = ['bw', 'classic', 'nature', 'notes', 'golden', 'paper', 'arcade',
     }
   }
   console.log('ok drawings, 14 themes, both phones');
+  // Two of a kind get a number. A lone hunter does not. Every number is the small rounded square at the bottom left.
+  const leaf = g.cfg.foods[0], rock = g.cfg.rocks[0];
+  g.b.o1.pos = [4, 3]; g.b.o1.carrying = g.eggs[0].id; g.eggs[0].pos = null;
+  g.eggs[1].pos = [2, 4]; g.b.o2.pos = [2, 4]; g.b.o2.carrying = null;
+  g.b.v2.pos = leaf.slice();
+  g.b.v1.pos = rock.slice();
+  g.marks = {}; g.marks[rock[0] + ',' + rock[1]] = 'spotted';
+  g.h.burrowed = false; g.h.p = [rock[0], rock[1] + 1];
+  g.turn = 'v2'; room.aiT = 1; server.broadcast(room);
+  const numberCheck = () => {
+    const problems = [];
+    const hit = (a, b) => a.right > b.left && a.left < b.right && a.bottom > b.top && a.top < b.bottom;
+    const shown = el => {
+      if (!el) return false;
+      const s = getComputedStyle(el);
+      if (s.visibility === 'hidden' || s.display === 'none' || +s.opacity === 0) return false;
+      const r = el.getBoundingClientRect();
+      return r.width > 2 && r.height > 2;
+    };
+    const box = el => { const r = el.getBoundingClientRect(); return { left: r.left, right: r.right, top: r.top, bottom: r.bottom, width: r.width }; };
+    const onCell = (el, cell) => { const r = el.getBoundingClientRect(), c = cell.getBoundingClientRect(); return r.left < c.right && r.right > c.left && r.top < c.bottom && r.bottom > c.top; };
+    const badges = [...document.querySelectorAll('#board b.snum, #fx b.snum')].filter(shown);
+    const birds = [...document.querySelectorAll('#board .pc.po, #board .pc.pv')];
+    if (birds.length < 4) problems.push('birds ' + birds.length);
+    if (badges.length !== birds.length) problems.push('numbers ' + badges.length + ' birds ' + birds.length);
+    for (const pc of birds) {
+      const cell = pc.closest('.cell'), cr = cell.getBoundingClientRect();
+      const badge = badges.find(b => onCell(b, cell));
+      if (!badge) { problems.push('no number ' + pc.className); continue; }
+      const br = box(badge);
+      const rad = parseFloat(getComputedStyle(badge).borderTopLeftRadius) || 0;
+      if (!(rad > 0 && rad * 2 < br.width - 1)) problems.push('shape ' + pc.className + ' ' + rad);
+      if (br.width > 14 || br.width < 8) problems.push('size ' + pc.className + ' ' + Math.round(br.width));
+      if (br.left > cr.left + cr.width * 0.42 || br.top < cr.top + cr.height * 0.4) problems.push('place ' + pc.className);
+      if (br.left < cr.left + 3 || br.bottom > cr.bottom - 3) problems.push('outside frame ' + pc.className);
+      if (document.documentElement.dataset.theme === 'bw') {
+        const text = (badge.textContent || '').trim();
+        if (!text) problems.push('empty number ' + pc.className);
+        const cs = getComputedStyle(badge);
+        const lum = c => { const m = String(c).match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/); if (!m) return null; const f = v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }; return 0.2126 * f(+m[1]) + 0.7152 * f(+m[2]) + 0.0722 * f(+m[3]); };
+        const a = lum(cs.color), b = lum(cs.backgroundColor);
+        const ratio = a == null || b == null ? 0 : (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+        if (ratio < 4.5) problems.push('contrast ' + ratio.toFixed(2) + ' ' + cs.color + ' on ' + cs.backgroundColor + ' ' + pc.className);
+      }
+      const img = [...document.querySelectorAll('img.aimg')].filter(shown).find(im => onCell(im, cell) && (pc.classList.contains('carrying') ? im.classList.contains('aimg-ostrich-carry') : true));
+      if (img) {
+        const ir = box(img);
+        const faceBottom = ir.top + (ir.bottom - ir.top) * 0.3;
+        const face = { left: ir.left, right: ir.right, top: ir.top, bottom: faceBottom };
+        if (hit(br, face)) problems.push('covers face ' + pc.className);
+        if (pc.classList.contains('carrying')) {
+          const egg = { left: ir.left + ir.width * 0.42, right: ir.left + ir.width * 0.78, top: ir.top + (ir.bottom - ir.top) * 0.46, bottom: ir.top + (ir.bottom - ir.top) * 0.8 };
+          if (hit(br, egg)) problems.push('covers egg');
+        }
+      }
+      for (const mark of cell.querySelectorAll('.cmark.cm-egg, .ic-food, .ic-rock')) {
+        if (shown(mark) && hit(br, box(mark))) problems.push('covers mark ' + mark.className);
+      }
+    }
+    const hunter = document.querySelector('#board .pc.ph');
+    if (hunter) {
+      const hc = hunter.closest('.cell');
+      if (badges.some(b => onCell(b, hc))) problems.push('lone hunter has a number');
+    }
+    return problems;
+  };
+  for (const theme of THEMES) {
+    for (const [page, who] of [[V, 'vulture'], [A, 'ostrich']]) {
+      await page.evaluate(t => THEME.set(t), theme);
+      await page.waitForFunction(() => document.querySelectorAll('#board .pc.po, #board .pc.pv').length >= 4 && !!document.querySelector('#board .pc.po.carrying'));
+      await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+      const got = await page.evaluate(numberCheck);
+      assert.deepEqual(got, [], who + ' numbers ' + theme + ' ' + JSON.stringify(got));
+    }
+  }
+  console.log('ok numbers, 14 themes, both phones');
+  // A lone bird of its kind has no number: 2-player ostrich and vulture.
+  const P2 = await mk();
+  await P2.goto(U);
+  await P2.evaluate(() => UI.open({ t: 'create', role: 'red', ai: 'normal', showTimers: false }));
+  await P2.waitForFunction(() => { const S = UI._S(); return S && S.role === 'red'; });
+  const room2 = [...server.rooms.values()].find(r => r.g && !r.team && !r.three && !r.hunt);
+  clearTimeout(room2.aiT); room2.aiT = 1; room2.clock = false;
+  const g2 = room2.g;
+  g2.phase = 'play'; g2.turn = 'red'; g2.round = 2;
+  g2.ostrich = [4, 3]; g2.vulture = [1, 5]; g2.carrying = 0;
+  g2.eggs = [{ id: 0, pos: null, alive: true, lastWarm: 1 }, { id: 1, pos: [0, 1], alive: true, lastWarm: 1 }, { id: 2, pos: [8, 4], alive: true, lastWarm: 1 }];
+  g2.lastAction = { type: 'stay' };
+  server.broadcast(room2);
+  await P2.waitForFunction(() => !!document.querySelector('#board .pc.po.carrying') && !!document.querySelector('#board .pc.pv'));
+  const lone = await P2.evaluate(() => document.querySelectorAll('#board b.snum, #fx b.snum').length);
+  assert.equal(lone, 0, '2-player birds have no number');
+  console.log('ok lone birds have no number');
+  g.b.o1.carrying = null; g.eggs[0].pos = [0, 3]; g.h.burrowed = true; g.h.p = [8, 6]; g.marks = {}; room.aiT = 1; server.broadcast(room);
   // Kick: Ostrich 1 pushes Vulture 1. Both phones must show a bird drawing in the cartoon or the slide.
   g.b.o1.pos = [2, 2]; g.b.v1.pos = [3, 2]; g.b.o2.pos = [7, 1]; g.b.v2.pos = [7, 5];
   g.turn = 'o1'; g.b.o1.carrying = null; g.phase = 'play';
