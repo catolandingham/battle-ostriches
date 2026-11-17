@@ -1,11 +1,14 @@
 // The badger's sayings play in their own bubble: each one shows during the turn it was queued on,
 // including a repeat of the same words, and a saying whose turn has passed is dropped.
 // node testbadgerbubble.js
-const assert = require('assert'), BL = require('./public/badgerlines'), { create, holdMs } = require('./public/badger-bubble');
-const quote = BL.LINES.firstBurrow;
+const assert = require('assert'), BL = require('./public/badgerlines'), { create, holdMs, words } = require('./public/badger-bubble');
+const lines = Object.values(BL.LINES).flat();
+const longest = lines.reduce((a, b) => words(b) > words(a) ? b : a);
+assert.equal(longest, BL.LINES.firstBurrow, 'the Guinness line is the longest saying');
+assert.equal(words(longest), 24);
 assert.equal(holdMs("Badger doesn't care."), 1000, 'a short saying is about 1s');
-assert.equal(holdMs(quote), 7200, 'the Guinness line gets reading time and does not block anything else');
-assert.ok(holdMs(quote) > 1000);
+assert.equal(holdMs(longest), 24 * 300, 'the longest line stays up 0.3s a word, long enough to read');
+assert.ok(holdMs(longest) > holdMs("Badger doesn't care."));
 
 let now = 0, timers = [], id = 0, shown = [], hidden = [];
 function tick(ms) {
@@ -63,7 +66,7 @@ const turn = (name, extra) => ({ round: 3, turn: name, h3: extra ? { extra: true
   const s = turn('hunter');
   b.note(s);
   b.add('Look at this nasty badass.', s);
-  b.add(quote, s);
+  b.add(longest, s);
   tick(0);
   assert.equal(b.state().active.text, 'Look at this nasty badass.');
   b.note(turn('red'));
@@ -71,7 +74,7 @@ const turn = (name, extra) => ({ round: 3, turn: name, h3: extra ? { extra: true
   assert.equal(b.state().pending.length, 0);
   tick(20000);
   assert.deepEqual(shown, ['Look at this nasty badass.'], 'the Guinness line never appears after the turn');
-  assert.equal(b.add(quote, s), false, 'a late add for the old turn is refused');
+  assert.equal(b.add(longest, s), false, 'a late add for the old turn is refused');
 }
 
 // An extra move is its own turn key, so a saying from the first step does not spill into it.

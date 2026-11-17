@@ -221,18 +221,24 @@ function badgerSquare(S){if(!S)return null;const h=S.h3||{},kind=S.role==='hunte
 // Sit the bubble beside the badger's square when this phone can already see that square. Never on top of a piece.
 // If it cannot sit clear of the pieces, it goes between the status line and the board, which names no square.
 function placeBubble(el,S){const stage=document.getElementById('stage'),board=document.getElementById('board'),app=document.getElementById('app');
- const off=()=>{if(app&&stage&&el.parentNode!==app)app.insertBefore(el,stage);el.classList.add('offboard');el.style.left='';el.style.top='';};
+ const wide=()=>{const w=app?Math.max(140,app.clientWidth-16):280;el.style.width=w+'px';el.style.maxWidth=w+'px';};
+ const off=()=>{if(app&&stage&&el.parentNode!==app)app.insertBefore(el,stage);el.classList.add('offboard');el.style.left='';el.style.top='';wide();};
  if(!stage||!board||!S||!S.cfg){off();return;}
+ off();
+ // A long saying needs the full phone width. It stays under the hint, where it can wrap without covering that text or a piece.
+ if(el.getBoundingClientRect().height>64)return;
  const p=badgerSquare(S),cell=p?board.children[p[1]*S.cfg.cols+p[0]]:null;
- if(!cell){off();return;}
+ if(!cell)return;
  if(el.parentNode!==stage)stage.appendChild(el);
- el.classList.remove('offboard');el.style.left='0px';el.style.top='0px';el.style.maxWidth=Math.max(96,stage.clientWidth-8)+'px';
+ el.classList.remove('offboard');
+ const room=Math.max(120,Math.min(stage.clientWidth-8,220));
+ el.style.width=room+'px';el.style.maxWidth=room+'px';el.style.left='0px';el.style.top='0px';
  const sr=stage.getBoundingClientRect(),br=el.getBoundingClientRect(),cr=cell.getBoundingClientRect();
- const slot=document.getElementById('msgslot'),srSlot=slot&&slot.getBoundingClientRect();
+ const slot=document.getElementById('hint')||document.getElementById('msgslot'),srSlot=slot&&slot.getBoundingClientRect();
  const pieces=[...board.querySelectorAll('.pc')].map(n=>n.getBoundingClientRect());
  const hits=(x,y)=>{const box={l:x,t:y,r:x+br.width,b:y+br.height};
   if(box.l<sr.left+1||box.r>sr.right-1||box.t<sr.top+1||box.b>sr.bottom-1)return true;
-  if(srSlot&&box.l<srSlot.right&&box.r>srSlot.left&&box.t<srSlot.bottom&&box.b>srSlot.top)return true;
+  if(srSlot&&box.l<srSlot.right-1&&box.r>srSlot.left+1&&box.t<srSlot.bottom-1&&box.b>srSlot.top+1)return true;
   return pieces.some(pc=>box.l<pc.right-0.5&&box.r>pc.left+0.5&&box.t<pc.bottom-0.5&&box.b>pc.top+0.5);};
  const cx=cr.left+cr.width/2-br.width/2,spots=[];
  spots.push([cx,cr.top-br.height-3],[cx,cr.bottom+3]);
