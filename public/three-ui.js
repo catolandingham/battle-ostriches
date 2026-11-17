@@ -146,8 +146,10 @@ function warnNear(S,board,prev){if(!window.BORing)return;if(!S||S.phase!=='play'
  // Look out! is a 1s beat after a hit: no "X near!" on that state, or on a
  // redraw during the beat. Remember who is already seen so the line does not
  // pop the moment the beat ends and cover the real event line.
+ // A kick whose hunter is already outside this phone's sight does not say "near".
  const pol=prev&&window.SURPRISE&&SURPRISE.policy?SURPRISE.policy(S,prev):null;
  const now=BORing.seenHunterKinds(S);
+ if(pol&&pol.skipNear){nearSeen=now.slice();if(window.STATUS_QUEUE&&STATUS_QUEUE.drop)STATUS_QUEUE.drop(isNearLine);document.querySelectorAll('#msgslot .h3pop.near,#msgslot .near').forEach(el=>el.remove());return;}
  if((pol&&pol.lookout)||Date.now()<lookoutUntil){nearSeen=now.slice();return;}
  const was=nearSeen;nearSeen=now.slice();
  const added=was?BORing.hunterAlerts(was,now):now;

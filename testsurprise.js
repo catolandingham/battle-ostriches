@@ -1,5 +1,5 @@
 // Combined surprise-moment policy: who is affected, Look out!, motion timing, and the
-// 8s tap-hold cap. The 10s shot clock must not run during that hold.
+// reading pause that replaced the tap. The 10s shot clock must not run during that pause.
 process.env.PORT = '0'; process.env.BO_NOSTORE = '1'; process.env.BO_BOTMS = '900000'; process.env.BO_CLOCKMS = '10000';
 const assert = require('assert');
 const SUR = require('./public/surprise');
@@ -13,11 +13,11 @@ const { make } = require('./tests/hunter-fixtures');
 assert.equal(SUR.LOOKOUT_MS, 1000);
 assert.equal(SUR.CARTOON_MS, 2000);
 assert.equal(SUR.STEP_MS, 600);
-assert.equal(SUR.HOLD_CAP_MS, 8000);
+assert.equal(SUR.HOLD_CAP_MS, undefined);
 assert.equal(SUR.WORD_MS, 300);
 assert.equal(SUR.MIN_LINE_MS, 1000);
 assert.equal(SUR.LOOKOUT_LINE, 'Look out!');
-assert.equal(SUR.GO_LINE, 'Tap to go on.');
+assert.equal(SUR.GO_LINE, undefined);
 assert.equal(SUR.wordCount('The ostrich kicked you 3 squares!'), 6);
 assert.equal(SUR.holdFor('Go.'), 1000, 'short lines still get a 1s floor, not a flash');
 assert.equal(SUR.holdFor('The ostrich kicked you 3 squares!'), 6 * 300);
@@ -42,9 +42,10 @@ function pol(f, prev, seat) { return SUR.policy(f.view(seat), prev[seat]); }
   assert.ok(!hun || (!hun.lookout && !hun.affected), 'far hunter is not the affected player');
   assert.equal(red.motionDelay, SUR.LOOKOUT_MS + SUR.CARTOON_MS);
   assert.ok(red.motionMs >= SUR.STEP_MS, 'real motion is 0.6s per square');
-  assert.equal(red.holdCap, 8000);
+  assert.equal(red.readMs, SUR.holdFor(red.line));
+  assert.ok(red.readMs < 8000, 'the reading pause replaced the 8s tap');
   assert.equal(red.animMs, SUR.LOOKOUT_MS + SUR.CARTOON_MS + red.motionMs);
-  assert.equal(SUR.clockDelayMs(red, { isCurrent: true, seesEvent: true }), red.animMs + 8000);
+  assert.equal(SUR.clockDelayMs(red, { isCurrent: true, seesEvent: true }), red.animMs + red.readMs);
   assert.equal(SUR.clockDelayMs(blue, { isCurrent: true, seesEvent: true }), blue.animMs + SUR.MIN_LINE_MS);
   assert.equal(SUR.clockDelayMs(red, { isBot: true, isCurrent: true, seesEvent: true }), 0, 'bots never delay the clock');
   assert.equal(SUR.clockDelayMs(null, { isCurrent: true }), 0);
@@ -189,7 +190,8 @@ for (const mode of ['3p', 'Hunters', '5p']) {
   const delay = S.clockDelayFor(f.room, S.view3, turn);
   const polNow = SUR.policy(f.view(turn), prev[turn]);
   if (polNow && polNow.affected) {
-    assert.equal(delay, polNow.animMs + SUR.HOLD_CAP_MS, 'affected current player: animation + 8s cap');
+    assert.equal(delay, polNow.animMs + polNow.readMs, 'affected current player: animation + reading pause');
+    assert.ok(polNow.readMs < 8000 && delay < polNow.animMs + 8000, 'no 8s tap cap on the clock');
   } else if (polNow && polNow.ev) {
     assert.equal(delay, polNow.animMs + SUR.MIN_LINE_MS, 'current viewer who was not hit: animation + 1s line floor');
   } else {
@@ -227,7 +229,8 @@ function stop(room) { clearTimeout(room.clockT); clearTimeout(room.aiT); }
   assert.ok(T.hunterMove(g, [4, 3]), 'hyena catches the ostrich');
   assert.notEqual(g.turn, 'blue', 'the vulture moves before the caught ostrich');
   S.broadcast(f.room);
-  assert.ok(f.room.holdUntil && f.room.holdUntil.blue > Date.now() + 8000, 'the ostrich hold is remembered');
+  assert.ok(f.room.holdUntil && f.room.holdUntil.blue > Date.now() + 1000, 'the ostrich hold is remembered');
+  assert.ok(f.room.holdUntil.blue < Date.now() + 8000, 'the ostrich hold is the reading pause, not an 8s tap');
   assert.ok(!f.room.holdUntil.red, 'a bot in between takes no hold');
   assert.equal(g.turn, 'red');
   assert.ok(T.timeout(g));
@@ -250,7 +253,8 @@ function stop(room) { clearTimeout(room.clockT); clearTimeout(room.aiT); }
   assert.ok(T.hunterMove(g, [4, 3]), 'hyena catches the vulture on the first of two turns');
   assert.equal(g.three.extra, true); assert.equal(g.turn, 'hunter');
   S.broadcast(f.room);
-  assert.ok(f.room.holdUntil && f.room.holdUntil.red > Date.now() + 8000, 'the vulture hold survives the extra turn');
+  assert.ok(f.room.holdUntil && f.room.holdUntil.red > Date.now() + 1000, 'the vulture hold survives the extra turn');
+  assert.ok(f.room.holdUntil.red < Date.now() + 8000, 'the vulture hold is not an 8s tap');
   assert.ok(T.hunterStay(g));
   assert.equal(g.turn, 'red');
   S.broadcast(f.room);
@@ -334,6 +338,123 @@ for (const mode of ['Hunters', '5p']) {
   stop(f.room);
 }
 
+// A 3-square kick of the hyena: reading pause is 0.3s a word, total about 6.6s.
+// The same pause replaces the tap on every other surprise that used to wait for it.
+{
+  const f = make(S, '3p'), g = f.g;
+  g.turn = 'blue'; g.ostrich = [3, 3]; g.vulture = [0, 6]; g.three.h = [4, 3]; g.three.kind = 'hyena';
+  const prev = shot(f);
+  assert.ok(T.ostrichKick3(g, [4, 3]));
+  const hit = pol(f, prev, 'hunter');
+  assert.equal(hit.line, 'The ostrich kicked you 3 squares!');
+  assert.equal(hit.readMs, 1800);
+  assert.equal(hit.motionMs, 3 * SUR.STEP_MS);
+  assert.equal(hit.animMs, SUR.LOOKOUT_MS + SUR.CARTOON_MS + hit.motionMs);
+  assert.equal(hit.animMs + hit.readMs, 6600);
+  assert.equal(SUR.clockDelayMs(hit, { isCurrent: true, seesEvent: true }), 6600);
+  assert.equal(hit.lineHold, SUR.CARTOON_MS + hit.motionMs + hit.readMs);
+}
+const P = require('./public/push-motion');
+{
+  const f = make(S, '3p'), g = f.g;
+  g.turn = 'blue'; g.ostrich = [3, 3]; g.vulture = [7, 5]; g.three.h = [4, 3]; g.three.kind = 'hyena';
+  const prev = shot(f);
+  assert.ok(T.ostrichKick3(g, [4, 3]), 'kick the hyena east');
+  assert.deepEqual(g.three.h, [7, 3], 'hyena lands 3 squares east');
+  const watch = f.view('red'), kickr = f.view('blue'), hit = f.view('hunter');
+  assert.equal(B.dist(g.vulture, g.three.h), 2, 'the watcher is 2 squares from the landing');
+  assert.deepEqual(watch.kick.to, [7, 3], 'landing is inside sight, so the server sends it');
+  assert.ok(watch.kick.trail.some(p => p == null), 'squares outside sight stay null');
+  assert.ok(!watch.kick.trail.some(p => p && B.dist(g.vulture, p) > 2), 'the trail does not grow past sight');
+  const wp = SUR.policy(watch, prev.red);
+  assert.ok(wp.bystander && wp.watchSlide && !wp.skipSlide && !wp.skipNear, 'a watcher who can still see the hunter plays the slide');
+  assert.equal(wp.motionDelay, 0, 'the watcher slide does not wait for the cartoon');
+  assert.ok(wp.motionMs > 0);
+  const ev = P.events(watch, prev.red).filter(e => e.key === 'hyena' || e.key === watch.kick.key);
+  assert.equal(ev.length, 1, 'one slide, taken from the redacted trail');
+  assert.deepEqual(ev[0].points, watch.kick.trail);
+  const kp = SUR.policy(kickr, prev.blue), hp = SUR.policy(hit, prev.hunter);
+  assert.equal(kp.motionDelay, SUR.CARTOON_MS, 'the kicker still waits for the cartoon');
+  assert.equal(hp.motionDelay, SUR.LOOKOUT_MS + SUR.CARTOON_MS, 'the kicked hunter still gets Look out! and the cartoon');
+  assert.ok(!kp.skipSlide && !hp.skipSlide);
+}
+{
+  const f = make(S, '3p'), g = f.g;
+  g.turn = 'blue'; g.ostrich = [3, 3]; g.vulture = [0, 0]; g.three.h = [4, 3]; g.three.kind = 'hyena';
+  const prev = shot(f);
+  assert.ok(T.ostrichKick3(g, [4, 3]));
+  const watch = f.view('red');
+  assert.equal(watch.kick.to, null, 'a far watcher is not told the landing');
+  assert.ok(watch.kick.trail.every(p => p == null), 'a far trail is fully redacted');
+  const wp = SUR.policy(watch, prev.red);
+  assert.ok(wp.skipSlide && wp.skipNear, 'hunter already out of sight: skip the slide and the near line');
+  assert.equal(wp.motionDelay, 0);
+  assert.equal(wp.motionMs, 0);
+  assert.deepEqual(P.events(watch, prev.red).filter(e => e.key === 'hyena' || e.key === watch.kick.key), []);
+  // The view is unchanged by the client. Hidden steps are still hidden.
+  assert.ok(watch.kick.trail.every(p => p == null));
+  assert.notDeepEqual(watch.kick.trail, f.view('blue').kick.trail);
+}
+{
+  const f = make(S, '3p'), g = f.g;
+  g.turn = 'blue'; g.ostrich = [3, 3]; g.vulture = [4, 5]; g.three.h = [4, 3]; g.three.kind = 'hyena';
+  const prev = shot(f);
+  assert.ok(T.ostrichKick3(g, [4, 3]));
+  const watch = f.view('red');
+  assert.equal(watch.kick.to, null, 'landing is outside this watcher');
+  assert.ok(watch.kick.trail.some(p => p && p[0] >= 0), 'part of the path was inside sight');
+  assert.ok(watch.kick.trail.some(p => p == null), 'the rest stays null');
+  const wp = SUR.policy(watch, prev.red);
+  assert.ok(wp.skipSlide && wp.skipNear, 'once the hunter has left sight, do not replay the path');
+  assert.deepEqual(P.events(watch, prev.red).filter(e => e.key === 'hyena' || e.key === watch.kick.key), []);
+  assert.ok(watch.kick.trail.every(p => p == null || B.dist([4, 5], p) <= 2));
+}
+
+// Every surprise that used to wait for a tap now uses the reading pause instead.
+{
+  const kick = SUR.policy(
+    { role: 'hunter', kind: 'hyena', phase: 'play', h3: { mySeat: 'hunter', kind: 'hyena' }, kick: { seq: 1, who: 'hyena', by: 'blue', target: 'hyena', moved: 3, to: [7, 3] } },
+    { role: 'hunter', kind: 'hyena', phase: 'play', h3: { mySeat: 'hunter', kind: 'hyena' }, kick: null });
+  assert.equal(kick.line, 'The ostrich kicked you 3 squares!');
+  assert.equal(kick.readMs, 1800);
+  const caught = SUR.policy(
+    { role: 'blue', phase: 'play', h3: { mySeat: 'blue', lastCatch: { seq: 2, bird: 'blue', by: 'hyena', at: [3, 3], to: [3, 5], ko: false } } },
+    { role: 'blue', phase: 'play', h3: { mySeat: 'blue' } });
+  assert.equal(caught.line, 'You were caught! You fled 2 squares.');
+  assert.equal(caught.readMs, SUR.holdFor(caught.line));
+  assert.equal(SUR.clockDelayMs(caught, { isCurrent: true, seesEvent: true }), caught.animMs + caught.readMs);
+  const ko = SUR.policy(
+    { role: 'red', phase: 'play', h3: { mySeat: 'red', kind: 'hyena', ko: 2, birds: { red: { catches: 2 } }, lastCatch: { seq: 3, bird: 'red', by: 'hyena', ko: true, at: [4, 3] } } },
+    { role: 'red', phase: 'play', h3: { mySeat: 'red' } });
+  assert.equal(ko.line, 'The hyena knocked you out.');
+  assert.equal(ko.readMs, SUR.holdFor(ko.line));
+  const stone = SUR.policy(
+    { role: 'blue', phase: 'play', h3: { mySeat: 'blue' }, stoneNote: { seq: 4, by: 'red', targets: ['ostrich'], text: 'A stone hit the ostrich!' } },
+    { role: 'blue', phase: 'play', h3: { mySeat: 'blue' }, stoneNote: null });
+  assert.ok(stone.affected && stone.line, 'a stone still has a result line');
+  assert.equal(stone.readMs, SUR.holdFor(stone.line));
+  assert.ok(/stone/i.test(stone.line));
+  const smash = SUR.policy(
+    { role: 'blue', phase: 'play', h3: { mySeat: 'blue' }, smashNote: { seq: 5, by: 'red', owner: 'blue' } },
+    { role: 'blue', phase: 'play', h3: { mySeat: 'blue' }, smashNote: null });
+  assert.equal(smash.line, 'The vulture smashed your egg!');
+  assert.equal(smash.readMs, SUR.holdFor(smash.line));
+  const burst = SUR.policy(
+    { role: 'hunter', kind: 'hyena', phase: 'play', h3: { mySeat: 'hyena', kind: 'hyena', burst: { seq: 6, n: 2, to: [5, 3], trail: [[3, 3], [4, 3], [5, 3]] } } },
+    { role: 'hunter', kind: 'hyena', phase: 'play', h3: { mySeat: 'hyena', kind: 'hyena' } });
+  assert.equal(burst.line, 'The badger burst out and shoved you 2 squares!');
+  assert.equal(burst.readMs, SUR.holdFor(burst.line));
+  const shove = SUR.policy(
+    { role: 'hunter', kind: 'badger', phase: 'play', h3: { mySeat: 'badger', kind: 'badger', rival: { seq: 7, by: 'hyena', to: [6, 3], trail: [[4, 3], [5, 3], [6, 3]] } } },
+    { role: 'hunter', kind: 'badger', phase: 'play', h3: { mySeat: 'badger', kind: 'badger' } });
+  assert.equal(shove.line, 'The hyena shoved you!');
+  assert.equal(shove.readMs, SUR.holdFor(shove.line));
+  for (const p of [kick, caught, ko, stone, smash, burst, shove]) {
+    assert.ok(p.affected && p.readMs >= 1000 && p.readMs < 8000, p.ev.event + ' uses a reading pause');
+    assert.equal(SUR.clockDelayMs(p, { isCurrent: true, seesEvent: true }), p.animMs + p.readMs);
+  }
+}
+
 S.close();
-console.log('PASS surprise: who is affected, Look out, 8s cap, clock hold, hidden redaction, wrap/team');
+console.log('PASS surprise: who is affected, Look out, reading pause, watcher slide, clock hold, hidden redaction, wrap/team');
 process.exit(0);

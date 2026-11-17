@@ -22,8 +22,11 @@
  function events(s,prev){if(!prev||!s.cfg||!(s.phase==='play'||s.phase==='over'&&prev.phase==='play'))return [];const out=[],a=positions(prev),b=positions(s),h=s.h3||{},old=prev.h3||{};
   const add=(key,from,to,wrap,max)=>{const points=path(s.cfg,from,to,wrap,max);if(points.length>1&&!out.some(e=>e.key===key))out.push({key,points});};
   const lc=h.lastCatch;if(s.role!=='hunter'&&fresh(lc,old.lastCatch)&&!lc.ko&&valid(lc.at)&&valid(lc.to))add(lc.bird,lc.at,lc.to,false,2);
-  if(fresh(s.kick,prev.kick)&&s.kick.trail&&s.kick.trail.some(valid)&&s.kick.trail.length>1)out.push({key:s.kick.key,points:s.kick.trail});
-  if(fresh(s.kick,prev.kick)&&valid(s.kick.to))for(const key in b)if(same(b[key],s.kick.to)&&valid(a[key]))add(key,a[key],b[key],true,s.kick.moved||3);
+  // A watcher whose hunter is already out of sight does not get a slide. The
+  // trail itself is never extended: points come only from the redacted view.
+  const skipKick=!!(root.SURPRISE&&SURPRISE.skipKickSlide&&SURPRISE.skipKickSlide(s,prev));
+  if(!skipKick&&fresh(s.kick,prev.kick)&&s.kick.trail&&s.kick.trail.some(valid)&&s.kick.trail.length>1)out.push({key:s.kick.key,points:s.kick.trail});
+  if(!skipKick&&fresh(s.kick,prev.kick)&&valid(s.kick.to))for(const key in b)if(same(b[key],s.kick.to)&&valid(a[key]))add(key,a[key],b[key],true,s.kick.moved||3);
   if(fresh(h.rival,old.rival)&&h.rival.trail&&h.rival.trail.some(valid)&&h.rival.trail.length>1)out.push({key:h.rival.by==='badger'?'hyena':'badger',points:h.rival.trail});
   if(fresh(h.rival,old.rival)&&valid(h.rival.to)){const key=h.rival.by==='badger'?'hyena':'badger';add(key,a[key],h.rival.to,false,2);}
   if(fresh(h.burst,old.burst)&&h.burst.trail&&h.burst.trail.some(valid)&&h.burst.trail.length>1)out.push({key:'hyena',points:h.burst.trail});
