@@ -204,7 +204,7 @@ function outBanner(S,prev){const birds=S.h3.birds;if(!birds)return;
  if(outNote&&Date.now()<outNote.until)noteBanner('no',outNote.txt);}
 // The badger's quotes (public/badgerlines.js): one line at a time in their own bubble near the badger's square
 // (about 1s, or 0.3s a word when the line is longer). The bubble is not in the board, so a redraw does not wipe it,
-// and it is not the status line. A saying whose turn has passed is dropped. Who may see each line lives in badgerlines.js.
+// and it is not the status line. A saying already queued still plays if the turn changes first. A new saying is only taken for the turn on screen now. Who may see each line lives in badgerlines.js.
 const BL=window.BadgerLines;let bPicker=BL.createPicker(),bLastS=null,bubbleState=null;
 const winNote=S=>{const t=BL.winLine(S);return t?`<p class="badgerwin">${t}</p>`:'';};
 const bubble=window.BADGER_BUBBLE.create({

@@ -1,8 +1,10 @@
 // The badger's sayings, in their own bubble. They never enter the status queue.
 // Each line stays up about a second, or 0.3s a word when that is longer (the same
-// reading rule as the status line). A saying still waiting when its turn has
-// changed is not shown. One already on screen finishes that reading time, so a
-// fast next turn cannot cut it off. Works in the browser (window.BADGER_BUBBLE) and in Node.
+// reading rule as the status line). A saying already queued still plays if the
+// turn changes before it reaches the screen: the kick quote waits behind the
+// first-burrow line, and the computer's next move must not eat it. A new saying
+// is only taken for the turn on screen now. One already on screen finishes its
+// reading time. Works in the browser (window.BADGER_BUBBLE) and in Node.
 (function (root) {
   function words(text) { return (String(text || '').trim().match(/\S+/g) || []).length; }
   function holdMs(text) { return Math.max(1000, words(text) * 300); }
@@ -16,7 +18,6 @@
     function pump() {
       timer = null;
       if (active) return;
-      while (pending.length && pending[0].turn !== turn) pending.shift();
       if (!pending.length) return;
       active = pending.shift();
       show(active);
@@ -27,8 +28,7 @@
         const key = turnKey(S);
         if (key === turn) return;
         turn = key;
-        // Drop sayings that never got onto the screen. The one already up keeps its reading time.
-        pending = pending.filter(item => item.turn === key);
+        // Keep the queue. The line on screen finishes, then the ones waiting play.
         if (!active && pending.length && timer == null) pump();
       },
       add(text, S) {

@@ -1,5 +1,6 @@
-// The badger's sayings play in their own bubble: each one shows during the turn it was queued on,
-// including a repeat of the same words, and a saying whose turn has passed is dropped.
+// The badger's sayings play in their own bubble: each one shows, including a repeat of the same
+// words. A line already queued still shows after the turn changes. A line offered for a turn that
+// is already over is refused.
 // node testbadgerbubble.js
 const assert = require('assert'), BL = require('./public/badgerlines'), { create, holdMs, words } = require('./public/badger-bubble');
 const lines = Object.values(BL.LINES).flat();
@@ -60,21 +61,23 @@ const turn = (name, extra) => ({ round: 3, turn: name, h3: extra ? { extra: true
   assert.deepEqual(shown, ["Badger doesn't care.", "Badger doesn't care."]);
 }
 
-// A saying still waiting when the turn changes is not shown. One already up finishes.
+// The kick quote waits behind the first-burrow line. The computer's next turn must not eat it.
 {
   const b = harness();
   const s = turn('hunter');
+  const kicked = "Ouch. I mean... badger doesn't care.";
   b.note(s);
-  b.add('Look at this nasty badass.', s);
   b.add(longest, s);
-  assert.equal(b.state().active.text, 'Look at this nasty badass.');
+  b.add(kicked, s);
+  assert.equal(b.state().active.text, longest, 'the burrow line is up');
   b.note(turn('red'));
-  assert.equal(b.state().active.text, 'Look at this nasty badass.', 'the line already up is not cut off');
-  assert.equal(b.state().pending.length, 0, 'the queued Guinness line is dropped');
-  tick(holdMs('Look at this nasty badass.'));
+  assert.equal(b.state().active.text, longest, 'the line already up is not cut off');
+  assert.equal(b.state().pending.length, 1, 'the queued kick quote stays');
+  tick(holdMs(longest));
+  assert.equal(b.state().active.text, kicked, 'the kick quote shows after the burrow line');
+  tick(holdMs(kicked));
   assert.equal(b.state().active, null);
-  tick(20000);
-  assert.deepEqual(shown, ['Look at this nasty badass.'], 'the Guinness line never appears after the turn');
+  assert.deepEqual(shown, [longest, kicked]);
   assert.equal(b.add(longest, s), false, 'a late add for the old turn is refused');
 }
 
@@ -92,5 +95,5 @@ const turn = (name, extra) => ({ round: 3, turn: name, h3: extra ? { extra: true
   assert.deepEqual(shown, ["Badger doesn't care."]);
 }
 
-console.log('PASS badger bubble: each queued saying shows within its turn, repeats are kept, a passed turn is dropped');
+console.log('PASS badger bubble: each queued saying shows, repeats are kept, a queued line survives the next turn');
 process.exit(0);
