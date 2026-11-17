@@ -56,7 +56,13 @@
   }
 
   function cardOf(title, picture, lines) {
-    return { title, picture, goal: lines[0] || '', moves: lines.slice(1), lines, lose: '' };
+    const extra = picture === 'ostrich'
+      ? 'A vulture may land on you only while you carry. The egg drops and is found.'
+      : picture === 'vulture'
+        ? 'You may land on an ostrich that is carrying. The egg drops and you find it.'
+        : '';
+    const all = extra ? lines.concat(extra) : lines;
+    return { title, picture, goal: all[0] || '', moves: all.slice(1), lines: all, lose: '' };
   }
   function koFor(mode, kind, R) {
     const ko = R.modes[mode] && R.modes[mode].ko;
@@ -204,7 +210,8 @@
     const base = [a, bird && m === '3' && HUNTERS[kind] ? kind : '', m].join('_'); // only the 3-player bird cards change with the hunter
     // P2 wording: a phone that already closed the old card should be shown this one.
     const revised = (a === 'hyena' && (m === '3' || m === '4h' || m === '5')) || (bird && m === '3');
-    return m === '3' ? base + '_r5' : revised ? base + '_p2' : base; // R5 changed every 3-player card: show it once more
+    const id = m === '3' ? base + '_r5' : revised ? base + '_p2' : base; // R5 changed every 3-player card: show it once more
+    return bird ? id + '_c' : id; // the carry landing line: show the bird card once more
   }
 
   const API = { roleCard, cardId, huntLine, kickList, animal, rulesFromModules, PICKED };

@@ -110,9 +110,13 @@ function ostrichStay(g, s, why) { const b = g.b[s]; b.sitRun = 0; b.sitting = fa
 function dropAll(g) { for (const s of OS) { const b = g.b[s]; if (b.carrying === null) continue; const e = g.eggs[b.carrying]; b.carrying = null; if (e.alive) e.pos = b.pos.slice(); } }
 function flyTargets(g, s) {
   if (!myTurn(g, s) || !isV(s)) return [];
-  const v = g.b[s].pos, m = g.b[mate(s)], r = [];
-  for (let x = 0; x < g.cfg.cols; x++) for (let y = 0; y < g.cfg.rows; y++) { const d = D([x, y], v);
-    if (d >= 1 && d <= g.cfg.vultureFly && !B.wrecked(g, [x, y]) && !hunterUp(g, [x, y]) && !birdsIn(g).some(o => K(g.b[o].pos) === K([x, y]))) r.push([x, y]); }
+  const v = g.b[s].pos, r = [];
+  for (let x = 0; x < g.cfg.cols; x++) for (let y = 0; y < g.cfg.rows; y++) { const p = [x, y], d = D(p, v);
+    if (d < 1 || d > g.cfg.vultureFly || B.wrecked(g, p) || hunterUp(g, p)) continue;
+    const occ = birdsIn(g).find(o => K(g.b[o].pos) === K(p));
+    // A bird may not land on an animal it can see, except a carrying ostrich.
+    if (occ && !(isO(occ) && g.b[occ].carrying != null)) continue;
+    r.push(p); }
   return r;
 }
 function throwTargets(g, s) {
@@ -127,24 +131,52 @@ function clearOut(g) { for (const s of OS.concat(VS)) { const b = g.b[s]; if (!b
   if (isO(s) && b.carrying != null) { const e = g.eggs[b.carrying]; b.carrying = null; if (e && e.alive) e.pos = b.pos.slice(); } b.pos = OFF.slice(); } }
 function vultureFly(g, s, p) { clearOut(g);
   if (!flyTargets(g, s).some(q => K(q) === K(p))) return false;
-  const b = g.b[s], from = b.pos.slice(); b.pos = p.slice();
+  const b = g.b[s], from = b.pos.slice();
+  const o = OS.find(x => live(g, x) && g.b[x].carrying != null && K(g.b[x].pos) === K(p));
+  let land = p.slice();
+  if (o) {
+    const blocked = m => birdsIn(g).some(q => q !== o && K(g.b[q].pos) === K(m)) || hunterUp(g, m);
+    const sn = B.bumpAway(g.cfg, g.marks, from, p, blocked);
+    if (sn.landed) {
+      const ob = g.b[o], e = g.eggs[ob.carrying]; ob.carrying = null; ob.sitting = false;
+      if (e && e.alive) e.pos = p.slice();
+      ob.pos = sn.to.slice();
+      g.lastBump = { seq: (g.bumpSeq = (g.bumpSeq || 0) + 1), by: s, target: o, key: o, from: sn.from.slice(), to: sn.to.slice(), moved: sn.moved, round: g.round };
+    } else {
+      const back = sn.back, open = back && inB(g, back) && !B.wrecked(g, back) && !birdsIn(g).some(q => K(g.b[q].pos) === K(back)) && !hunterUp(g, back);
+      land = open ? back.slice() : from.slice();
+    }
+  }
+  b.pos = land.slice();
   g.lastAction = { seat: s, type: 'fly', from };
-  const e = eggAt(g, p);
-  if (e && !OS.some(o => live(g, o) && K(g.b[o].pos) === K(p))) { g.marks[K(p)] = 'spotted'; g.lastAction.spotted = p.slice(); }
-  if (B.isRock(g, p)) { g.lastAction.refill = b.stones < g.cfg.stones; b.stones = g.cfg.stones; }
-  g.lastAction.smell = smells(g, p); g.sniffs[s] = { p: p.slice(), yes: g.lastAction.smell, round: g.round };
-  const foundHere = !!(e && !OS.some(o => live(g, o) && K(g.b[o].pos) === K(p)));
-  g.sniffKeeps[s] = (!foundHere && g.lastAction.smell) ? { p: p.slice(), yes: true, round: g.round } : null;
+  const e = eggAt(g, land);
+  if (e && !OS.some(x => live(g, x) && K(g.b[x].pos) === K(land))) { g.marks[K(land)] = 'spotted'; g.lastAction.spotted = land.slice(); }
+  if (B.isRock(g, land)) { g.lastAction.refill = b.stones < g.cfg.stones; b.stones = g.cfg.stones; }
+  g.lastAction.smell = smells(g, land); g.sniffs[s] = { p: land.slice(), yes: g.lastAction.smell, round: g.round };
+  const foundHere = !!(e && !OS.some(x => live(g, x) && K(g.b[x].pos) === K(land)));
+  g.sniffKeeps[s] = (!foundHere && g.lastAction.smell) ? { p: land.slice(), yes: true, round: g.round } : null;
   dropAll(g);
-  if (g.h && K(p) === K(g.h.p)) { catchBird(g, s, () => { b.pos = from.slice(); }); g.lastCatch.walked = true; } // the vulture flew onto the buried badger
+  if (g.h && K(land) === K(g.h.p)) { catchBird(g, s, () => { b.pos = from.slice(); }); g.lastCatch.walked = true; } // the vulture flew onto the buried badger
   next(g); return true;
 }
 // The stone resolver's view of this mode: either ostrich kicks it back, the hunter is pushed 2 away from the vulture and a buried badger comes up.
 const stoneW = (g, s) => { const b = g.b[s]; return { thrower: () => b.pos.slice(), setThrower: q => { b.pos = q.slice(); },
   ostrichSeatAt: p => OS.find(o=>live(g,o)&&K(g.b[o].pos)===K(p)),
-  ostrichAt: p => OS.some(o => live(g, o) && K(g.b[o].pos) === K(p)), eggAt: p => eggAt(g, p),
-  pushAt: (p, dir, n) => { if (!g.h || K(g.h.p) !== K(p)) return []; const from = g.h.p.slice(), wasBur = g.h.burrowed; g.h.burrowed = false; g.h.dig = 0; if (wasBur) g.popout = { seq: g.popSeq = (g.popSeq || 0) + 1, round: g.round };
-    g.h.p = B.slide(g.cfg, from, dir, n, m => birdsIn(g).some(o => K(g.b[o].pos) === K(m)), g.marks); return [{ kind: g.h.kind, from, to: g.h.p.slice() }]; },
+  ostrichAt: p => OS.some(o => live(g, o) && K(g.b[o].pos) === K(p)),
+  carryingAt: p => OS.some(o => live(g, o) && g.b[o].carrying != null && K(g.b[o].pos) === K(p)),
+  dropCarried: p => { const o = OS.find(x => live(g, x) && g.b[x].carrying != null && K(g.b[x].pos) === K(p)); if (!o) return;
+    const e = g.eggs[g.b[o].carrying]; g.b[o].carrying = null; if (e && e.alive) e.pos = p.slice(); },
+  eggAt: p => eggAt(g, p),
+  pushAt: (p, dir, n) => {
+    const moved = [];
+    const o = OS.find(x => live(g, x) && K(g.b[x].pos) === K(p));
+    if (o) { const from = g.b[o].pos.slice(); g.b[o].sitting = false;
+      g.b[o].pos = B.slide(g.cfg, from, dir, n, m => birdsIn(g).some(q => q !== o && K(g.b[q].pos) === K(m)) || hunterUp(g, m), g.marks);
+      moved.push({ kind: 'ostrich', key: o, from, to: g.b[o].pos.slice() }); }
+    if (!g.h || K(g.h.p) !== K(p)) return moved;
+    const from = g.h.p.slice(), wasBur = g.h.burrowed; g.h.burrowed = false; g.h.dig = 0; if (wasBur) g.popout = { seq: g.popSeq = (g.popSeq || 0) + 1, round: g.round };
+    g.h.p = B.slide(g.cfg, from, dir, n, m => birdsIn(g).some(q => K(g.b[q].pos) === K(m)), g.marks);
+    moved.push({ kind: g.h.kind, key: g.h.kind, from, to: g.h.p.slice() }); return moved; },
   open: q => !B.wrecked(g, q) && !birdsIn(g).some(o => K(g.b[o].pos) === K(q)) && !hunterUp(g, q), ostrichPos: () => { const o = OS.find(x => live(g, x)); return o ? g.b[o].pos : null; } }; };
 function vultureThrow(g, s, p) { clearOut(g);
   if (!throwTargets(g, s).some(q => K(q) === K(p))) return false;
@@ -153,7 +185,7 @@ function vultureThrow(g, s, p) { clearOut(g);
   g.lastAction = { seat: s, type: 'throw', from, p: p.slice(), result: r.result, line: r.line, kickedBack: r.kickedBack, hop: r.hop, used: r.used };
   if (r.result === 'bounce') g.lastAction.egg = !!(eggAt(g, p) || OS.some(o => live(g, o) && K(g.b[o].pos) === K(p) && g.b[o].carrying !== null));
   if (r.result === 'hit') g.lastSmash = {seq:g.smashSeq=(g.smashSeq||0)+1,by:s,owner:OS[(g.eggs.find(e=>e.id===r.smashed)||{}).nest]||null};
-  if (r.line) g.lastStone = { seq: ++g.stoneSeq, text: r.line, by: s, targets: r.pushed.map(x => x.kind), kicker:r.kicker||null, trails: r.pushed.map(x=>({key:x.kind,from:x.from,to:x.to})), round: g.round };
+  if (r.line) g.lastStone = { seq: ++g.stoneSeq, text: r.line, by: s, targets: r.pushed.map(x => x.kind), kicker:r.kicker||null, trails: r.pushed.map(x=>({key:x.key||x.kind,from:x.from,to:x.to})), round: g.round };
   dropAll(g); next(g); return r.result;
 }
 // --- hunter (5 players) ---

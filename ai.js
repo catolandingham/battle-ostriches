@@ -61,6 +61,12 @@ function observe(v, mem) {
 function vulture(v, lvl = 'normal', mem = {}) {
   const L = LVL[lvl] || LVL.normal, C = v.cfg, me = v.vulture, sq = [];
   observe(v, mem);
+  // A carrying ostrich's square is a fly square. Smash it when the stone reaches, otherwise land and take the egg.
+  if (v.ostrich && v.ostrich[0] >= 0 && (v.fly || []).some(p => K(p) === K(v.ostrich))) {
+    const th = v.stones >= 1 && (v.throw || []).find(p => K(p) === K(v.ostrich));
+    if (th) { mem.lastThrow = th; return { a: 'throw', p: th.slice() }; }
+    return { a: 'fly', p: v.ostrich.slice() };
+  }
   for (let x = 0; x < C.cols; x++) for (let y = 0; y < C.rows; y++) sq.push([x, y]);
   const score = p => { const k = K(p); let s = (mem.heat[k] || 0) + (mem.stay[k] || 0) * L.stay + (mem.ret[k] || 0) * L.ret;
     const m = v.marks[k]; if (m === 'spotted') s += 20; if (m === 'hit' || m === 'stone') s -= 50; if (mem.miss[k]) s -= 6;

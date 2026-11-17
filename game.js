@@ -196,8 +196,48 @@ function endOstrich(g) {
 function flyTargets(g) {
   if (!myTurn(g, 'red')) return [];
   const r = []; for (let x = 0; x < g.cfg.cols; x++) for (let y = 0; y < g.cfg.rows; y++) {
-    const d = dist([x, y], g.vulture); if (d >= 1 && d <= g.cfg.vultureFly && !wrecked(g, [x, y]) && !hunterUpAt(g, [x, y]) && !(onBoard(g.ostrich) && key([x, y]) === key(g.ostrich))) r.push([x, y]); }
+    const p = [x, y], d = dist(p, g.vulture);
+    if (d < 1 || d > g.cfg.vultureFly || wrecked(g, p) || hunterUpAt(g, p)) continue;
+    // A bird may not land on an animal it can see, except a vulture landing on an ostrich that is carrying an egg.
+    if (onBoard(g.ostrich) && key(p) === key(g.ostrich) && g.carrying === null) continue;
+    r.push(p);
+  }
   return r;
+}
+// Direction of a push when two animals meet (rule 5.1): straight along the move, or only its longer part when the move is not straight.
+function pushDir(from, to) {
+  const dx = to[0] - from[0], dy = to[1] - from[1], sx = sgn(dx), sy = sgn(dy);
+  if (dx && dy && Math.abs(dx) !== Math.abs(dy)) return Math.abs(dx) > Math.abs(dy) ? [sx, 0] : [0, sy];
+  return [sx, sy];
+}
+// Bump the animal at `at` 2 squares away from `from` (rule 5.2: no wrap, stop before a wreck, the edge, or an animal that is up).
+// landed is false when it cannot move at all. `back` is one square back from `at` toward `from` (the pusher steps back 1).
+function bumpAway(cfg, marks, from, at, blocked) {
+  const dir = pushDir(from, at);
+  if (!dir[0] && !dir[1]) return { landed: false, moved: 0, back: from.slice(), from: at.slice(), to: at.slice(), dir };
+  const slideR = slideN(cfg, at, dir, 2, blocked, marks, false);
+  if (slideR.moved < 1) {
+    const back = [at[0] - dir[0], at[1] - dir[1]];
+    return { landed: false, moved: 0, back, from: at.slice(), to: at.slice(), dir };
+  }
+  return { landed: true, moved: slideR.moved, back: null, from: at.slice(), to: slideR.to.slice(), points: slideR.points, dir };
+}
+function carryingHere(g, p) { return onBoard(g.ostrich) && g.carrying !== null && key(p) === key(g.ostrich); }
+// Fly onto a carrying ostrich: the egg drops on that square, the ostrich is bumped 2 away, the vulture will land there.
+// If the ostrich cannot move, the vulture does not take the egg and steps back 1 (or stays, if that square is closed).
+function snatchOstrich(g, from, at) {
+  const blocked = m => !!hunterUpAt(g, m) || key(m) === key(from);
+  const sn = bumpAway(g.cfg, g.marks, from, at, blocked);
+  if (!sn.landed) {
+    const back = sn.back, open = back && inB(back, g.cfg) && !wrecked(g, back) && !hunterUpAt(g, back) && key(back) !== key(at);
+    return { landed: false, moved: 0, back: open ? back.slice() : from.slice(), from: at.slice(), to: at.slice() };
+  }
+  const e = g.eggs[g.carrying];
+  g.carrying = null;
+  if (e && e.alive) e.pos = at.slice();
+  g.ostrich = sn.to.slice();
+  g.sitting = false;
+  return { landed: true, moved: sn.moved, from: at.slice(), to: sn.to.slice(), egg: e && e.id };
 }
 // Needs a stone. Its own square or a square next to it, not a wrecked one.
 function throwTargets(g) {
@@ -209,16 +249,19 @@ function throwTargets(g) {
 function vultureFly(g, p) {
   if (!flyTargets(g).some(q => key(q) === key(p))) return false;
   const from = g.vulture.slice();
-  g.vulture = p.slice(); g.lastAction = { type: 'fly', from };
-  const e = eggAt(g, p);
-  if (e && !ostrichGuards(g, p)) { g.marks[key(p)] = 'spotted'; g.lastAction.spotted = p.slice(); }
-  if (isRock(g, p)) { g.lastAction.refill = g.stones < g.cfg.stones; g.stones = g.cfg.stones; }
-  g.lastAction.smell = smellsEgg(g, p);
+  const sn = carryingHere(g, p) ? snatchOstrich(g, from, p) : null;
+  const land = sn && !sn.landed ? sn.back : p.slice();
+  g.vulture = land.slice(); g.lastAction = { type: 'fly', from };
+  if (sn && sn.landed) g.lastBump = { seq: (g.bumpSeq = (g.bumpSeq || 0) + 1), by: 'red', target: 'blue', key: 'blue', from: sn.from.slice(), to: sn.to.slice(), moved: sn.moved, round: g.round };
+  const e = eggAt(g, g.vulture);
+  if (e && !ostrichGuards(g, g.vulture)) { g.marks[key(g.vulture)] = 'spotted'; g.lastAction.spotted = g.vulture.slice(); }
+  if (isRock(g, g.vulture)) { g.lastAction.refill = g.stones < g.cfg.stones; g.stones = g.cfg.stones; }
+  g.lastAction.smell = smellsEgg(g, g.vulture);
   // Snapshot for the "may be here" squares until the next landing. round stamps the sense
   // so a later turn can keep the memory without announcing it again as a current fact.
-  g.sniff = { p: p.slice(), yes: g.lastAction.smell, round: g.round };
+  g.sniff = { p: g.vulture.slice(), yes: g.lastAction.smell, round: g.round };
   // A find is the egg on this square, not a neighborhood. A throw must not refresh this copy.
-  g.sniffKeep = (e && !ostrichGuards(g, p)) || !g.lastAction.smell ? null : { p: p.slice(), yes: true, round: g.round };
+  g.sniffKeep = (e && !ostrichGuards(g, g.vulture)) || !g.lastAction.smell ? null : { p: g.vulture.slice(), yes: true, round: g.round };
   g.turn = 'blue'; dropCarried(g); return true;
 }
 const onBoard = p => !!(p && p[0] >= 0 && p[1] >= 0);
@@ -245,7 +288,9 @@ function resolveThrow(g, W, target) {
   let p = target.slice(), kicked = false;
   for (let guard = 0; guard < 3; guard++) {
     const t = W.thrower();
-    if (W.ostrichAt(p)) {
+    // A carrying ostrich cannot kick. The egg drops on the square and the stone hits it like any egg, and the ostrich is pushed with the other animals.
+    if (W.carryingAt && W.carryingAt(p)) { if (W.dropCarried) W.dropCarried(p); }
+    else if (W.ostrichAt(p)) {
       if (kicked) { out.used = true; out.result = 'bounce'; return out; } // a stone is never kicked back twice
       out.kicker = W.ostrichSeatAt ? W.ostrichSeatAt(p) : 'blue'; out.kickedBack = true; out.result = 'bounce'; kicked = true; out.line = 'The ostrich kicked the stone right back!';
       if (isFood(g, t) || isRock(g, t)) { // the vulture stands where a stone cannot land: it bounces off and goes one square on, straight past the vulture
@@ -277,7 +322,16 @@ function resolveThrow(g, W, target) {
 }
 // the classic (2 player) adapter
 const classicW = g => ({ thrower: () => g.vulture.slice(), setThrower: q => { g.vulture = q.slice(); },
-  ostrichAt: p => onBoard(g.ostrich) && key(p) === key(g.ostrich), eggAt: p => eggAt(g, p), pushAt: () => [],
+  ostrichAt: p => onBoard(g.ostrich) && key(p) === key(g.ostrich),
+  carryingAt: p => carryingHere(g, p),
+  dropCarried: p => { const e = g.eggs[g.carrying]; g.carrying = null; if (e && e.alive) e.pos = p.slice(); },
+  eggAt: p => eggAt(g, p),
+  pushAt: (p, dir, n) => {
+    if (!(onBoard(g.ostrich) && key(p) === key(g.ostrich))) return [];
+    const from = g.ostrich.slice(); g.sitting = false;
+    g.ostrich = slide(g.cfg, from, dir, n, m => onBoard(g.vulture) && key(m) === key(g.vulture), g.marks);
+    return [{ kind: 'ostrich', key: 'blue', from, to: g.ostrich.slice() }];
+  },
   open: q => inB(q, g.cfg) && !wrecked(g, q) && !(onBoard(g.ostrich) && key(q) === key(g.ostrich)), ostrichPos: () => g.ostrich });
 function vultureThrow(g, p, mkW) {
   if (!throwTargets(g).some(q => key(q) === key(p))) return false;
@@ -286,7 +340,7 @@ function vultureThrow(g, p, mkW) {
   g.lastAction = { type: 'throw', from, p: p.slice(), result: r.result, line: r.line, kickedBack: r.kickedBack, hop: r.hop, used: r.used };
   if (r.result === 'bounce') g.lastAction.egg = !!(g.carrying !== null || eggAt(g, p)); // a kicked stone does not say what the ostrich guards
   if (r.result === 'hit') g.lastSmash = {seq:g.smashSeq=(g.smashSeq||0)+1,by:'red',owner:'blue'};
-  if (r.line) g.lastStone = { seq: ++g.stoneSeq, text: r.line, by: 'red', targets: r.pushed.map(x => x.kind), kicker:r.kicker||null, trails: r.pushed.map(x=>({key:x.kind,from:x.from,to:x.to})), round: g.round };
+  if (r.line) g.lastStone = { seq: ++g.stoneSeq, text: r.line, by: 'red', targets: r.pushed.map(x => x.kind), kicker:r.kicker||null, trails: r.pushed.map(x=>({key:x.key||x.kind,from:x.from,to:x.to})), round: g.round };
   if (!aliveEggs(g).length) { g.winner = 'red'; g.winBy = 'smashed'; g.phase = 'over'; } else { g.turn = 'blue'; dropCarried(g); }
   return r.result;
 }
@@ -355,6 +409,6 @@ function outlineSniff(v) {
   return sn;
 }
 
-const API = { slideN, CONFIG, HUNTER_GOAL, hunterUpAt, scrambleTo, relocateCaught, DIRS8, resolveThrow, wrecked, nearLeaf, myTurn, slide, awayFrom, canKick, kickable, kickTargets, kickPlans, kickDone, ostrichKick, newGame, canPlaceEgg, placeEgg, placeOstrich, ostrichMoves, ostrichStep, ostrichSit, canSit, canCarry, mustLeave, onEgg, dropCarried,
+const API = { slideN, CONFIG, HUNTER_GOAL, hunterUpAt, scrambleTo, relocateCaught, DIRS8, resolveThrow, wrecked, nearLeaf, myTurn, slide, awayFrom, pushDir, bumpAway, canKick, kickable, kickTargets, kickPlans, kickDone, ostrichKick, newGame, canPlaceEgg, placeEgg, placeOstrich, ostrichMoves, ostrichStep, ostrichSit, canSit, canCarry, mustLeave, onEgg, dropCarried,
   endRound, walkSquares, smellsEgg, flyTargets, throwTargets, vultureFly, vultureThrow, eggAt, aliveEggs, coldIn, sniffFresh, sniffAnnounce, outlineSniff, key, dist, visible, isFood, isRock, parkEliminated, ostrichGuards, foodRoute };
 if (typeof module !== 'undefined') module.exports = API; else window.BO = API;

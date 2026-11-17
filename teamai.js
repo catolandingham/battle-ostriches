@@ -33,7 +33,14 @@ function vView(g, s) {
     sniff: g.sniffs[s] || null, stones: b.stones, fly: T.flyTargets(g, s), throw: T.throwTargets(g, s) };
 }
 function vulture(g, s, level, mem, hv, reach) {
-  const v = vView(g, s), m0 = mem.smells ? mem.smells.length : 0;
+  const v = vView(g, s);
+  // The fly list includes an ostrich square only while that ostrich is carrying.
+  for (const o of T.OS) if (T.live(g, o) && v.fly.some(p => K(p) === K(g.b[o].pos))) {
+    const th = g.b[s].stones >= 1 && v.throw.find(p => K(p) === K(g.b[o].pos));
+    if (th) return { a: 'throw', p: th.slice() };
+    return { a: 'fly', p: g.b[o].pos.slice() };
+  }
+  const m0 = mem.smells ? mem.smells.length : 0;
   const ms = g.sniffs[T.mate(s)]; // shared sniffs: the partner's last result goes into this bot's memory too
   if (ms && mem.mateKey !== ms.round + K(ms.p)) { mem.mateKey = ms.round + K(ms.p); (mem.smells = mem.smells || []).push([ms.p.slice(), ms.yes]); if (mem.smells.length > 6) mem.smells.shift(); }
   let m = AI.vulture(v, level, mem); void m0;
