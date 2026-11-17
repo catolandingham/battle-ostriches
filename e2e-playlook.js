@@ -38,7 +38,7 @@ let n = 0; const ok = m => { n++; console.log('ok', m); };
     return { content: a.content, before: b.content, border: a.borderTopWidth, display: a.display, theme: document.documentElement.dataset.theme, bird: !!land.querySelector('.pc.pv') };
   });
 
-  // 1. Throwable squares are lit and have no circle-plus. The found-egg crosshair stays when Throw is not selected.
+  // 1. Throwable squares are lit and have no circle-plus. A found egg has no crosshair.
   const V = await mk();
   await V.goto(U); await V.click('#playSolo'); await V.click('[data-bots="1"]'); await V.click('#soloGo');
   await V.click('[data-role="red"]'); await V.click('#startGame'); await V.waitForSelector('#board .cell');
@@ -69,11 +69,16 @@ let n = 0; const ok = m => { n++; console.log('ok', m); };
   server.broadcast(rv);
   await V.waitForFunction(k => { const s = UI._S(); return s && s.marks && s.marks[k] === 'spotted'; }, B.key(egg.pos));
   await V.evaluate(() => UI.setMode('fly')); await sleep(200);
-  const cue = await V.evaluate(() => document.querySelectorAll('#board .cell.aimcue > i.aim.cue').length);
-  assert.equal(cue, 1, 'the found-egg crosshair is still there when Throw is not selected');
+  const foundEgg = await V.evaluate(() => ({
+    aims: document.querySelectorAll('#board i.aim, #board .cell.aimcue').length,
+    filled: document.querySelectorAll('#board .ic-spot .cmark.cm-egg.is').length
+  }));
+  assert.equal(foundEgg.aims, 0, 'a found egg in range has no crosshair');
+  assert.ok(foundEgg.filled >= 1, 'the filled egg shows the find');
   await V.evaluate(() => UI.setMode('throw')); await sleep(150);
-  assert.equal(await V.evaluate(() => document.querySelectorAll('#board i.aim').length), 0, 'selecting Throw does not put the circle-plus back, including on the found egg');
-  ok('the found-egg crosshair is unchanged, and Throw does not add it to every square');
+  assert.equal(await V.evaluate(() => document.querySelectorAll('#board i.aim').length), 0, 'Throw does not add a crosshair');
+  assert.ok(await V.evaluate(() => document.querySelectorAll('#board .cell.target').length) >= 1, 'picking Throw lights the squares in range');
+  ok('a found egg has no crosshair; Throw lights the squares in range');
 
   // 3. Outlines from the landing survive the throw, stay put when the egg moves, and go on the next landing.
   g.eggs = [[6, 2], [2, 2], [2, 5]].map((p, id) => ({ id, pos: p.slice(), alive: true, lastWarm: g.round }));

@@ -1,15 +1,13 @@
 /* Signals: one look per meaning, in every theme (loaded after every theme file; themes restyle floors and animals, never a signal).
    Every signal carries a thin dark edge and a thin light edge, so it reads on a pale tile and on a dark tile. */
 /* A square you can move to is LIT: the whole square is filled bright yellow with a dark edge inside a pale one, so it reads on a pale tile and on a dark tile in every theme.
-   A throwable square is lit the same way, with no circle-plus in its middle. The crosshair (.aim) is only the found-egg cue. Nothing is drawn in the middle of a lit square, so an egg, an animal or a leaf on it stays readable. */
+   A throwable square is lit the same way, with no circle-plus and no crosshair. A found egg is the filled egg. Nothing is drawn in the middle of a lit square, so an egg, an animal or a leaf on it stays readable. */
 html[data-theme] #board .cell.legal.legal.legal.legal.legal:not(.target),#board .cell.legal.legal.legal.legal.legal:not(.target){background-image:linear-gradient(rgba(255,225,77,.84),rgba(255,225,77,.84))!important;box-shadow:inset 0 0 0 2px #111,inset 0 0 0 4px #fff7c2!important;outline:none!important;animation:none!important;filter:none!important;z-index:2}
 /* setting up (hiding eggs, picking a start): almost every square is allowed, so none of them is lit */
 html[data-theme] #board .cell.legal.legal.legal.legal.legal.setupsq.setupsq:not(.target),#board .cell.legal.legal.legal.legal.legal.setupsq.setupsq:not(.target){background-image:linear-gradient(rgba(0,0,0,.13),rgba(0,0,0,.13))!important;box-shadow:inset 0 0 0 1px rgba(255,255,255,.28),inset 0 0 0 2px rgba(0,0,0,.30)!important;cursor:pointer}
 html[data-theme] #board .cell.legal.legal.legal.legal.legal.setupsq.setupsq.alt:not(.target),#board .cell.legal.legal.legal.legal.legal.setupsq.setupsq.alt:not(.target){background-image:linear-gradient(rgba(255,255,255,.13),rgba(255,255,255,.13))!important}
 /* the moves that get you closest to the thing to reach are brighter and have a wider edge */
 html[data-theme] #board .cell.legal.legal.legal.legal.legal.toward:not(.target),#board .cell.legal.legal.legal.legal.legal.toward:not(.target){background-image:linear-gradient(#ffe650,#ffe650)!important;box-shadow:inset 0 0 0 3px #111,inset 0 0 0 7px #fff!important}
-#board .cell>.aim{position:absolute;inset:16%;border-radius:50%;border:3px solid #ff7a1a;box-shadow:0 0 0 2px #111,inset 0 0 0 2px #111,0 0 0 4px #fff;z-index:5;pointer-events:none;
-  background:linear-gradient(#ff7a1a,#ff7a1a) center/3px 70% no-repeat,linear-gradient(#ff7a1a,#ff7a1a) center/70% 3px no-repeat}
 #board .cell>.kring{position:absolute;inset:4%;border-radius:50%;border:4px solid #ffd21f;box-shadow:0 0 0 2px #111,inset 0 0 0 2px #111,0 0 0 4px #fff;z-index:7;pointer-events:none}
 /* The whole board stays on a phone screen (390 x 664): a compact header, no reserved banner slot, and the banner floats over the top edge of the board. */
 #stage{position:relative;flex:1 1 auto;min-height:0;display:flex;flex-direction:column}
