@@ -60,18 +60,19 @@ const turn = (name, extra) => ({ round: 3, turn: name, h3: extra ? { extra: true
   assert.deepEqual(shown, ["Badger doesn't care.", "Badger doesn't care."]);
 }
 
-// A saying still waiting when the turn changes is not shown. One already up is taken down.
+// A saying still waiting when the turn changes is not shown. One already up finishes.
 {
   const b = harness();
   const s = turn('hunter');
   b.note(s);
   b.add('Look at this nasty badass.', s);
   b.add(longest, s);
-  tick(0);
   assert.equal(b.state().active.text, 'Look at this nasty badass.');
   b.note(turn('red'));
-  assert.equal(b.state().active, null, 'the saying on screen is dropped when its turn passes');
-  assert.equal(b.state().pending.length, 0);
+  assert.equal(b.state().active.text, 'Look at this nasty badass.', 'the line already up is not cut off');
+  assert.equal(b.state().pending.length, 0, 'the queued Guinness line is dropped');
+  tick(holdMs('Look at this nasty badass.'));
+  assert.equal(b.state().active, null);
   tick(20000);
   assert.deepEqual(shown, ['Look at this nasty badass.'], 'the Guinness line never appears after the turn');
   assert.equal(b.add(longest, s), false, 'a late add for the old turn is refused');
@@ -84,8 +85,10 @@ const turn = (name, extra) => ({ round: 3, turn: name, h3: extra ? { extra: true
   b.add("Badger doesn't care.", turn('hunter'));
   tick(0);
   b.note(turn('hunter', true));
+  assert.equal(b.state().active.text, "Badger doesn't care.", 'the line already up finishes on the extra move');
+  assert.equal(b.state().pending.length, 0);
+  tick(holdMs("Badger doesn't care."));
   assert.equal(b.state().active, null);
-  tick(5000);
   assert.deepEqual(shown, ["Badger doesn't care."]);
 }
 

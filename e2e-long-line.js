@@ -65,9 +65,15 @@ const WIDTHS = [375, 390];
   await show();
   for (const width of WIDTHS) {
     await page.setViewportSize({ width, height: 700 });
+    // Width is set in pixels when the saying appears. A later theme does not start the line again.
+    await page.evaluate(() => {
+      const el = document.getElementById('badgerline'), app = document.getElementById('app');
+      if (!el || !app) return;
+      const w = Math.max(140, app.clientWidth - 16);
+      el.style.width = w + 'px'; el.style.maxWidth = w + 'px';
+    });
     for (const theme of THEMES) {
       await page.evaluate(t => THEME.set(t), theme);
-      await show();
       await page.waitForFunction(line => (document.getElementById('badgerline') || {}).textContent === line, LINE);
       const b = await bubbleBox();
       assert.equal(b.text, LINE, theme + ' ' + width + ' bubble text');
@@ -86,6 +92,7 @@ const WIDTHS = [375, 390];
   await page.evaluate(() => { document.getElementById('hint').textContent = 'Your turn. Tap to move.'; });
   await page.setViewportSize({ width: 390, height: 700 });
   await page.evaluate(() => THEME.set('volcano'));
+  await page.waitForFunction(() => !document.getElementById('badgerline'), null, { timeout: 20000 });
   const t0 = Date.now();
   await show();
   await page.waitForFunction(line => (document.getElementById('badgerline') || {}).textContent === line, LINE);

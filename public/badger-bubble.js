@@ -1,7 +1,8 @@
 // The badger's sayings, in their own bubble. They never enter the status queue.
 // Each line stays up about a second, or 0.3s a word when that is longer (the same
-// reading rule as the status line). A saying queued for a turn that has already
-// changed is dropped and not shown. Works in the browser (window.BADGER_BUBBLE) and in Node.
+// reading rule as the status line). A saying still waiting when its turn has
+// changed is not shown. One already on screen finishes that reading time, so a
+// fast next turn cannot cut it off. Works in the browser (window.BADGER_BUBBLE) and in Node.
 (function (root) {
   function words(text) { return (String(text || '').trim().match(/\S+/g) || []).length; }
   function holdMs(text) { return Math.max(1000, words(text) * 300); }
@@ -10,9 +11,8 @@
     const extra = S.h3 && S.h3.extra ? ':x' : '';
     return (S.round == null ? '' : S.round) + ':' + (S.turn || '') + extra;
   }
-  function create({ show, hide, schedule, cancel }) {
+  function create({ show, hide, schedule }) {
     let pending = [], active = null, timer = null, turn = null;
-    function clearTimer() { if (timer != null) { cancel(timer); timer = null; } }
     function pump() {
       timer = null;
       if (active) return;
@@ -27,15 +27,15 @@
         const key = turnKey(S);
         if (key === turn) return;
         turn = key;
+        // Drop sayings that never got onto the screen. The one already up keeps its reading time.
         pending = pending.filter(item => item.turn === key);
-        if (active && active.turn !== key) { clearTimer(); const done = active; active = null; hide(done); }
-        if (!active && pending.length && timer == null) timer = schedule(pump, 0);
+        if (!active && pending.length && timer == null) pump();
       },
       add(text, S) {
         const key = turnKey(S);
         if (!text || key !== turn) return false;
         pending.push({ text, turn: key });
-        if (!active && timer == null) timer = schedule(pump, 0);
+        if (!active && timer == null) pump();
         return true;
       },
       state: () => ({ active, pending: pending.slice(), turn })
