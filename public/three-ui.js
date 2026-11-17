@@ -202,13 +202,56 @@ function outBanner(S,prev){const birds=S.h3.birds;if(!birds)return;
   const mine=r===(S.h3.mySeat||S.role);
   if(!first&&!mine&&S.phase==='play'){const txt=window.CatchText.outLine(r);outNote={txt,until:Date.now()+4000};noteBanner('no',txt,true);setTimeout(()=>{const bn=$('banner');if(bn&&bn.textContent===txt){bn.textContent='';bn.className='hidden';}},4000);}}
  if(outNote&&Date.now()<outNote.until)noteBanner('no',outNote.txt);}
-// The badger's quotes (public/badgerlines.js): one line at a time near the badger's square, about 1 second each. They sit in their own
-// element, not in the board, so the next state redrawing the board does not wipe them. The words and who may see them live in badgerlines.js.
-const BL=window.BadgerLines;let bPicker=BL.createPicker(),bLastS=null;
+// The badger's quotes (public/badgerlines.js): one line at a time in their own bubble near the badger's square
+// (about 1s, or 0.3s a word when the line is longer). The bubble is not in the board, so a redraw does not wipe it,
+// and it is not the status line. A saying already queued still plays if the turn changes first. A new saying is only taken for the turn on screen now. Who may see each line lives in badgerlines.js.
+const BL=window.BadgerLines;let bPicker=BL.createPicker(),bLastS=null,bubbleState=null;
 const winNote=S=>{const t=BL.winLine(S);return t?`<p class="badgerwin">${t}</p>`:'';};
-function badgerSay(text){window.STATUS_QUEUE.add({id:'badgerline',className:'h3pop badger',text,priority:0});}
+const bubble=window.BADGER_BUBBLE.create({
+ show(item){const old=document.getElementById('badgerline');if(old)old.remove();
+  const el=document.createElement('div');el.id='badgerline';el.className='badger-bubble';el.textContent=item.text;el.setAttribute('role','status');item.node=el;
+  placeBubble(el,bubbleState);},
+ hide(item){if(item&&item.node){item.node.remove();item.node=null;}},
+ schedule:setTimeout,cancel:clearTimeout
+});
+function badgerSquare(S){if(!S)return null;const h=S.h3||{},kind=S.role==='hunter'?(S.kind||h.kind):h.kind;
+ if(kind==='badger'&&S.hunter&&S.hunter[0]>=0)return S.hunter;
+ if(h.hunter&&h.hunter[0]>=0&&(h.kind==='badger'||kind==='badger'))return h.hunter;
+ const listed=(h.hunters||[]).find(x=>x&&x.kind==='badger'&&x.p&&x.p[0]>=0);return listed?listed.p:null;}
+// Sit the bubble beside the badger's square when this phone can already see that square. Never on top of a piece.
+// If it cannot sit clear of the pieces, it goes between the status line and the board, which names no square.
+function placeBubble(el,S){const stage=document.getElementById('stage'),board=document.getElementById('board'),app=document.getElementById('app');
+ const wide=()=>{const w=app?Math.max(140,app.clientWidth-16):280;el.style.width=w+'px';el.style.maxWidth=w+'px';};
+ const off=()=>{if(app&&stage&&el.parentNode!==app)app.insertBefore(el,stage);el.classList.add('offboard');el.style.left='';el.style.top='';wide();};
+ if(!stage||!board||!S||!S.cfg){off();return;}
+ off();
+ // A long saying needs the full phone width. It stays under the hint, where it can wrap without covering that text or a piece.
+ if(el.getBoundingClientRect().height>64)return;
+ const p=badgerSquare(S),cell=p?board.children[p[1]*S.cfg.cols+p[0]]:null;
+ if(!cell)return;
+ if(el.parentNode!==stage)stage.appendChild(el);
+ el.classList.remove('offboard');
+ const room=Math.max(120,Math.min(stage.clientWidth-8,220));
+ el.style.width=room+'px';el.style.maxWidth=room+'px';el.style.left='0px';el.style.top='0px';
+ const sr=stage.getBoundingClientRect(),br=el.getBoundingClientRect(),cr=cell.getBoundingClientRect();
+ const slot=document.getElementById('hint')||document.getElementById('msgslot'),srSlot=slot&&slot.getBoundingClientRect();
+ const pieces=[...board.querySelectorAll('.pc')].map(n=>n.getBoundingClientRect());
+ const hits=(x,y)=>{const box={l:x,t:y,r:x+br.width,b:y+br.height};
+  if(box.l<sr.left+1||box.r>sr.right-1||box.t<sr.top+1||box.b>sr.bottom-1)return true;
+  if(srSlot&&box.l<srSlot.right-1&&box.r>srSlot.left+1&&box.t<srSlot.bottom-1&&box.b>srSlot.top+1)return true;
+  return pieces.some(pc=>box.l<pc.right-0.5&&box.r>pc.left+0.5&&box.t<pc.bottom-0.5&&box.b>pc.top+0.5);};
+ const cx=cr.left+cr.width/2-br.width/2,spots=[];
+ spots.push([cx,cr.top-br.height-3],[cx,cr.bottom+3]);
+ spots.push([cr.right+3,cr.top+(cr.height-br.height)/2],[cr.left-br.width-3,cr.top+(cr.height-br.height)/2]);
+ for(const shift of [0,16,-16,36,-36,56,-56])spots.push([cx+shift,cr.top-br.height-3]);
+ let pick=null;
+ for(const [x,y] of spots){const px=Math.min(Math.max(x,sr.left+2),sr.right-br.width-2),py=Math.min(Math.max(y,sr.top+2),sr.bottom-br.height-2);if(!hits(px,py)){pick=[px,py];break;}}
+ if(!pick){off();return;}
+ el.style.left=(pick[0]-sr.left)+'px';el.style.top=(pick[1]-sr.top)+'px';}
 function badgerLines(S,prev){if(S===bLastS)return;bLastS=S;if(!prev||(prev.round!=null&&S.round<prev.round))bPicker=BL.createPicker();
- for(const e of BL.detect(prev,S,bPicker))badgerSay(e.text);}
+ bubbleState=S;bubble.note(S);
+ for(const e of BL.detect(prev,S,bPicker))bubble.add(e.text,S);
+ const el=document.getElementById('badgerline');if(el)placeBubble(el,S);}
 // One look per meaning, in one corner of the square (never over its middle). "May be here" is the animal's small outline, dashed and unfilled. "Is here" (known to be there) is the same small shape filled white with a dark edge. Animals themselves stay full size.
 // The shapes: an egg for the vulture's sniff and for eggs you know, a bird for the hunters' sense, a badger for a burrow a bird saw being dug. Style (dashed or filled) lives in part1.css.
 // The bird is a plain (not dashed) side-view line: dashes break a small detailed shape apart, and a hunter only ever sees "may be here" birds, so there is no filled bird to mix it up with.
@@ -327,7 +370,8 @@ function after(S,prev,board){
  outBanner(S,prev);
  warnNear(S,board,prev);
  // waiting panel text: which seats are still open
- if(!S.joined){const w=$('wait');const open=Object.entries(h.seats).filter(([,v])=>v==='open').map(([r])=>SN[r]);if(w)w.firstElementChild.nextElementSibling.textContent=`Waiting for: ${open.join(', ')}. Send them this link:`;}}
+ if(!S.joined){const w=$('wait');const open=Object.entries(h.seats||{}).filter(([,v])=>v==='open').map(([r])=>SN[r]);if(w)w.firstElementChild.nextElementSibling.textContent=`Waiting for: ${open.join(', ')}. Send them this link:`;}
+ const liveBubble=document.getElementById('badgerline');if(liveBubble)placeBubble(liveBubble,S);}
 function kindPick(S){let k=$('kindPick');if(!S.h3.needKind){k&&k.classList.add('hidden');return;}
  if(!k){k=document.createElement('div');k.id='kindPick';document.body.appendChild(k);}
  k.className='';k.innerHTML=`<div class="hbox"><h1>You're the hunter</h1><p>Pick your animal</p><div class="kindrow">${['hyena','badger'].map(x=>`<button class="kindbtn" id="pick-${x}" onclick="UI.send({t:'act',a:'kind',kind:'${x}'})"><span class="ka">${KIND[x].art}</span><b>${KIND[x].n}</b><small>${kindLine(x)}</small></button>`).join('')}</div></div>`;}

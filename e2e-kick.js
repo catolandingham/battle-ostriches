@@ -56,6 +56,8 @@ const at = { state: 'attached' };
   for (const [P, name] of [[A, 'ostrich'], [Y, 'badger']]) await P.waitForFunction(t => (document.getElementById('badgerline') || {}).textContent === t, BL.LINES.kicked, { timeout: 25000 }).catch(e => { throw new Error(name + ' phone never showed the badger quote: ' + e.message); });
   assert.equal(BL.LINES.kicked, "Ouch. I mean... badger doesn't care.");
   await shot(A, '3-kick-ostrich'); await shot(Y, '4-kick-badger');
+  // The quote is up during the cartoon. The settled board, after the slide, is what ongoing sight means.
+  for (const P of [A, Y]) await P.waitForFunction(() => !document.getElementById('cutaway') && !document.querySelector('.push-motion,.partial-motion'), null, { timeout: 12000 });
   // Both participants get the actual landing; this does not grant ongoing sight.
   const ka = await A.evaluate(() => UI._S().kick), ky = await Y.evaluate(() => UI._S().kick);
   assert.equal(ka.who, 'badger'); assert.equal(ky.who, 'badger'); assert.deepEqual(ka.to, [5, 5], 'the kicker sees the actual landing beyond ordinary sight'); assert.deepEqual(ky.to, [5, 5]);

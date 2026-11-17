@@ -18,12 +18,12 @@
     const x = Math.sign(dx), y = Math.sign(dy);
     return { '0,-1': '↑', '1,-1': '↗', '1,0': '→', '1,1': '↘', '0,1': '↓', '-1,1': '↙', '-1,0': '←', '-1,-1': '↖' }[x + ',' + y] || '';
   }
-  // stored is localStorage bo_timers: '1' on, '0' off, missing follows the server (default on).
+  // stored is localStorage bo_timers: '1' on, '0' off. Missing follows the server, and with no server value the timer is off.
   function timersShown(state, stored) {
     if (state && state.clockStopped) return false;
     if (stored === '0') return false;
     if (stored === '1') return true;
-    return !state || state.showTimers !== false;
+    return !!(state && state.showTimers);
   }
   // Step and Fly stay on the ring so the default action can be selected. The glowing squares still do the move.
   function legalActions(S, mode) {
