@@ -302,7 +302,7 @@ function tap(x,y){clearTimeout(tap.q);if(!S||actLock||locked||cardOpen||inHold()
  const m0=curMode();if(m0==='hmove'){if(!ok)return nope('Too far.',p);return send({t:'act',a:'hmove',p});}
  const m=curMode();if(!m)return;
  if(!ok&&m==='carry'&&isF(S.cfg,key(p))&&gd(p,S.ostrich)===1){const c=$('board').children[p[1]*S.cfg.cols+p[0]];c&&c.animate([{transform:'translateX(0)'},{transform:'translateX(-3px)'},{transform:'translateX(3px)'},{transform:'translateX(0)'}],{duration:180});return nope('No eggs by food.',p);}
- if(!ok)return nope(m==='throw'?(S.stones<1?'No stone. Go to rocks.':'Too far.'):m==='kick'?'Tap where they go.':m==='carry'?'Not there.':'Too far.',p);
+ if(!ok)return nope(m==='throw'?window.THROW_TAP.miss(S,p):m==='kick'?'Tap where they go.':m==='carry'?'Not there.':'Too far.',p);
  if(m==='kick'){const plan=(S.kickPlans||[]).find(q=>q.to&&q.to[0]===x&&q.to[1]===y);if(!plan)return;coachDid('kick');send({t:'act',a:'kick',p:plan.at});return;}
  coachDid(m==='carry'?'step':m);send({t:'act',a:m,p});}
 function onFoundEggWithStone(st){return !!(st&&st.role==='red'&&st.phase==='play'&&st.myTurn&&st.stones>0&&st.vulture&&st.marks&&st.marks[st.vulture[0]+','+st.vulture[1]]==='spotted');}
