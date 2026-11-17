@@ -258,13 +258,13 @@ function speak(S,prev,txt,priority,preempt){
  announce(txt,priority,hold,preempt,held);
 }
 if(window.CUTAWAYS)CUTAWAYS.onDone=releaseHeldLine;
-const evSeen={kick:0,pop:0,rival:0,stone:0,dug:0,burst:0};
+const evSeen={kick:0,pop:0,rival:0,stone:0,dug:0,burst:0,bump:0};
 function events(S,prev,board){
  if(!S)return;if(!S.three)rulesMode('2');
  const h=S.h3||{};
- for(const e of window.CatchText.newEvents(evSeen,S,prev)){const big=e.kind==='kick'||e.kind==='burst'||e.kind==='rival'||e.kind==='smash'||(e.kind==='stone'&&S.stoneNote&&(S.stoneNote.targets||[]).length);speak(S,prev,window.CatchText.viewerEvent(e,S),null,big);
+ for(const e of window.CatchText.newEvents(evSeen,S,prev)){const big=e.kind==='kick'||e.kind==='bump'||e.kind==='burst'||e.kind==='rival'||e.kind==='smash'||(e.kind==='stone'&&S.stoneNote&&(S.stoneNote.targets||[]).length);speak(S,prev,window.CatchText.viewerEvent(e,S),null,big);
   // the square highlight: the hyena's landing square for the meeting; the badger's own square for a pop-out, only if this phone can see the badger
-  const sq=e.kind==='rival'||e.kind==='kick'||e.kind==='burst'?e.square:e.kind==='dug'?null:e.seen?(h.hunters?(h.hunters.find(x=>x.kind==='badger')||{}).p:h.hunter):null,c=cellAt(board,S,sq);c&&c.classList.add('h3kb');}}
+  const sq=e.kind==='rival'||e.kind==='kick'||e.kind==='bump'||e.kind==='burst'?e.square:e.kind==='dug'?null:e.seen?(h.hunters?(h.hunters.find(x=>x.kind==='badger')||{}).p:h.hunter):null,c=cellAt(board,S,sq);c&&c.classList.add('h3kb');}}
 // One plain line at the start of every game: who hunts what, naming only the animals in the game (roles.js).
 let startDone=false;
 function eggLineShowing(){const h=document.getElementById('hint');return !!(h&&h.textContent.indexOf("You're on the egg!")===0);}

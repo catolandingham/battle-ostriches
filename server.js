@@ -576,6 +576,8 @@ function stamp(room, v, seat) {
     v.smashNote = g.lastSmash ? {seq:g.lastSmash.seq,by:g.lastSmash.by,owner:g.team||v.role==='blue'||v.god?g.lastSmash.owner:null} : null;
     if(v.kick&&g.lastKick){const k=g.lastKick,key=g.team?(k.seat==='hunter'?g.h.kind:k.seat):k.who==='vulture'?'red':k.who;v.kick.trail=seat===(v.kick.by||'blue')?motionPath(g.cfg,k.from,k.to,true,k.moved||3):trailView(room,v,seat,key,k.from,k.to,true,k.moved||3);v.kick.key=key;}
     if(v.stoneNote)v.stoneNote.trails=(g.lastStone.trails||[]).map(t=>({key:t.key,points:trailView(room,v,seat,t.key,t.from,t.to,false,2)}));
+    const bump=g.lastBump,seeBump=!!(bump&&(g.phase==='over'||v.god||!['hunter','hyena','badger'].includes(seat)));
+    v.bumpNote=bump?{seq:bump.seq,by:bump.by,target:bump.target,key:bump.key,moved:bump.moved,to:seeBump?bump.to.slice():null,trail:seeBump?motionPath(g.cfg,bump.from,bump.to,false,bump.moved||2):null}:null;
     if(v.h3&&g.hunt){const rv=g.hunt.rival,bs=g.hunt.burst;if(v.h3.rival&&rv)v.h3.rival.trail=trailView(room,v,seat,rv.by==='hyena'?'badger':'hyena',rv.at,rv.to,false,2);if(v.h3.burst&&bs)v.h3.burst.trail=trailView(room,v,seat,'hyena',bs.at,bs.to,false,2);}
 
     // anyone who can see the ostrich sees it sit: birds always; hunters only through ambush sight (a buried badger with the ostrich next to it)

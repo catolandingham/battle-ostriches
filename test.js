@@ -28,10 +28,10 @@ t('hunger: eat at food every N turns or starve',()=>{const g=setup({...C,warmth:
 t('warmth: unvisited eggs go cold; vulture wins',()=>{const g=setup();let x=0;for(let r=1;r<=C.warmth+2&&!g.winner;r++){B.ostrichStep(g,r%2?[1,1]:[0,0]);if(!g.winner)fl(g);}assert.equal(g.winBy,'cold')});
 t('ostrich wins after C.rounds rounds (eating + sitting)',()=>{const cfg={...C,warmth:99};const g=B.newGame(cfg);B.placeEgg(g,[2,0]);B.placeEgg(g,[6,2]);B.placeEgg(g,[2,5]);B.placeOstrich(g,[1,0]);B.vultureFly(g,[4,2]);
  for(let r=1;r<=40&&!g.winner;r++){B.ostrichStep(g,g.ostrich[0]===0?[1,0]:[0,0]);if(!g.winner)fl(g);}assert.equal(g.winner,'blue');assert.equal(g.round,C.rounds)});
-t('regression (Brian r28): vulture on the ostrich square throws -> bounce, egg safe (sitting, carrying, bot path), UI never cracks an egg',()=>{
+t('regression (Brian r28, updated 2026-11-16): a sitting ostrich still kicks a stone back; a carrying ostrich cannot, so the egg breaks',()=>{
  const AI=require('./ai.js');const g=setup();assert(B.ostrichSit(g));assert(B.vultureFly(g,[3,3]));assert(B.ostrichSit(g));g.vulture=[2,2];g.turn='red';
  assert(AI.redView(g).throw.some(p=>p+''==='2,2'));assert.equal(B.vultureThrow(g,[2,2]),'bounce');assert(g.eggs[0].alive);assert.equal(AI.redView(g).lastAction.result,'bounce');assert.equal(g.marks['2,2'],undefined);assert.deepEqual(Object.keys(AI.redView(g).lastAction).sort(),['egg','from','p','result','type']);assert.equal(g.lastAction.egg,true);
- const h=setup();assert(B.ostrichStep(h,[3,2],true));h.vulture=[3,2];assert.equal(B.vultureThrow(h,[3,2]),'bounce');assert(h.eggs[0].alive);assert.deepEqual(h.eggs[0].pos,[3,2]);assert.equal(h.lastAction.egg,true);
+ const h=setup();assert(B.ostrichStep(h,[3,2],true));h.vulture=[3,2];assert.equal(B.vultureThrow(h,[3,2]),'hit');assert.equal(h.eggs[0].alive,false);assert.deepEqual(h.eggs[0].pos,[3,2]);assert.equal(h.marks['3,2'],'hit');assert.equal(h.lastAction.kickedBack,false);
  const q=setup();assert(B.ostrichStep(q,[2,3]));q.vulture=[2,3];assert.equal(B.vultureThrow(q,[2,3]),'bounce');assert.equal(q.lastAction.egg,false);
  const w={};require('vm').runInNewContext(require('fs').readFileSync(__dirname+'/public/smash.js','utf8'),{window:w,document:{}});
  assert.equal(w.SMASH.kind('bounce'),'feather');assert.equal(w.SMASH.kind('hit'),'hit');assert.equal(w.SMASH.kind('miss'),'miss');});

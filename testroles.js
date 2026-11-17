@@ -55,11 +55,13 @@ ok('approved wording, with numbers from the rules constants', () => {
   assert.deepEqual(o.lines, [
     `Keep at least 1 egg alive for ${C.rounds} rounds.`,
     'You lose if every egg is broken or goes cold, or if you don\'t eat in time.',
+    'A vulture may land on you only while you carry. The egg drops and is found.',
   ]);
   assert.deepEqual(v.lines, [
     'You win if every egg is broken or goes cold.',
     'You also win if the ostrich doesn\'t eat in time.',
     `You lose if an egg lasts ${C.rounds} rounds.`,
+    'You may land on an ostrich that is carrying. The egg drops and you find it.',
   ]);
   const o3 = R.roleCard('blue', 'hyena', '3'), h3 = R.roleCard('hunter', 'hyena', '3');
   assert.deepEqual(o3.lines, [
@@ -68,6 +70,7 @@ ok('approved wording, with numbers from the rules constants', () => {
     'You lose if every egg is broken or goes cold, or if you don\'t eat in time.',
     'The hunter wins when both birds are out.',
     `When the hunter knocks a bird out, they always take ${T.T3.double} turns in a row. The hyena can pounce only on the first.`,
+    'A vulture may land on you only while you carry. The egg drops and is found.',
   ]);
   assert.deepEqual(h3.lines, [
     'You win when both birds are out.',
@@ -121,8 +124,8 @@ ok('the start-of-game line names only the animals in the game', () => {
 
 ok('card ids: one per animal, hunter and mode (a bird card only changes with the hunter in 3 players)', () => {
   const id = R.cardId;
-  assert.equal(id('blue', null, '2'), 'ostrich__2'); assert.equal(id('blue', 'hyena', '2'), 'ostrich__2');
-  assert.equal(id('blue', 'hyena', '3'), 'ostrich_hyena_3_r5'); assert.equal(id('blue', 'badger', '3'), 'ostrich_badger_3_r5');
+  assert.equal(id('blue', null, '2'), 'ostrich__2_c'); assert.equal(id('blue', 'hyena', '2'), 'ostrich__2_c');
+  assert.equal(id('blue', 'hyena', '3'), 'ostrich_hyena_3_r5_c'); assert.equal(id('blue', 'badger', '3'), 'ostrich_badger_3_r5_c');
   assert.equal(id('o1', null, '4'), id('o2', null, '4'), 'both 2 vs 2 ostriches share a card');
   assert.equal(id('hunter', 'hyena', '3'), 'hyena__3_r5'); assert.equal(id('hunter', 'badger', '3'), 'badger__3_r5'); assert.equal(id('badger', null, '4h'), 'badger__4h');
   assert.equal(id('hyena', null, '4h'), 'hyena__4h_p2'); assert.equal(id('hunter', 'hyena', '5'), 'hyena__5_p2');

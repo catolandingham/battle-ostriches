@@ -102,9 +102,17 @@ function vultureFly3(g, p) {
 }
 // The stone resolver's view of this mode: the hunter is pushed 2 away from the vulture and a buried badger comes up.
 const stoneW3 = g => { const t = g.three; return { thrower: () => g.vulture.slice(), setThrower: q => { g.vulture = q.slice(); },
-  ostrichAt: p => liveAt(g, 'blue') && K(p) === K(g.ostrich), eggAt: p => B.eggAt(g, p),
-  pushAt: (p, dir, n) => { if (K(t.h) !== K(p)) return []; const from = t.h.slice(), wasBur = t.burrowed; t.burrowed = false; t.dig = 0; if (wasBur && t.kind === 'badger') t.popout = { seq: t.popSeq = (t.popSeq || 0) + 1, round: g.round };
-    t.h = B.slide(g.cfg, from, dir, n, m => (liveAt(g, 'blue') && K(m) === K(g.ostrich)) || (liveAt(g, 'red') && K(m) === K(g.vulture)), g.marks); return [{ kind: t.kind || 'hyena', from, to: t.h.slice() }]; },
+  ostrichAt: p => liveAt(g, 'blue') && K(p) === K(g.ostrich),
+  carryingAt: p => liveAt(g, 'blue') && g.carrying !== null && K(p) === K(g.ostrich),
+  dropCarried: p => { const e = g.eggs[g.carrying]; g.carrying = null; if (e && e.alive) e.pos = p.slice(); },
+  eggAt: p => B.eggAt(g, p),
+  pushAt: (p, dir, n) => {
+    const moved = [], block = m => (liveAt(g, 'blue') && K(m) === K(g.ostrich)) || (liveAt(g, 'red') && K(m) === K(g.vulture)) || (K(m) === K(t.h) && !(t.kind === 'badger' && t.burrowed));
+    if (liveAt(g, 'blue') && K(g.ostrich) === K(p)) { const from = g.ostrich.slice(); g.sitting = false;
+      g.ostrich = B.slide(g.cfg, from, dir, n, m => block(m) && K(m) !== K(from), g.marks); moved.push({ kind: 'ostrich', key: 'blue', from, to: g.ostrich.slice() }); }
+    if (K(t.h) !== K(p)) return moved;
+    const from = t.h.slice(), wasBur = t.burrowed; t.burrowed = false; t.dig = 0; if (wasBur && t.kind === 'badger') t.popout = { seq: t.popSeq = (t.popSeq || 0) + 1, round: g.round };
+    t.h = B.slide(g.cfg, from, dir, n, m => block(m) && K(m) !== K(from), g.marks); moved.push({ kind: t.kind || 'hyena', key: t.kind || 'hyena', from, to: t.h.slice() }); return moved; },
   open: q => !B.wrecked(g, q) && !(liveAt(g, 'blue') && K(q) === K(g.ostrich)) && !(K(q) === K(t.h) && !(t.kind === 'badger' && t.burrowed)), ostrichPos: () => g.ostrich }; };
 function vultureThrow3(g, p) { const r = B.vultureThrow(g, p, stoneW3); if (!r) return false; if (!finish(g)) advance(g); return r; }
 // --- Kick (rules in game.js): the ostrich may kick the vulture or the hunter next to it. A burrowed badger can't be seen, so it can't be kicked.

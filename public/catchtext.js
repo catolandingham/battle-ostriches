@@ -58,11 +58,12 @@
   function newEvents(seen, S, prev) {
     const out = [], h = (S && S.h3) || {};
     if (!S) return out;
-    if (S.phase && S.phase.startsWith('setup')) { seen.pop = seen.rival = seen.kick = seen.stone = seen.dug = seen.burst = seen.smash = 0; return out; }
+    if (S.phase && S.phase.startsWith('setup')) { seen.pop = seen.rival = seen.kick = seen.stone = seen.dug = seen.burst = seen.smash = seen.bump = 0; return out; }
     const po = h.popout, rv = h.rival, k = S.kick;
     if(S.smashNote&&S.smashNote.seq!==seen.smash){seen.smash=S.smashNote.seq;if(prev)out.push({kind:'smash',text:'The vulture smashed an egg.'});}
     const la=S.lastAction;if(prev&&h.team&&S.role==='red'&&la&&la.type==='fly'&&la.spotted&&la.seat!==h.mySeat&&JSON.stringify(la)!==JSON.stringify(prev.lastAction))out.push({kind:'teamFound',text:`${SEAT[la.seat]} found an egg.`});
     if (k && k.seq !== seen.kick) { seen.kick = k.seq; if (prev) out.push({ kind: 'kick', text: kickLine(k.who, k.moved, S.cfg && S.cfg.kickPush), square: k.to || null }); }
+    if (S.bumpNote && S.bumpNote.seq !== seen.bump) { seen.bump = S.bumpNote.seq; if (prev) out.push({ kind: 'bump', text: '', square: S.bumpNote.to || null }); }
     if (S.stoneNote && S.stoneNote.seq !== seen.stone) { seen.stone = S.stoneNote.seq; if (prev) out.push({ kind: 'stone', text: S.stoneNote.text }); }
     if (h.dug && h.dug.seq !== seen.dug) { seen.dug = h.dug.seq; if (prev) out.push({ kind: 'dug', text: h.dugSeen ? 'A bird saw you dig in.' : dugLine() }); } // the badger's own phone is told when a bird saw it dig (Brian, 2026-11-15)
     if (h.burst && h.burst.seq !== seen.burst) { seen.burst = h.burst.seq; if (prev) out.push({ kind: 'burst', text: burstLine(h.burst), square: h.burst.to || null }); }
@@ -84,9 +85,18 @@
     if(e.kind==='stone'&&S.stoneNote&&SEAT[S.stoneNote.kicker]&&/^The ostrich kicked the stone/.test(e.text))return e.text.replace('The ostrich',SEAT[S.stoneNote.kicker]);
     if(e.kind==='stone'&&S.stoneNote&&S.stoneNote.targets&&S.stoneNote.targets.length) {
       const n=S.stoneNote,targets=n.targets.join(' and the ');
+      const keys=(n.trails||[]).map(t=>t&&t.key);
       if(seat===n.by)return `Your stone hit the ${targets}!`;
-      if(n.targets.includes(viewer))return 'A stone hit you!';
+      if(n.targets.includes(viewer)||keys.includes(viewer)||keys.includes(seat))return 'A stone hit you!';
       return `${SEAT[n.by]||'The vulture'}'s stone hit the ${targets}!`;
+    }
+    if(e.kind==='bump'&&S.bumpNote){
+      const n=S.bumpNote,by=SEAT[n.by]||'The vulture',who=SEAT[n.target]||'the ostrich';
+      const hunter=S.role==='hunter'||seat==='hunter'||viewer==='hyena'||viewer==='badger';
+      if(seat===n.target||viewer===n.target||(!SEAT[n.target]&&(seat==='blue'||S.role==='blue')&&(n.target==='blue'||n.target==='ostrich')))return `${by} bumped you off your egg!`;
+      if(seat===n.by||viewer===n.by||(!SEAT[n.by]&&(seat==='red'||S.role==='red')&&(n.by==='red'||n.by==='vulture')))return `You bumped ${who} and found the egg!`;
+      if(hunter)return SEAT[n.by]&&SEAT[n.target]?`${SEAT[n.by]} bumped ${SEAT[n.target]}!`:'The vulture bumped the ostrich!';
+      return SEAT[n.by]&&SEAT[n.target]?`${SEAT[n.by]} bumped ${SEAT[n.target]} and found the egg!`:'The vulture bumped the ostrich and found the egg!';
     }
     if(e.kind==='rival') {const by=h.rival.by,other=by==='hyena'?'badger':'hyena';
       if(viewer===by)return `You shoved the ${other}!`;

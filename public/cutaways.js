@@ -14,6 +14,8 @@
     { id: 'kick', event: 'kick', by: 'ostrich', target: 'hyena', wrap: false },
     { id: 'kick-badger', event: 'kick', by: 'ostrich', target: 'badger' },
     { id: 'kick-vulture', event: 'kick', by: 'ostrich', target: 'vulture' },
+    // The bump reuses the vulture and ostrich picture until a landing drawing exists.
+    { id: 'kick-vulture', event: 'bump', by: 'vulture', target: 'ostrich' },
     { id: 'knockout', event: 'knockout', by: 'hyena', target: 'ostrich' },
     { id: 'knockout-hyena-vulture', event: 'knockout', by: 'hyena', target: 'vulture' },
     { id: 'knockout-badger-ostrich', event: 'knockout', by: 'badger', target: 'ostrich' },
@@ -64,6 +66,10 @@
     const lc = h.lastCatch;
     if (fresh(lc, oh.lastCatch) && pointOk(lc.at)) {
       out.push({ event: lc.ko ? 'knockout' : 'catch', by: kindOf(lc.by || h.kind), target: kindOf(lc.bird), seq: lc.seq });
+    }
+    const bn = S.bumpNote;
+    if (fresh(bn, prev.bumpNote) && (pointOk(bn.to) || anyPoint(bn.trail))) {
+      out.push({ event: 'bump', by: kindOf(bn.by || 'vulture'), target: 'ostrich', seq: bn.seq });
     }
     const note = S.stoneNote;
     if (fresh(note, prev.stoneNote)) {

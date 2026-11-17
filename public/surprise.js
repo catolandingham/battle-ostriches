@@ -13,7 +13,7 @@
   const WORD_MS = 300;
   const MIN_LINE_MS = 1000;
   const LOOKOUT_LINE = 'Look out!';
-  const HIT_EVENTS = ['kick', 'catch', 'knockout', 'stone', 'smash', 'burst', 'shove'];
+  const HIT_EVENTS = ['kick', 'catch', 'knockout', 'stone', 'smash', 'burst', 'shove', 'bump'];
 
   function wordCount(text) {
     return (String(text || '').trim().match(/\S+/g) || []).length;
@@ -80,7 +80,17 @@
       const trails = note.trails || [];
       const seen = trails.some(tr => Array.isArray(tr && tr.points) && tr.points.some(pointOk));
       const sq = seen ? (trails.reduce((m, tr) => Math.max(m, squaresOf(null, null, tr.points, 2)), 0) || 2) : 0;
-      out.push({ event: 'stone', seq: note.seq, by: note.by || 'red', targets: note.targets.slice(), cartoon: true, squares: sq });
+      const seats = trails.map(tr => tr && tr.key).filter(Boolean);
+      out.push({ event: 'stone', seq: note.seq, by: note.by || 'red', targets: note.targets.slice(), seats, cartoon: true, squares: sq });
+    }
+    const bn = S.bumpNote, pbn = prev.bumpNote;
+    if (fresh(bn, pbn)) {
+      const seen = pointOk(bn.to) || (Array.isArray(bn.trail) && bn.trail.some(pointOk));
+      out.push({
+        event: 'bump', seq: bn.seq, by: bn.by || 'red', target: bn.target, key: bn.key, who: 'ostrich',
+        to: bn.to, trail: bn.trail, cartoon: !!seen,
+        squares: seen ? squaresOf(bn.from, bn.to, bn.trail, bn.moved) : 0
+      });
     }
     const sm = S.smashNote, psm = prev.smashNote;
     if (fresh(sm, psm)) {
@@ -133,7 +143,8 @@
       return false;
     }
     if (ev.event === 'catch' || ev.event === 'knockout') return sameBeing(S, ev.bird);
-    if (ev.event === 'stone') return (ev.targets || []).some(t => sameBeing(S, t));
+    if (ev.event === 'stone') return (ev.seats || []).concat(ev.targets || []).some(t => sameBeing(S, t));
+    if (ev.event === 'bump') return sameBeing(S, ev.target) || sameBeing(S, ev.key);
     if (ev.event === 'smash') {
       if (ev.owner && seat === ev.owner) return true;
       // 2v2 / 5p: only the exact owner, never the teammate.
@@ -152,7 +163,7 @@
     if (!S || !ev) return false;
     if (ev.event === 'kick') return sameBeing(S, ev.by || 'blue');
     if (ev.event === 'catch' || ev.event === 'knockout') return sameBeing(S, ev.by) || (S.role === 'hunter' && kindOf(ev.by) === kindOf(viewerKind(S)));
-    if (ev.event === 'stone' || ev.event === 'smash') return sameBeing(S, ev.by || 'red');
+    if (ev.event === 'stone' || ev.event === 'smash' || ev.event === 'bump') return sameBeing(S, ev.by || 'red');
     if (ev.event === 'burst') return sameBeing(S, 'badger');
     if (ev.event === 'shove') return sameBeing(S, ev.by);
     return false;
@@ -189,6 +200,7 @@
         return CT.catchLine(lc, viewerSeat(S), lc.by || h.kind, CT.catchesLeft(h, lc)) || '';
       }
       if (ev.event === 'stone') return CT.viewerEvent({ kind: 'stone', text: (S.stoneNote && S.stoneNote.text) || '' }, S) || '';
+      if (ev.event === 'bump') return CT.viewerEvent({ kind: 'bump', text: '' }, S) || '';
       if (ev.event === 'smash') return CT.viewerEvent({ kind: 'smash', text: '' }, S) || '';
       if (ev.event === 'burst') return CT.viewerEvent({ kind: 'burst', text: '' }, S) || '';
       if (ev.event === 'shove') return CT.viewerEvent({ kind: 'rival', text: '' }, S) || '';

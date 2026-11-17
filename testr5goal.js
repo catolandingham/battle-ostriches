@@ -21,7 +21,7 @@ ok('every 3-player card states the both-birds goal and no catch count', () => {
     const c = R.roleCard(role, kind, '3'), all = c.lines.join(' ');
     assert.ok(/(You win|The hunter wins) when both birds are out\./.test(all), role + ' ' + kind + ': ' + all);
     assert.ok(!/win(s)? at \d+ catches/.test(all), role + ' ' + kind + ' still names a catch count');
-    assert.ok(/_r5$/.test(c.id), 'phones that saw the old card see this one once: ' + c.id);
+    assert.ok(/_r5(_c)?$/.test(c.id), 'phones that saw the old card see this one once: ' + c.id);
   }
 });
 console.log(n + ' R5 goal checks passed');
