@@ -856,7 +856,7 @@ function openLobby(ws, m) {
   const human = { id, token, ws, name: 'Player 1', role: null, kind: null, host: true };
   const room = { code: c, lobby: true, flow: 1, solo: !!m.solo, pass: false, humans: [human],
     botsWanted: m.solo ? Math.max(1, Math.min(4, +m.bots || 1)) : 0, setupChoice: null, recovery: null,
-    clock: true, level: 'normal', hunterKind: null, arrivals: [], note: '', touched: Date.now(), players: {}, bots: [], mem: {} };
+    clock: false, level: 'normal', hunterKind: null, arrivals: [], note: '', touched: Date.now(), players: {}, bots: [], mem: {} };
   LB.clampBots(room); LB.reconcile(room); rooms.set(c, room); ws._bo = { room, seat: null, hid: id };
   try { ws.send(JSON.stringify({ t: 'joined', code: c, role: null, token, lobby: true })); } catch {}
   lobbyBroadcast(room);

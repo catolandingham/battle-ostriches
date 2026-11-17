@@ -20,10 +20,19 @@ const MEET = 'The badger shoved the hyena!';
   for (const [p, r] of [[O, 'ostrich'], [V, 'vulture'], [Y, 'hyena'], [K, 'badger']]) { await p.waitForSelector(`[data-role="${r}"]`); await p.click(`[data-role="${r}"]`); }
   await O.waitForFunction(() => LobbyUI.get().canStart && LobbyUI.get().setup === '4h');
   await O.click('#startGame'); for (const p of ALL) await p.waitForSelector('#board .cell');
-  // a recorder on every phone: when #announce shows which words, and for how long (it is outside #board, so a redraw must not cut it short)
-  for (const p of ALL) await p.evaluate(() => { window.__ann = []; setInterval(() => { const e = document.getElementById('announce'), on = !!e && e.classList.contains('show'), L = window.__ann, last = L[L.length - 1];
-    if (on && (!last || last.end || last.text !== e.textContent)) L.push({ text: e.textContent, start: performance.now(), inBoard: !!e.closest('#board') });
-    else if (!on && last && !last.end) last.end = performance.now(); }, 40); });
+  // a recorder on every phone: when #announce shows which words, and for how long (it is outside #board, so a redraw must not cut it short).
+  // The clock is the DOM change itself. A 40ms poll starts late when the phone is busy drawing, and a 1s line then measures under 0.9s.
+  for (const p of ALL) await p.evaluate(() => {
+    window.__ann = [];
+    const slot = document.getElementById('msgslot') || document.body;
+    const sample = () => {
+      const e = document.getElementById('announce'), on = !!e && e.classList.contains('show'), L = window.__ann, last = L[L.length - 1];
+      if (on && (!last || last.end || last.text !== e.textContent)) L.push({ text: e.textContent, start: performance.now(), inBoard: !!e.closest('#board') });
+      else if (!on && last && !last.end) last.end = performance.now();
+    };
+    new MutationObserver(sample).observe(slot, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
+    sample();
+  });
   const room = [...server.rooms.values()].find(r => r.hunt); room.clock = false;
   // the game starts: hyena (4,3) and badger (5,3) side by side; the ostrich and the vulture are far from both
   const g = H.newHunt(undefined, [[0, 3], [8, 3]]); for (let i = 0; i < 10 && g.phase !== 'play'; i++) assert.ok(HA.act(g, 'blue', HA.move(g, 'blue', {})));
