@@ -146,13 +146,24 @@ const THEMES = ['bw', 'classic', 'nature', 'notes', 'golden', 'paper', 'arcade',
       if (!(rad > 0 && rad * 2 < br.width - 1)) problems.push('shape ' + pc.className + ' ' + rad);
       if (br.width > 14 || br.width < 8) problems.push('size ' + pc.className + ' ' + Math.round(br.width));
       if (br.left > cr.left + cr.width * 0.42 || br.top < cr.top + cr.height * 0.4) problems.push('place ' + pc.className);
+      if (br.left < cr.left + 3 || br.bottom > cr.bottom - 3) problems.push('outside frame ' + pc.className);
+      if (document.documentElement.dataset.theme === 'bw') {
+        const text = (badge.textContent || '').trim();
+        if (!text) problems.push('empty number ' + pc.className);
+        const cs = getComputedStyle(badge);
+        const lum = c => { const m = String(c).match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/); if (!m) return null; const f = v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }; return 0.2126 * f(+m[1]) + 0.7152 * f(+m[2]) + 0.0722 * f(+m[3]); };
+        const a = lum(cs.color), b = lum(cs.backgroundColor);
+        const ratio = a == null || b == null ? 0 : (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+        if (ratio < 4.5) problems.push('contrast ' + ratio.toFixed(2) + ' ' + cs.color + ' on ' + cs.backgroundColor + ' ' + pc.className);
+      }
       const img = [...document.querySelectorAll('img.aimg')].filter(shown).find(im => onCell(im, cell) && (pc.classList.contains('carrying') ? im.classList.contains('aimg-ostrich-carry') : true));
       if (img) {
         const ir = box(img);
-        const face = { left: ir.left, right: ir.right, top: ir.top, bottom: ir.top + ir.width * 0.42 };
+        const faceBottom = ir.top + (ir.bottom - ir.top) * 0.3;
+        const face = { left: ir.left, right: ir.right, top: ir.top, bottom: faceBottom };
         if (hit(br, face)) problems.push('covers face ' + pc.className);
         if (pc.classList.contains('carrying')) {
-          const egg = { left: ir.left + ir.width * 0.36, right: ir.left + ir.width * 0.78, top: ir.top + ir.width * 0.42, bottom: ir.top + ir.width * 0.82 };
+          const egg = { left: ir.left + ir.width * 0.42, right: ir.left + ir.width * 0.78, top: ir.top + (ir.bottom - ir.top) * 0.46, bottom: ir.top + (ir.bottom - ir.top) * 0.8 };
           if (hit(br, egg)) problems.push('covers egg');
         }
       }
