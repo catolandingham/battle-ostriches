@@ -164,13 +164,27 @@ const COLS = 9;
   const A4 = await mk(), Y = await mk();
   await A4.goto(U); await A4.click('#playFriend'); await A4.waitForSelector('#lobbyCode:not(:empty)');
   await Y.goto((await A4.inputValue('#lobbyLink')).replace(/^http:\/\/[^/]+/, 'http://localhost:3966')); await Y.waitForSelector('#roomLobby');
-  await A4.click('#botPlus'); await A4.click('#botPlus');
+  // Each plus sends the count the phone has now. A second click before that count comes back sends the same number, so wait for 1, then 2.
+  await A4.click('#botPlus'); await A4.waitForFunction(() => { const s = LobbyUI.get(); return s && s.botsWanted >= 1; });
+  await A4.click('#botPlus'); await A4.waitForFunction(() => { const s = LobbyUI.get(); return s && s.botsWanted >= 2; });
   await A4.waitForSelector('[data-role="badger"]'); await A4.click('[data-role="badger"]'); await Y.click('[data-role="hyena"]');
   await Y.waitForFunction(() => { const s = LobbyUI.get(); return s && s.roles.some(r => r.id === 'hyena' && r.mine); });
   await A4.click('#startGame'); await Y.waitForSelector('#board .cell');
-  await Y.waitForSelector('#actions.mine', { ...at, timeout: 20000 });
-  await Y.locator('#actions button').first().click({ force: true }); // the hyena stays put
-  await A4.waitForSelector('#actions.mine', { ...at, timeout: 20000 });
+  // The birds' turns can still be in a cartoon when the bar first appears. A tap then is dropped and the badger never gets a turn.
+  const ready = (word) => Y.waitForFunction(w => {
+    const S = UI._S();
+    const busy = !!(window.CUTAWAYS && CUTAWAYS.busy && CUTAWAYS.busy());
+    const btn = document.querySelector('#actions.mine button');
+    return !!(S && S.phase === 'play' && S.myTurn && !UI._locked() && !busy && btn && btn.textContent.indexOf(w) >= 0);
+  }, word, { timeout: 20000 });
+  await ready('Stay');
+  await Y.locator('#actions button', { hasText: 'Stay' }).click();
+  await A4.waitForFunction(() => {
+    const S = UI._S();
+    const busy = !!(window.CUTAWAYS && CUTAWAYS.busy && CUTAWAYS.busy());
+    const btn = document.querySelector('#actions.mine button');
+    return !!(S && S.phase === 'play' && S.myTurn && !UI._locked() && !busy && btn && /Burrow/.test(btn.textContent));
+  }, null, { timeout: 20000 });
   assert.equal((await A4.textContent('#actions')).trim(), 'Burrow');
   const hs = await S_(A4); assert.equal(hs.burrowed, false);
   await reset(A4, Y);

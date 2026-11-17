@@ -7,10 +7,27 @@
   function rulesFromModules() {
     const B = require('../game.js'), T = require('../three.js'), H = require('../hunt.js'), M = require('../team.js'), C = B.CONFIG;
     const pick = (t, mode) => Object.assign({ ko: { hyena: t.ko.hyena, badger: t.ko.badger }, sense: t.sense, see: t.see, walk: t.walk, pounce: t.pounce }, t.double != null ? { double: t.double } : {}, mode ? { goal: B.HUNTER_GOAL(mode) } : {});
+    // eggs: how many eggs each ostrich hides. Classic, 3-player and Hunters use CONFIG. Team modes (2 vs 2, 5 players) use TM.eggs.
+    const nest = t => (t && t.eggs != null) ? t.eggs : C.eggs;
+    const boxed = (t, mode) => Object.assign(pick(t, mode), { eggs: nest(t) });
     return {
       cfg: { eggs: C.eggs, rounds: C.rounds, warmth: C.warmth, food: C.food, stones: C.stones, fly: C.vultureFly, throwRange: C.throwRange, smell: C.smellRange, walk: C.ostrichWalk, carryWalk: C.carryWalk, kick: C.kickPush, kickBadger: C.kickPushBadger },
-      modes: { '3': pick(T.T3, '3'), '4h': pick(H.TH), '4': pick(M.TM), '5': pick(M.TM, '5') },
+      modes: { '3': boxed(T.T3, '3'), '4h': boxed(H.TH), '4': boxed(M.TM), '5': boxed(M.TM, '5') },
     };
+  }
+  // Eggs each ostrich hides in this mode. Classic ('2') uses cfg.eggs. Team modes use the eggs on that mode. Null when the phone has no rules object yet.
+  function eggsFor(mode, rules) {
+    const R = rules || (typeof module !== 'undefined' ? rulesFromModules() : null);
+    if (!R || !R.cfg) return null;
+    const slot = R.modes && R.modes[String(mode || '2')];
+    if (slot && slot.eggs != null) return slot.eggs;
+    return R.cfg.eggs;
+  }
+  // How to play, ostrich goal. Same words in every mode; only the egg count changes.
+  function howEggLine(mode, rules) {
+    const R = rules || (typeof module !== 'undefined' ? rulesFromModules() : null);
+    if (!R) return null;
+    return `Keep one of your ${eggsFor(mode, R)} eggs alive for ${R.cfg.rounds} rounds. Both birds always see each other; your eggs stay hidden.`;
   }
 
   const PICKED = 'We picked this animal for you.';
@@ -207,6 +224,6 @@
     return m === '3' ? base + '_r5' : revised ? base + '_p2' : base; // R5 changed every 3-player card: show it once more
   }
 
-  const API = { roleCard, cardId, huntLine, kickList, animal, rulesFromModules, PICKED };
+  const API = { roleCard, cardId, huntLine, kickList, animal, rulesFromModules, eggsFor, howEggLine, PICKED };
   if (typeof module !== 'undefined') module.exports = API; else window.Roles = API;
 })();
