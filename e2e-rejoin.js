@@ -30,9 +30,51 @@ async function clearSeatMemory(page) {
     await p.addInitScript(init);
     return { p, c };
   };
+  // The lost-storage visit has to happen after the old socket is actually gone.
+  // A reload in the same page can join while that socket is still open, and the
+  // server then says the game is full instead of offering the seat. The rejoin
+  // line is what we wait for; the grace (1.5s in this file) is what reveals it.
+  const seatDropped = async (code, seat) => {
+    const deadline = Date.now() + 5000;
+    while (Date.now() < deadline) {
+      const room = server.rooms.get(code);
+      const p = room && room.players && room.players[seat];
+      if (p && !(p.ws && p.ws.readyState === 1)) return;
+      await new Promise(r => setTimeout(r, 20));
+    }
+    throw new Error('seat ' + seat + ' was still connected');
+  };
+  const returnWithoutStorage = async (holder, code, seat) => {
+    await clearSeatMemory(holder.p);
+    await holder.c.close();
+    await seatDropped(code, seat);
+    const next = await mk();
+    await next.p.goto('http://localhost:4021/?room=' + code);
+    await next.p.waitForSelector('#roomLobby');
+    return next;
+  };
+  // The reclaim line is the bench note once the grace has ended and the seat is
+  // actually offline. A page that connected during the grace is still on the
+  // "next game" note until that push; if the push was missed, reload then.
+  const waitRejoin = async (page, code, pattern) => {
+    const LB = require('./lobby');
+    const offered = () => {
+      const room = server.rooms.get(code);
+      return !!(room && LB.offlineSeats(room).length);
+    };
+    const deadline = Date.now() + 10000;
+    while (Date.now() < deadline && !offered()) await new Promise(r => setTimeout(r, 40));
+    if (!offered()) throw new Error('no offline seat to reclaim in ' + code);
+    const showing = () => page.evaluate(src => new RegExp(src).test((document.getElementById('roomLobby') || {}).textContent || ''), pattern);
+    if (!(await showing())) {
+      await page.reload();
+      await page.waitForSelector('#roomLobby');
+    }
+    await page.waitForFunction(src => new RegExp(src).test((document.getElementById('roomLobby') || {}).textContent || ''), pattern);
+  };
 
   // ---- 2 players ----
-  const A = await mk(), V = await mk();
+  let A = await mk(), V = await mk();
   await A.p.goto(U); await A.p.click('#playFriend'); await A.p.waitForSelector('#lobbyCode:not(:empty)');
   const link = (await A.p.inputValue('#lobbyLink')).replace(/^http:\/\/[^/]+/, 'http://localhost:4021');
   const code = await A.p.textContent('#lobbyCode');
@@ -56,12 +98,10 @@ async function clearSeatMemory(page) {
   console.log('ok 2p navigate away and back with storage, token kept out of the URL');
 
   // lost storage: show reclaim, confirm, sit back down
-  await clearSeatMemory(A.p);
-  await A.p.goto('http://localhost:4021/?room=' + code); // no hash, no storage
-  await A.p.waitForSelector('#roomLobby');
+  A = await returnWithoutStorage(A, code, roleA);
   const early2 = await A.p.textContent('#roomLobby');
   if (/You'll play in the next one/.test(early2) && !/Rejoin as/.test(early2)) await shot(A.p, '2p-grace');
-  await A.p.waitForFunction(() => /Back in the game\? Tap your animal\./.test((document.getElementById('roomLobby') || {}).textContent || ''), null, { timeout: 8000 });
+  await waitRejoin(A.p, code, 'Back in the game\\? Tap your animal\\.');
   const body2 = await A.p.textContent('#roomLobby');
   assert.ok(!/You're in[\s\S]*You're in/.test(body2), 'title is not repeated in the body');
   assert.ok(/Rejoin as the ostrich/.test(body2), body2);
@@ -94,7 +134,7 @@ async function clearSeatMemory(page) {
   console.log('ok 2p live seats cannot be stolen');
 
   // ---- 3 players ----
-  const A3 = await mk(), V3 = await mk(), H3 = await mk();
+  let A3 = await mk(), V3 = await mk(), H3 = await mk();
   await A3.p.goto(U); await A3.p.click('#playFriend'); await A3.p.waitForSelector('#lobbyCode:not(:empty)');
   const link3 = (await A3.p.inputValue('#lobbyLink')).replace(/^http:\/\/[^/]+/, 'http://localhost:4021');
   const code3 = await A3.p.textContent('#lobbyCode');
@@ -110,9 +150,8 @@ async function clearSeatMemory(page) {
   await H3.p.waitForFunction(() => UI._S() && UI._S().role === 'hunter' && document.querySelectorAll('#board .cell').length > 0);
   console.log('ok 3p navigate away and back with storage');
 
-  await clearSeatMemory(H3.p);
-  await H3.p.goto('http://localhost:4021/?room=' + code3);
-  await H3.p.waitForFunction(() => /Rejoin as the hyena/.test((document.getElementById('roomLobby') || {}).textContent || ''), null, { timeout: 8000 });
+  H3 = await returnWithoutStorage(H3, code3, 'hunter');
+  await waitRejoin(H3.p, code3, 'Rejoin as the hyena');
   const hTxt = await H3.p.textContent('#roomLobby');
   assert.ok(/Back in the game\? Tap your animal\./.test(hTxt), hTxt);
   assert.ok(!/Rejoin as the ostrich/.test(hTxt) && !/Rejoin as the vulture/.test(hTxt), 'only the offline hyena');
@@ -128,7 +167,7 @@ async function clearSeatMemory(page) {
   await A3.c.close(); await V3.c.close(); await H3.c.close();
 
   // ---- team (2 vs 2): two people + two computers ----
-  const A4 = await mk(), V4 = await mk();
+  let A4 = await mk(), V4 = await mk();
   await A4.p.goto(U); await A4.p.click('#playFriend'); await A4.p.waitForSelector('#lobbyCode:not(:empty)');
   const link4 = (await A4.p.inputValue('#lobbyLink')).replace(/^http:\/\/[^/]+/, 'http://localhost:4021');
   const code4 = await A4.p.textContent('#lobbyCode');
@@ -146,9 +185,9 @@ async function clearSeatMemory(page) {
   await A4.p.waitForFunction(r => UI._S() && UI._S().role === r && document.querySelectorAll('#board .cell').length > 0, role4);
   console.log('ok team navigate away and back with storage');
 
-  await clearSeatMemory(A4.p);
-  await A4.p.goto('http://localhost:4021/?room=' + code4);
-  await A4.p.waitForFunction(() => /Rejoin as/.test((document.getElementById('roomLobby') || {}).textContent || ''), null, { timeout: 8000 });
+  const seat4 = await A4.p.evaluate(() => UI._S().h3.mySeat);
+  A4 = await returnWithoutStorage(A4, code4, seat4);
+  await waitRejoin(A4.p, code4, 'Rejoin as');
   const tTxt = await A4.p.textContent('#roomLobby');
   assert.ok(/Back in the game\? Tap your animal\./.test(tTxt), tTxt);
   assert.ok(/Rejoin as Ostrich 1|Rejoin as the ostrich/.test(tTxt), tTxt);
