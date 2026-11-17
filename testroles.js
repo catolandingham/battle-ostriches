@@ -18,7 +18,7 @@ const ALL = [
 ok('rules from the modules are plain numbers and nothing else (no start squares)', () => {
   const r = R.rulesFromModules();
   assert.deepEqual(r.cfg, { eggs: C.eggs, rounds: C.rounds, warmth: C.warmth, food: C.food, stones: C.stones, fly: C.vultureFly, throwRange: C.throwRange, smell: C.smellRange, walk: C.ostrichWalk, carryWalk: C.carryWalk, kick: C.kickPush, kickBadger: C.kickPushBadger });
-  const pk = (t, g) => Object.assign({ ko: t.ko, sense: t.sense, see: t.see, walk: t.walk, pounce: t.pounce }, t.double != null ? { double: t.double } : {}, g ? { goal: B.HUNTER_GOAL(g) } : {});
+  const pk = (t, g) => Object.assign({ ko: t.ko, sense: t.sense, see: t.see, walk: t.walk, pounce: t.pounce, eggs: t.eggs != null ? t.eggs : C.eggs }, t.double != null ? { double: t.double } : {}, g ? { goal: B.HUNTER_GOAL(g) } : {});
   assert.deepEqual(r.modes['3'], pk(T.T3, '3')); assert.deepEqual(r.modes['4h'], pk(H.TH)); assert.deepEqual(r.modes['5'], pk(TT.TM, '5'));
   assert.equal(r.modes['3'].double, 2);
   assert.ok(!/starts|clockMs/.test(JSON.stringify(r)), 'no start squares or clocks in what the server sends');
