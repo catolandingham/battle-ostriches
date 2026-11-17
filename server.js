@@ -31,6 +31,7 @@ const tok = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
 // The 10s clock still expires the turn when it is hidden. Lobby code can set this at create time via settings.showTimers.
 function timersOn(room) { if (room && room.clock === false) return false; return !(room && room.settings && room.settings.showTimers === false); }
 // A big event is announced to every seat; where it happened goes only to a seat that can see that square.
+// The dig line is the exception: only the badger and a bird that saw the dig get it (Brian, 2026-11-16).
 // popout: the badger came out of its burrow without a catch. Every seat gets the event (seq, round); `seen` says whether this seat can see the badger.
 // how many squares a kick actually moved the animal (0 to 2); the words say "back 2 squares" only when it went that far
 const kickMoved = k => k.moved != null ? k.moved : Math.max(Math.abs(k.to[0] - k.from[0]), Math.abs(k.to[1] - k.from[1]));
@@ -558,6 +559,43 @@ function trailView(room,v,seat,key,from,to,wrap=false,n=3){
   const eye=v.role==='blue'?v.ostrich:v.vulture;return eye&&eye[0]>=0&&B.dist(eye,p)<=2?p:null;
  });
 }
+// Which decision the table is waiting on. A pounce, a bonus turn, and the next round are different turns even when the same animal is still moving.
+function senseNow(g) {
+  if (!g) return 0;
+  if (g.three) return g.three.senseSeq | 0;
+  if (g.hunt && g.hunt.hs && g.hunt.hs[g.turn]) return g.hunt.hs[g.turn].senseSeq | 0;
+  if (g.h) return g.h.senseSeq | 0;
+  return 0;
+}
+function bonusNow(g) { return !!(g && g.three && g.three.extra); }
+function pounceNow(g) {
+  if (!g) return false;
+  if (g.three) return !!g.three.pounce;
+  if (g.hunt && g.hunt.hs && g.hunt.hs[g.turn]) return !!g.hunt.hs[g.turn].pounce;
+  if (g.h) return !!g.h.pounce;
+  return false;
+}
+function turnKey(g) {
+  return [g.phase, g.round | 0, g.turn, bonusNow(g) ? 1 : 0, senseNow(g), pounceNow(g) ? 1 : 0].join(':');
+}
+function syncTurnSeq(g) {
+  if (!g) return;
+  const k = turnKey(g);
+  if (g.turnSeq == null) g.turnSeq = 1;
+  if (g._turnKey == null) { g._turnKey = k; return; }
+  if (g._turnKey !== k) { g.turnSeq += 1; g._turnKey = k; }
+}
+function turnStamp(room) {
+  const g = room && room.g;
+  if (!g) return null;
+  syncTurnSeq(g);
+  return { round: g.round | 0, turn: g.turn, bonus: bonusNow(g), sense: senseNow(g), seq: g.turnSeq };
+}
+function stampMatch(got, cur) {
+  if (!got || !cur || typeof got !== 'object') return false;
+  return got.round === cur.round && got.turn === cur.turn && got.bonus === cur.bonus && got.sense === cur.sense && got.seq === cur.seq;
+}
+const TURN_ACTS = new Set(['place', 'step', 'carry', 'sit', 'fly', 'throw', 'kick', 'hmove', 'hstay', 'hburst']);
 function stamp(room, v, seat) {
   if (v && room && room.g) {
     if (room.g.phase === 'over') v.god = true; // Brian: finished-game full reveal for everyone.
@@ -567,11 +605,12 @@ function stamp(room, v, seat) {
     if (room.g.phase !== 'over' && v.kick && !v.kick.to && v.lastAction && v.lastAction.type === 'kick')
       v.lastAction = { ...v.lastAction, to: null };
   }
-  if (v && v.h3 && room && room.g) { // the badger digging in and bursting out (rule 7.4): the line goes to every seat; the mound only to a bird that could see it dig, only while it stays buried
+  if (v && v.h3 && room && room.g) { // the badger digging in and bursting out (rule 7.4): the dig line goes only to the badger and to a bird that saw the dig; the mound only to that bird, only while it stays buried (Brian, 2026-11-16)
     const g = room.g, t = g.three || g.hunt || (g.team && g.h ? g : null), over = g.phase === 'over';
     if (t) { const bur = g.three ? g.three.burrowed : g.hunt ? g.hunt.hs.badger.burrowed : g.h.burrowed, m = t.mound;
-      v.h3.dug = t.dug ? { seq: t.dug.seq, round: t.dug.round } : null; v.h3.mound = !over && bur && m && (m.seenBy || []).includes(seat) ? m.at.slice() : null;
       const isBadger = g.three ? seat === 'hunter' && g.three.kind === 'badger' : g.hunt ? seat === 'badger' : seat === 'hunter' && g.h.kind === 'badger'; // only the badger's own phone learns whether a bird saw it dig (Brian, 2026-11-15)
+      const saw = !!(m && (m.seenBy || []).includes(seat)); // three.js, hunt.js and team.js record who could see the dig
+      v.h3.dug = t.dug && (isBadger || saw) ? { seq: t.dug.seq, round: t.dug.round } : null; v.h3.mound = !over && bur && saw ? m.at.slice() : null;
       v.h3.dugSeen = isBadger && t.dug && m ? (m.seenBy || []).length > 0 : null;
       const bs = g.hunt && g.hunt.burst; v.h3.burst = bs ? { seq: bs.seq, round: bs.round, n: bs.n, to: over || v.god || ['hyena', 'badger'].includes(seat) || HU.seen(g, seat, 'hyena') ? bs.to : null } : null; } }
   if (v && room && room.g) { const g = room.g; v.endWhy = g.phase === 'over' ? g.endWhy || null : null; v.leftName = g.phase === 'over' && g.winBy === 'left' ? (g.leftName || null) : null; v.leftArt = g.phase === 'over' && g.winBy === 'left' ? (g.leftArt || null) : null; v.stoneNote = g.lastStone ? { seq: g.lastStone.seq, text: g.lastStone.text, by: g.lastStone.by, targets: g.lastStone.targets || [], kicker:g.lastStone.kicker||null } : null;
@@ -604,6 +643,7 @@ function stamp(room, v, seat) {
     v.h3.clockLeft = room.clockAskPause.left;
     v.h3.clockPaused = true;
   }
+  if (v && room && room.g) v.stamp = turnStamp(room);
   return v;
 }
 const hid = () => Math.random().toString(36).slice(2, 10);
@@ -818,7 +858,7 @@ function openLobby(ws, m) {
   const human = { id, token, ws, name: 'Player 1', role: null, kind: null, host: true };
   const room = { code: c, lobby: true, flow: 1, solo: !!m.solo, pass: false, humans: [human],
     botsWanted: m.solo ? Math.max(1, Math.min(4, +m.bots || 1)) : 0, setupChoice: null, recovery: null,
-    clock: true, level: 'normal', hunterKind: null, arrivals: [], note: '', touched: Date.now(), players: {}, bots: [], mem: {} };
+    clock: false, level: 'normal', hunterKind: null, arrivals: [], note: '', touched: Date.now(), players: {}, bots: [], mem: {} };
   LB.clampBots(room); LB.reconcile(room); rooms.set(c, room); ws._bo = { room, seat: null, hid: id };
   try { ws.send(JSON.stringify({ t: 'joined', code: c, role: null, token, lobby: true })); } catch {}
   lobbyBroadcast(room);
@@ -1028,6 +1068,7 @@ wss.on('connection', ws => {
       }
       if (m.a === 'rematch' && room.flow) { if (!room.g || room.g.phase !== 'over') return send({ t: 'error', msg: 'Not a legal move right now.', soft: true }); return handleRematch(room, m.how === 'change' ? 'change' : 'same'); }
       const who = room.pass ? (m.a === 'rematch' ? 'blue' : active(room.g)) : role;
+      if (TURN_ACTS.has(m.a) && !stampMatch(m.stamp, turnStamp(room))) return; // a tap from another turn is dropped, in every mode
       if (act(room, who, m)) { room.touched = Date.now(); broadcast(room); }
       else send({ t: 'error', msg: 'Not a legal move right now.', soft: true });
     }
@@ -1061,4 +1102,8 @@ setInterval(() => { const now = Date.now(); for (const [c, r] of rooms) if (now 
 server.listen(PORT, () => console.log('Battle Ostriches on http://localhost:' + PORT));
 // on shutdown (deploys send SIGTERM) save every live room right away
 process.on('SIGTERM', async () => { try { await Promise.all([...rooms.values()].map(r => ST.save(r))); ST.flushFile(); } catch {} process.exit(0); });
-module.exports = server; server.view = view; server.timersOn = timersOn; server.view3 = view3; server.create3 = create3; server.viewT = viewT; server.createT = createT; server.viewH = viewH; server.createH = createH; server.act3 = act3; server.actT = actT; server.actH = actH; server.rooms = rooms; server.broadcast = broadcast; server.surpriseDone = surpriseDone; server.clockDelayFor = clockDelayFor; server.isBotSeat = isBotSeat; server.scrubSaved = scrubSaved;
+module.exports = server; server.view = view; server.timersOn = timersOn; server.view3 = view3; server.create3 = create3; server.viewT = viewT; server.createT = createT; server.viewH = viewH; server.createH = createH; server.act3 = act3; server.actT = actT; server.actH = actH; server.rooms = rooms; server.broadcast = broadcast; server.surpriseDone = surpriseDone; server.clockDelayFor = clockDelayFor; server.isBotSeat = isBotSeat; server.scrubSaved = scrubSaved; server.turnStamp = turnStamp; server.acceptAct = function (room, who, m) {
+  if (!room || !m) return false;
+  if (TURN_ACTS.has(m.a) && !stampMatch(m.stamp, turnStamp(room))) return false;
+  return act(room, who, m);
+};

@@ -60,9 +60,3 @@ html[data-theme] :is(#board,.mini) .cell:is(:has(>.ic-food),:has(>.ic-rock)):has
 html[data-theme] :is(#board,.mini) .cell:is(:has(>.ic-food),:has(>.ic-rock)):has(.pc~.pc)>.pc.po:not(#_a):not(#_b):not(#_c):not(#_d){left:3%!important;top:44%!important;z-index:6!important}
 /* An ostrich carrying an egg uses the carry drawing: beak open a little, the egg lying sideways inside, medium, no number. Same in every theme. */
 html[data-theme] :is(#board,.mini) .cell>.pc.po.carrying:not(#_a):not(#_b):not(#_c):not(#_d){inset:auto!important;left:14%!important;top:14%!important;width:72%!important;height:72%!important;transform:none!important}
-/* 4 and 5 players draw the other ostrich as .pc.other. Twelve themes hide .pc and redraw only
-   the viewer's own bird, so that ostrich's carry drawing would disappear on a vulture's phone.
-   Show this one piece. Classic and Black and white already show it. A change that shows every
-   team bird can leave this rule: it does not add a second sprite. A surprise landing and the
-   carry slide still hide the piece (those rules use !important, or this selector steps aside). */
-html[data-theme] :is(#board,.mini) .cell:not(.fxslideo):not(.surprise-landing)>.pc.po.other.carrying:not(#_a):not(#_b):not(#_c):not(#_d){visibility:visible}

@@ -74,6 +74,7 @@ const at = { state: 'attached' };
   await A.waitForSelector('[data-role="ostrich"]'); await A.click('[data-role="ostrich"]'); await V.click('[data-role="vulture"]');
   await V.waitForFunction(() => { const s = LobbyUI.get(); return s && s.roles.some(r => r.id === 'vulture' && r.mine); });
   await shot(A, '4p-1-lobby');
+  await A.click('#lobbyGear'); await A.click('#clockToggle'); await A.waitForFunction(() => LobbyUI.get() && LobbyUI.get().clock);
   await A.click('#startGame'); await A.waitForSelector('#board .cell'); await V.waitForSelector('#board .cell');
   for (const [x, y] of [[2, 1], [2, 4], [1, 2]]) await placeAt(A, x, y);
   await myTurn(V); assert.ok(/VULTURE 1/.test(await V.textContent('#turnTag')));

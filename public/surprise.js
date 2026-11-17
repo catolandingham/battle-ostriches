@@ -71,7 +71,9 @@
       const n = squaresOf(lc.at, lc.to, null, null);
       out.push({
         event: ev, seq: lc.seq, by: lc.by || h.kind, bird: lc.bird, at: lc.at, to: lc.to,
-        walked: !!lc.walked, ambush: !!lc.ambush, ko: !!lc.ko, cartoon: !!pointOk(lc.at),
+        walked: !!lc.walked, ambush: !!lc.ambush, ko: !!lc.ko,
+        // Every phone plays the animals-only cartoon. The slide length stays 0 unless this view was sent both squares.
+        cartoon: true,
         squares: ev === 'catch' && !lc.ko ? n : 0
       });
     }

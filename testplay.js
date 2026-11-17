@@ -1,4 +1,4 @@
-// Action ring choices, knockout/end visibility, and the default-on turn timer. node testplay.js
+// Action ring choices, knockout/end visibility, and the turn timer (off until the host switches it on). node testplay.js
 process.env.PORT = process.env.PORT || '3971';
 const assert = require('assert');
 const B = require('./game.js'), T = require('./three.js'), HU = require('./hunt.js'), TT = require('./team.js');
@@ -18,9 +18,9 @@ ok('compass names the grid, including diagonals, with north toward the top', () 
   assert.equal(R.arrowGlyph(0, -1), '↑'); assert.equal(R.arrowGlyph(1, 1), '↘');
 });
 
-ok('turn timer defaults on and can be turned off without changing the stored rule', () => {
-  assert.equal(R.timersShown(null, null), true);
-  assert.equal(R.timersShown({}, undefined), true);
+ok('nothing saved means the timer is off, and a saved choice still overrides', () => {
+  assert.equal(R.timersShown(null, null), false);
+  assert.equal(R.timersShown({}, undefined), false);
   assert.equal(R.timersShown({ showTimers: true }, null), true);
   assert.equal(R.timersShown({ showTimers: false }, null), false);
   assert.equal(R.timersShown({ showTimers: false }, '1'), true);

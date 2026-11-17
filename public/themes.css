@@ -48,7 +48,7 @@ html[data-theme=neon],html[data-theme=neon] body{background:#07061a radial-gradi
 #fx{position:absolute;left:0;top:0;width:0;height:0;z-index:30;pointer-events:none}
 .spr{position:absolute;left:0;top:0;will-change:transform;filter:drop-shadow(0 3px 2px #0006)}
 .spr svg{width:100%;height:100%}
-#fx.neon .spr{filter:drop-shadow(0 0 4px currentColor)}#fx.neon .spr-o{color:#38d6f0}#fx.neon .spr-v{color:#e04cff}
+#fx.neon .spr{filter:drop-shadow(0 0 4px currentColor)}#fx.neon .spr-o,#fx.neon .bird-o{color:#38d6f0}#fx.neon .spr-v,#fx.neon .bird-v{color:#e04cff}
 [data-theme=nature] .cell .pc:not(.ph),[data-theme=neon] .cell .pc:not(.ph){visibility:hidden}
 .fxring{position:absolute;border:3px solid;border-radius:50%;animation:fxr .5s ease-out forwards}
 .fxring.radar{border-width:2px;background:radial-gradient(circle,#5effa022 0,#5effa000 70%);animation-name:radar}
