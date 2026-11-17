@@ -293,6 +293,35 @@ const BO_BANNER=(()=>{let shown='',at=0,want=null,timer=null;
   clearTimeout(timer);timer=null;paint(t,c);}
  return {set,reset(){clearTimeout(timer);timer=null;shown='';at=0;want=null;},current:()=>shown};})();
 window.BO_BANNER=BO_BANNER;
+// Food counter rise, and the private "you ate" sign. The header is rebuilt on every paint, so the rise
+// keeps its own clock and writes the digit that is actually on screen, never the finished number early.
+const ateBadge={};
+let ateLine=null;
+const hungerPlayer=window.ATE.createPlayer({
+ element:()=>document.getElementById('hungerLeft'),
+ onShow(n,rising){
+  if(n==null){document.documentElement.classList.remove('hunger-rise');return;}
+  const node=document.getElementById('hungerLeft'),chip=node&&node.closest('.hh');
+  if(chip)chip.classList.toggle('low',n<=3);
+  const bar=chip&&chip.querySelector('.hbar i'),food=S&&S.cfg&&S.cfg.food;
+  if(bar&&food)bar.style.width=Math.max(0,Math.min(100,100*n/food))+'%';
+  document.documentElement.classList.toggle('hunger-rise',!!rising);
+ }
+});
+function ateSeat(){return window.ATE?ATE.seatOf(S):'';}
+function ateShowing(){return !!(window.ATE&&ateLine&&Date.now()<ateLine.until&&ateSeat()===ateLine.seat&&ATE.isOstrich(S));}
+function ateBadgeOn(prev){
+ if(!window.ATE)return false;
+ const seat=ateSeat(),on=ATE.badgeOn(!!ateBadge[seat],prev,S);
+ if(ATE.isOstrich(S))ateBadge[seat]=on;
+ return on;
+}
+function hungerDigit(now,was){
+ const st=hungerPlayer.state();
+ if(was!=null&&now>was)return st.shown!=null&&st.shown>=was&&st.shown<now?st.shown:was;
+ if(st.rising&&st.shown!=null&&st.shown<now)return st.shown;
+ return now;
+}
 // While a cartoon or the reading pause is up, the screen shows a frozen board and this phone's state is a step behind the table's, so a tap would be refused ("Not a legal move right now."). Ignore it quietly.
 function inHold(){return !!(window.CUTAWAYS&&CUTAWAYS.busy&&CUTAWAYS.busy());}
 function tap(x,y){clearTimeout(tap.q);if(!S||actLock||locked||cardOpen||inHold())return;if(Date.now()<sniffUntil){const stamp=()=>S&&JSON.stringify([S.phase,S.round,S.turn,S.myTurn,S.ostrich,S.vulture,S.hunter,S.pounce,S.lastAction]),queuedState=stamp(),queuedMode=curMode();tap.q=setTimeout(()=>{if(stamp()===queuedState&&curMode()===queuedMode)tap(x,y);},sniffUntil-Date.now()+20);return;}const p=[x,y],ok=legalNow().some(q=>q[0]===x&&q[1]===y);
@@ -400,9 +429,14 @@ function render(prev){
  maybeCard();$('lobby').classList.add('hidden');const C=S.cfg,blue=S.role==='blue',body=document.body;body.className=(S.role==='hunter'?'hunter':blue?'blue':'red')+(S.three?' three':'')+(S.god?' godview':'');
  $('turnTag').innerHTML=S.role==='hunter'||(S.h3&&S.h3.team)?window.T3UI.tag(S):`<span style="display:inline-block;width:26px;height:26px;vertical-align:middle">${blue?OST:VUL}</span> ${blue?'OSTRICH':'VULTURE'}`;
  $('roundsLeft').textContent=C.rounds-S.round+1;$('eggsLeft').textContent=S.eggsLeft;
- // HUD: ostrich hunger (leaf + turns left) and vulture stones, both public
+ // HUD: ostrich hunger (leaf + turns left) and vulture stones. The number is public.
+ // A rise counts up from the old digit; a paint in the middle must not jump to the new one.
  const hud=$('stats');if(hud){const play=S.phase==='play'||S.phase==='over';hud.classList.toggle('hidden',!play);
-  if(play)hud.innerHTML=`<span class="hh${S.hungerLeft<=3?' low':''}" data-tip="Ostrich food: turns left before it starves">${LEAF}<b id="hungerLeft">${S.hungerLeft}</b>${blue?`<i class="hbar"><i style="width:${Math.max(0,Math.min(100,100*S.hungerLeft/C.food))}%"></i></i>`:''}</span><span class="hs${S.stones<1?' empty':''}" data-tip="Vulture stones">${STONE}<b id="stonesLeft">${S.stones}/${C.stones}</b></span>`;}
+  if(play){const now=S.hungerLeft|0,was=prev&&prev.hungerLeft!=null?prev.hungerLeft|0:null,digit=hungerDigit(now,was),badge=ateBadgeOn(prev);
+   hud.innerHTML=`<span class="hh${digit<=3?' low':''}${badge?' ate':''}" data-tip="Ostrich food: turns left before it starves">${LEAF}<b id="hungerLeft">${digit}</b>${blue?`<i class="hbar"><i style="width:${Math.max(0,Math.min(100,100*digit/C.food))}%"></i></i>`:''}</span><span class="hs${S.stones<1?' empty':''}" data-tip="Vulture stones">${STONE}<b id="stonesLeft">${S.stones}/${C.stones}</b></span>`;
+   if(was!=null&&now>was)hungerPlayer.play(was,now);
+   else if(hungerPlayer.rising()){if(hungerPlayer.state().target!=null&&now<hungerPlayer.state().target)hungerPlayer.reset();else hungerPlayer.hold();}
+  }}
  // waiting for opponent
  const link=location.origin+'/?room='+S.code,slot=$('wait-slot');
  $('shareCode').textContent=S.code;$('shareLink').value=link;const w=$('wait');
@@ -475,7 +509,10 @@ function render(prev){
   d.innerHTML=h;d.dataset.tip=[...new Set(tip)].join(' · ');
   d.dataset.tags=tags.join(' ');if(tags.includes('me'))d.id='current';d.onclick=()=>{if(Date.now()<noClick)return;tap(x,y);};board.appendChild(d);}
  {const cs=getComputedStyle(board),gap=parseFloat(cs.columnGap)||0,pad=parseFloat(cs.paddingLeft)+parseFloat(cs.paddingRight),inner=board.clientWidth-pad,w=(inner-gap*(C.cols-1))/C.cols;if(w>1){board.style.gridAutoRows='0';board.style.gridTemplateRows=`repeat(${C.rows},${w}px)`;}}
- if(prev&&blue&&S.hungerLeft>prev.hungerLeft&&S.ostrich&&S.ostrich[0]>=0){const c=board.children[S.ostrich[1]*C.cols+S.ostrich[0]];if(c)c.classList.add('ate');}
+ const ateNow=!!(window.ATE&&ATE.justAte(prev,S));
+ if(ateNow)ateLine={seat:ATE.seatOf(S),until:Date.now()+ATE.LINE_MS};
+ const ateShow=ateShowing();
+ if(ateNow&&S.ostrich&&S.ostrich[0]>=0){const c=board.children[S.ostrich[1]*C.cols+S.ostrich[0]];if(c)c.classList.add('ate');}
  // "may be here" is a small outline of the animal in the corner of each square it may be on: here, an egg in each of the 8 squares around where the vulture last landed. A throw keeps that landing's outlines; the next landing replaces them.
  if(snShow&&S.phase==='play'&&window.T3UI)T3UI.marksAround(board,S,snShow.p[0],snShow.p[1],1,'egg');
  if(snNew){const vc=board.children[sn.p[1]*C.cols+sn.p[0]];if(vc&&!found){const w=document.createElement('div');w.className='snwave '+(sn.yes?'yes':'no');vc.appendChild(w);}
@@ -488,7 +525,7 @@ function render(prev){
  else if(BO.sniffAnnounce(S)){bt=BO.sniffAnnounce(S);bc=bt==='No egg nearby'?'no':'yes';}
  else if(S.phase==='play'&&blue&&S.ostrich&&S.ostrich[0]>=0&&!BO.foodRoute(C,S.ostrich,S.marks)&&S.hungerLeft<=2){bt='Hungry. No way to food.';bc='hungry';}
  if(prev&&S.phase==='play'&&(S.lastCold|0)>(prev.lastCold|0)&&!smashed){bt='An egg went cold.';bc='no';}
- if(prev&&blue&&S.hungerLeft>prev.hungerLeft){bt='Ate the leaf. Hunger restored.';bc='yes';}
+ if(ateShow){bt=ATE.LINE;bc='yes';}
  {const left=C.rounds-S.round+1;if(S.phase==='play'&&left<=3&&!bt){bt=left===1?'Last round!':`Final ${left} rounds!`;bc='final';}}
  if(bn)BO_BANNER.set(bt,bc);
  $('warm').innerHTML='';
@@ -555,7 +592,8 @@ function render(prev){
  if(window.BORing&&S.phase==='play'&&S.myTurn){for(const note of BORing.omittedNotes(S)){const sit=/^sit/i.test(note),stone=/stone/i.test(note);if(sit&&!/step off|sit is used/i.test(h))h=(h?h+' ':'')+note;if(stone&&!/stone/i.test(h))h=(h?h+' ':'')+note;}}
  if(mt&&(!h||/turn…$/.test(h))){const what=S.role==='red'?'Tap to fly':S.role==='hunter'?'Tap to move':'Tap to move';h=(h&&!/turn…$/.test(h)?h:'Your turn. '+what+'.');}
  if(blue&&M==='kick')h='Tap where they go.';
- $('hint').textContent=h;if(typeof preferEggLine==='function')preferEggLine();if(h&&(G||(W&&W.txt))&&!(blue&&M==='kick')){const sb=document.createElement('button');sb.className='skipguide';sb.id='skipGuide';sb.textContent='Skip guide';$('hint').appendChild(sb);tapper(sb,()=>{UI.guides(false)});}$('hint').classList.toggle('empty',!h);$('hint').classList.toggle('guide',!!G||!!(W&&W.txt));$('hint').classList.toggle('cold',!G&&!!(W&&W.txt));$('hint').classList.toggle('urgent',!G&&!!(W&&W.urgent));$('log').textContent=S.joined&&!S.opponent&&S.phase!=='over'?'Opponent offline… they can rejoin with the same link.':'';
+ if(ateShow)h=ATE.LINE;
+ $('hint').textContent=h;if(typeof preferEggLine==='function')preferEggLine();if(!ateShow&&h&&(G||(W&&W.txt))&&!(blue&&M==='kick')){const sb=document.createElement('button');sb.className='skipguide';sb.id='skipGuide';sb.textContent='Skip guide';$('hint').appendChild(sb);tapper(sb,()=>{UI.guides(false)});}$('hint').classList.toggle('empty',!h);$('hint').classList.toggle('guide',!!G||!!(W&&W.txt));$('hint').classList.toggle('cold',!G&&!!(W&&W.txt));$('hint').classList.toggle('urgent',!G&&!!(W&&W.urgent));$('log').textContent=S.joined&&!S.opponent&&S.phase!=='over'?'Opponent offline… they can rejoin with the same link.':'';
  // cause before result (D36): stone into the count, carried egg slide, cold egg dims, badger sinks; each only on a screen that already held the facts (fx.js)
  if(window.CAUSE)CAUSE.run(S,prev,board,{stone:STONE,egg:MYEGG,ring:n=>warmRing(n,C.warmth)});
  if(window.PUSH_MOTION)PUSH_MOTION.run(S,prev,board);
@@ -571,5 +609,8 @@ function render(prev){
  else if(S.phase==='over'){const pop=document.getElementById('snpop');if(pop)pop.remove();const won=S.winner===S.role;o.classList.remove('hidden');
   o.innerHTML=`<div class="lobbybox"><div class="bigost">${S.winner==='blue'?OST:VUL}</div><h1>${S.pass?(S.winner==='blue'?'Ostrich wins!':'Vulture wins!'):won?'You win!':'You lose'}</h1>${S.ai?`<p>vs computer (${S.ai})</p>`:''}<p>${S.endWhy||(S.winner==='blue'?`The ostrich kept ${S.eggsLeft} egg(s) alive for ${C.rounds} rounds.`:S.winBy==='starved'?`The ostrich starved in round ${S.round}.`:S.winBy==='cold'?`The last egg went cold in round ${S.round}.`:`The vulture smashed every egg by round ${S.round}.`)}</p>${window.T3UI.endBits(S)}</div>`;}
  else o.classList.add('hidden');
+ // Last, so a line queued earlier in this paint (a turn line, a cold egg, a cartoon caption) cannot cover it.
+ if(window.STATUS_QUEUE){if(ateShow)STATUS_QUEUE.add({text:ATE.LINE,key:'you-ate',className:'ate-line',priority:90,preempt:true,hold:ATE.LINE_MS});
+  else if(STATUS_QUEUE.drop)STATUS_QUEUE.drop(item=>item.key==='you-ate');}
 }
 })();
