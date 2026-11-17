@@ -161,34 +161,63 @@ ok('views: Hunters and 2 vs 2 carry the same notes', () => {
   assert.deepEqual(S.viewT(rt, 'v1').sittingAt, [[2, 1]]); assert.deepEqual(S.viewT(rt, 'hunter').sittingAt, []); });
 
 
-// ---- 7.4: the badger digs in (announced to everyone; a mound for birds that saw it) and bursts out from under the hyena
+// ---- 7.4: the badger digs in (told to the badger and to birds that saw it; a mound for those birds) and bursts out from under the hyena
 const CT = require('./public/catchtext.js'), BLN = require('./public/badgerlines.js');
 const roomH2 = () => S.createH({ role: 'badger', bots: ['blue', 'red', 'hyena'] }, null).room;
 const roomT2 = kind => S.createT({ team: 5, role: 'hunter', bots: ['v1', 'v2', 'o1', 'o2'], kind }, null).room;
-ok('3 players: digging in is announced to every seat; only a bird within 2 of the badger gets the mound, and only while it stays buried', () => {
+const freshSeen = () => ({ pop: 0, rival: 0, kick: 0, stone: 0, dug: 0, burst: 0, smash: 0 });
+const digEvents = v => CT.newEvents(freshSeen(), v, { phase: 'play', h3: {} }).filter(e => e.kind === 'dug' || /dug in/i.test(e.text || ''));
+// A bird that did not see the dig: no dig event, no mound, no dig line, and the burrow flag stays off (Brian, 2026-11-16).
+function noDig(v, label) {
+  assert.ok(v && v.h3, label + ' has a view');
+  assert.ok(v.h3.dug == null, label + ' gets no dig event');
+  assert.ok(v.h3.mound == null, label + ' gets no mound');
+  assert.ok(v.h3.dugSeen == null, label + ' is not told whether a bird saw it');
+  assert.ok(!v.h3.burrowed, label + ' burrow status does not say a dig happened');
+  assert.ok(!/dug in/i.test(JSON.stringify(v)), label + ' view has no dig line');
+  assert.deepEqual(digEvents(v), [], label + ' page gets no dig line');
+}
+ok('3 players: digging in is told to the badger and to a bird that saw it; a bird too far gets no dig line or event, and only the bird that saw it gets the mound', () => {
   const room = room3('badger'), g = room.g = three('badger', [4, 3], [8, 0], [4, 5]); // the vulture is 2 away, the ostrich far
   assert.ok(T.hunterStay(g)); assert.equal(g.three.burrowed, true);
   const v = Object.fromEntries(SEATS3.map(s => [s, S.view3(room, s)]));
-  for (const s of SEATS3) assert.deepEqual(v[s].h3.dug, { seq: 1, round: g.round }, s + ' is told');
-  assert.deepEqual(v.red.h3.mound, [4, 3]); assert.equal(v.blue.h3.mound, null, 'the ostrich was too far to see it dig'); assert.equal(v.hunter.h3.mound, null);
+  assert.deepEqual(v.hunter.h3.dug, { seq: 1, round: g.round }, 'the badger is told');
+  assert.deepEqual(v.red.h3.dug, { seq: 1, round: g.round }, 'the vulture saw it');
+  assert.equal(digEvents(v.red)[0].text, 'The badger dug in!');
+  assert.equal(digEvents(v.hunter)[0].text, 'A bird saw you dig in.');
+  noDig(v.blue, 'ostrich');
+  assert.deepEqual(v.red.h3.mound, [4, 3]); assert.equal(v.hunter.h3.mound, null);
   assert.equal(v.blue.h3.hunter, null, 'nothing else leaks to the ostrich'); assert.equal(CT.dugLine(), 'The badger dug in!');
-  // the badger moves: no mound left for anyone; the dig stays recorded but names no square
+  // the badger moves: no mound left; the dig stays for the badger and the bird that saw it, and still nothing for the ostrich
   g.turn = 'hunter'; assert.ok(T.hunterMove(g, [5, 3]));
-  for (const s of SEATS3) { const w = S.view3(room, s); assert.equal(w.h3.mound, null, s + ' has no stale mound'); assert.equal(JSON.stringify(w.h3.dug), JSON.stringify({ seq: 1, round: g.round })); assert.ok(!hasSq(w.h3.dug, [4, 3])); }
-  // it digs again where nobody can see: new line, no mound
-  g.vulture = [0, 6]; g.turn = 'hunter'; assert.ok(T.hunterStay(g)); const r = S.view3(room, 'red'); assert.equal(r.h3.dug.seq, 2); assert.equal(r.h3.mound, null); assert.equal(S.view3(room, 'hunter').h3.dug.seq, 2); });
+  for (const s of ['hunter', 'red']) { const w = S.view3(room, s); assert.equal(w.h3.mound, null, s + ' has no stale mound'); assert.equal(JSON.stringify(w.h3.dug), JSON.stringify({ seq: 1, round: g.round })); assert.ok(!hasSq(w.h3.dug, [4, 3])); }
+  noDig(S.view3(room, 'blue'), 'ostrich after the badger moves');
+  // it digs again where nobody can see: the badger gets the new line; neither bird does
+  g.vulture = [0, 6]; g.turn = 'hunter'; assert.ok(T.hunterStay(g));
+  assert.equal(S.view3(room, 'hunter').h3.dug.seq, 2); assert.equal(S.view3(room, 'hunter').h3.mound, null);
+  noDig(S.view3(room, 'red'), 'vulture on the unseen dig'); noDig(S.view3(room, 'blue'), 'ostrich on the unseen dig'); });
 ok('3 players: staying burrowed does not announce a second dig; a hyena never digs', () => {
   const g = three('badger', [4, 3], [8, 0], [4, 5]); T.hunterStay(g); g.turn = 'hunter'; T.hunterStay(g); assert.equal(g.three.dug.seq, 1);
   const h = three('hyena', [4, 3], [8, 0], [4, 5]); T.hunterStay(h); assert.equal(h.three.dug, undefined); });
-ok('Hunters: the hyena is told "dug in" but gets no square, even standing next to the badger; birds that saw it get the mound', () => {
+ok('Hunters: the hyena is not told the dig, even standing next to the badger; a bird that saw it gets the line and the mound; a bird that did not gets neither', () => {
   const room = roomH2(), g = room.g = hunters([5, 3], [4, 3], [8, 6], [4, 5]); g.turn = 'badger'; assert.ok(H.hunterStay(g));
-  for (const s of ['blue', 'red', 'hyena', 'badger']) assert.equal(S.viewH(room, s).h3.dug.seq, 1, s);
-  assert.equal(S.viewH(room, 'hyena').h3.mound, null); assert.deepEqual(S.viewH(room, 'red').h3.mound, [4, 3]); assert.equal(S.viewH(room, 'blue').h3.mound, null);
+  assert.equal(S.viewH(room, 'badger').h3.dug.seq, 1); assert.equal(S.viewH(room, 'red').h3.dug.seq, 1);
+  assert.equal(digEvents(S.viewH(room, 'red'))[0].text, 'The badger dug in!');
+  noDig(S.viewH(room, 'blue'), 'ostrich'); noDig(S.viewH(room, 'hyena'), 'hyena');
+  assert.deepEqual(S.viewH(room, 'red').h3.mound, [4, 3]);
   g.turn = 'badger'; assert.ok(H.hunterMove(g, [3, 3])); for (const s of ['blue', 'red', 'hyena', 'badger']) assert.equal(S.viewH(room, s).h3.mound, null); });
-ok('2 vs 2 + hunter: digging in is announced; the mound goes only to the birds that saw it', () => {
+ok('2 vs 2 + hunter: digging in is told to the badger and to a bird that saw it; the mound goes only to that bird', () => {
   const room = roomT2('badger'), g = room.g = team('badger', { h: [4, 3], o1: [8, 6], o2: [8, 0], v1: [4, 5], v2: [0, 0] }); g.turn = 'hunter'; assert.ok(TT.hunterStay(g));
-  for (const s of ['o1', 'o2', 'v1', 'v2', 'hunter']) assert.equal(S.viewT(room, s).h3.dug.seq, 1, s);
-  assert.deepEqual(S.viewT(room, 'v1').h3.mound, [4, 3]); for (const s of ['o1', 'o2', 'v2', 'hunter']) assert.equal(S.viewT(room, s).h3.mound, null, s); });
+  assert.equal(S.viewT(room, 'hunter').h3.dug.seq, 1); assert.equal(S.viewT(room, 'v1').h3.dug.seq, 1);
+  assert.equal(digEvents(S.viewT(room, 'v1'))[0].text, 'The badger dug in!');
+  for (const s of ['o1', 'o2', 'v2']) noDig(S.viewT(room, s), s);
+  assert.deepEqual(S.viewT(room, 'v1').h3.mound, [4, 3]); assert.equal(S.viewT(room, 'hunter').h3.mound, null); });
+ok('4 players: there is no hunter, so no bird view carries a dig line or event', () => {
+  const room = S.createT({ team: 4, role: 'o1', bots: ['o2', 'v1', 'v2'] }, null).room, g = TT.newTeam(4);
+  for (const p of [[2, 1], [2, 3]]) assert.ok(TT.place(g, 'o1', p)); assert.ok(TT.place(g, 'o1', [1, 1]));
+  for (const p of [[6, 1], [6, 3]]) assert.ok(TT.place(g, 'o2', p)); assert.ok(TT.place(g, 'o2', [7, 1]));
+  assert.equal(g.phase, 'play'); assert.equal(g.h, null); room.g = g;
+  for (const s of ['o1', 'o2', 'v1', 'v2']) noDig(S.viewT(room, s), '4p ' + s); });
 // Brian, 2026-11-15: the badger is told before it digs whether a bird will see it, and after, whether one did. Only the badger's phone learns this.
 ok('the badger is told whether a bird saw it dig in, in all three modes, and nobody else is', () => {
   const room = room3('badger'), g = room.g = three('badger', [4, 3], [8, 0], [4, 5]); assert.ok(T.hunterStay(g));
