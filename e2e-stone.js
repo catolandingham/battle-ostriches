@@ -44,9 +44,16 @@ const THEMES = ['classic', 'nature', 'notes', 'golden', 'paper', 'arcade', 'toyb
     const glow = cs.map((e, i) => e.classList.contains('rockcall') ? i : -1).filter(i => i >= 0);
     const th = [...document.querySelectorAll('#actions button')].find(x => /Throw/.test(x.textContent));
     if (!th) return null;
-    const after = e => { const a = getComputedStyle(e, '::after'); return { content: a.content, bw: a.borderTopWidth, pos: a.position }; };
+    const after = e => {
+      if (!(e instanceof Element)) return null;
+      let a; try { a = getComputedStyle(e, '::after'); } catch (err) { return null; }
+      return a ? { content: a.content, bw: a.borderTopWidth, pos: a.position } : null;
+    };
+    const ring = glow.length ? after(cs[glow[0]]) : null;
+    // A redraw can drop the rock-pile cell for a moment. Say so, and the caller reads again.
+    if (glow.length && !ring) return null;
     return { glow, want: rocks.list.map(p => p[1] * cols + p[0]), th: th.textContent.trim(), thDis: th.disabled, thOpacity: getComputedStyle(th).opacity,
-      ring: glow.length ? after(cs[glow[0]]) : null, legalOnRock: rocks.list.map(p => cs[p[1] * cols + p[0]].classList.contains('legal')),
+      ring, legalOnRock: rocks.list.map(p => cs[p[1] * cols + p[0]].classList.contains('legal')),
       guide: document.querySelectorAll('#hint.guide,#skipGuide,.gtarget,.gpath').length };
   }, { list: S.cfg.rocks, cols: S.cfg.cols }); if (r) return r; await P.waitForTimeout(100); } throw new Error('the Throw button never appeared'); };
   const assertNoStoneTurn = async (S, label) => {
@@ -90,10 +97,24 @@ const THEMES = ['classic', 'nature', 'notes', 'golden', 'paper', 'arcade', 'toyb
 
   // 3) glow readable in every theme: the ring is drawn the same way under all 13 themes (checked on this turn's board)
   S = await myTurn(); await assertNoStoneTurn(S, 'before the found egg');
+  const rockRing = async () => {
+    for (let i = 0; i < 40; i++) {
+      const r = await P.evaluate(() => {
+        const cells = [...document.querySelectorAll('#board .cell.rockcall')].filter(e => e instanceof Element);
+        if (cells.length < 2) return null;
+        let a; try { a = getComputedStyle(cells[0], '::after'); } catch (err) { return null; }
+        if (!a) return null;
+        return { content: a.content, w: a.borderTopWidth, color: a.borderTopColor, shadow: a.boxShadow !== 'none', op: a.opacity, vis: a.visibility, n: cells.length };
+      });
+      if (r) return r;
+      await P.waitForTimeout(50);
+    }
+    return null;
+  };
   for (const t of THEMES) {
     await P.evaluate(t => document.documentElement.setAttribute('data-theme', t), t);
-    const r = await P.evaluate(() => { const e = document.querySelector('#board .cell.rockcall'); const a = getComputedStyle(e, '::after'); return { content: a.content, w: a.borderTopWidth, color: a.borderTopColor, shadow: a.boxShadow !== 'none', op: a.opacity, vis: a.visibility, n: document.querySelectorAll('#board .cell.rockcall').length }; });
-    assert.ok(r.content !== 'none' && parseFloat(r.w) >= 3 && r.n === 2 && r.op === '1' && r.vis === 'visible' && r.shadow, t + ' ring: ' + JSON.stringify(r));
+    const r = await rockRing();
+    assert.ok(r && r.content !== 'none' && parseFloat(r.w) >= 3 && r.n === 2 && r.op === '1' && r.vis === 'visible' && r.shadow, t + ' ring: ' + JSON.stringify(r));
   }
   await P.evaluate(() => document.documentElement.setAttribute('data-theme', 'classic'));
 
