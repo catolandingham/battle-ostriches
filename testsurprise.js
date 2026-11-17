@@ -418,10 +418,11 @@ const P = require('./public/push-motion');
   assert.equal(kick.line, 'The ostrich kicked you 3 squares!');
   assert.equal(kick.readMs, 1800);
   const caught = SUR.policy(
-    { role: 'blue', phase: 'play', h3: { mySeat: 'blue', lastCatch: { seq: 2, bird: 'blue', by: 'hyena', at: [3, 3], to: [3, 5], ko: false } } },
+    { role: 'blue', phase: 'play', h3: { mySeat: 'blue', lastCatch: { seq: 2, bird: 'blue', by: 'hyena', at: [3, 3], to: [3, 6], ko: false } } },
     { role: 'blue', phase: 'play', h3: { mySeat: 'blue' } });
-  assert.equal(caught.line, 'You were caught! You fled 2 squares.');
-  assert.equal(caught.readMs, SUR.holdFor(caught.line));
+  assert.equal(caught.line, 'You were caught! You fled 3 squares.');
+  assert.equal(caught.readMs, SUR.holdFor('You were caught! You fled 3 squares.'));
+  assert.equal(caught.motionMs, 3 * SUR.STEP_MS);
   assert.equal(SUR.clockDelayMs(caught, { isCurrent: true, seesEvent: true }), caught.animMs + caught.readMs);
   const ko = SUR.policy(
     { role: 'red', phase: 'play', h3: { mySeat: 'red', kind: 'hyena', ko: 2, birds: { red: { catches: 2 } }, lastCatch: { seq: 3, bird: 'red', by: 'hyena', ko: true, at: [4, 3] } } },

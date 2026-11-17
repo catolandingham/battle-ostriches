@@ -2,7 +2,7 @@
 // vultures (v1, v2); in 5 players a hunter (hyena / badger) moves last. Turn order: V1, O1, V2, O2 (, hunter).
 // Reuses the 2-player CONFIG and the 3-player hunter rules (sense, pounce, burrow, catches, knock-back).
 const B = require('./game.js'), K = B.key, D = B.dist;
-const TM = { eggs: 2, vStarts: [[4, 2], [4, 4]], sense: 2, see: 2, walk: 2, pounce: 1, knock: 2, clockMs: 10000, ko: { hyena: 2, badger: 2 }, hStarts: [[0, 3], [8, 3]] };
+const TM = { eggs: 2, vStarts: [[4, 2], [4, 4]], sense: 2, see: 2, walk: 2, pounce: 1, knock: 3, clockMs: 10000, ko: { hyena: 2, badger: 2 }, hStarts: [[0, 3], [8, 3]] };
 const OFF = [-99, -99], OS = ['o1', 'o2'], VS = ['v1', 'v2'], sgn = Math.sign;
 const isO = s => s === 'o1' || s === 'o2', isV = s => s === 'v1' || s === 'v2';
 const mate = s => ({ o1: 'o2', o2: 'o1', v1: 'v2', v2: 'v1' })[s];
@@ -197,12 +197,12 @@ function knockout(g, s, why) {
   if (why === 'caught' && g.h) g.h.kos[isO(s) ? 'o' : 'v']++;
   checkEnd(g);
 }
-// A caught bird scrambles 2 squares in a random open direction chosen by the game (rule 4.2). No missed turn. If it cannot move at all, whoever moved goes back (back()).
+// A caught bird lands on a random open square exactly TM.knock (3) king-moves away. No missed turn. If it cannot move at all, whoever moved goes back (back()).
 function catchBird(g, s, back) {
   const b = g.b[s], at = b.pos.slice(); b.catches++;
   if (b.carrying != null) { const e = g.eggs[b.carrying]; b.carrying = null; if (e.alive) e.pos = at.slice(); } // a carried egg drops where it was caught
   if (b.catches >= koAt(g)) { g.lastCatch = { bird: s, at, to: null, ko: true, seq: ++g.seq, round: g.round }; knockout(g, s, 'caught'); return; }
-  const q = B.scrambleTo(g.cfg, at, m => !B.wrecked(g, m) && !birdsIn(g).some(o => o !== s && K(g.b[o].pos) === K(m)) && !hunterUp(g, m) && !(g.h && K(g.h.p) === K(m)), TM.knock);
+  const q = B.relocateCaught(g.cfg, at, m => !B.wrecked(g, m) && !birdsIn(g).some(o => o !== s && K(g.b[o].pos) === K(m)) && !hunterUp(g, m) && !(g.h && K(g.h.p) === K(m)), TM.knock);
   b.sitting = false; if (q) b.pos = q; else if (back) back();
   if (g.h && g.h.burrowed && K(g.h.p) === K(at)) { g.h.burrowed = false; g.h.dig = 0; }
   g.lastCatch = { bird: s, at, to: b.pos.slice(), ko: false, seq: ++g.seq, round: g.round };
