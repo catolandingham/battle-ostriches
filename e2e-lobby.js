@@ -29,7 +29,12 @@ const server = require('./server.js');
   assert.equal(await A.locator('#moreP').count(), 0);
   await A.click('#lobbyGear');
   await A.waitForSelector('#clockToggle');
-  assert.equal(await A.getAttribute('#clockToggle', 'aria-pressed'), 'true', 'turn timer defaults on');
+  assert.equal(await A.getAttribute('#clockToggle', 'aria-pressed'), 'false', 'turn timer starts off');
+  await A.click('#clockToggle');
+  await A.waitForFunction(() => {
+    const b = document.getElementById('clockToggle');
+    return !!(b && b.getAttribute('aria-pressed') === 'true' && window.LobbyUI && LobbyUI.get() && LobbyUI.get().clock);
+  });
   assert.equal(await A.locator('#roomLobby [data-role]').count(), 0, 'no animal choice until a second player is in');
   const link = (await A.inputValue('#lobbyLink')).replace(/^http:\/\/[^/]+/, 'http://localhost:3990');
   const V = await mk(); await V.goto(link); await V.waitForSelector('#roomLobby');
