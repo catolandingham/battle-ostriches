@@ -73,7 +73,7 @@ function relocateCaught(cfg, from, open, n = 3, rnd = Math.random) {
 function newGame(cfg = CONFIG) {
   return { cfg, phase: 'setupEggs', round: 1, turn: 'blue', eggs: [], ostrich: null,
     carrying: null, sitRun: 0, vulture: cfg.vultureStart.slice(), hungerLeft: cfg.food, stones: cfg.stones,
-    marks: {}, sniff: null, winner: null, winBy: null, lastAction: null, lastCold: [], kickSeq: 0, lastKick: null, stoneSeq: 0, lastStone: null };
+    marks: {}, sniff: null, sniffKeep: null, winner: null, winBy: null, lastAction: null, lastCold: [], kickSeq: 0, lastKick: null, stoneSeq: 0, lastStone: null };
 }
 function eggAt(g, p) { return g.eggs.find(e => e.alive && e.pos && key(e.pos) === key(p)); }
 function aliveEggs(g) { return g.eggs.filter(e => e.alive); }
@@ -214,9 +214,11 @@ function vultureFly(g, p) {
   if (e && !ostrichGuards(g, p)) { g.marks[key(p)] = 'spotted'; g.lastAction.spotted = p.slice(); }
   if (isRock(g, p)) { g.lastAction.refill = g.stones < g.cfg.stones; g.stones = g.cfg.stones; }
   g.lastAction.smell = smellsEgg(g, p);
-  // Snapshot for the green "might" squares until the next vulture move. round stamps the sense
+  // Snapshot for the "may be here" squares until the next landing. round stamps the sense
   // so a later turn can keep the memory without announcing it again as a current fact.
   g.sniff = { p: p.slice(), yes: g.lastAction.smell, round: g.round };
+  // A find is the egg on this square, not a neighborhood. A throw must not refresh this copy.
+  g.sniffKeep = (e && !ostrichGuards(g, p)) || !g.lastAction.smell ? null : { p: p.slice(), yes: true, round: g.round };
   g.turn = 'blue'; dropCarried(g); return true;
 }
 const onBoard = p => !!(p && p[0] >= 0 && p[1] >= 0);
@@ -341,7 +343,18 @@ function sniffAnnounce(v, role) {
   if (!sniffFresh(v)) return '';
   return sn.yes ? 'Egg nearby!' : 'No egg nearby';
 }
+// Dashed egg outlines for the last landing. A throw clears `sniff` (so the announcement and the
+// computer vulture stay as they were) and the board keeps this older copy until the next landing.
+// It is never recomputed from where the eggs are now. A find draws the egg, not a neighborhood.
+function outlineSniff(v) {
+  if (!v || v.phase !== 'play') return null;
+  const sn = v.sniff || v.sniffKeep || null;
+  if (!sn || !sn.yes || !sn.p) return null;
+  const vul = v.vulture;
+  if (vul && vul[0] >= 0 && v.marks && v.marks[key(vul)] === 'spotted' && key(sn.p) === key(vul)) return null;
+  return sn;
+}
 
 const API = { slideN, CONFIG, HUNTER_GOAL, hunterUpAt, scrambleTo, relocateCaught, DIRS8, resolveThrow, wrecked, nearLeaf, myTurn, slide, awayFrom, canKick, kickable, kickTargets, kickPlans, kickDone, ostrichKick, newGame, canPlaceEgg, placeEgg, placeOstrich, ostrichMoves, ostrichStep, ostrichSit, canSit, canCarry, mustLeave, onEgg, dropCarried,
-  endRound, walkSquares, smellsEgg, flyTargets, throwTargets, vultureFly, vultureThrow, eggAt, aliveEggs, coldIn, sniffFresh, sniffAnnounce, key, dist, visible, isFood, isRock, parkEliminated, ostrichGuards, foodRoute };
+  endRound, walkSquares, smellsEgg, flyTargets, throwTargets, vultureFly, vultureThrow, eggAt, aliveEggs, coldIn, sniffFresh, sniffAnnounce, outlineSniff, key, dist, visible, isFood, isRock, parkEliminated, ostrichGuards, foodRoute };
 if (typeof module !== 'undefined') module.exports = API; else window.BO = API;

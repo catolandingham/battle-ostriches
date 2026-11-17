@@ -293,7 +293,6 @@ function tap(x,y){clearTimeout(tap.q);if(!S||locked||cardOpen||inHold())return;i
  if(S.phase!=='play')return;if(!S.myTurn)return nope(S.three?window.T3UI.waitMsg(S):S.role==='blue'?'Wait. Vulture\'s turn.':'Wait. Ostrich\'s turn.');
  const m0=curMode();if(m0==='hmove'){if(!ok)return nope('Too far.',p);return send({t:'act',a:'hmove',p});}
  const m=curMode();if(!m)return;
- if(S.role==='red'&&m==='fly'){const cc=$('board').children[y*S.cfg.cols+x];if(cc&&cc.classList.contains('aimcue'))return UI.setMode('throw');} // the crosshair on a found egg: tapping it picks Throw
  if(!ok&&m==='carry'&&isF(S.cfg,key(p))&&gd(p,S.ostrich)===1){const c=$('board').children[p[1]*S.cfg.cols+p[0]];c&&c.animate([{transform:'translateX(0)'},{transform:'translateX(-3px)'},{transform:'translateX(3px)'},{transform:'translateX(0)'}],{duration:180});return nope('No eggs by food.',p);}
  if(!ok)return nope(m==='throw'?(S.stones<1?'No stone. Go to rocks.':'Too far.'):m==='kick'?'Tap where they go.':m==='carry'?'Not there.':'Too far.',p);
  if(m==='kick'){const plan=(S.kickPlans||[]).find(q=>q.to&&q.to[0]===x&&q.to[1]===y);if(!plan)return;coachDid('kick');send({t:'act',a:'kick',p:plan.at});return;}
@@ -371,7 +370,7 @@ function howPics(){const box=$('howPics');if(!box)return;
  const pics=[
   mini(4,2,{'1,1':`${myegg}<div class="pc po">${OST}</div>${sqRing(11,C0.warmth,null)}`},m=>{m.children[5].classList.add('sat');lit(m,0,1,2,4,6);flag(m,1,1);}),
   mini(4,2,{'1,1':`<div class="pc pv">${VUL}</div>`},(m,s)=>{if(window.T3UI)T3UI.marksAround(m,s,1,1,1,'egg');}),
-  mini(4,2,{'1,1':`<div class="pc pv">${VUL}</div>`,'2,1':`<span class="ic ic-spot" data-t="spot">${eggIs()}</span><i class="aim"></i>`},m=>{flag(m,1,1);}),
+  mini(4,2,{'1,1':`<div class="pc pv">${VUL}</div>`,'2,1':`<span class="ic ic-spot" data-t="spot">${eggIs()}</span>`},m=>{flag(m,1,1);}),
   mini(4,2,{'1,1':`<span class="ic ic-hit" data-t="hit">${XMARK}</span>`,'2,1':`<div class="pc po">${OST}</div>`},m=>{m.children[5].classList.add('hit');})];
  // Captions differ by role (blue, red, hunter); unapproved roles keep shared lines.
  const CAPS={all:['Tap a lit square to move.','Dashed egg: may be here.','Filled egg: found. Throw at it.','Wrecked: no one can land.']};
@@ -432,6 +431,9 @@ function render(prev){
  const senseNow=BO.sniffFresh(S),seen=sniffSeen[S.role]||'',snNew=!!sn&&senseNow&&snK!==seen;sniffSeen[S.role]=snK;if(snNew)sniffUntil=Date.now()+1200;
  const found=!!sn&&key(sn.p)===key(S.vulture)&&S.marks[key(S.vulture)]==='spotted'; // landed ON an egg: that's a find, not a sniff
  const inSn=k=>{if(!sn)return false;const [a,b]=k.split(',').map(Number);return Math.max(Math.abs(a-sn.p[0]),Math.abs(b-sn.p[1]))<=1;};
+ // Outlines use the last landing, including after a throw cleared the live sense. A new landing replaces it.
+ const snShow=BO.outlineSniff(S);
+ const inShow=k=>{if(!snShow)return false;const [a,b]=k.split(',').map(Number);return Math.max(Math.abs(a-snShow.p[0]),Math.abs(b-snShow.p[1]))<=1;};
  const birdGone=side=>{const b=S.h3&&S.h3.birds;if(!b)return false;if(S.h3.team){const me=S.h3.mySeat;return side==='o'?!!((me==='o1'||me==='o2')&&b[me]&&b[me].out):!!((me==='v1'||me==='v2')&&b[me]&&b[me].out);}return side==='o'?!!(b.blue&&b.blue.out):!!(b.red&&b.red.out);};
  const onBoard=p=>p&&p[0]>=0&&p[1]>=0;
  const noStone=!blue&&S.role==='red'&&S.phase==='play'&&S.myTurn&&S.stones<1,throwing=!blue&&M==='throw',kicking=blue&&M==='kick',ok=onBoard(S.ostrich)&&!birdGone('o')?key(S.ostrich):'',vk=onBoard(S.vulture)&&!birdGone('v')?key(S.vulture):'';
@@ -443,7 +445,7 @@ function render(prev){
   if(nsT.has(k)&&NS.kind!=='rocks'&&!kicking)d.classList.add('cue','cue-'+NS.kind);
   if(legal&&kicking){d.setAttribute('aria-label','Tap where they go.');}
   else if(legal){d.classList.add('legal');if(setup)d.classList.add('setupsq');if(throwing)d.classList.add('target');tags.push(throwing?'target':'legal');d.setAttribute('aria-label',throwing?'Throw here':'Legal step');if(nsW.has(k))d.classList.add('toward');}
-  if(!blue&&sn&&sn.yes&&!found&&inSn(k)&&!m&&k!==ok)tip.push('Egg may be here.'); // the 8 squares get a small egg outline in the corner (below)
+  if(!blue&&snShow&&inShow(k)&&!m&&k!==ok)tip.push('Egg may be here.'); // the 8 squares get a small egg outline in the corner (below)
   if(sn&&snNew&&inSn(k)&&!found){d.classList.add(sn.yes?'snyes':'snno');d.style.animationDelay=(Math.max(Math.abs(x-sn.p[0]),Math.abs(y-sn.p[1]))*.18)+'s';}
   // exactly one tile icon: smashed > found egg > own egg > food > rocks
   const e=eggAt[k];let h='';const under=!!(blue&&e&&k===ok&&S.phase==='play'); // the egg you stand on: ring around the whole square
@@ -462,14 +464,12 @@ function render(prev){
   if(k===vk){h+=`<div class="pc pv">${VUL}</div>`;tip.push(blue?'The vulture':'You.');tags.push(blue?'vul':'me');}
   if(k===ok){if(blue&&e){d.classList.add('sat');}h+=`<div class="pc po${S.carried?' carrying':''}">${S.carried&&ART.ostrichCarry?ART.ostrichCarry:OST}</div>`;tip.push(blue?'You.':'The ostrich');tags.push(blue?'me':'ost');}
   if(legal)tip.push(kicking?kickTip(x,y):throwing?'Throw here.':setup?(S.phase==='setupEggs'?'Hide an egg here':'Start here'):blue||S.role==='hunter'?'Move here':'Fly here'); // a hunter walks; only the vulture flies
-  const aimCue=NS.kind==='throw'&&nsT.has(k); // a found egg in throw range: the crosshair already sits on it
-  if(aimCue&&!throwing)d.classList.add('aimcue');
-  d.innerHTML=h+(kicking?'':(aimCue&&!throwing?'<i class="aim cue"></i>':(legal&&throwing?'<i class="aim'+(aimCue?' cue':'')+'"></i>':'')));d.dataset.tip=[...new Set(tip)].join(' · ');
+  d.innerHTML=h;d.dataset.tip=[...new Set(tip)].join(' · ');
   d.dataset.tags=tags.join(' ');if(tags.includes('me'))d.id='current';d.onclick=()=>{if(Date.now()<noClick)return;tap(x,y);};board.appendChild(d);}
  {const cs=getComputedStyle(board),gap=parseFloat(cs.columnGap)||0,pad=parseFloat(cs.paddingLeft)+parseFloat(cs.paddingRight),inner=board.clientWidth-pad,w=(inner-gap*(C.cols-1))/C.cols;if(w>1){board.style.gridAutoRows='0';board.style.gridTemplateRows=`repeat(${C.rows},${w}px)`;}}
  if(prev&&blue&&S.hungerLeft>prev.hungerLeft&&S.ostrich&&S.ostrich[0]>=0){const c=board.children[S.ostrich[1]*C.cols+S.ostrich[0]];if(c)c.classList.add('ate');}
- // "may be here" is a small outline of the animal in the corner of each square it may be on: here, an egg in each of the 8 squares around where the vulture last landed (only the latest sniff; nothing is kept across landings)
- if(sn&&sn.yes&&!found&&S.phase==='play'&&window.T3UI)T3UI.marksAround(board,S,sn.p[0],sn.p[1],1,'egg');
+ // "may be here" is a small outline of the animal in the corner of each square it may be on: here, an egg in each of the 8 squares around where the vulture last landed. A throw keeps that landing's outlines; the next landing replaces them.
+ if(snShow&&S.phase==='play'&&window.T3UI)T3UI.marksAround(board,S,snShow.p[0],snShow.p[1],1,'egg');
  if(snNew){const vc=board.children[sn.p[1]*C.cols+sn.p[0]];if(vc&&!found){const w=document.createElement('div');w.className='snwave '+(sn.yes?'yes':'no');vc.appendChild(w);}
   if(!window.BORing||BORing.showSniffPop(blue,!!sn.yes,found)){window.STATUS_QUEUE.add({id:'snpop',className:(found?'yes found':sn.yes?'yes':'no')+(blue?' small':''),text:found?(blue?'Vulture found your egg!':'Found egg!'):sn.yes?(blue?'Vulture sniffed an egg.':'Egg nearby!'):'No egg nearby',priority:found?40:10});}}
  // sniff banner: the vulture's yes/no for this sense only (a later round must not repeat it), plus hunger
