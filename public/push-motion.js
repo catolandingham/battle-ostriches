@@ -11,6 +11,7 @@
   if(s.role==='hunter'&&valid(s.hunter))m[s.kind||h.kind||'hyena']=s.hunter;
   return m;
  }
+ function kingPath(from,to){if(!valid(from)||!valid(to)||same(from,to))return [];const points=[from.slice()];let x=from[0],y=from[1],guard=0;while((x!==to[0]||y!==to[1])&&guard++<32){if(x!==to[0])x+=Math.sign(to[0]-x);if(y!==to[1])y+=Math.sign(to[1]-y);points.push([x,y]);}return x===to[0]&&y===to[1]?points:[];}
  function path(cfg,from,to,wrap=false,max=3){
   if(!valid(from)||!valid(to)||same(from,to))return [];
   for(let n=1;n<=max;n++)for(const dx of [-1,0,1])for(const dy of [-1,0,1]){if(!dx&&!dy)continue;
@@ -21,7 +22,7 @@
  const fresh=(a,b)=>a&&(!b||a.seq!==b.seq);
  function events(s,prev){if(!prev||!s.cfg||!(s.phase==='play'||s.phase==='over'&&prev.phase==='play'))return [];const out=[],a=positions(prev),b=positions(s),h=s.h3||{},old=prev.h3||{};
   const add=(key,from,to,wrap,max)=>{const points=path(s.cfg,from,to,wrap,max);if(points.length>1&&!out.some(e=>e.key===key))out.push({key,points});};
-  const lc=h.lastCatch;if(s.role!=='hunter'&&fresh(lc,old.lastCatch)&&!lc.ko&&valid(lc.at)&&valid(lc.to))add(lc.bird,lc.at,lc.to,false,2);
+  const lc=h.lastCatch;if(s.role!=='hunter'&&fresh(lc,old.lastCatch)&&!lc.ko&&valid(lc.at)&&valid(lc.to)){const points=kingPath(lc.at,lc.to);if(points.length>1&&!out.some(e=>e.key===lc.bird))out.push({key:lc.bird,points});}
   if(fresh(s.kick,prev.kick)&&s.kick.trail&&s.kick.trail.some(valid)&&s.kick.trail.length>1)out.push({key:s.kick.key,points:s.kick.trail});
   if(fresh(s.kick,prev.kick)&&valid(s.kick.to))for(const key in b)if(same(b[key],s.kick.to)&&valid(a[key]))add(key,a[key],b[key],true,s.kick.moved||3);
   if(fresh(h.rival,old.rival)&&h.rival.trail&&h.rival.trail.some(valid)&&h.rival.trail.length>1)out.push({key:h.rival.by==='badger'?'hyena':'badger',points:h.rival.trail});
