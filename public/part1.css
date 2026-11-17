@@ -7,10 +7,9 @@
 @keyframes btnpulse{0%,100%{box-shadow:0 0 0 0 rgba(255,210,31,0)}50%{box-shadow:0 0 0 7px rgba(255,210,31,.95)}}
 html #board .cell.cue::after{content:'';position:absolute;inset:2px;border-radius:5px;border:3px solid #fff;box-shadow:0 0 0 2px #111,inset 0 0 0 2px #111;z-index:47;pointer-events:none;animation:cuepulse 1.4s ease-in-out infinite}
 html #board .cell.cue.sat::after{inset:0}
-#board .cell>.aim.cue{animation:aimpulse 1.2s ease-in-out infinite}
 #board .cell>.kring.cue{animation:aimpulse 1.2s ease-in-out infinite}
 html[data-theme] #actions button.cuebtn:not(:disabled){animation:btnpulse 1s ease-in-out 3}
-@media (prefers-reduced-motion:reduce){html #board .cell.cue::after,#board .cell>.aim.cue,#board .cell>.kring.cue{animation:none}html[data-theme] #actions button.cuebtn:not(:disabled){animation:none;box-shadow:0 0 0 4px #ffd21f}}
+@media (prefers-reduced-motion:reduce){html #board .cell.cue::after,#board .cell>.kring.cue{animation:none}html[data-theme] #actions button.cuebtn:not(:disabled){animation:none;box-shadow:0 0 0 4px #ffd21f}}
 /* the older guide glows are replaced by the one cue */
 html #board .cell.gpath::after,html #board .cell.gtarget::after,html #board .cell.gloud::after,html #board .cell.gcool::after{display:none!important}
 
@@ -115,7 +114,6 @@ html #board .cell.fix{outline:4px solid #fff;outline-offset:-4px;animation:fixou
 .mini .ic svg{width:100%;height:100%;display:block}
 .mini .pc{position:absolute;left:8%;top:8%;width:84%;height:84%;z-index:4;pointer-events:none}
 .mini .pc svg{width:100%;height:100%}
-.mini .cell>.aim{position:absolute;inset:3%;border-radius:50%;border:3px solid #ff7a1a;box-shadow:0 0 0 2px #111,inset 0 0 0 2px #111,0 0 0 4px #fff;z-index:5;pointer-events:none;background:linear-gradient(#ff7a1a,#ff7a1a) center/2px 100% no-repeat,linear-gradient(#ff7a1a,#ff7a1a) center/100% 2px no-repeat}
 .mini .wring.sq{position:absolute;left:0;top:0;width:100%;height:100%;z-index:41}
 .mini>.youflag{position:absolute;transform:translate(-50%,-100%);z-index:21;pointer-events:none;font:900 9px/1 system-ui,-apple-system,sans-serif;padding:1.5px 5px 2px;background:#ffd21f;color:#111;border:1.5px solid #111;border-bottom:0;border-radius:5px 5px 0 0;white-space:nowrap}
 .mini .pc,html[data-theme] .mini .pc{background:none!important;border:0!important;box-shadow:none!important;border-radius:0!important;filter:drop-shadow(0 0 2px #fff) drop-shadow(0 0 1px #fff)}
@@ -123,8 +121,6 @@ html #board .cell.fix{outline:4px solid #fff;outline-offset:-4px;animation:fixou
 html[data-theme] #board .cell.sat>.wring.sq,html #board .cell.sat>.wring.sq{left:0!important;top:0!important;width:100%!important;height:100%!important;inset:auto!important;z-index:41!important}
 /* on your egg the square's own ring and the YOU tag mark you: the round ring under the animal would only cut across the egg */
 html #board .cell.sat .youring,html #board .cell.vfound .youring{display:none}
-/* the vulture stands over the crosshair on the egg it found, so it stays visible; the ring still shows around it */
-html #board .cell.vfound>.aim{z-index:3}
 /* a newly found egg pulses twice (found-pulse.js); with reduced motion it only shows */
 @keyframes foundpulse{0%,100%{opacity:1}40%{opacity:.35}}
 :is(#board,.mini,#howPics) .justfound{animation:foundpulse .55s ease-in-out 2;transform-origin:50% 60%}
