@@ -67,8 +67,8 @@ body.hunter #turnTag{background:#c46a12}body.hunter .cell{background:#6b4a1f}bod
 /* 4/5 players */
 
 #threeStep .rolerow.r5{flex-wrap:wrap}#threeStep .rolerow.r5 .rolebtn{flex:1 1 30%;font-size:14px}
-.rolebtn .ra{position:relative}.rolebtn .ra .snum{position:absolute;right:-4px;bottom:-4px}
-b.snum{position:absolute;right:2px;bottom:1px;z-index:6;min-width:17px;height:17px;line-height:15px;font-size:12px;font-weight:900;text-align:center;border-radius:9px;border:2px solid #000;background:#fff;color:#000;pointer-events:none}
+.rolebtn .ra{position:relative}.rolebtn .ra .snum{position:absolute;left:auto;right:-4px;bottom:-4px;top:auto}
+b.snum{position:absolute;left:2px;right:auto;bottom:1px;top:auto;z-index:6;box-sizing:border-box;width:12px;height:12px;min-width:12px;max-width:12px;margin:0;padding:0;display:flex;align-items:center;justify-content:center;font-size:8px;line-height:9px;font-weight:900;text-align:center;border-radius:2px;border:1.5px solid #000;background:#fff;color:#000;pointer-events:none}
 b.snum.o{background:#38d6f0}b.snum.v{background:#ffb000}b.snum.me{background:#ffd21f;box-shadow:0 0 0 2px #fff}
 .cell .pc.other.mate{filter:drop-shadow(0 0 4px #ffffff)}
 .cell .pc.other.opp{filter:drop-shadow(0 0 3px #ff2a6d)}
