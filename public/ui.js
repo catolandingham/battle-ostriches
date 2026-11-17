@@ -103,9 +103,9 @@ function connect(){
   else if(m.t==='state'&&m.pass)return passState(m);
   else if(m.t==='state'){window.LobbyUI&&LobbyUI.hide();if(window.CUTAWAYS&&CUTAWAYS.defer(m.state))return;acceptState(m.state);return;}
   else if(m.t==='error'&&/No game with that code/.test(m.msg)&&(S||m.gone)){gameGone();return;}
-  else if(m.t==='error'){if(!S){pending=null;clearTimeout(pendTimer);attempts=0;status(m.msg,true);window.LobbyUI&&LobbyUI.fail&&LobbyUI.fail();}else $('log').textContent=m.msg;}};
+  else if(m.t==='error'){actLock=false;if(!S){pending=null;clearTimeout(pendTimer);attempts=0;status(m.msg,true);window.LobbyUI&&LobbyUI.fail&&LobbyUI.fail();}else $('log').textContent=m.msg;}};
 }
-function acceptState(state){const prev=S;S=state;if(!prev||prev.turn!==S.turn||prev.phase!==S.phase)mode=null;render(prev);sounds(prev);if(!prev)maybeWalk(S.role);}
+function acceptState(state){actLock=false;const prev=S;S=state;if(!prev||prev.turn!==S.turn||prev.phase!==S.phase)mode=null;render(prev);sounds(prev);if(!prev)maybeWalk(S.role);}
 if(window.CUTAWAYS)CUTAWAYS.bind(acceptState);
 function inRoom(){const n=document.getElementById('roomLobby');return !!(S||(n&&!n.classList.contains('hidden')));}
 function retry(){
@@ -120,7 +120,14 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden&&inRoom()&
 window.addEventListener('pageshow',ev=>{if(ev.persisted&&inRoom()&&(!ws||ws.readyState>1)){attempts=0;connect();}});
 let fitAt=0;function fitPhone(){const now=Date.now();if(now-fitAt<250)return;fitAt=now;const vv=window.visualViewport,h=Math.round(vv?vv.height:innerHeight)+'px',top=Math.round(Math.max(0,vv?vv.offsetTop:0))+'px',root=document.documentElement;root.style.setProperty('--vvh',h);root.style.setProperty('--vvo',top);}
 fitPhone();if(window.visualViewport)visualViewport.addEventListener('resize',fitPhone);window.addEventListener('resize',fitPhone);
+let actLock=false; // one action tap is in flight; further taps wait for the next state
+const TURN_ACT=a=>a==='place'||a==='step'||a==='carry'||a==='sit'||a==='fly'||a==='throw'||a==='kick'||a==='hmove'||a==='hstay'||a==='hburst';
 const send=o=>{try{tipBar(null)}catch(e){}
+ if(o&&o.t==='act'&&TURN_ACT(o.a)){
+  if(actLock)return false;
+  if(S&&S.stamp)o.stamp={round:S.stamp.round,turn:S.stamp.turn,bonus:!!S.stamp.bonus,sense:S.stamp.sense,seq:S.stamp.seq};
+  if(!(ws&&ws.readyState===1))return false;
+  actLock=true;}
  if(o&&o.t==='act'&&window.CUTAWAYS&&CUTAWAYS.busy&&CUTAWAYS.busy())CUTAWAYS.dismiss();
  return ws&&ws.readyState===1&&ws.send(JSON.stringify(o));};
 function open(msg){pending=msg;attempts=0;if(ws&&ws.readyState===1)sendPending();else connect();}
@@ -143,7 +150,7 @@ function showCover(r,first){const h=$('handoff');h.className=r;$('hArt').innerHT
  $('hGo').textContent=`I'm the ${NAME[r]} — tap to start`;
  $('board').innerHTML='';$('actions').innerHTML='';$('hint').textContent='';
  const bn=$('banner');if(bn){bn.textContent='';bn.className='hidden';}if(window.BO_BANNER)BO_BANNER.reset();}
-function showView(r,v){holder=r;const prev=lastBy[r]||null;const pr=S;S=v;mode=null;if(!pr)$('lobby').classList.add('hidden');render(prev);sounds(prev);if(!lastBy[r])maybeWalk(r);lastBy[r]=v;}
+function showView(r,v){actLock=false;holder=r;const prev=lastBy[r]||null;const pr=S;S=v;mode=null;if(!pr)$('lobby').classList.add('hidden');render(prev);sounds(prev);if(!lastBy[r])maybeWalk(r);lastBy[r]=v;}
 function passState(m){PV=m;const next=m.active,over=m.views.blue.phase==='over';
  if(over||holder===next||(holder&&locked)){if(over){clearTimeout(hT);$('handoff').className='hidden';locked=false;}if(!locked||over)return showView(over?'blue':next,m.views[over?'blue':next]);return;}
  if(!holder){locked=true;showCover(next,m.views.blue.phase==='setupEggs');$('lobby').classList.add('hidden');return;}
@@ -210,6 +217,7 @@ function cardFor(s){if(!s||!window.Roles||!s.rules)return null;const h=s.h3||{};
 function cardArt(k){return k==='ostrich'?OST:k==='vulture'?VUL:window.T3UI&&T3UI.KIND[k]?T3UI.KIND[k].art:'';}
 const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function mySeat(){return (S&&S.h3&&S.h3.mySeat)||(S&&S.role)||null;}
+let rulesOpen=false;
 function showCard(c,picked,again){const el=$('rolecard');if(!el||!c)return;cardOpen={id:c.id,again:!!again};
  const lines=c.lines&&c.lines.length?c.lines:[c.goal,...(c.moves||[])].filter(Boolean);
  el.innerHTML=`<div class="rc" data-animal="${esc(c.animal||'')}"><div class="rtop"><span class="rpic">${cardArt(c.picture)}</span><h2>${esc(c.mode||'')}</h2></div><p class="rwho">${esc(c.title)}</p>${picked?`<p class="rpicked">${esc(Roles.PICKED)}</p>`:''}<ul class="rmoves">${lines.map(m=>`<li>${esc(m)}</li>`).join('')}</ul><button type="button" class="rok">Got it</button></div>`;
@@ -217,7 +225,7 @@ function showCard(c,picked,again){const el=$('rolecard');if(!el||!c)return;cardO
  send({t:'card-hold',seat:mySeat()});}
 function closeCard(){const el=$('rolecard');if(!el||!cardOpen)return;el.classList.add('hidden');
  if(!cardOpen.again)try{localStorage.setItem('bo_card_'+cardOpen.id,'1')}catch(e){}
- const seat=mySeat();cardOpen=null;send({t:'card-done',seat});if(S)render();}
+ const seat=mySeat();cardOpen=null;if(!rulesOpen)send({t:'card-done',seat});if(S)render();}
 function maybeCard(){if(cardOpen||!S||S.god||S.phase==='over')return;
  const setup=S.phase==='play'||S.phase==='setup'||S.phase==='setupEggs'||S.phase==='setupOstrich';if(!setup)return;const h=S.h3;
  if(h&&(h.ready===false||h.needKind))return;
@@ -225,12 +233,12 @@ function maybeCard(){if(cardOpen||!S||S.god||S.phase==='over')return;
  const walk=$('walk'),tut=document.getElementById('tut');if(!walk.classList.contains('hidden')||(tut&&!tut.classList.contains('hidden')))return;
  const c=cardFor(S);if(!c||cardSeen(c.id))return;showCard(c,S.picked,false);}
 tapper($('rolecard'),closeCard);
-window.UI={card(){showCard(cardFor(S),S&&S.picked,true);},walk(){walk();},rules(){fillHuntLines();$('rules').classList.remove('hidden');$('rules').scrollTop=0;howPics();const rb=$('roleCardBtn');if(rb)rb.classList.toggle('hidden',!cardFor(S));const b=document.getElementById('guideToggle');if(b){const on=!localStorage.getItem('bo_hs_off');b.textContent=on?'Ostrich guides: ON (tap to turn off)':'Ostrich guides: OFF (tap to turn on)';}},closeRules(){$('rules').classList.add('hidden')},
+window.UI={card(){showCard(cardFor(S),S&&S.picked,true);},walk(){walk();},rules(){fillHuntLines();$('rules').classList.remove('hidden');$('rules').scrollTop=0;howPics();const rb=$('roleCardBtn');if(rb)rb.classList.toggle('hidden',!cardFor(S));const b=document.getElementById('guideToggle');if(b){const on=!localStorage.getItem('bo_hs_off');b.textContent=on?'Ostrich guides: ON (tap to turn off)':'Ostrich guides: OFF (tap to turn on)';}if(!rulesOpen){rulesOpen=true;send({t:'card-hold',seat:mySeat()});}},closeRules(){$('rules').classList.add('hidden');if(!rulesOpen)return;rulesOpen=false;if(!cardOpen)send({t:'card-done',seat:mySeat()});},
  setMode(m){if(locked||!S||!S.myTurn||inHold())return;kickPick=null;mode=m;if(m==='throw')coachDid('throw');render();},
  kick(){if(locked||!S||!S.myTurn||S.role!=='blue'||inHold())return;if(curMode()==='carry')return nope('Not while carrying.');
   if(!(S.can&&S.can.kick))return nope('Nothing to kick.');
   kickPick=null;mode='kick';render();}, // like Throw: Kick selects the mode, then a tap on the glowing animal kicks it
- act(a){if(a==='kick')return UI.kick();if(locked||!S||!S.myTurn||inHold())return;if(a==='sit'&&!(S.can&&S.can.sit))return nope('Not there.');coachDid(a);if(a==='sit'&&G&&G.id==='start')gSet('start','1');send({t:'act',a})},guides(on){if(on)localStorage.removeItem('bo_hs_off');else localStorage.setItem('bo_hs_off','1');const b=document.getElementById('guideToggle');if(b)b.textContent=on?'Ostrich guides: ON (tap to turn off)':'Ostrich guides: OFF (tap to turn on)';if(S)render();},replayCoach(){Object.keys(localStorage).filter(k=>k.startsWith('bo_g_')).forEach(k=>localStorage.removeItem(k));['blue','red'].forEach(r=>localStorage.removeItem('bo_cs_'+r));localStorage.removeItem('bo_tips_off');Object.keys(localStorage).filter(k=>k.startsWith('bo_tip_')).forEach(k=>localStorage.removeItem(k));if(S)render();},rematch(how){holder=null;lastBy={};sniffSeen={};send({t:'act',a:'rematch',how:how||'same'})},
+ act(a){if(a==='kick')return UI.kick();if(actLock||locked||!S||!S.myTurn||inHold())return;if(a==='sit'&&!(S.can&&S.can.sit))return nope('Not there.');coachDid(a);if(a==='sit'&&G&&G.id==='start')gSet('start','1');send({t:'act',a})},guides(on){if(on)localStorage.removeItem('bo_hs_off');else localStorage.setItem('bo_hs_off','1');const b=document.getElementById('guideToggle');if(b)b.textContent=on?'Ostrich guides: ON (tap to turn off)':'Ostrich guides: OFF (tap to turn on)';if(S)render();},replayCoach(){Object.keys(localStorage).filter(k=>k.startsWith('bo_g_')).forEach(k=>localStorage.removeItem(k));['blue','red'].forEach(r=>localStorage.removeItem('bo_cs_'+r));localStorage.removeItem('bo_tips_off');Object.keys(localStorage).filter(k=>k.startsWith('bo_tip_')).forEach(k=>localStorage.removeItem(k));if(S)render();},rematch(how){holder=null;lastBy={};sniffSeen={};send({t:'act',a:'rematch',how:how||'same'})},
  _rr(){if(S)render();},_mode:()=>curMode(),open(m){open(m);},pause(ms){sniffUntil=Math.max(sniffUntil,Date.now()+ms);},send(o){send(o);},_tip:t=>tipBar(t),_S:()=>S,_legal:()=>legalNow(),_locked:()=>locked,menu(){S=null;clearMe();location.href='/';}};
 // --- learn-by-playing coach marks: one hint, anchored, everything else dimmed; advances when the player does it ---
 const COACH={blue:[
@@ -287,14 +295,14 @@ const BO_BANNER=(()=>{let shown='',at=0,want=null,timer=null;
 window.BO_BANNER=BO_BANNER;
 // While a cartoon or the reading pause is up, the screen shows a frozen board and this phone's state is a step behind the table's, so a tap would be refused ("Not a legal move right now."). Ignore it quietly.
 function inHold(){return !!(window.CUTAWAYS&&CUTAWAYS.busy&&CUTAWAYS.busy());}
-function tap(x,y){clearTimeout(tap.q);if(!S||locked||cardOpen||inHold())return;if(Date.now()<sniffUntil){const stamp=()=>S&&JSON.stringify([S.phase,S.round,S.turn,S.myTurn,S.ostrich,S.vulture,S.hunter,S.pounce,S.lastAction]),queuedState=stamp(),queuedMode=curMode();tap.q=setTimeout(()=>{if(stamp()===queuedState&&curMode()===queuedMode)tap(x,y);},sniffUntil-Date.now()+20);return;}const p=[x,y],ok=legalNow().some(q=>q[0]===x&&q[1]===y);
+function tap(x,y){clearTimeout(tap.q);if(!S||actLock||locked||cardOpen||inHold())return;if(Date.now()<sniffUntil){const stamp=()=>S&&JSON.stringify([S.phase,S.round,S.turn,S.myTurn,S.ostrich,S.vulture,S.hunter,S.pounce,S.lastAction]),queuedState=stamp(),queuedMode=curMode();tap.q=setTimeout(()=>{if(stamp()===queuedState&&curMode()===queuedMode)tap(x,y);},sniffUntil-Date.now()+20);return;}const p=[x,y],ok=legalNow().some(q=>q[0]===x&&q[1]===y);
  if(!ok){const c=$('board').children[y*S.cfg.cols+x];if(c&&c.dataset.tip&&c.dataset.tags)showTip(c,c.dataset.tip,2600);if(c&&c.animate)c.animate([{transform:'translateX(0)'},{transform:'translateX(-4px)'},{transform:'translateX(4px)'},{transform:'translateX(-3px)'},{transform:'translateX(0)'}],{duration:220});}
  if(S.role==='blue'&&(S.phase==='setupEggs'||S.phase==='setupOstrich'))return ok?send({t:'act',a:'place',p}):nope('Not there.',p);
  if(S.phase!=='play')return;if(!S.myTurn)return nope(S.three?window.T3UI.waitMsg(S):S.role==='blue'?'Wait. Vulture\'s turn.':'Wait. Ostrich\'s turn.');
  const m0=curMode();if(m0==='hmove'){if(!ok)return nope('Too far.',p);return send({t:'act',a:'hmove',p});}
  const m=curMode();if(!m)return;
  if(!ok&&m==='carry'&&isF(S.cfg,key(p))&&gd(p,S.ostrich)===1){const c=$('board').children[p[1]*S.cfg.cols+p[0]];c&&c.animate([{transform:'translateX(0)'},{transform:'translateX(-3px)'},{transform:'translateX(3px)'},{transform:'translateX(0)'}],{duration:180});return nope('No eggs by food.',p);}
- if(!ok)return nope(m==='throw'?(S.stones<1?'No stone. Go to rocks.':'Too far.'):m==='kick'?'Tap where they go.':m==='carry'?'Not there.':'Too far.',p);
+ if(!ok)return nope(m==='throw'?window.THROW_TAP.miss(S,p):m==='kick'?'Tap where they go.':m==='carry'?'Not there.':'Too far.',p);
  if(m==='kick'){const plan=(S.kickPlans||[]).find(q=>q.to&&q.to[0]===x&&q.to[1]===y);if(!plan)return;coachDid('kick');send({t:'act',a:'kick',p:plan.at});return;}
  coachDid(m==='carry'?'step':m);send({t:'act',a:m,p});}
 function onFoundEggWithStone(st){return !!(st&&st.role==='red'&&st.phase==='play'&&st.myTurn&&st.stones>0&&st.vulture&&st.marks&&st.marks[st.vulture[0]+','+st.vulture[1]]==='spotted');}
@@ -552,7 +560,7 @@ function render(prev){
  if(window.CAUSE)CAUSE.run(S,prev,board,{stone:STONE,egg:MYEGG,ring:n=>warmRing(n,C.warmth)});
  if(window.PUSH_MOTION)PUSH_MOTION.run(S,prev,board);
  if(window.CUTAWAYS)CUTAWAYS.play(S,prev,board);
- const o=$('over');if(S.phase==='over'){hideTip();tipBar(null);$('rules').classList.add('hidden');$('walk').classList.add('hidden');const tut=document.getElementById('tut');if(tut)tut.classList.add('hidden');
+ const o=$('over');if(S.phase==='over'){hideTip();tipBar(null);$('rules').classList.add('hidden');if(rulesOpen){rulesOpen=false;if(!cardOpen)send({t:'card-done',seat:mySeat()});}$('walk').classList.add('hidden');const tut=document.getElementById('tut');if(tut)tut.classList.add('hidden');
   const wait=window.CUTAWAYS&&CUTAWAYS.busy()?CUTAWAYS.MS:1000;
   if(!overHold){overHold=Date.now()+wait;setTimeout(()=>{if(S&&S.phase==='over')render();},wait);}}
  else overHold=0;

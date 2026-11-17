@@ -20,6 +20,8 @@ const roomOf = code => server.rooms.get(code);
   b.send({ t: 'lobby', a: 'role', role: 'red' });
   c.send({ t: 'lobby', a: 'role', role: 'hyena' });
   await wait(a, m => m.t === 'state' && m.lobby && m.state.canStart);
+  a.send({ t: 'lobby', a: 'clock', on: true });
+  await wait(a, m => m.t === 'state' && m.lobby && m.state.clock === true);
   a.send({ t: 'lobby', a: 'start' });
   const started = await wait(a, m => m.t === 'state' && !m.lobby && m.state.phase);
   const room = roomOf(aj.code);
