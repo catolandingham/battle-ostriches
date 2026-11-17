@@ -16,6 +16,7 @@ const shot = (p, n) => p.screenshot({ path: OUT + n + '.jpg', type: 'jpeg', qual
   await A.waitForFunction(() => { const s = LobbyUI.get(); return s && s.setup === '3'; });
   await A.click('[data-role="blue"]'); await V.click('[data-role="red"]');
   await H.click('[data-role="hyena"]'); await H.waitForFunction(() => /YOU ARE Hyena/.test(document.body.innerText)); await shot(H, '2-hunter-pick');
+  await A.click('#lobbyGear'); await A.click('#clockToggle'); await A.waitForFunction(() => LobbyUI.get() && LobbyUI.get().clock);
   await A.click('#startGame'); await A.waitForSelector('#board .cell'); await V.waitForSelector('#board .cell'); await H.waitForSelector('#board .cell');
   for (const [x, y] of [[2, 1], [6, 1], [2, 5], [7, 6]]) { await cell(A, x, y).click(); await A.waitForTimeout(120); }
   // round 1: vulture first, clock running

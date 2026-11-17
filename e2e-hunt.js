@@ -22,6 +22,7 @@ const at = { state: 'attached' };
   await A.waitForSelector('[data-role="badger"]'); await A.click('[data-role="badger"]'); await Y.click('[data-role="hyena"]');
   await Y.waitForFunction(() => { const s = LobbyUI.get(); return s && s.roles.some(r => r.id === 'hyena' && r.mine); });
   await shot(A, '3-hunters-setup');
+  await A.click('#lobbyGear'); await A.click('#clockToggle'); await A.waitForFunction(() => LobbyUI.get() && LobbyUI.get().clock);
   await A.click('#startGame'); await Y.waitForSelector('#board .cell');
   await Y.waitForSelector('#actions.mine', { ...at, timeout: 20000 }); assert.ok(/HYENA/.test(await Y.textContent('#turnTag')));
   await Y.locator('#actions button').first().click({ force: true }); // hyena stays put
