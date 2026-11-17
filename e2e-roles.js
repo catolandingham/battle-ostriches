@@ -47,7 +47,7 @@ const R = require('./public/roles.js'), THEMES = fs.readFileSync('./public/theme
 
   // a tap closes it and the game keeps going
   await V.click('#rolecard'); assert.equal(await shown(V).count(), 0, 'a tap closes the card');
-  assert.equal(await V.evaluate(() => localStorage.getItem('bo_card_vulture_hyena_3_r5')), '1', 'the phone remembers this card');
+  assert.equal(await V.evaluate(id => localStorage.getItem('bo_card_' + id), R.cardId('red', 'hyena', '3')), '1', 'the phone remembers this card');
   await H.click('#rolecard .rok'); await A.click('#rolecard .rc');
   assert.equal(await shown(H).count() + await shown(A).count(), 0);
   for (const [x, y] of [[2, 1], [6, 1], [2, 5], [7, 6]]) { await cell(A, x, y).click(); await A.waitForTimeout(120); }
