@@ -95,9 +95,11 @@ const hint = p => p.evaluate(() => document.getElementById('hint').textContent.t
   ok('squares you can move to are lit, with no dots');
   // Throw is a button. The found egg then throws on one tap (no confirm, no crosshair shortcut).
   await V.locator('#actions button:has-text("Throw")').click(); await V.waitForFunction(() => UI._mode() === 'throw'); assert.equal((await cueState(V)).confirm, 0);
-  // wrong tap while in throw mode on a far square: "Too far." and the egg square pulses
-  const far = [E[0] < 4 ? 8 : 0, E[1] < 3 ? 6 : 0]; await cell(V, ...far).click(); await sleep(150);
-  assert.equal(await hint(V), 'Too far.'); const fixed = await V.evaluate(() => [...document.querySelectorAll('#board .cell.fix')].map(c => [...c.parentNode.children].indexOf(c))); assert.deepEqual(fixed, [idx(...E)], 'after a wrong tap the found egg pulses');
+  // wrong tap while in throw mode on a far square: "Too far." and the egg square pulses.
+  // A tap during the short sniff pause is applied when that pause ends, so wait for the hint.
+  const far = [E[0] < 4 ? 8 : 0, E[1] < 3 ? 6 : 0]; await cell(V, ...far).click();
+  await V.waitForFunction(() => document.getElementById('hint').textContent.trim() === 'Too far.', null, { timeout: 4000 });
+  const fixed = await V.evaluate(() => [...document.querySelectorAll('#board .cell.fix')].map(c => [...c.parentNode.children].indexOf(c))); assert.deepEqual(fixed, [idx(...E)], 'after a wrong tap the found egg pulses');
   ok('every wrong tap shows the right move (the found egg pulses)');
   await cell(V, ...E).click(); await V.waitForFunction(() => UI._S().turn === 'blue', null, { timeout: 5000 }); ok('a throw at the found egg needs only one tap');
   // --- no stone: rock piles pulse, moves toward the nearest rock are bolder
