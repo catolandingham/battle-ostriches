@@ -1,7 +1,10 @@
 // Full-screen cartoon scenes for the big moments that have art, including the vulture smashing an egg.
 // A new pair is a row in TABLE plus its drawings and steps in public/cutaway-scenes.js
 // (made by tools/cutaways/export.py; see tools/cutaways/README.md). Nothing else.
-// The pictures play only for a player who can already see that moment. A wrapping
+// A kick, a stone, a burst, or a shove plays only for a player who can already see
+// that moment. A catch, and the knock-out picture, plays on every phone: the drawing
+// is the two animals and carries no square, so it does not show where the hunter was,
+// where the bird landed, or whether a badger was buried. A wrapping
 // kick (the path leaves one edge and comes back on the other) uses the wrap row.
 (function (root) {
   const MS = 2000, REVEAL = 1500, STEP = 50;
@@ -62,7 +65,8 @@
       if (seen) out.push({ event: 'kick', by: kindOf(k.by || 'ostrich'), target: kindOf(k.who), wrap: seenWrap(k.trail, S.cfg), seq: k.seq, trail: k.trail });
     }
     const lc = h.lastCatch;
-    if (fresh(lc, oh.lastCatch) && pointOk(lc.at)) {
+    // The square (lc.at) is only on phones that may see the hunter. The cartoon does not use it.
+    if (fresh(lc, oh.lastCatch) && (lc.bird || lc.ko)) {
       out.push({ event: lc.ko ? 'knockout' : 'catch', by: kindOf(lc.by || h.kind), target: kindOf(lc.bird), seq: lc.seq });
     }
     const note = S.stoneNote;

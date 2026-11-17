@@ -1,7 +1,8 @@
-// Which cartoon plays, and who is allowed to see it. The pictures follow the view
-// the server already sends: a phone that cannot see the moment gets no cartoon.
+// Which cartoon plays, and who is allowed to see it. A kick, stone, burst, or shove
+// follows the view the server already sends. A catch cartoon plays on every phone;
+// the slide still needs the square, and the cartoon object carries none.
 process.env.PORT = '0'; process.env.BO_NOSTORE = '1'; process.env.BO_BOTMS = '900000';
-const assert = require('assert'), S = require('./server'), C = require('./public/cutaways'), { make } = require('./tests/hunter-fixtures');
+const assert = require('assert'), S = require('./server'), C = require('./public/cutaways'), P = require('./public/push-motion'), { make } = require('./tests/hunter-fixtures');
 const T = require('./three'), H = require('./hunt'), TT = require('./team'), B = require('./game');
 
 assert.equal(C.seenWrap([[8, 3], [0, 3], [1, 3], [2, 3]], { cols: 9, rows: 7 }), true, 'a jump across the edge is a wrap');
@@ -73,7 +74,23 @@ for (const mode of ['3p', 'Hunters', '5p']) {
   assert.equal(C.sceneFor(v.view('hunter'), vp.hunter), null, 'a far hunter does not see a kick on the vulture');
 }
 
-// --- catches: hyena -> ostrich, and the knock-out picture instead when it is the last heart ---
+// The cartoon record is the animals only. A phone that was not sent a square must not find one here.
+function cartoonLeaks(scene) {
+  const blob = JSON.stringify(scene);
+  return /"at"|"to"|"trail":\[|burrow/.test(blob);
+}
+function assertEverySeatCartoon(f, prev, id) {
+  for (const r of f.roles) {
+    const now = f.view(r), scene = C.sceneFor(now, prev[r]), lc = now.h3.lastCatch;
+    assert.equal(scene && scene.id, id, f.g.n ? id + ' ' + r : id + ' ' + r);
+    assert.equal(scene.trail, null, r + ' cartoon has no path');
+    assert.equal(cartoonLeaks(scene), false, r + ' cartoon names no square or burrow');
+    const slide = P.events(now, prev[r]).some(e => e.key === lc.bird);
+    const maySlide = now.role !== 'hunter' && !lc.ko && Array.isArray(lc.at) && Array.isArray(lc.to);
+    assert.equal(slide, maySlide, r + ' slides only with both squares');
+  }
+}
+// --- catches: the cartoon on every phone; the slide only where the square was sent ---
 for (const mode of ['3p', 'Hunters', '5p']) {
   const f = make(S, mode), g = f.g;
   if (mode === '5p') { g.turn = 'hunter'; g.h.p = [3, 3]; g.h.pounce = false; g.h.kind = 'hyena'; g.b.o1.pos = [4, 3]; g.b.o2.pos = [0, 0]; g.b.v1.pos = [8, 6]; g.b.v2.pos = [0, 6]; }
@@ -82,10 +99,16 @@ for (const mode of ['3p', 'Hunters', '5p']) {
   const prev = shot(f);
   const moved = mode === '5p' ? TT.hunterMove(g, [4, 3]) : mode === '3p' ? T.hunterMove(g, [4, 3]) : H.hunterMove(g, [4, 3]);
   assert.ok(moved, mode + ' catch');
-  const got = ids(f, prev), hyena = mode === 'Hunters' ? 'hyena' : 'hunter';
-  assert.equal(got[f.blue], 'catch', mode + ' caught ostrich sees the catch cartoon');
-  assert.equal(got[hyena], 'catch', mode + ' hyena sees the catch cartoon');
-  for (const r of f.roles) if (r !== f.blue && r !== hyena) assert.equal(got[r], null, mode + ' ' + r + ' cannot see that catch');
+  assertEverySeatCartoon(f, prev, 'catch');
+  const hyena = mode === 'Hunters' ? 'hyena' : 'hunter';
+  assert.ok(Array.isArray(f.view(f.blue).h3.lastCatch.at), mode + ' caught bird still receives the square');
+  assert.ok(Array.isArray(f.view(hyena).h3.lastCatch.at), mode + ' catching hunter still receives the square');
+  assert.equal(f.view(hyena).h3.lastCatch.to, null, mode + ' hunter is not told the landing');
+  for (const r of f.roles) {
+    const v = f.view(r);
+    if (r !== f.blue && r !== hyena) assert.equal(v.h3.lastCatch.at, null, mode + ' ' + r + ' is not sent the catch square');
+    if (v.role !== 'hunter' && !v.god) assert.equal(v.h3.burrowed, false, mode + ' ' + r + ' is not told a burrow');
+  }
 
   const ko = make(S, mode), kg = ko.g;
   if (mode === '5p') { kg.b.o1.catches = 1; kg.turn = 'hunter'; kg.h.p = [3, 3]; kg.h.pounce = false; kg.h.kind = 'hyena'; kg.b.o1.pos = [4, 3]; kg.b.o2.pos = [0, 0]; kg.b.v1.pos = [8, 6]; kg.b.v2.pos = [0, 6]; }
@@ -93,52 +116,60 @@ for (const mode of ['3p', 'Hunters', '5p']) {
   else { kg.hunt.birds.blue.catches = 1; kg.turn = 'hyena'; kg.hunt.hs.hyena.p = [3, 3]; kg.hunt.hs.hyena.pounce = false; kg.hunt.hs.badger.p = [0, 6]; kg.ostrich = [4, 3]; kg.vulture = [8, 6]; }
   const kp = shot(ko);
   assert.ok(mode === '5p' ? TT.hunterMove(kg, [4, 3]) : mode === '3p' ? T.hunterMove(kg, [4, 3]) : H.hunterMove(kg, [4, 3]), mode + ' knockout');
-  const kgot = ids(ko, kp);
-  assert.equal(kgot[ko.blue], 'knockout', mode + ' knocked-out ostrich sees the knockout, not the plain catch');
-  assert.equal(kgot[hyena], 'knockout', mode + ' hyena sees the knockout');
-  for (const r of ko.roles) if (r !== ko.blue && r !== hyena) assert.equal(kgot[r], null, mode + ' ' + r + ' cannot see that knockout');
+  assertEverySeatCartoon(ko, kp, 'knockout');
 }
 
-// badger catches, and a hyena catching a vulture. Only phones that can see that catch.
+// badger catches, and a hyena catching a vulture. Every phone gets the picture. Squares stay filtered.
 {
   const f = make(S, '3p'), g = f.g; g.three.kind = 'badger'; g.turn = 'hunter'; g.three.h = [3, 3]; g.three.burrowed = false; g.three.pounce = false; g.ostrich = [4, 3]; g.vulture = [8, 6];
   const prev = shot(f); assert.ok(T.hunterMove(g, [4, 3]));
-  const got = ids(f, prev);
-  assert.equal(got.blue, 'catch-badger-ostrich');
-  assert.equal(got.hunter, 'catch-badger-ostrich');
-  assert.equal(got.red, null, 'far vulture does not see the badger catch the ostrich');
+  assertEverySeatCartoon(f, prev, 'catch-badger-ostrich');
+  assert.equal(f.view('red').h3.lastCatch.at, null, 'far vulture is not sent the catch square');
+  assert.equal(f.view('red').h3.hunter, null, 'far vulture still cannot see the badger');
   const hunters = make(S, 'Hunters'), hg = hunters.g; hg.turn = 'badger'; hg.hunt.hs.badger.p = [3, 3]; hg.hunt.hs.badger.burrowed = false; hg.hunt.hs.badger.pounce = false; hg.hunt.hs.hyena.p = [8, 6]; hg.ostrich = [4, 3]; hg.vulture = [0, 0];
   const hp = shot(hunters); assert.ok(H.hunterMove(hg, [4, 3]));
-  const hgot = ids(hunters, hp);
-  assert.equal(hgot.blue, 'catch-badger-ostrich');
-  assert.equal(hgot.badger, 'catch-badger-ostrich');
-  assert.equal(hgot.hyena, null, 'the other hunter does not see that catch');
-  assert.equal(hgot.red, null, 'far vulture does not see that catch');
+  assertEverySeatCartoon(hunters, hp, 'catch-badger-ostrich');
+  assert.equal(hunters.view('hyena').h3.lastCatch.at, null, 'the other hunter is not sent the catch square');
+  assert.equal(hunters.view('hyena').h3.lastCatch.to, null, 'the other hunter is not sent the landing');
+  assert.equal(hunters.view('red').h3.lastCatch.at, null, 'far vulture is not sent that catch square');
   const hv = make(S, 'Hunters'), vg = hv.g; vg.turn = 'hyena'; vg.hunt.hs.hyena.p = [3, 3]; vg.hunt.hs.hyena.pounce = false; vg.hunt.hs.badger.p = [0, 6]; vg.vulture = [4, 3]; vg.ostrich = [8, 6];
   const vp = shot(hv); assert.ok(H.hunterMove(vg, [4, 3]));
-  const vgot = ids(hv, vp);
-  assert.equal(vgot.red, 'catch-hyena-vulture');
-  assert.equal(vgot.hyena, 'catch-hyena-vulture');
-  assert.equal(vgot.blue, null, 'far ostrich does not see the hyena catch the vulture');
-  assert.equal(vgot.badger, null, 'far badger does not see that catch');
-  // last heart: the knockout picture replaces the catch picture
+  assertEverySeatCartoon(hv, vp, 'catch-hyena-vulture');
+  assert.equal(hv.view('blue').h3.lastCatch.at, null, 'far ostrich is not sent the catch square');
+  assert.equal(hv.view('badger').h3.lastCatch.at, null, 'far badger is not sent that catch square');
+  assert.equal(hv.view('badger').h3.burrowed, false, 'the other hunter is not shown as a burrow on this phone');
+  // last heart: the knockout picture replaces the catch picture, still on every phone
   const ko = make(S, 'Hunters'), kg = ko.g; kg.hunt.birds.red.catches = 1; kg.turn = 'badger'; kg.hunt.hs.badger.p = [3, 3]; kg.hunt.hs.badger.burrowed = false; kg.hunt.hs.badger.pounce = false; kg.hunt.hs.hyena.p = [8, 0]; kg.vulture = [4, 3]; kg.ostrich = [0, 6];
   const kp = shot(ko); assert.ok(H.hunterMove(kg, [4, 3]));
-  assert.equal(C.sceneFor(ko.view('red'), kp.red).id, 'knockout-badger-vulture');
-  assert.equal(C.sceneFor(ko.view('badger'), kp.badger).id, 'knockout-badger-vulture');
-  assert.equal(C.sceneFor(ko.view('blue'), kp.blue), null);
-  assert.equal(C.sceneFor(ko.view('hyena'), kp.hyena), null);
+  assertEverySeatCartoon(ko, kp, 'knockout-badger-vulture');
+  assert.equal(ko.view('blue').h3.lastCatch.at, null);
+  assert.equal(ko.view('hyena').h3.lastCatch.at, null);
   const ko2 = make(S, '3p'), k2 = ko2.g; k2.three.kind = 'badger'; k2.three.birds.blue.catches = 1; k2.turn = 'hunter'; k2.three.h = [3, 3]; k2.three.burrowed = false; k2.three.pounce = false; k2.ostrich = [4, 3]; k2.vulture = [8, 6];
   const k2p = shot(ko2); assert.ok(T.hunterMove(k2, [4, 3]));
-  assert.equal(C.sceneFor(ko2.view('blue'), k2p.blue).id, 'knockout-badger-ostrich');
-  assert.equal(C.sceneFor(ko2.view('hunter'), k2p.hunter).id, 'knockout-badger-ostrich');
-  assert.equal(C.sceneFor(ko2.view('red'), k2p.red), null);
+  assertEverySeatCartoon(ko2, k2p, 'knockout-badger-ostrich');
+  assert.equal(ko2.view('red').h3.lastCatch.at, null);
   const ko3 = make(S, 'Hunters'), k3 = ko3.g; k3.hunt.birds.red.catches = 1; k3.turn = 'hyena'; k3.hunt.hs.hyena.p = [3, 3]; k3.hunt.hs.hyena.pounce = false; k3.hunt.hs.badger.p = [8, 6]; k3.vulture = [4, 3]; k3.ostrich = [0, 0];
   const k3p = shot(ko3); assert.ok(H.hunterMove(k3, [4, 3]));
-  assert.equal(C.sceneFor(ko3.view('red'), k3p.red).id, 'knockout-hyena-vulture');
-  assert.equal(C.sceneFor(ko3.view('hyena'), k3p.hyena).id, 'knockout-hyena-vulture');
-  assert.equal(C.sceneFor(ko3.view('blue'), k3p.blue), null);
-  assert.equal(C.sceneFor(ko3.view('badger'), k3p.badger), null);
+  assertEverySeatCartoon(ko3, k3p, 'knockout-hyena-vulture');
+  assert.equal(ko3.view('blue').h3.lastCatch.at, null);
+  assert.equal(ko3.view('badger').h3.lastCatch.at, null);
+}
+// 5 players: a buried badger's catch. Every seat gets the same animals-only cartoon. Far seats still lack the square, the landing path, and the burrow.
+{
+  const f = make(S, '5p'), g = f.g;
+  g.h.kind = 'badger'; g.h.burrowed = true; g.h.p = [3, 3]; g.turn = 'hunter'; g.h.pounce = false;
+  g.b.o1.pos = [4, 3]; g.b.o2.pos = [0, 0]; g.b.v1.pos = [8, 6]; g.b.v2.pos = [0, 6];
+  const prev = shot(f); assert.ok(TT.hunterMove(g, [4, 3])); assert.equal(g.lastCatch.ambush, true);
+  assertEverySeatCartoon(f, prev, 'catch-badger-ostrich');
+  for (const r of ['o2', 'v1', 'v2']) {
+    const v = f.view(r);
+    assert.equal(v.h3.lastCatch.at, null, r + ' ambush catch square stays hidden');
+    assert.equal(v.h3.hunter, null, r + ' still cannot see the badger');
+    assert.equal(v.h3.burrowed, false, r + ' is not told the burrow');
+    assert.equal(P.events(v, prev[r]).some(e => e.key === 'o1'), false, r + ' does not slide the scramble');
+  }
+  assert.ok(Array.isArray(f.view('o1').h3.lastCatch.at) && Array.isArray(f.view('o1').h3.lastCatch.to), 'the caught ostrich still has both squares');
+  assert.equal(f.view('hunter').h3.lastCatch.to, null, 'the badger is not told where the ostrich landed');
 }
 
 // --- stone: vulture -> hyena only, and only for a phone that can see the hyena move ---
