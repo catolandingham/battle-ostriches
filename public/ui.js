@@ -428,14 +428,16 @@ function render(prev){
  syncRejoinAsk();
  maybeCard();$('lobby').classList.add('hidden');const C=S.cfg,blue=S.role==='blue',body=document.body;body.className=(S.role==='hunter'?'hunter':blue?'blue':'red')+(S.three?' three':'')+(S.god?' godview':'');
  $('turnTag').innerHTML=S.role==='hunter'||(S.h3&&S.h3.team)?window.T3UI.tag(S):`<span style="display:inline-block;width:26px;height:26px;vertical-align:middle">${blue?OST:VUL}</span> ${blue?'OSTRICH':'VULTURE'}`;
- $('roundsLeft').textContent=C.rounds-S.round+1;$('eggsLeft').textContent=S.eggsLeft;
- // HUD: ostrich hunger (leaf + turns left) and vulture stones. The number is public.
+ $('roundsLeft').textContent=C.rounds-S.round+1;
+ // HUD: food, stones, and eggs on one chip row. The food number is public.
  // A rise counts up from the old digit; a paint in the middle must not jump to the new one.
- const hud=$('stats');if(hud){const play=S.phase==='play'||S.phase==='over';hud.classList.toggle('hidden',!play);
-  if(play){const now=S.hungerLeft|0,was=prev&&prev.hungerLeft!=null?prev.hungerLeft|0:null,digit=hungerDigit(now,was),badge=ateBadgeOn(prev);
-   hud.innerHTML=`<span class="hh${digit<=3?' low':''}${badge?' ate':''}" data-tip="Ostrich food: turns left before it starves">${LEAF}<b id="hungerLeft">${digit}</b>${blue?`<i class="hbar"><i style="width:${Math.max(0,Math.min(100,100*digit/C.food))}%"></i></i>`:''}</span><span class="hs${S.stones<1?' empty':''}" data-tip="Vulture stones">${STONE}<b id="stonesLeft">${S.stones}/${C.stones}</b></span>`;
-   if(was!=null&&now>was)hungerPlayer.play(was,now);
-   else if(hungerPlayer.rising()){if(hungerPlayer.state().target!=null&&now<hungerPlayer.state().target)hungerPlayer.reset();else hungerPlayer.hold();}
+ const hud=$('stats');if(hud){const play=S.phase==='play'||S.phase==='over';const chips=play||S.phase==='setupEggs'||S.phase==='setupOstrich'||S.phase==='setup';hud.classList.toggle('hidden',!chips);
+  if(chips){const now=S.hungerLeft|0,was=prev&&prev.hungerLeft!=null?prev.hungerLeft|0:null,digit=hungerDigit(now,was),badge=play&&ateBadgeOn(prev),pop=play&&!!(window.ATE&&ATE.justAte(prev,S));
+   const leaf=badge?`<span class="leaf-hold">${LEAF.replace('<svg ','<svg class="leaf-back" ')}${LEAF.replace('<svg ','<svg class="leaf-front" ')}</span>`:LEAF;
+   const food=play?`<span class="hh${digit<=3?' low':''}${badge?' ate':''}${pop?' ate-pop':''}" data-tip="Ostrich food: turns left before it starves"><span class="hh-top">${leaf}<b id="hungerLeft">${digit}</b></span>${blue?`<i class="hbar"><i style="width:${Math.max(0,Math.min(100,100*digit/C.food))}%"></i></i>`:''}</span><span class="hs${S.stones<1?' empty':''}" data-tip="Vulture stones">${STONE}<b id="stonesLeft">${S.stones}/${C.stones}</b></span>`:'';
+   hud.innerHTML=food+`<span class="he">${EGG}EGGS <b id="eggsLeft">${S.eggsLeft}</b></span>`;
+   if(play){if(was!=null&&now>was)hungerPlayer.play(was,now);
+    else if(hungerPlayer.rising()){if(hungerPlayer.state().target!=null&&now<hungerPlayer.state().target)hungerPlayer.reset();else hungerPlayer.hold();}}
   }}
  // waiting for opponent
  const link=location.origin+'/?room='+S.code,slot=$('wait-slot');
@@ -525,7 +527,6 @@ function render(prev){
  else if(BO.sniffAnnounce(S)){bt=BO.sniffAnnounce(S);bc=bt==='No egg nearby'?'no':'yes';}
  else if(S.phase==='play'&&blue&&S.ostrich&&S.ostrich[0]>=0&&!BO.foodRoute(C,S.ostrich,S.marks)&&S.hungerLeft<=2){bt='Hungry. No way to food.';bc='hungry';}
  if(prev&&S.phase==='play'&&(S.lastCold|0)>(prev.lastCold|0)&&!smashed){bt='An egg went cold.';bc='no';}
- if(ateShow){bt=ATE.LINE;bc='yes';}
  {const left=C.rounds-S.round+1;if(S.phase==='play'&&left<=3&&!bt){bt=left===1?'Last round!':`Final ${left} rounds!`;bc='final';}}
  if(bn)BO_BANNER.set(bt,bc);
  $('warm').innerHTML='';

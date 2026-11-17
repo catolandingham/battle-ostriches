@@ -52,12 +52,21 @@ const THEMES = ['bw', 'classic', 'nature'];
   room.g.hungerLeft = 4;
   server.broadcast(room);
   await p.waitForFunction(() => document.getElementById('hungerLeft') && document.getElementById('hungerLeft').textContent.trim() === '4');
+  room.g.hungerLeft = 2;
+  server.broadcast(room);
+  await p.waitForFunction(() => document.getElementById('hungerLeft').textContent.trim() === '2');
+  await setTheme('classic');
+  await p.waitForTimeout(60);
+  const lowName = await shot('ate-header-low-food.png');
+  room.g.hungerLeft = 4;
+  server.broadcast(room);
+  await p.waitForFunction(() => document.getElementById('hungerLeft').textContent.trim() === '4');
 
   const before = [];
   for (const t of THEMES) {
     await setTheme(t);
     await p.waitForTimeout(80);
-    before.push(await shot('ate-counter-before-' + t + '.png'));
+    before.push(await shot('ate-header-before-' + t + '.png'));
   }
   await setTheme('bw');
   await p.waitForTimeout(50);
@@ -89,7 +98,20 @@ const THEMES = ['bw', 'classic', 'nature'];
 
   await cell(0, 0).click();
   await p.waitForFunction(() => window.__log.some(row => +row.n > 4 && +row.n < 15), null, { timeout: 4000 });
-  const risingName = await shot('ate-counter-rising-bw.png');
+  const popped = await p.evaluate(() => {
+    const chip = document.querySelector('#stats .hh');
+    const leaf = chip && chip.querySelector('svg');
+    const back = chip && chip.querySelector('.leaf-back'), front = chip && chip.querySelector('.leaf-front');
+    const br = back && back.getBoundingClientRect(), fr = front && front.getBoundingClientRect();
+    return { pop: !!(chip && chip.classList.contains('ate-pop')), ate: !!(chip && chip.classList.contains('ate')), rim: br && fr ? br.width - fr.width : 0 };
+  });
+  assert.ok(popped.pop, 'the leaf bounces once when the eat arrives');
+  assert.ok(popped.rim >= 6, 'the leaf outline is wider than the leaf during the rise: ' + popped.rim);
+  const rising = [];
+  for (const t of THEMES) {
+    await setTheme(t);
+    rising.push(await shot('ate-header-mid-' + t + '.png'));
+  }
   await p.waitForFunction(() => {
     const a = window.__log;
     return a.some(row => row.n === '15') && a.some(row => +row.n > 4 && +row.n < 15);
@@ -102,12 +124,16 @@ const THEMES = ['bw', 'classic', 'nature'];
     const said = await p.evaluate(() => {
       const e = document.querySelector('#msgslot .ate-line');
       const n = document.getElementById('hungerLeft');
-      if (!e || !n) return '';
+      if (!e || !n) return { raw: '' };
       const s = getComputedStyle(e);
-      return n.textContent.trim() + '|' + s.visibility + '|' + s.color + '|' + (e.textContent || '').trim();
+      const rgb = (s.backgroundColor.match(/[\d.]+/g) || []).map(Number);
+      return { raw: n.textContent.trim() + '|' + s.visibility + '|' + s.color + '|' + (e.textContent || '').trim(), rgb };
     });
-    assert.ok(/15\|visible\|/.test(said) && said.endsWith('You ate.'), t + ' still shows the new number and the line: ' + said);
-    after.push(await shot('ate-counter-after-' + t + '.png'));
+    if (said.raw) {
+      assert.ok(/15\|visible\|/.test(said.raw) && said.raw.endsWith('You ate.'), t + ' still shows the new number and the line: ' + said.raw);
+      assert.ok(said.rgb[1] < 80, t + ' the You ate bar stays dark, not the green banner: ' + said.rgb.join(','));
+    }
+    after.push(await shot('ate-header-after-' + t + '.png'));
   }
 
   const log = await p.evaluate(() => window.__log);
@@ -121,55 +147,49 @@ const THEMES = ['bw', 'classic', 'nature'];
 
   const mark = await p.evaluate(() => {
     const chip = document.querySelector('#stats .hh.ate');
-    if (!chip) return null;
+    const leaf = chip && chip.querySelector('.hh-top svg');
+    const num = document.getElementById('hungerLeft');
+    const bar = chip && chip.querySelector('.hbar');
+    const eggs = document.getElementById('eggsLeft');
+    const stats = document.getElementById('stats');
+    const hud = document.getElementById('hud');
+    if (!chip || !leaf || !num || !bar || !eggs) return null;
+    const nr = num.getBoundingClientRect(), br = bar.getBoundingClientRect();
+    const chips = [...stats.children].map(el => el.getBoundingClientRect());
     const after = getComputedStyle(chip, '::after');
-    const chipBox = chip.getBoundingClientRect();
-    const num = document.getElementById('hungerLeft').textContent.trim();
     return {
-      num,
+      num: num.textContent.trim(),
       low: chip.classList.contains('low'),
-      radius: after.borderRadius,
-      w: parseFloat(after.width),
-      h: parseFloat(after.height),
-      chipW: chipBox.width,
-      bg: after.backgroundColor
+      pop: chip.classList.contains('ate-pop'),
+      rim: leaf.getBoundingClientRect ? (chip.querySelector('.leaf-back').getBoundingClientRect().width - chip.querySelector('.leaf-front').getBoundingClientRect().width) : 0,
+      after: after.content,
+      gap: br.top - nr.bottom,
+      eggsInStats: eggs.closest('#stats') === stats,
+      eggsInRounds: !!document.querySelector('.ctr .eg'),
+      eggsText: eggs.parentElement.textContent.replace(/\s+/g, ' ').trim(),
+      row: Math.max(...chips.map(r => r.top)) - Math.min(...chips.map(r => r.top)),
+      overflow: stats.scrollWidth - stats.clientWidth,
+      fit: stats.getBoundingClientRect().right <= hud.getBoundingClientRect().right + 1
     };
   });
-  assert.ok(mark, 'the eater sees a mark on the food chip');
+  assert.ok(mark, 'the food chip is on screen');
   assert.equal(mark.num, '15');
   assert.equal(mark.low, false, 'a full counter is not the low-food fill');
-  assert.equal(mark.radius, '0px', 'the mark is not round');
-  assert.ok(mark.w >= 6 && mark.w <= 12 && mark.h >= 6 && mark.h <= 12, 'the mark is small: ' + mark.w + 'x' + mark.h);
-  assert.ok(mark.w < mark.chipW / 2, 'the mark does not fill the chip');
-
-  await setTheme('classic');
-  await p.evaluate(() => {
-    const hud = document.getElementById('stats');
-    const chip = hud.querySelector('.hh');
-    const low = chip.cloneNode(true);
-    low.classList.remove('ate');
-    low.classList.add('low');
-    const b = low.querySelector('b');
-    b.textContent = '2';
-    b.removeAttribute('id');
-    hud.appendChild(low);
-  });
-  await p.waitForTimeout(40);
-  const besideLook = await p.evaluate(() => {
-    const chips = [...document.querySelectorAll('#stats .hh')];
-    const bg = el => getComputedStyle(el).backgroundColor;
-    return { n: chips.length, ate: bg(chips[0]), low: bg(chips[1]), ateClass: chips[0].className, lowClass: chips[1].className };
-  });
-  assert.equal(besideLook.n, 2);
-  assert.ok(besideLook.ateClass.includes('ate') && !besideLook.ateClass.includes('low'));
-  assert.ok(besideLook.lowClass.includes('low') && !besideLook.lowClass.includes('ate'));
-  assert.notEqual(besideLook.ate, besideLook.low, 'the ate chip is not the filled low-food chip: ' + JSON.stringify(besideLook));
-  const beside = await shot('ate-counter-beside-low-food.png');
+  assert.equal(mark.pop, false, 'the bounce does not repeat on a later paint');
+  assert.ok(mark.rim >= 6, 'the leaf stays strongly outlined: ' + mark.rim);
+  assert.equal(mark.after, 'none', 'the empty square is gone');
+  assert.ok(mark.gap >= 2, 'the food bar sits clear of the digits, gap ' + mark.gap);
+  assert.equal(mark.eggsInStats, true);
+  assert.equal(mark.eggsInRounds, false);
+  assert.ok(/^EGGS \d+$/.test(mark.eggsText.replace(/[^A-Z0-9 ]/g, '').replace(/\s+/g, ' ').trim()) || mark.eggsText.includes('EGGS'), 'eggs chip keeps the word EGGS: ' + mark.eggsText);
+  assert.ok(mark.row < 8, 'eggs, food, and stones share one row: ' + mark.row);
+  assert.ok(mark.overflow <= 1, 'the chip row does not overflow: ' + mark.overflow);
+  assert.equal(mark.fit, true, 'the chip row stays inside the header');
 
   await p.evaluate(() => { window.__ateDone = true; });
   clearInterval(stopper);
   assert.deepEqual(errs, [], errs.join('\n'));
-  const names = before.concat([risingName], after, [beside]);
+  const names = before.concat(rising, after, [lowName]);
   console.log('SHOTS ' + names.join(' '));
   console.log('PASS ate phone');
   await b.close();

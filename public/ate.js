@@ -6,7 +6,7 @@
   const STEP_MS = 90;
   const MIN_MS = 700;
   // The line stays up through the longest refill (1 to 15 is about 1.3s) and a moment after the new number lands.
-  const LINE_MS = 3200;
+  const LINE_MS = 4500;
 
   function seatOf(S) { return (S && S.h3 && S.h3.mySeat) || (S && S.role) || ''; }
   function isOstrich(S) {
