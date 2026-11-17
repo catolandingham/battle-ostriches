@@ -1,7 +1,7 @@
 // 3-player mode: ostrich (blue) + vulture (red) + a hunter (hyena or badger). Wraps the 2-player rules in game.js
 // without changing them. Turn order each round: vulture, ostrich, hunter. All tuning lives in T3.
 const B = require('./game.js'), K = B.key, D = B.dist;
-const T3 = { sense: 2, see: 2, walk: 2, pounce: 1, knock: 2, clockMs: 10000, ko: { hyena: 2, badger: 2 }, double: 2, starts: [[0, 3], [8, 3]] };
+const T3 = { sense: 2, see: 2, walk: 2, pounce: 1, knock: 3, clockMs: 10000, ko: { hyena: 2, badger: 2 }, double: 2, starts: [[0, 3], [8, 3]] };
 const OFF = [-99, -99], BIRDS = ['red', 'blue'], NAME = { red: 'vulture', blue: 'ostrich', hunter: 'hunter' };
 const sgn = Math.sign;
 function newGame3(kind, cfg = B.CONFIG, start) {
@@ -45,14 +45,14 @@ function knockout(g, b, why) {
   else g.vulture = OFF.slice();
   settle(g);
 }
-// A caught bird scrambles 2 squares in a random open direction chosen by the game (rule 4.2). No missed turn. If it cannot move at all, whoever moved this turn goes back (back()).
+// A caught bird lands on a random open square exactly T3.knock (3) king-moves away. No missed turn. If it cannot move at all, whoever moved this turn goes back (back()).
 function catchBird(g, b, back) {
   const t = g.three, st = t.birds[b], at = pos(g, b).slice();
   st.catches++;
   if (b === 'blue' && g.carrying !== null) { const e = g.eggs[g.carrying]; g.carrying = null; if (e.alive) e.pos = at.slice(); } // the egg drops where it was caught
   if (st.catches >= koAt(g)) { t.lastCatch = { bird: b, at, to: null, ko: true, seq: ++t.seq, round: g.round }; knockout(g, b, 'caught'); return; }
   const other = BIRDS.find(x => x !== b);
-  const q = B.scrambleTo(g.cfg, at, m => !B.wrecked(g, m) && !(liveAt(g, other) && K(pos(g, other)) === K(m)) && !(K(t.h) === K(m) && !(t.kind === 'badger' && t.burrowed)), T3.knock);
+  const q = B.relocateCaught(g.cfg, at, m => !B.wrecked(g, m) && !(liveAt(g, other) && K(pos(g, other)) === K(m)) && !(K(t.h) === K(m) && !(t.kind === 'badger' && t.burrowed)), T3.knock);
   if (b === 'blue') g.sitting = false;
   if (q) { if (b === 'blue') { g.ostrich = q; } else g.vulture = q; } else if (back) back();
   if (t.burrowed && K(t.h) === K(at)) { t.burrowed = false; t.dig = 0; }

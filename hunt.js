@@ -4,7 +4,7 @@
 // Fearless rivalry: badger moves onto the hyena -> the hyena is knocked back 2; hyena moves onto the badger -> the hyena
 // bounces back 2. Nobody is hurt. Hunters win when both birds are out (more knock-outs wins; if even, more catches; if both even, a tie).
 const B = require('./game.js'), K = B.key, D = B.dist;
-const TH = { sense: 2, see: 2, walk: 2, pounce: 1, knock: 2, rivalKnock: 2, clockMs: 10000, ko: { hyena: 2, badger: 2 }, starts: [[0, 3], [8, 3]] };
+const TH = { sense: 2, see: 2, walk: 2, pounce: 1, knock: 3, rivalKnock: 2, clockMs: 10000, ko: { hyena: 2, badger: 2 }, starts: [[0, 3], [8, 3]] };
 const OFF = [-99, -99], BIRDS = ['red', 'blue'], HUNTERS = ['hyena', 'badger'], ORDER = ['red', 'blue', 'hyena', 'badger'], sgn = Math.sign;
 function newHunt(cfg = B.CONFIG, starts) {
   const g = B.newGame(cfg), st = starts || (Math.random() < .5 ? TH.starts : TH.starts.slice().reverse());
@@ -65,7 +65,7 @@ function catchBird(g, b, h, back) {
   const t = g.hunt, st = t.birds[b], at = pos(g, b).slice(); st.catches++; t.hs[h].catches++;
   if (b === 'blue' && g.carrying !== null) { const e = g.eggs[g.carrying]; g.carrying = null; if (e.alive) e.pos = at.slice(); }
   if (st.catches >= TH.ko[h]) { t.lastCatch = { bird: b, by: h, at, to: null, ko: true, seq: ++t.seq, round: g.round }; knockout(g, b, 'caught', h); return; }
-  const q = B.scrambleTo(g.cfg, at, m => !B.wrecked(g, m) && !upAt(g, m, b) && !(K(t.hs[h].p) === K(m)), TH.knock);
+  const q = B.relocateCaught(g.cfg, at, m => !B.wrecked(g, m) && !upAt(g, m, b) && !(K(t.hs[h].p) === K(m)), TH.knock);
   if (b === 'blue') g.sitting = false;
   if (q) { if (b === 'blue') g.ostrich = q; else g.vulture = q; } else if (back) back();
   for (const o of HUNTERS) if (t.hs[o].burrowed && K(t.hs[o].p) === K(at) && o !== h) { t.hs[o].burrowed = false; t.hs[o].dig = 0; } // a bird landed on the buried badger
