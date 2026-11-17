@@ -111,15 +111,6 @@
   function hideGo() {
     const el = document.getElementById('surprise-go'); if (el) el.remove();
   }
-  function showGo(token) {
-    hideGo();
-    const app = document.getElementById('app') || document.body;
-    const bar = document.createElement('div'); bar.id = 'surprise-go';
-    const b = document.createElement('button'); b.type = 'button';
-    b.textContent = (root.SURPRISE && SURPRISE.GO_LINE) || 'Tap to go on.';
-    b.addEventListener('click', () => api.dismiss());
-    bar.appendChild(b); app.appendChild(bar);
-  }
   api.dismiss = function () {
     hideGo();
     finish(serial);
@@ -344,7 +335,13 @@
     // cartoon. Starting a hold here would hide the piece for 2s with no copy.
     if (api.flushing && !scene) return;
     const ev = (root.PUSH_MOTION && PUSH_MOTION.events(S, prev)) || [];
-    if (!scene && !ev.length) return;
+    const pol = (root.SURPRISE && SURPRISE.policy) ? SURPRISE.policy(S, prev) : null;
+    api.policy = pol;
+    // Watchers play a kick on the board. The cartoon must not cover that slide,
+    // and a hunter who has already left sight gets neither.
+    const watcherKick = !!(pol && pol.ev && pol.ev.event === 'kick' && !pol.affected && !pol.actor);
+    const useScene = scene && !watcherKick;
+    if (!useScene && !ev.length) return;
     const stage = document.getElementById('stage');
     if (stage && board.children.length) {
       const hold = snapshot(board);
@@ -358,27 +355,18 @@
       const prevHold = document.getElementById('boardhold'); if (prevHold) prevHold.remove();
       stage.appendChild(hold); holdEl = hold;
     }
-    const pol = (root.SURPRISE && SURPRISE.policy) ? SURPRISE.policy(S, prev) : null;
-    api.policy = pol;
-    const cartoon = scene && !reduced();
+    const cartoon = useScene && !reduced();
     const motionDelay = pol ? pol.motionDelay : (cartoon ? REVEAL : MS);
     const motionMs = pol ? pol.motionMs : 0;
-    // A hit that already ended the game does not add the 8s tap on top of the cartoon.
+    // A finished game does not add a reading pause on top of the cartoon.
     const ended = !!(S && S.phase === 'over');
-    const tapHold = !!(pol && pol.affected && !ended && !reduced());
-    const after = tapHold ? (pol.holdCap || 8000) : ((root.SURPRISE && SURPRISE.MIN_LINE_MS) || 1000);
-    // Tap waits until the cartoon is gone and the real move, if any, has finished.
-    const total = motionDelay + motionMs + (tapHold ? after : 0);
-    busyUntil = Date.now() + (tapHold ? total : motionDelay + motionMs);
+    const readMs = (pol && pol.affected && !ended) ? (pol.readMs || 0) : 0;
+    const total = motionDelay + motionMs + readMs;
+    busyUntil = Date.now() + total;
     const token = ++serial;
     nextCard = cartoon ? { scene, S, delay: pol && pol.lookout ? ((root.SURPRISE && SURPRISE.LOOKOUT_MS) || 1000) : 0 } : null;
     setTimeout(() => { if (token === serial) reveal(); }, motionDelay);
-    if (tapHold) {
-      setTimeout(() => { if (token === serial && !document.getElementById('cutaway')) showGo(token); }, motionDelay + motionMs);
-      setTimeout(() => { if (token === serial) api.dismiss(); }, total);
-    } else {
-      setTimeout(() => finish(token), motionDelay + motionMs);
-    }
+    setTimeout(() => { if (token === serial) finish(token); }, total);
   };
   api.play = function (S, prev, board) {
     if (nextCard) {

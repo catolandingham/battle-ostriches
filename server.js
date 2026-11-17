@@ -206,8 +206,9 @@ function rememberViews(room, seats, viewFn) {
   room.lastViews = {};
   for (const s of seats) { try { room.lastViews[s] = viewFn(room, s); } catch (e) {} }
 }
-// A hit player's phone holds on "Tap to go on." even when someone else moves first.
-// Remember that hold per seat, so their own 10s clock waits when the turn arrives.
+// A hit player's phone is still in the cartoon, the slide, or the reading pause
+// even when someone else moves first. Remember that hold per seat, so their own
+// 10s clock waits when the turn arrives and never runs while they watch.
 function noteHolds(room, seats, viewFn) {
   if (!room.holdUntil) room.holdUntil = {};
   const now = Date.now();
@@ -219,7 +220,7 @@ function noteHolds(room, seats, viewFn) {
     if (!nowView || nowView.phase === 'over') continue;
     const pol = SUR.policy(nowView, prev);
     if (pol && pol.affected) {
-      const until = now + (pol.animMs || 0) + SUR.HOLD_CAP_MS;
+      const until = now + (pol.animMs || 0) + (pol.readMs || 0);
       if (until > (room.holdUntil[s] || 0)) room.holdUntil[s] = until;
     }
   }

@@ -285,7 +285,7 @@ const BO_BANNER=(()=>{let shown='',at=0,want=null,timer=null;
   clearTimeout(timer);timer=null;paint(t,c);}
  return {set,reset(){clearTimeout(timer);timer=null;shown='';at=0;want=null;},current:()=>shown};})();
 window.BO_BANNER=BO_BANNER;
-// While a cartoon or "Tap to go on." is up, the screen shows a frozen board and this phone's state is a step behind the table's, so a tap would be refused ("Not a legal move right now."). Ignore it quietly.
+// While a cartoon or the reading pause is up, the screen shows a frozen board and this phone's state is a step behind the table's, so a tap would be refused ("Not a legal move right now."). Ignore it quietly.
 function inHold(){return !!(window.CUTAWAYS&&CUTAWAYS.busy&&CUTAWAYS.busy());}
 function tap(x,y){clearTimeout(tap.q);if(!S||locked||cardOpen||inHold())return;if(Date.now()<sniffUntil){const stamp=()=>S&&JSON.stringify([S.phase,S.round,S.turn,S.myTurn,S.ostrich,S.vulture,S.hunter,S.pounce,S.lastAction]),queuedState=stamp(),queuedMode=curMode();tap.q=setTimeout(()=>{if(stamp()===queuedState&&curMode()===queuedMode)tap(x,y);},sniffUntil-Date.now()+20);return;}const p=[x,y],ok=legalNow().some(q=>q[0]===x&&q[1]===y);
  if(!ok){const c=$('board').children[y*S.cfg.cols+x];if(c&&c.dataset.tip&&c.dataset.tags)showTip(c,c.dataset.tip,2600);if(c&&c.animate)c.animate([{transform:'translateX(0)'},{transform:'translateX(-4px)'},{transform:'translateX(4px)'},{transform:'translateX(-3px)'},{transform:'translateX(0)'}],{duration:220});}
