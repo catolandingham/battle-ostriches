@@ -92,9 +92,10 @@
     }
     return null;
   }
-  // After a surprise hold, only the latest deferred state is applied (the board
-  // should show the current truth). Intermediate packets are dropped so we do not
-  // replay a mid-hold turn as a snap.
+  // After a surprise hold, only the latest deferred state is applied to the board
+  // (the board should show the current truth). Intermediate packets are dropped so
+  // we do not replay a mid-hold turn as a snap. The turn line is not part of that
+  // collapse: each deferred state still updates whose turn the status bar shows.
   function flushStates(queue) { return queue && queue.length ? [queue[queue.length - 1]] : []; }
   const api = { MS, REVEAL, TABLE, kindOf, seenWrap, candidates, sceneFor, flushStates, flushing: false };
   if (typeof module !== 'undefined') module.exports = api;
@@ -106,7 +107,15 @@
   api.busy = () => busyUntil > Date.now();
   // true while the egg-smash cartoon is about to play or playing: smash.js then skips its own little egg-crack on the board
   api.smashCartoon = () => !!((nextCard && nextCard.scene.id === 'egg-smash') || document.querySelector('#cutaway[data-scene="egg-smash"]'));
-  api.defer = state => { if (busyUntil > Date.now()) { queue.push(state); return true; } return false; };
+  api.note = null; // display-only hook for a state held back from the board (the turn line and clock)
+  api.defer = state => {
+    if (busyUntil > Date.now()) {
+      queue.push(state);
+      try { if (api.note) api.note(state); } catch (e) {}
+      return true;
+    }
+    return false;
+  };
   api.policy = null;
   function hideGo() {
     const el = document.getElementById('surprise-go'); if (el) el.remove();

@@ -80,7 +80,6 @@ const C0=window.BO.CONFIG;
 // an eye: standard symbol for "seen by others" (on the Sit button, since a sitting ostrich shows where it is)
 const EYE='<svg class="eye" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" style="vertical-align:-3px;margin-right:4px"><path d="M1 12 C5 5 19 5 23 12 C19 19 5 19 1 12Z" fill="#fff" stroke="#111" stroke-width="2"/><circle cx="12" cy="12" r="3.6" fill="#111"/></svg>';
 const CARRYIC='<svg class="eye carryic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" style="vertical-align:-3px;margin-right:4px"><path d="M12 1.5C9.6 1.5 7.6 6.2 7.6 9.4C7.6 12.2 9.5 14 12 14C14.5 14 16.4 12.2 16.4 9.4C16.4 6.2 14.4 1.5 12 1.5Z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M3 15.5Q12 24 21 15.5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>'; // Carry: an egg lifted on a curve
-const satNote=S=>!!(S&&S.sittingAt&&S.ostrich&&S.sittingAt.some(q=>q[0]===S.ostrich[0]&&q[1]===S.ostrich[1]));
 ['eggs','warm','sit','fly','rounds','smell','food','stones','walk','carry','kick','kickb','push'].forEach(k=>document.querySelectorAll('.c-'+k).forEach(e=>e.textContent={push:C0.pushHunters,eggs:C0.eggs,warm:C0.warmth,fly:C0.vultureFly,rounds:C0.rounds,smell:C0.smellRange,food:C0.food,stones:C0.stones,walk:C0.ostrichWalk,carry:C0.carryWalk,kick:C0.kickPush,kickb:C0.kickPushBadger}[k]));
 // --- robust connection layer ---
 let pending=null,pendTimer=null,connTimer=null,attempts=0,hb=null,lastPong=0;
@@ -106,7 +105,20 @@ function connect(){
   else if(m.t==='error'){if(!S){pending=null;clearTimeout(pendTimer);attempts=0;status(m.msg,true);window.LobbyUI&&LobbyUI.fail&&LobbyUI.fail();}else $('log').textContent=m.msg;}};
 }
 function acceptState(state){const prev=S;S=state;if(!prev||prev.turn!==S.turn||prev.phase!==S.phase)mode=null;render(prev);sounds(prev);if(!prev)maybeWalk(S.role);}
-if(window.CUTAWAYS)CUTAWAYS.bind(acceptState);
+// A cartoon keeps the board on its snapshot. The status line and the clock are above that picture, so they follow the latest state immediately.
+function paintTurn(state){
+ if(!state||state.phase!=='play'||!window.TURNLINE||!TURNLINE.live)return;
+ const seat=state.h3&&(state.h3.mySeat||state.role);
+ const birds=state.h3&&state.h3.birds;
+ if(birds&&seat&&birds[seat]&&birds[seat].out)return;
+ const own=!!(state.myTurn&&!state.pass);
+ const line=own?TURNLINE.ownLine(state):TURNLINE.watchLine(state);
+ if(!line)return;
+ const shown=TURNLINE.live.show(line,{own:own});
+ const hint=$('hint');if(hint){hint.textContent=shown;hint.classList.toggle('myturn',own);hint.classList.toggle('empty',!shown);}
+ if(state.h3&&window.T3UI&&T3UI.clock)T3UI.clock(state);
+}
+if(window.CUTAWAYS){CUTAWAYS.bind(acceptState);CUTAWAYS.note=paintTurn;}
 function inRoom(){const n=document.getElementById('roomLobby');return !!(S||(n&&!n.classList.contains('hidden')));}
 function retry(){
  if(attempts>=6&&!inRoom()){pending=null;clearTimeout(pendTimer);attempts=0;status('Could not reach the game server. Check your connection and tap again.',true);return;}
@@ -489,7 +501,7 @@ function render(prev){
  if(S.phase==='setupEggs')h=blue?`Hide your eggs. ${S.h3&&S.h3.eggsToPlace!=null?S.h3.eggsToPlace:C.eggs-S.eggs.length} left.`:(S.h3&&S.h3.teamSetup==='ostrich'?'The ostriches are choosing where to start…':'The ostrich is hiding its eggs…');
  else if(S.phase==='setupOstrich')h=blue?'Pick your start.':(S.h3&&S.h3.teamSetup==='ostrich'?'The ostriches are choosing where to start…':'The ostrich is hiding its eggs…');
  else if(S.phase==='play'&&S.three&&(!S.myTurn||S.role==='hunter'))h=window.T3UI.hint(S,a);
- else if(S.phase==='play'&&!S.myTurn)h=blue?(satNote(S)?'The vulture sees you sit.':'Vulture\'s turn…'):'Ostrich\'s turn…';
+ else if(S.phase==='play'&&!S.myTurn)h=window.TURNLINE?TURNLINE.watchLine(S):(blue?'Vulture\'s turn…':'Ostrich\'s turn…');
  else if(S.phase==='play'&&blue){
   a.innerHTML=btn('s','Walk',M==='step',"UI.setMode('step')")+(S.onEgg?btn('c',CARRYIC+'Carry',M==='carry',"UI.setMode('carry')",M==='carry'||!S.can.carry)+btn('t',EYE+'Sit',false,"UI.act('sit')",!S.can.sit):'')+(S.kickNear?btn('k','Kick',M==='kick',"UI.kick()",M==='carry'||!(S.can&&S.can.kick)):'');
   h=M==='kick'?'Tap where they go.':M==='carry'?'Pick where the egg goes.':S.moves.length?'Your turn. Tap to move.':'';
@@ -534,7 +546,7 @@ function render(prev){
  document.body.classList.remove('coaching');ce.className='hidden';
  if(CM){let an=CM.at==='board'?null:[...a.querySelectorAll('button')].find(b=>(CM.at==='sit'?/Sit/:/Throw/).test(b.textContent));
   if(an&&!an.disabled){an.classList.add('spot','pulse');}if(CM.at==='board'||(an&&!an.disabled))h=CM.txt+(h&&CM.at!=='board'?' — or '+h.charAt(0).toLowerCase()+h.slice(1):'');}
- (S.sittingAt||[]).forEach(q=>{const c=board.children[q[1]*C.cols+q[0]];if(c&&c.classList&&!c.querySelector('.sittag')){const t=document.createElement('span');t.className='sittag';t.innerHTML=EYE;t.setAttribute('aria-label','Seen by the vulture');c.appendChild(t);}});
+ (S.sittingAt||[]).forEach(q=>{const c=board.children[q[1]*C.cols+q[0]];if(c&&c.classList&&!c.querySelector('.sittag')){const t=document.createElement('span');t.className='sittag';t.innerHTML=EYE;t.setAttribute('aria-label','Seen by the vulture');t.title='The vulture sees you sit.';c.appendChild(t);}});
  if(S.three)window.T3UI.after(S,prev,board);
  if(window.PUSH_MOTION)PUSH_MOTION.kickChoose(board,blue&&M==='kick'?(S.kickPlans||[]):[]);
  window.T3UI.events(S,prev,board);window.T3UI.startLine(S,prev,cardMode(S));
@@ -547,7 +559,8 @@ function render(prev){
  if(window.BORing&&S.phase==='play'&&S.myTurn){for(const note of BORing.omittedNotes(S)){const sit=/^sit/i.test(note),stone=/stone/i.test(note);if(sit&&!/step off|sit is used/i.test(h))h=(h?h+' ':'')+note;if(stone&&!/stone/i.test(h))h=(h?h+' ':'')+note;}}
  if(mt&&(!h||/turn…$/.test(h))){const what=S.role==='red'?'Tap to fly':S.role==='hunter'?'Tap to move':'Tap to move';h=(h&&!/turn…$/.test(h)?h:'Your turn. '+what+'.');}
  if(blue&&M==='kick')h='Tap where they go.';
- $('hint').textContent=h;if(typeof preferEggLine==='function')preferEggLine();if(h&&(G||(W&&W.txt))&&!(blue&&M==='kick')){const sb=document.createElement('button');sb.className='skipguide';sb.id='skipGuide';sb.textContent='Skip guide';$('hint').appendChild(sb);tapper(sb,()=>{UI.guides(false)});}$('hint').classList.toggle('empty',!h);$('hint').classList.toggle('guide',!!G||!!(W&&W.txt));$('hint').classList.toggle('cold',!G&&!!(W&&W.txt));$('hint').classList.toggle('urgent',!G&&!!(W&&W.urgent));$('log').textContent=S.joined&&!S.opponent&&S.phase!=='over'?'Opponent offline… they can rejoin with the same link.':'';
+ const shown=window.TURNLINE&&TURNLINE.live?TURNLINE.live.show(h,{own:!!mt}):h;
+ $('hint').textContent=shown;if(typeof preferEggLine==='function')preferEggLine();if(shown&&shown===h&&(G||(W&&W.txt))&&!(blue&&M==='kick')){const sb=document.createElement('button');sb.className='skipguide';sb.id='skipGuide';sb.textContent='Skip guide';$('hint').appendChild(sb);tapper(sb,()=>{UI.guides(false)});}$('hint').classList.toggle('empty',!shown);$('hint').classList.toggle('guide',!!G||!!(W&&W.txt));$('hint').classList.toggle('cold',!G&&!!(W&&W.txt));$('hint').classList.toggle('urgent',!G&&!!(W&&W.urgent));$('log').textContent=S.joined&&!S.opponent&&S.phase!=='over'?'Opponent offline… they can rejoin with the same link.':'';
  // cause before result (D36): stone into the count, carried egg slide, cold egg dims, badger sinks; each only on a screen that already held the facts (fx.js)
  if(window.CAUSE)CAUSE.run(S,prev,board,{stone:STONE,egg:MYEGG,ring:n=>warmRing(n,C.warmth)});
  if(window.PUSH_MOTION)PUSH_MOTION.run(S,prev,board);

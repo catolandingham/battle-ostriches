@@ -82,7 +82,7 @@ function tHint(S,a){const r=S.h3.mySeat,t=S.turn,h=S.h3;
  if(!h.ready)return h.needKind?'Pick your hunter.':`Waiting for all ${h.n} players…`;
  if(h.setupStep==='done'&&h.teamSetup&&h.teamSetup!=='done')return h.teamSetup==='eggs'?'Partner is hiding eggs…':'Partner is placing…';
  const me=h.birds[r];if(me&&me.out)return 'You\'re out. Watching.';
- if((r==='blue'||r==='o1'||r==='o2')&&window.UI&&UI._S()&&UI._S().sittingAt&&UI._S().ostrich&&UI._S().sittingAt.some(q=>q[0]===UI._S().ostrich[0]&&q[1]===UI._S().ostrich[1]))return 'The vulture sees you sit.';return `${tname(S,t)}'s turn…`;}
+ return window.TURNLINE?TURNLINE.watchLine(S):`${tname(S,t)}'s turn…`;}
 function tChips(S){let bar=$('h3bar');if(!bar){bar=document.createElement('div');bar.id='h3bar';$('hud').after(bar);
   bar.addEventListener('click',e=>{const c=e.target.closest('[data-tip]');if(c&&UI._tip)UI._tip(c.dataset.tip);});}
  const h=S.h3,live=S.phase==='play',five=h.n===5,ko=h.ko;bar.classList.add('team');
@@ -166,9 +166,7 @@ function hint(S,a){if(S.h3.team&&!hint.in){hint.in=1;try{return tHint(S,a);}fina
 function digWarn(S){return S.sense?'A bird will see you dig in.':'No bird will see you dig in.';}
  if(!S.h3.ready)return S.h3.needKind?'Pick your hunter.':`Waiting for all ${S.h3.hunt?4:3} players…`;
  if(r!=='hunter'&&S.h3.birds[r]&&S.h3.birds[r].out)return 'You\'re out. Watching.';
- if(r==='blue'&&window.UI&&UI._S()&&UI._S().sittingAt&&UI._S().ostrich&&UI._S().sittingAt.some(q=>q[0]===UI._S().ostrich[0]&&q[1]===UI._S().ostrich[1]))return 'The vulture sees you sit.';
- if(t==='hunter'&&S.h3&&S.h3.extra)return tname(S,t)+"'s turn again.";
- return `${tname(S,t)}'s turn…`;}
+ return window.TURNLINE?TURNLINE.watchLine(S):(t==='hunter'&&S.h3&&S.h3.extra?tname(S,t)+"'s turn again.":`${tname(S,t)}'s turn…`);}
 function chips(S){if(S.h3.hunt)return hChips(S);if(S.h3.team)return tChips(S);let bar=$('h3bar');if(!bar){bar=document.createElement('div');bar.id='h3bar';$('hud').after(bar);
   bar.addEventListener('click',e=>{const c=e.target.closest('[data-tip]');if(c&&UI._tip)UI._tip(c.dataset.tip);});}
  const h=S.h3,ko=h.ko,live=S.phase==='play';
@@ -177,7 +175,10 @@ function chips(S){if(S.h3.hunt)return hChips(S);if(S.h3.team)return tChips(S);le
   return `<span class="bchip ${r}${b.out?' out':''}${b.catches&&!b.out?' injured':''}${live&&S.turn===r?' now':''}" data-tip="${tip}" data-b="${r}">${sp(r==='blue'?OSTI:VULI,24)}<span class="pips">${pips}</span>${b.out?'<b class="ko">OUT</b>':''}</span>`;};
  const k=h.kind||'hyena';
  bar.innerHTML=bird('red')+bird('blue')+`<span class="bchip hunter${live&&S.turn==='hunter'?' now':''}" data-tip="${KIND[k].n}: catches birds.">${sp(KIND[k].art,26)}${claws(caught(h),3)}</span>`;}
-function clock(S){let c=$('clock3');if(!c){c=document.createElement('div');c.id='clock3';c.innerHTML='<div class="cfill"></div><span class="ctxt"></span>';$('h3bar').after(c);}
+function clock(S){
+ // Own turn, countdown not started yet (a cartoon is still holding the clock): show the full clock paused, so it is on screen the moment the turn is yours.
+ if(S&&!clock.face&&window.TURNLINE){const face=TURNLINE.clockFace(S);if(face&&S.h3&&S.h3.clockLeft==null&&face.paused){clock.face=1;try{return clock(Object.assign({},S,{h3:Object.assign({},S.h3,{clockLeft:face.left,clockPaused:true})}));}finally{clock.face=0;}}}
+ let c=$('clock3');if(!c){const bar=$('h3bar');if(!bar)return;c=document.createElement('div');c.id='clock3';c.innerHTML='<div class="cfill"></div><span class="ctxt"></span>';bar.after(c);}
  const on=S.phase==='play'&&S.h3.clockLeft!=null;c.classList.toggle('hidden',!on);if(!on){cancelAnimationFrame(raf);return;}
  if(S.h3.clockMs)clockMs=S.h3.clockMs;
  if(S.h3.clockPaused){cancelAnimationFrame(raf);lastTurnKey='';const left=Math.max(0,S.h3.clockLeft),s=Math.ceil(left/1000);c.firstChild.style.width=(100*left/clockMs)+'%';
@@ -336,6 +337,6 @@ function over(S){if(S.h3.hunt)return hOver(S);if(S.h3.team)return tOver(S);const
   :w==='red'?(S.winBy==='cold'?`The last egg went cold in round ${S.round}.`:S.winBy==='starved'?'The ostrich was out and no eggs were left.':`The vulture smashed every egg by round ${S.round}.`)
   :S.winBy==='time'?'Time ran out: the ostrich was out and the vulture never got every egg.':'The eggs were lost, but the vulture was already out.';
  return endBox(S,endArt(S,art),endTitle(S,title),endWhyText(S,why));}
-window.T3UI={mark,markHTML,marksAround,after,events,startLine,preferEggLine,announce,hint,tag,waitMsg,nopeMsg,over,endBits,KIND};
+window.T3UI={mark,markHTML,marksAround,after,events,startLine,preferEggLine,announce,hint,tag,waitMsg,nopeMsg,over,endBits,clock,KIND};
 document.readyState==='loading'?document.addEventListener('DOMContentLoaded',lobby):lobby();
 })();
