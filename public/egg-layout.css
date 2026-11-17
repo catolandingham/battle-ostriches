@@ -10,4 +10,4 @@ html[data-theme] :is(#board,.mini) .cell .wnum:not(#_a):not(#_b):not(#_c){positi
 /* Reduced motion: retain the static path / destination cue, never the legacy bounce or claw burst. */
 @media (prefers-reduced-motion:reduce){html[data-theme] .cell.h3kb,html[data-theme] .cell.h3kb::after,html[data-theme] .bchip.hitnow{animation:none!important;transform:none!important}}
 /* The moving copy is the only animal shown during a push, including sprite themes. */
-body:has(.push-motion[data-sprite="o"][data-moving="1"]) #fx .spr-o,body:has(.push-motion[data-sprite="v"][data-moving="1"]) #fx .spr-v{visibility:hidden!important}
+body:has(.push-motion[data-sprite="o"][data-moving="1"]) #fx .spr-o,body:has(.push-motion[data-sprite="v"][data-moving="1"]) #fx .spr-v,body:has(.push-motion[data-sprite="o1"][data-moving="1"]) #fx .spr-o1,body:has(.push-motion[data-sprite="o2"][data-moving="1"]) #fx .spr-o2,body:has(.push-motion[data-sprite="v1"][data-moving="1"]) #fx .spr-v1,body:has(.push-motion[data-sprite="v2"][data-moving="1"]) #fx .spr-v2{visibility:hidden!important}
