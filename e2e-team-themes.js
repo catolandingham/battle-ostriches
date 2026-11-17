@@ -112,6 +112,56 @@ const THEMES = ['bw', 'classic', 'nature', 'notes', 'golden', 'paper', 'arcade',
     }
   }
   console.log('ok drawings, 14 themes, both phones');
+  // A carrying ostrich's number is a small rounded square at the bottom left, clear of the egg in the beak. Other numbers stay put.
+  g.b.o1.carrying = g.eggs[0].id; g.eggs[0].pos = null; room.aiT = 1; server.broadcast(room);
+  const carryBadge = () => {
+    const problems = [];
+    const shown = el => {
+      if (!el) return false;
+      const s = getComputedStyle(el);
+      if (s.visibility === 'hidden' || s.display === 'none' || +s.opacity === 0) return false;
+      const r = el.getBoundingClientRect();
+      return r.width > 2 && r.height > 2;
+    };
+    const pc = document.querySelector('#board .pc.po.carrying');
+    if (!pc) return ['no carrying piece'];
+    const cell = pc.closest('.cell'), cr = cell.getBoundingClientRect();
+    const imgs = [...document.querySelectorAll('img.aimg-ostrich-carry')].filter(shown);
+    if (imgs.length !== 1) problems.push('carry images ' + imgs.length);
+    const over = el => { const r = el.getBoundingClientRect(); return r.left < cr.right && r.right > cr.left && r.top < cr.bottom && r.bottom > cr.top; };
+    const badges = [...document.querySelectorAll('b.snum')].filter(el => shown(el) && over(el));
+    if (badges.length !== 1) problems.push('badges ' + badges.length + ' ' + badges.map(b => b.className).join('|'));
+    const badge = badges[0];
+    if (badge && imgs[0]) {
+      const br = badge.getBoundingClientRect(), ir = imgs[0].getBoundingClientRect();
+      const rad = parseFloat(getComputedStyle(badge).borderTopLeftRadius) || 0;
+      if (!(rad > 0 && rad * 2 < br.width - 1)) problems.push('shape radius ' + rad + ' width ' + Math.round(br.width));
+      if (br.width > 14 || br.height > 14) problems.push('too big ' + Math.round(br.width));
+      if (br.left > cr.left + cr.width * 0.42) problems.push('not at the left');
+      if (br.top < cr.top + cr.height * 0.4) problems.push('not at the bottom');
+      const egg = { l: ir.left + ir.width * 0.36, r: ir.left + ir.width * 0.78, t: ir.top + ir.height * 0.42, b: ir.top + ir.height * 0.82 };
+      if (br.right > egg.l && br.left < egg.r && br.bottom > egg.t && br.top < egg.b) problems.push('badge covers the egg');
+    }
+    const other = document.querySelector('#board .pc.po:not(.carrying)');
+    if (other) {
+      const oc = other.closest('.cell').getBoundingClientRect();
+      const ob = [...document.querySelectorAll('b.snum')].filter(shown).find(b => { const r = b.getBoundingClientRect(); return r.left < oc.right && r.right > oc.left && r.top < oc.bottom && r.bottom > oc.top; });
+      if (!ob) problems.push('other number missing');
+      else if (ob.classList.contains('carrytag') || ob.getBoundingClientRect().left < oc.left + oc.width * 0.45) problems.push('other number moved ' + ob.className);
+    }
+    return problems;
+  };
+  for (const theme of THEMES) {
+    for (const [page, who] of [[V, 'vulture'], [A, 'ostrich']]) {
+      await page.evaluate(t => THEME.set(t), theme);
+      await page.waitForFunction(() => !!document.querySelector('#board .pc.po.carrying'));
+      await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+      const got = await page.evaluate(carryBadge);
+      assert.deepEqual(got, [], who + ' carry badge ' + theme + ' ' + JSON.stringify(got));
+    }
+  }
+  console.log('ok carry badge, 14 themes, both phones');
+  g.b.o1.carrying = null; g.eggs[0].pos = [0, 3]; room.aiT = 1; server.broadcast(room);
   // Kick: Ostrich 1 pushes Vulture 1. Both phones must show a bird drawing in the cartoon or the slide.
   g.b.o1.pos = [2, 2]; g.b.v1.pos = [3, 2]; g.b.o2.pos = [7, 1]; g.b.v2.pos = [7, 5];
   g.turn = 'o1'; g.b.o1.carrying = null; g.phase = 'play';

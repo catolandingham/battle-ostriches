@@ -92,11 +92,11 @@ function tChips(S){let bar=$('h3bar');if(!bar){bar=document.createElement('div')
  const k=h.kind||'hyena';
  bar.innerHTML=h.order.filter(r=>r!=='hunter').map(bird).join('')+(five?`<span class="bchip hunter${live&&S.turn==='hunter'?' now':''}" data-tip="${KIND[k].n}: catches birds.">${sp(KIND[k].art,24)}${claws(caught(h),4)}</span>`:'');}
 function tPieces(S,board){const h=S.h3,me=h.mySeat;
- const badge=(c,r,mate)=>{const b=document.createElement('b');b.className='snum '+(isOs(r)?'o':'v')+(mate?' mate':'')+(r===me?' me':'');b.textContent=NUM(r);c.appendChild(b);};
+ const badge=(c,r,mate,carry)=>{const b=document.createElement('b');b.className='snum '+(isOs(r)?'o':'v')+(mate?' mate':'')+(r===me?' me':'')+(carry?' carrytag':'');b.textContent=NUM(r);c.appendChild(b);};
  for(const q of h.pieces){if(h.birds&&h.birds[q.seat]&&h.birds[q.seat].out)continue;const c=cellAt(board,S,q.p);if(!c||q.p[0]<0)continue;const d=document.createElement('div');d.className='pc '+(q.type==='o'?'po':'pv')+' other'+(q.mate?' mate':' opp');
-  d.innerHTML=q.type==='o'?(q.carrying&&window.ART&&ART.ostrichCarry?ART.ostrichCarry:OSTI):VULI;if(q.carrying)d.classList.add('carrying');c.appendChild(d);c.dataset.seat=q.seat;badge(c,q.seat,q.mate);
+  d.innerHTML=q.type==='o'?(q.carrying&&window.ART&&ART.ostrichCarry?ART.ostrichCarry:OSTI):VULI;if(q.carrying)d.classList.add('carrying');c.appendChild(d);c.dataset.seat=q.seat;badge(c,q.seat,q.mate,!!q.carrying);
   c.dataset.tip=(c.dataset.tip?c.dataset.tip+' · ':'')+SN[q.seat]+(q.mate?' (your teammate)':'')+(q.carrying?', carrying an egg':'');}
- const mine=me==='hunter'?null:cellAt(board,S,isOs(me)?S.ostrich:S.vulture);if(mine)badge(mine,me,false);
+ const mine=me==='hunter'?null:cellAt(board,S,isOs(me)?S.ostrich:S.vulture);if(mine)badge(mine,me,false,!!(isOs(me)&&S.carried));
  const ms=h.mateSniff;if(ms){const c=cellAt(board,S,ms.p);if(c){const r=document.createElement('div');r.className='msniff '+(ms.yes?'yes':'no');r.textContent=ms.yes?'Egg near':'No egg';c.appendChild(r);
   c.dataset.tip=(c.dataset.tip?c.dataset.tip+' · ':'')+(isOs(me)?'':'Your teammate sniffed here: ')+(ms.yes?'an egg is on or next to this square':'no egg on or next to this square');}}
  if(isOs(me)&&S.eggs)S.eggs.forEach(e=>{if(!e.alive||!e.pos||e.mine)return;const c=cellAt(board,S,e.pos);c&&c.classList.add('mateegg');});}

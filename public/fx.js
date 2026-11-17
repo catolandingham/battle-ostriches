@@ -98,7 +98,8 @@ function pinTag(e,S,b){const board=document.getElementById('board');if(!e||!boar
  let tag=e.querySelector(':scope>b.snum');if(!tag){tag=document.createElement('b');e.appendChild(tag);}
  tag.className=src.className;tag.textContent=src.textContent;
  const cr=cell.getBoundingClientRect(),er=e.getBoundingClientRect();
- tag.style.right=(er.right-cr.right+2)+'px';tag.style.bottom=(er.bottom-cr.bottom+1)+'px';}
+ if(tag.classList.contains('carrytag')){tag.style.right='auto';tag.style.left=(cr.left-er.left+2)+'px';tag.style.bottom=(er.bottom-cr.bottom+1)+'px';}
+ else{tag.style.left='auto';tag.style.right=(er.right-cr.right+2)+'px';tag.style.bottom=(er.bottom-cr.bottom+1)+'px';}}
 window.FX={update(S,prev){const t=theme();ensure();layer.className=t||'';
  // A surprise owns the moving animal. Leave the theme sprites hidden, and forget
  // their last square so they do not slide into the landing spot when the cartoon ends.
