@@ -8,7 +8,7 @@ const isO = s => s === 'o1' || s === 'o2', isV = s => s === 'v1' || s === 'v2';
 const mate = s => ({ o1: 'o2', o2: 'o1', v1: 'v2', v2: 'v1' })[s];
 function newTeam(n, kind, cfg = B.CONFIG, hstart) {
   const g = { team: true, n: n === 5 ? 5 : 4, cfg: { ...cfg, eggs: TM.eggs }, phase: 'setup', round: 1, turn: null, eggs: [], marks: {}, winner: null, winBy: null,
-    order: n === 5 ? ['v1', 'o1', 'v2', 'o2', 'hunter'] : ['v1', 'o1', 'v2', 'o2'], b: {}, sniffs: {}, lastAction: null, lastCold: [], seq: 0, kickSeq: 0, lastKick: null, stoneSeq: 0, lastStone: null, lastCatch: null, lost: null,
+    order: n === 5 ? ['v1', 'o1', 'v2', 'o2', 'hunter'] : ['v1', 'o1', 'v2', 'o2'], b: {}, sniffs: {}, sniffKeeps: {}, lastAction: null, lastCold: [], seq: 0, kickSeq: 0, lastKick: null, stoneSeq: 0, lastStone: null, lastCatch: null, lost: null,
     h: n === 5 ? { kind: kind === 'badger' || kind === 'hyena' ? kind : null, p: (hstart || TM.hStarts[Math.random() * 2 | 0]).slice(), burrowed: false, dig: 0,
       sense: null, senseSeq: 0, kos: { o: 0, v: 0 }, last: null } : null };
   VS.forEach((s, i) => g.b[s] = { pos: TM.vStarts[i].slice(), stones: cfg.stones, out: false, why: null, catches: 0, skip: 0 });
@@ -133,6 +133,8 @@ function vultureFly(g, s, p) { clearOut(g);
   if (e && !OS.some(o => live(g, o) && K(g.b[o].pos) === K(p))) { g.marks[K(p)] = 'spotted'; g.lastAction.spotted = p.slice(); }
   if (B.isRock(g, p)) { g.lastAction.refill = b.stones < g.cfg.stones; b.stones = g.cfg.stones; }
   g.lastAction.smell = smells(g, p); g.sniffs[s] = { p: p.slice(), yes: g.lastAction.smell, round: g.round };
+  const foundHere = !!(e && !OS.some(o => live(g, o) && K(g.b[o].pos) === K(p)));
+  g.sniffKeeps[s] = (!foundHere && g.lastAction.smell) ? { p: p.slice(), yes: true, round: g.round } : null;
   dropAll(g);
   if (g.h && K(p) === K(g.h.p)) { catchBird(g, s, () => { b.pos = from.slice(); }); g.lastCatch.walked = true; } // the vulture flew onto the buried badger
   next(g); return true;

@@ -55,7 +55,7 @@ function observe(v, mem) {
   mem.prevO = mem.last; mem.prevStay = mem.last && mem.last !== k ? (mem.stay[mem.last] || 0) : 0;
   mem.seen[k] = v.round; mem.last = k;
   const la = v.lastAction;
-  mem.smells = v.sniff ? [[v.sniff.p.slice(), v.sniff.yes]] : []; // only the latest sniff, the same as a person sees on the board (nothing is remembered across landings)
+  mem.smells = v.sniff ? [[v.sniff.p.slice(), v.sniff.yes]] : []; // only `sniff`. A throw clears it; the board may still show that landing, and this bot does not read that picture.
   if (mem.lastThrow && v.marks[K(mem.lastThrow)] !== 'hit') { const t = K(mem.lastThrow); mem.miss[t] = 1; delete mem.stay[t]; delete mem.ret[t]; mem.heat[t] = 0; }
 }
 function vulture(v, lvl = 'normal', mem = {}) {
