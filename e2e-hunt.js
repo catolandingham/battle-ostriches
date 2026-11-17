@@ -48,9 +48,30 @@ const at = { state: 'attached' };
     assert.equal(await Y.locator('.pc.ambushsee').count(), 0, 'the hyena sees nothing new');
     room.g.ostrich = saved; server.broadcast(room); await A.waitForFunction(n => !document.querySelectorAll('.cell')[n].querySelector('.pc.ambushsee'), nb[1] * 9 + nb[0], { timeout: 5000 }); }
   // An up badger is pushed in a meeting; a hidden buried badger shares the hyena's square (rule 8).
-  await Y.waitForSelector('#actions.mine', { state: 'attached',  ...at, timeout: 20000 }); await Y.waitForFunction(()=>UI._S().myTurn&&!UI._locked());const hy = room.g.hunt.hs.hyena.p, bd = room.g.hunt.hs.badger.p,wasBuried=room.g.hunt.hs.badger.burrowed;
-  if (Math.max(Math.abs(hy[0] - bd[0]), Math.abs(hy[1] - bd[1])) === 1) { await Y.locator('.cell').nth(bd[1] * 9 + bd[0]).click(); await Y.waitForTimeout(500);
-    if(wasBuried){assert.deepEqual(room.g.hunt.hs.hyena.p,bd,'hyena shares the buried badger square');assert.equal(room.g.hunt.rival,null,'no meeting with an unseen buried badger');}else assert.equal(room.g.hunt.rival && room.g.hunt.rival.by, 'hyena'); await shot(Y, '6-hyena-bounced'); }
+  // The hyena's "Bird near." pause holds the tap for about a second, and a cartoon
+  // from the burrow ignores it. Wait until the board will take the tap, then wait
+  // for the server, not a fixed half second.
+  await Y.waitForSelector('#actions.mine', { state: 'attached', ...at, timeout: 20000 });
+  await Y.waitForFunction(() => {
+    const S = UI._S();
+    if (!S || !S.myTurn || UI._locked()) return false;
+    if (window.CUTAWAYS && CUTAWAYS.busy && CUTAWAYS.busy()) return false;
+    if (document.getElementById('cutaway') || document.querySelector('.push-motion,.partial-motion')) return false;
+    return !document.documentElement.classList.contains('cutaway-up') && !document.documentElement.classList.contains('surprise-slide');
+  }, null, { timeout: 20000 });
+  const hy = room.g.hunt.hs.hyena.p.slice(), bd = room.g.hunt.hs.badger.p.slice(), wasBuried = room.g.hunt.hs.badger.burrowed;
+  if (Math.max(Math.abs(hy[0] - bd[0]), Math.abs(hy[1] - bd[1])) === 1) {
+    const landed = () => wasBuried ? room.g.hunt.hs.hyena.p[0] === bd[0] && room.g.hunt.hs.hyena.p[1] === bd[1] : !!(room.g.hunt.rival && room.g.hunt.rival.by === 'hyena');
+    const tapBadger = () => Y.locator('.cell').nth(bd[1] * 9 + bd[0]).click();
+    await tapBadger();
+    for (let i = 0; i < 30 && !landed(); i++) {
+      await Y.waitForTimeout(150);
+      if (i === 12 && !landed()) await tapBadger();
+    }
+    if (wasBuried) { assert.deepEqual(room.g.hunt.hs.hyena.p, bd, 'hyena shares the buried badger square'); assert.equal(room.g.hunt.rival, null, 'no meeting with an unseen buried badger'); }
+    else assert.equal(room.g.hunt.rival && room.g.hunt.rival.by, 'hyena');
+    await shot(Y, '6-hyena-bounced');
+  }
   // game over: both birds out, the badger has more KOs
   if (room.g.phase === 'play') { H.knockout(room.g, 'red', 'caught', 'badger'); H.knockout(room.g, 'blue', 'caught', 'badger'); server.broadcast(room); }
   await A.waitForSelector('#over:not(.hidden)'); assert.ok(/You win/.test(await A.textContent('#over'))); await Y.waitForSelector('#over:not(.hidden)');

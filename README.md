@@ -45,7 +45,9 @@ A catch that does not knock a bird out shows HURT on that animal. OUT means elim
 The ⏱ control shows the round counter and the shot clock. It is its own clock button in the top bar, just left of the ⋯ menu, in every game with a shot clock (Brian, 2026-11-15: "Timer needs its own button"); it is no longer a line inside the ⋯ menu. New games start with the turn timer off (Brian, 2026-11-16). The Turn timer switch stays in the gear menu, and the host turns it on. A new lobby room is created with `clock: false`, so there is no shot clock until that switch. `room.settings.showTimers` (set from create `showTimers`, default true) is copied onto each view as `showTimers`, and the view is off while the turn timer is off. A phone with nothing saved follows that: localStorage `bo_timers` missing means off, and `1` or `0` still overrides the display. Rounds left is still `rounds - round + 1`, counting the current round. Hiding the clock does not stop it when the turn timer is on: the turn still ends after 10 seconds. Catch counts, movement, hunter visibility for living players, the badger speed boost, and win conditions are unchanged.
 
 ## Themes
-`classic` (default), `nature`, `neon`. Use 🎨 in the HUD/title, or `?theme=nature`; saved in localStorage `bo_theme`. CSS only (`public/themes.css`, `public/theme.js`).
+Black and white is the default. The rest are Classic, Nature, Neon, Field notes, Golden hour, Papercraft, Arcade, Toybox, Tactical, Savanna storm, Volcano, Comic pop and Pharaoh sunset (`public/theme.js`). Pick Theme in the menu, or open `?theme=nature`. The choice is saved in localStorage `bo_theme`.
+
+In a 4- or 5-player game every bird that phone is allowed to see is drawn, including the teammate and the birds on the other side. Black and white and Classic draw the plain piece. Every other theme hides that piece and paints the same drawing in the moving layer, one sprite per bird (`public/fx.js`). The small number stays on the bird, and a teammate keeps the light outline. Test: `node e2e-team-themes.js`.
 
 
 ## Words and signals (UX pass, 2026-11-07)
