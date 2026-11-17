@@ -385,7 +385,7 @@ function howPics(){const box=$('howPics');if(!box)return;
  box.innerHTML='';pics.forEach((p,i)=>{const f=document.createElement('figure');f.className='pic'+(real?' realpic'+(i===2?' found':''):'');if(real){const im=document.createElement('img');im.src='tut/how/'+(i===2&&S&&S.role==='blue'?'2-blue':i)+'.png';im.alt='';f.appendChild(im);}else f.appendChild(p.m);const c=document.createElement('figcaption');c.textContent=lines[i];f.appendChild(c);box.appendChild(f);});
  if(!real)pics.forEach(p=>p.after());}
 function syncRejoinAsk(){const el=$('rejoinAsk');if(!el)return;const a=S&&S.rejoinAsk;if(!a){el.classList.add('hidden');return;}
- $('rejoinAskTitle').textContent=a.title||'';const body=$('rejoinAskBody');if(body)body.textContent=a.body||'';
+ $('rejoinAskTitle').textContent=a.title||'';const body=$('rejoinAskBody');if(body){const t=a.body||'';body.textContent=t;body.hidden=!t;}
  $('rejoinAskYes').textContent=a.yes||'Let them in';$('rejoinAskNo').textContent=a.no||'Not them';
  el.dataset.id=a.id||'';el.dataset.seat=a.seat||'';el.classList.remove('hidden');}
 function render(prev){

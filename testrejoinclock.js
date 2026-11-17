@@ -44,6 +44,7 @@ const roomOf = code => server.rooms.get(code);
   assert.equal(asked.state.rejoinAsk.title, 'Someone wants to rejoin as the ostrich.');
   assert.equal(asked.state.rejoinAsk.yes, 'Let them in');
   assert.equal(asked.state.rejoinAsk.no, 'Not them');
+  assert.ok(!asked.state.rejoinAsk.body, 'the table ask has no body line');
   assert.equal(asked.state.h3.clockPaused, true);
   assert.ok(asked.state.h3.clockLeft > 1000 && asked.state.h3.clockLeft <= remain, 'frozen time shown: ' + asked.state.h3.clockLeft);
   assert.equal(asked.state.h3.clockMs, 10000, 'the 10 second clock length stays 10 seconds');

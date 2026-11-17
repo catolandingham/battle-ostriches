@@ -594,7 +594,7 @@ function stamp(room, v, seat) {
     const ask = (room.rejoinAsks || []).find(a => a && seatOpen(room, a.seat) && personLive(room, a.hid));
     if (ask) {
       const label = LB.seatLabel(room, ask.seat);
-      v.rejoinAsk = { id: ask.id, seat: ask.seat, title: LB.askLine(label), body: LB.REJOIN_WORDS.askBody, yes: LB.REJOIN_WORDS.askYes, no: LB.REJOIN_WORDS.askNo };
+      v.rejoinAsk = { id: ask.id, seat: ask.seat, title: LB.askLine(label), yes: LB.REJOIN_WORDS.askYes, no: LB.REJOIN_WORDS.askNo };
     }
   }
   if (v && v.h3 && room && room.clockAskPause && room.g && room.g.phase === 'play') {
