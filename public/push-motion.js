@@ -22,6 +22,7 @@
  const fresh=(a,b)=>a&&(!b||a.seq!==b.seq);
  function events(s,prev){if(!prev||!s.cfg||!(s.phase==='play'||s.phase==='over'&&prev.phase==='play'))return [];const out=[],a=positions(prev),b=positions(s),h=s.h3||{},old=prev.h3||{};
   const add=(key,from,to,wrap,max)=>{const points=path(s.cfg,from,to,wrap,max);if(points.length>1&&!out.some(e=>e.key===key))out.push({key,points});};
+  // Scramble slide only when this view was sent both squares. The catch cartoon does not use them.
   const lc=h.lastCatch;if(s.role!=='hunter'&&fresh(lc,old.lastCatch)&&!lc.ko&&valid(lc.at)&&valid(lc.to)){const points=kingPath(lc.at,lc.to);if(points.length>1&&!out.some(e=>e.key===lc.bird))out.push({key:lc.bird,points});}
   // A watcher whose hunter is already out of sight does not get a slide. The
   // trail itself is never extended: points come only from the redacted view.
