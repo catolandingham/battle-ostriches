@@ -35,7 +35,17 @@ const shot = (p, n) => p.screenshot({ path: OUT + n + '.jpg', type: 'jpeg', qual
   assert.equal(await A.locator('#h3bar .bchip.blue .heart.lost').count(), 1, 'header shows catch (one lost heart)');
   const os = await A.evaluate(() => UI._S().ostrich); assert.equal(Math.max(Math.abs(os[0] - 7), Math.abs(os[1] - 5)), 3, 'the caught ostrich landed exactly 3 squares away: ' + os);
   // round 2: vulture lets the clock run out -> pass; ostrich lost its turn -> hunter
-  await V.waitForSelector('#actions.mine', { state: 'attached' }); await V.waitForTimeout(5500); await shot(V, '6-shot-clock');
+  // The catch cartoon holds this clock, so a fixed 5.5s after the buttons appear can still read 6s.
+  await V.waitForSelector('#actions.mine', { state: 'attached' });
+  await V.waitForFunction(() => {
+    if (document.getElementById('cutaway') || document.documentElement.classList.contains('cutaway-up') || document.documentElement.classList.contains('surprise-slide')) return false;
+    if (window.CUTAWAYS && CUTAWAYS.busy && CUTAWAYS.busy()) return false;
+    const el = document.getElementById('clock3');
+    if (!el || el.classList.contains('hidden')) return false;
+    const m = (el.textContent || '').match(/(\d+)s/);
+    return !!(m && +m[1] >= 1 && +m[1] <= 5);
+  }, null, { timeout: 20000 });
+  await shot(V, '6-shot-clock');
   const t = await V.textContent('#clock3'); assert.ok(/[1-5]s/.test(t), 'countdown ' + t);
   await H.waitForSelector('#actions.mine', { state: 'attached', timeout: 30000 }); // the ostrich no longer misses a turn after a catch: its own clock runs out first
   await H.locator('#actions button').click({ force: true }); await V.waitForSelector('#actions.mine', { state: 'attached' });
