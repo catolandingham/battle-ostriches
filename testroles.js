@@ -156,6 +156,21 @@ ok('no visible label repeats its own prefix', () => {
   assert.equal(KIND.badger.pwTxt, 'Burrow: stay still to hide.');
 });
 
+ok('How to play: teammate vultures see each other\'s found eggs', () => {
+  const fs = require('fs');
+  const line = 'Vultures on the same team see each other\'s found eggs.';
+  const html = fs.readFileSync('public/index.html', 'utf8');
+  const block = m => { const s = html.indexOf('data-m="' + m + '"'); assert.ok(s >= 0, 'mode ' + m); return html.slice(s, html.indexOf('</div>', s)); };
+  assert.ok(block('4').includes('<li>' + line + '</li>'), '2 vs 2 How to play');
+  assert.ok(block('5').includes('<li>' + line + '</li>'), '5-player How to play');
+  for (const m of ['2', '3', '4h']) assert.ok(!block(m).includes(line), m + ' How to play stays without the team line');
+  const book = fs.readFileSync('docs/reviews/RULEBOOK-v2-2026-11-07.md', 'utf8');
+  const vul = book.slice(book.indexOf('### 7.2 Vulture'), book.indexOf('### 7.3'));
+  assert.ok(vul.includes(line), 'rulebook vulture section');
+  const row = book.split('\n').find(l => l.startsWith('| Vulture |'));
+  assert.ok(row && row.includes(line), 'rulebook sight table, team and 5-player vultures');
+});
+
 ok('the pounce extra move button says Stay and still sends hstay', () => {
   const fs = require('fs');
   const ui = fs.readFileSync('public/three-ui.js', 'utf8');
