@@ -7,6 +7,9 @@ Node + WebSocket server (`server.js`) holds the authoritative game (`game.js`, a
 - Deploy: Render (render.yaml, free plan: New → Blueprint, pick the repo) or Fly.io (`fly launch --copy-config && fly deploy`, uses Dockerfile).
 Games live in memory: a restart or free-tier sleep ends games in progress.
 
+## Hidden test modes
+Simple rules is off unless the lobby page is opened with `?simple=1` (for example `http://localhost:3000/?simple=1`). There is no menu entry. A game created from that page uses the simple rules for every player in it. Joining with the room code is enough. The normal game, opened without that flag, is unchanged. In a simple game, How to play shows the one page simple rules.
+
 ## Balance (sim.js)
 `node sim.js 6000` pits an ostrich bot (coldest-egg routing, guards when the vulture is near, carries spotted eggs away, obeys the sit cap) against a vulture bot (hunts footprints, uses smell history to rule squares in/out, throws at guarded/spotted squares).
 CONFIG in `game.js`: rounds 30, warmth 15, no sit limit, ostrich walk 2 (carryWalk 1), kickPush 3 (badger 2, wraps at the edge), fly 2, throw adjacent, 1 stone (refill at a rock pile), smell 1, food every 15 turns, `hunterGoal` per one-hunter mode ('all' in 3 players, 'first' in 5). `node ai-test.js` on 2026-11-06 (older rules): vulture bot wins about 48% on Normal and 43% on Easy. Stone throws animate via public/smash.js.

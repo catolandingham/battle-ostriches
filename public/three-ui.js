@@ -94,7 +94,7 @@ function tChips(S){let bar=$('h3bar');if(!bar){bar=document.createElement('div')
 function tPieces(S,board){const h=S.h3,me=h.mySeat;
  const badge=(c,r,mate)=>{const b=document.createElement('b');b.className='snum '+(isOs(r)?'o':'v')+(mate?' mate':'')+(r===me?' me':'');b.textContent=NUM(r);c.appendChild(b);};
  for(const q of h.pieces){if(h.birds&&h.birds[q.seat]&&h.birds[q.seat].out)continue;const c=cellAt(board,S,q.p);if(!c||q.p[0]<0)continue;const d=document.createElement('div');d.className='pc '+(q.type==='o'?'po':'pv')+' other'+(q.mate?' mate':' opp');
-  d.innerHTML=q.type==='o'?(q.carrying&&window.ART&&ART.ostrichCarry?ART.ostrichCarry:OSTI):VULI;if(q.carrying)d.classList.add('carrying');c.appendChild(d);c.dataset.seat=q.seat;badge(c,q.seat,q.mate);
+  if(q.camo){d.className='pc ph bur other'+(q.mate?' mate':' opp');d.innerHTML=MOUND;}else{d.innerHTML=q.type==='o'?(q.carrying&&window.ART&&ART.ostrichCarry?ART.ostrichCarry:OSTI):VULI;if(q.carrying)d.classList.add('carrying');}c.appendChild(d);c.dataset.seat=q.seat;badge(c,q.seat,q.mate);
   c.dataset.tip=(c.dataset.tip?c.dataset.tip+' · ':'')+SN[q.seat]+(q.mate?' (your teammate)':'')+(q.carrying?', carrying an egg':'');}
  const mine=me==='hunter'?null:cellAt(board,S,isOs(me)?S.ostrich:S.vulture);if(mine)badge(mine,me,false);
  const ms=h.mateSniff;if(ms){const c=cellAt(board,S,ms.p);if(c){const r=document.createElement('div');r.className='msniff '+(ms.yes?'yes':'no');r.textContent=ms.yes?'Egg near':'No egg';c.appendChild(r);
@@ -123,7 +123,7 @@ function hChips(S){let bar=$('h3bar');if(!bar){bar=document.createElement('div')
   const tip=`${BN[r]}${r===me?' (you)':''}: ${b.out?'out.':b.catches?b.catches+' of '+(h.ko.hyena===h.ko.badger?h.ko.hyena:h.ko.hyena)+' catches.':'not caught.'}`;
   return `<span class="bchip ${r}${b.out?' out':''}${b.catches&&!b.out?' injured':''}${live&&S.turn===r?' now':''}${r===me?' me':''}" data-tip="${tip}" data-b="${r}">${sp(r==='blue'?OSTI:VULI,22)}<span class="pips">${pips}</span>${b.out?'<b class="ko">OUT</b>':''}</span>`;};
  const hun=k=>{const now=live&&(S.turn===k||(S.turn==='hunter'&&me===k)),n=h.hkos[k];
-  const tip=k==='hyena'?`${KIND[k].n}${k===me?' (you)':''}: Pounce. When you miss, move 1 more square. ${h.ko[k]} catches knock a bird out. Knock-outs: ${n}.`:`${KIND[k].n}${k===me?' (you)':''}: ${KIND[k].pw}. ${h.ko[k]} catches knock a bird out. Knock-outs: ${n}.`;
+  const tip=S.simple?`${KIND[k].n}: catches birds.`:k==='hyena'?`${KIND[k].n}${k===me?' (you)':''}: Pounce. When you miss, move 1 more square. ${h.ko[k]} catches knock a bird out. Knock-outs: ${n}.`:`${KIND[k].n}${k===me?' (you)':''}: ${KIND[k].pw}. ${h.ko[k]} catches knock a bird out. Knock-outs: ${n}.`;
   return `<span class="bchip hunter h${k}${now?' now':''}${k===me?' me':''}" data-b="${k}" data-tip="${tip}">${sp(KIND[k].art,24)}${claws(h.hcatches?h.hcatches[k]|0:0,4)}</span>`;};
  bar.innerHTML=bird('red')+bird('blue')+hun('hyena')+hun('badger');}
 function hPieces(S,board,prev){const h=S.h3,me=h.mySeat;
@@ -158,7 +158,7 @@ function tag(S){if(S.h3&&S.h3.team&&S.h3.mySeat!=='hunter')return tTag(S);const 
 function waitMsg(S){return `Wait, it's the ${tname(S,S.turn)}'s turn.`;}
 function nopeMsg(S){return `Move up to ${S.h3.range} square${S.h3.range>1?'s':''}: tap a glowing square.`;}
 function hint(S,a){if(S.h3.team&&!hint.in){hint.in=1;try{return tHint(S,a);}finally{hint.in=0;}}const r=S.role,t=S.turn;
- if(r==='hunter'&&S.myTurn){const k=S.h3.kind;
+ if(r==='hunter'&&S.myTurn){if(S.simple){const n=S.hideLeft|0,me=S.h3.mySeat||S.kind||'hunter',hidden=S.veil&&(S.veil[me]||S.veil.hunter);a.innerHTML=(n>0&&!hidden?`<button type="button" onclick="UI.send({t:'act',a:'hide'})">Hide <b class="hidect">${n}</b></button>`:'')+'<button type="button" onclick="UI.send({t:\'act\',a:\'hstay\'})">Stay</button>';return 'Your turn. Tap to move.';}const k=S.h3.kind;
   a.innerHTML=S.pounce?'<button class="on" title="Skip this extra move. You will not catch the bird." onclick="UI.send({t:\'act\',a:\'hstay\'})">Stay</button>':`<button title="${k==='badger'?(S.burrowed?'Stay burrowed. Birds still cannot see you.':digWarn(S)):'Stay put and end your turn.'}" onclick="UI.send({t:'act',a:'hstay'})">${k==='badger'?(S.burrowed?'Stay':'Burrow'):'Stay'}</button>${S.canBurst?`<button title="Come up and shove the hyena back." onclick="UI.send({t:'act',a:'hburst'})">Burst out</button>`:''}`;
   if(S.pounce)return 'When you miss, move 1 more square.';
   if(S.h3.extra)return 'Your turn again. Tap to move.';
@@ -382,6 +382,6 @@ function over(S){if(S.h3.hunt)return hOver(S);if(S.h3.team)return tOver(S);const
   :w==='red'?(S.winBy==='cold'?`The last egg went cold in round ${S.round}.`:S.winBy==='starved'?'The ostrich was out and no eggs were left.':`The vulture smashed every egg by round ${S.round}.`)
   :S.winBy==='time'?'Time ran out: the ostrich was out and the vulture never got every egg.':'The eggs were lost, but the vulture was already out.';
  return endBox(S,endArt(S,art),endTitle(S,title),endWhyText(S,why));}
-window.T3UI={mark,markHTML,marksAround,after,events,startLine,preferEggLine,announce,hint,tag,waitMsg,nopeMsg,over,endBits,KIND,rulesMode};
+window.T3UI={mark,markHTML,marksAround,after,events,startLine,preferEggLine,announce,hint,tag,waitMsg,nopeMsg,over,endBits,KIND,MOUND,rulesMode};
 document.readyState==='loading'?document.addEventListener('DOMContentLoaded',lobby):lobby();
 })();
