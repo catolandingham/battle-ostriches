@@ -60,6 +60,35 @@ html[data-theme] :is(#board,.mini) .cell:is(:has(>.ic-food),:has(>.ic-rock)):has
 html[data-theme] :is(#board,.mini) .cell:is(:has(>.ic-food),:has(>.ic-rock)):has(.pc~.pc)>.pc.po:not(#_a):not(#_b):not(#_c):not(#_d){left:3%!important;top:44%!important;z-index:6!important}
 /* An ostrich carrying an egg uses the carry drawing: beak open a little, the egg lying sideways inside, medium, no number. Same in every theme. */
 html[data-theme] :is(#board,.mini) .cell>.pc.po.carrying:not(#_a):not(#_b):not(#_c):not(#_d){inset:auto!important;left:14%!important;top:14%!important;width:72%!important;height:72%!important;transform:none!important}
+
+/* Ate a leaf. The food number counts up in place. While it is rising, the header stays above cartoons and lines.
+   The leaf already in the food chip bounces once, then keeps a strong outline until that bird's next turn.
+   A filled chip still means low food. The outline is the same in every theme. Eggs sit on this same chip row. */
+html.hunger-rise #hud:not(#_a):not(#_b):not(#_c){position:relative!important;z-index:80!important}
+html.hunger-rise #stats:not(#_a):not(#_b),
+html.cutaway-up #hud #stats:not(#_a):not(#_b),
+html.surprise-slide #hud #stats:not(#_a):not(#_b){visibility:visible!important}
+html[data-theme] #stats:not(#_a):not(#_b){flex-wrap:nowrap!important;gap:2px!important}
+html[data-theme] #stats>span:not(#_a):not(#_b){white-space:nowrap!important;padding:2px 4px!important}
+html[data-theme] #stats>.hh:not(#_a):not(#_b){flex-direction:column!important;align-items:stretch!important;gap:3px!important;padding:3px 4px 4px!important;overflow:visible!important}
+html[data-theme] #stats>.hh>.hh-top:not(#_a):not(#_b){display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:6px!important}
+html[data-theme] #hud .hh .hbar:not(#_a):not(#_b),
+#hud .hh .hbar{position:static!important;left:auto!important;right:auto!important;bottom:auto!important;display:block!important;width:100%!important;height:4px!important;margin:0!important}
+html[data-theme] #stats>.hh .hh-top>b#hungerLeft:not(#_a):not(#_b):not(#_c),
+#stats>.hh b#hungerLeft{font-weight:900!important;font-size:18px!important;line-height:1!important;font-variant-numeric:tabular-nums;min-width:1.3em;text-align:center}
+html.hunger-rise #stats>.hh b#hungerLeft:not(#_a):not(#_b):not(#_c){font-size:26px!important}
+html[data-theme] #stats>.hh.ate .leaf-hold:not(#_a):not(#_b){position:relative!important;display:inline-block!important;width:18px!important;height:18px!important;flex:none!important;overflow:visible!important}
+html[data-theme] #stats>.hh.ate .leaf-back:not(#_a):not(#_b){position:absolute!important;left:50%!important;top:50%!important;width:27px!important;height:27px!important;transform:translate(-50%,-50%)!important;display:block!important}
+html[data-theme] #stats>.hh.ate .leaf-back:not(#_a):not(#_b) path:not(#_a):not(#_b){fill:#111!important;stroke:#111!important;stroke-width:3px!important}
+html[data-theme] #stats>.hh.ate .leaf-front:not(#_a):not(#_b){position:relative!important;width:18px!important;height:18px!important;display:block!important}
+html[data-theme] #stats>.hh.ate-pop .leaf-hold:not(#_a):not(#_b){transform-origin:50% 80%;animation:leaf-ate .5s ease 1}
+@keyframes leaf-ate{0%,100%{transform:translateY(0)}40%{transform:translateY(-6px)}}
+@media (prefers-reduced-motion:reduce){html[data-theme] #stats>.hh.ate-pop .leaf-hold{animation:none!important}}
+html[data-theme] #stats>.hh.ate::after,
+#stats>.hh.ate::after{content:none!important;display:none!important}
+html[data-theme] #app #msgslot>.ate-line.status-active:not(#_a):not(#_b):not(#_c),
+#app #msgslot>.ate-line.status-active{position:absolute!important;left:0;right:0;top:0;height:44px!important;z-index:8;display:flex!important;align-items:center;justify-content:center;box-sizing:border-box;margin:0!important;padding:2px 10px!important;border-radius:12px!important;background:#111!important;color:#fff!important;-webkit-text-fill-color:#fff!important;font:800 15px/1.15 system-ui,-apple-system,sans-serif!important;text-align:center;pointer-events:none;visibility:visible!important}
+
 /* Every number on a square is this small rounded square at the bottom left. A circle reads as an egg. A lone bird of its kind still has no number. Same in every theme, including Black and white. */
 html[data-theme] :is(#board,.mini,#fx) b.snum:not(#_a):not(#_b):not(#_c):not(#_d){box-sizing:border-box!important;width:12px!important;height:12px!important;min-width:12px!important;max-width:12px!important;margin:0!important;padding:0!important;display:flex!important;align-items:center!important;justify-content:center!important;font-size:8px!important;line-height:9px!important;font-weight:900!important;border-width:1.5px!important;border-style:solid!important;border-radius:2px!important}
 html[data-theme] :is(#board,.mini) .cell>b.snum:not(#_a):not(#_b):not(#_c):not(#_d){left:4px!important;right:auto!important;bottom:4px!important;top:auto!important}
