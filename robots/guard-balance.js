@@ -10,7 +10,7 @@ const EXPECT = {
   cols: 9, rows: 7, eggs: 3, rounds: 30, warmth: 15,
   ostrichWalk: 2, carryWalk: 1, kickPush: 3, kickPushBadger: 2,
   vultureFly: 2, throwRange: 1, smellRange: 1, food: 15, stones: 1,
-  scramble: 2, pushHunters: 2,
+  scramble: 3, pushHunters: 2, // a catch sets the bird down 3 squares away (Brian, 2026-11-16)
 };
 for (const [k, v] of Object.entries(EXPECT)) assert.equal(B.CONFIG[k], v, 'CONFIG.' + k);
 assert.deepEqual(B.CONFIG.foods, [[0, 0], [8, 6]], 'leaf squares');
