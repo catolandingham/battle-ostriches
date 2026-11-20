@@ -69,8 +69,8 @@ html.hunger-rise #stats:not(#_a):not(#_b),
 html.cutaway-up #hud #stats:not(#_a):not(#_b),
 html.surprise-slide #hud #stats:not(#_a):not(#_b){visibility:visible!important}
 html[data-theme] #stats:not(#_a):not(#_b){flex-wrap:nowrap!important;gap:2px!important}
-html[data-theme] #stats>span:not(#_a):not(#_b){white-space:nowrap!important;padding:2px 5px!important}
-html[data-theme] #stats>.hh:not(#_a):not(#_b){flex-direction:column!important;align-items:stretch!important;gap:3px!important;padding:3px 6px 4px!important;overflow:visible!important}
+html[data-theme] #stats>span:not(#_a):not(#_b){white-space:nowrap!important;padding:2px 4px!important}
+html[data-theme] #stats>.hh:not(#_a):not(#_b){flex-direction:column!important;align-items:stretch!important;gap:3px!important;padding:3px 4px 4px!important;overflow:visible!important}
 html[data-theme] #stats>.hh>.hh-top:not(#_a):not(#_b){display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:6px!important}
 html[data-theme] #hud .hh .hbar:not(#_a):not(#_b),
 #hud .hh .hbar{position:static!important;left:auto!important;right:auto!important;bottom:auto!important;display:block!important;width:100%!important;height:4px!important;margin:0!important}
