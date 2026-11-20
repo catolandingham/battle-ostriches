@@ -279,8 +279,17 @@ async function playTwo(opts) {
   }
 }
 
+async function turnClockOn(page) {
+  // New games start with the timer off. This check turns it on, the same tap a host makes.
+  const gear = page.locator('#lobbyGear');
+  if (await gear.count()) await gear.click({ timeout: 4000 });
+  await page.locator('#clockToggle').click({ timeout: 4000 });
+  await page.waitForFunction(() => window.LobbyUI && LobbyUI.get() && LobbyUI.get().clock === true, null, { timeout: 4000 });
+}
+
 async function reachPlay(pages) {
   const host = pages[0].page;
+  await turnClockOn(host);
   await host.locator('#startGame:not([disabled])').click({ timeout: 8000 });
   await host.waitForSelector('#board .cell', { timeout: 12000 });
   for (let n = 0; n < 8; n++) {
