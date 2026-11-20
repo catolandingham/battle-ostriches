@@ -41,8 +41,9 @@
       let mid;
       if (pendingClaim && offline.some(o => o.seat === pendingClaim)) {
         const o = offline.find(x => x.seat === pendingClaim);
+        const body = words.confirmBody ? `<p class="statusline">${esc(words.confirmBody)}</p>` : '';
         mid = `<p class="sub">${esc(o.confirm || o.action + '?')}</p>
-          <p class="statusline">${esc(words.confirmBody || '')}</p>
+          ${body}
           <div class="row rejoinrow">
             <button type="button" class="big" id="claimYes">${esc(words.confirmYes || 'Rejoin')}</button>
             <button type="button" class="big alt" id="claimNo">${esc(words.confirmNo || 'Not me')}</button>

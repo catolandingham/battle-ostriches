@@ -18,7 +18,7 @@ const ALL = [
 ok('rules from the modules are plain numbers and nothing else (no start squares)', () => {
   const r = R.rulesFromModules();
   assert.deepEqual(r.cfg, { eggs: C.eggs, rounds: C.rounds, warmth: C.warmth, food: C.food, stones: C.stones, fly: C.vultureFly, throwRange: C.throwRange, smell: C.smellRange, walk: C.ostrichWalk, carryWalk: C.carryWalk, kick: C.kickPush, kickBadger: C.kickPushBadger });
-  const pk = (t, g) => Object.assign({ ko: t.ko, sense: t.sense, see: t.see, walk: t.walk, pounce: t.pounce }, t.double != null ? { double: t.double } : {}, g ? { goal: B.HUNTER_GOAL(g) } : {});
+  const pk = (t, g) => Object.assign({ ko: t.ko, sense: t.sense, see: t.see, walk: t.walk, pounce: t.pounce, eggs: t.eggs != null ? t.eggs : C.eggs }, t.double != null ? { double: t.double } : {}, g ? { goal: B.HUNTER_GOAL(g) } : {});
   assert.deepEqual(r.modes['3'], pk(T.T3, '3')); assert.deepEqual(r.modes['4h'], pk(H.TH)); assert.deepEqual(r.modes['5'], pk(TT.TM, '5'));
   assert.equal(r.modes['3'].double, 2);
   assert.ok(!/starts|clockMs/.test(JSON.stringify(r)), 'no start squares or clocks in what the server sends');
@@ -154,6 +154,21 @@ ok('no visible label repeats its own prefix', () => {
   const KIND = { hyena: { pw: 'Pounce', pwTxt: 'When you miss, move 1 more.' }, badger: { pw: 'Burrow', pwTxt: 'Burrow: stay still to hide.' } };
   for (const k of Object.keys(KIND)) assert.ok(!KIND[k].pwTxt.startsWith(KIND[k].pw + ': ' + KIND[k].pw), KIND[k].pwTxt);
   assert.equal(KIND.badger.pwTxt, 'Burrow: stay still to hide.');
+});
+
+ok('How to play: teammate vultures see each other\'s found eggs', () => {
+  const fs = require('fs');
+  const line = 'Vultures on the same team see each other\'s found eggs.';
+  const html = fs.readFileSync('public/index.html', 'utf8');
+  const block = m => { const s = html.indexOf('data-m="' + m + '"'); assert.ok(s >= 0, 'mode ' + m); return html.slice(s, html.indexOf('</div>', s)); };
+  assert.ok(block('4').includes('<li>' + line + '</li>'), '2 vs 2 How to play');
+  assert.ok(block('5').includes('<li>' + line + '</li>'), '5-player How to play');
+  for (const m of ['2', '3', '4h']) assert.ok(!block(m).includes(line), m + ' How to play stays without the team line');
+  const book = fs.readFileSync('docs/reviews/RULEBOOK-v2-2026-11-07.md', 'utf8');
+  const vul = book.slice(book.indexOf('### 7.2 Vulture'), book.indexOf('### 7.3'));
+  assert.ok(vul.includes(line), 'rulebook vulture section');
+  const row = book.split('\n').find(l => l.startsWith('| Vulture |'));
+  assert.ok(row && row.includes(line), 'rulebook sight table, team and 5-player vultures');
 });
 
 ok('the pounce extra move button says Stay and still sends hstay', () => {

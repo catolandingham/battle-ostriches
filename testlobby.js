@@ -125,12 +125,16 @@ t('6 players get a recovery choice, not a dead end', () => {
   const p = LB.plan(r);
   assert.equal(p.setup, '5'); assert.equal(p.bench.length, 1); assert.equal(p.bench[0].id, 'h5');
 });
-t('turn timer defaults on and only the host changes it', () => {
-  const r = humans(2);
-  assert.equal(LB.view(r, 'h0').clock, true);
-  assert.ok(LB.setClock(r, false, 'h1').error);
-  assert.equal(LB.setClock(r, false, 'h0').ok, true);
+t('turn timer defaults off and only the host turns it on', () => {
+  const r = humans(2, { clock: false });
   assert.equal(r.clock, false);
+  assert.equal(LB.view(r, 'h0').clock, false);
+  assert.equal(LB.view(r, 'h1').clock, false);
+  assert.ok(LB.setClock(r, true, 'h1').error);
+  assert.equal(r.clock, false);
+  assert.equal(LB.setClock(r, true, 'h0').ok, true);
+  assert.equal(r.clock, true);
+  assert.equal(LB.view(r, 'h0').clock, true);
 });
 t('same-roles rematch keeps a full room', () => {
   const d = LB.sameOrAdapt({ humans: [{ id: 'h0', role: 'blue', host: true, token: 'a', name: 'Player 1' }, { id: 'h1', role: 'red', host: false, token: 'b', name: 'Player 2' }], bots: [], arrivals: [], hunterKind: null });
@@ -306,9 +310,10 @@ t('viewing the lobby never marks or seats anyone', () => {
 });
 
 t('bench note no longer repeats You\'re in, and offers only offline human seats', () => {
-  assert.equal(LB.LATE_NOTE_REJOIN, 'Back in the game? Tap your animal.');
+  assert.equal(LB.LATE_NOTE_REJOIN, 'This game already started. Tap your animal to come back.');
   assert.equal(LB.LATE_NOTE, "This game is already running. You'll play in the next one.");
-  assert.equal(LB.REJOIN_WORDS.confirmBody, 'Only pick this if this was you.');
+  assert.equal(LB.REJOIN_WORDS.confirmBody, undefined);
+  assert.equal(LB.REJOIN_WORDS.askBody, undefined);
   assert.equal(LB.REJOIN_WORDS.confirmYes, 'Rejoin');
   assert.equal(LB.REJOIN_WORDS.confirmNo, 'Not me');
   const room = { code: 'AB', g: { phase: 'play' }, flow: 1, players: {
@@ -379,6 +384,9 @@ const roomOf = code => server.rooms.get(code);
   const code = ja.code;
   let va = await wait(A, m => m.t === 'state' && m.lobby);
   assert.equal(va.state.code, code); assert.equal(va.state.canStart, false); assert.equal(va.state.host, true);
+  assert.equal(va.state.clock, false, 'a new room starts with the turn timer off');
+  assert.equal(roomOf(code).clock, false);
+  assert.equal(roomOf(code).deadline, null, 'a new room has no turn clock');
   A.send({ t: 'lobby', a: 'role', role: 'red' });
   va = await wait(A, m => m.t === 'state' && m.lobby && m.state.roles.some(r => r.id === 'red' && r.mine));
   A.send({ t: 'lobby', a: 'role', role: 'blue' });
@@ -435,8 +443,9 @@ const roomOf = code => server.rooms.get(code);
 
   const S = await conn();
   S.send({ t: 'create', solo: 1, bots: 2 });
-  await wait(S, m => m.t === 'state' && m.lobby && m.state.solo && m.state.setup === '3');
-  S.send({ t: 'lobby', a: 'clock', on: false });
+  const opened = await wait(S, m => m.t === 'state' && m.lobby && m.state.solo && m.state.setup === '3');
+  assert.equal(opened.state.clock, false, 'a new solo room starts with the turn timer off');
+  assert.equal(roomOf(opened.state.code).deadline, null, 'a new room has no turn clock');
   S.send({ t: 'lobby', a: 'level', level: 'easy' });
   S.send({ t: 'lobby', a: 'role', role: 'hunter', kind: 'hyena' });
   await wait(S, m => m.t === 'state' && m.lobby && m.state.clock === false && m.state.level === 'easy');
@@ -449,9 +458,10 @@ const roomOf = code => server.rooms.get(code);
   soloRoom.g.phase = 'play'; soloRoom.g.turn = 'red';
   server.broadcast(soloRoom);
   assert.equal(soloRoom.deadline, null, 'timer off means no shot clock');
-  soloRoom.clock = true; soloRoom.clockKey = null;
-  server.broadcast(soloRoom);
-  assert.ok(soloRoom.deadline, 'timer on arms the shot clock');
+  S.send({ t: 'lobby', a: 'clock', on: true });
+  const armed = await wait(S, m => m.t === 'state' && m.state.clockStopped === false && m.state.h3 && m.state.h3.clockLeft > 0);
+  assert.ok(roomOf(armed.state.code).deadline, 'the turn timer switch arms the shot clock');
+  assert.equal(roomOf(armed.state.code).clock, true);
   clearTimeout(soloRoom.clockT); soloRoom.clockKey = null;
   S.send({ t: 'lobby', a: 'clock', on: false });
   const stopped = await wait(S, m => m.t === 'state' && !m.lobby && m.state.clockStopped === true && m.state.host === true);

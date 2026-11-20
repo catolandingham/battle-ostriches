@@ -1,5 +1,16 @@
 // Pre-game lobby: joined humans set the size, setup is inferred, bots fill open roles at Start.
 // Does not touch combat, dig odds, or badger speed. Game objects are built by server.js from a plan.
+let RULE_PACK;
+function rulePack() { return RULE_PACK || (RULE_PACK = require('./public/roles.js').rulesFromModules()); }
+// The mode a game already in progress is using, so How to play can name that mode's egg count.
+function runningMode(room) {
+  if (!room || !room.g) return null;
+  if (room.setupId === '2' || room.setupId === '3' || room.setupId === '4' || room.setupId === '4h' || room.setupId === '5') return room.setupId;
+  if (room.hunt) return '4h';
+  if (room.team) return (room.n === 5 || room.g.n === 5) ? '5' : '4';
+  if (room.three) return '3';
+  return '2';
+}
 const SETUPS = {
   '2': { seats: ['blue', 'red'], label: 'Ostrich vs Vulture' },
   '3': { seats: ['blue', 'red', 'hunter'], label: 'Hunter' },
@@ -424,19 +435,20 @@ function view(room, hid) {
     computers: p.bots > 0 ? computerSeatNames(room).join(', ') : '',
     hunterKind: room.hunterKind || null,
     showHunterKind: (setupId === '3' || setupId === '5') && p.bots > 0 && !room.humans.some(h => animalOf(h) === 'hyena' || animalOf(h) === 'badger'),
-    needKind, canStart,
+    needKind, canStart, rules: rulePack(),
   };
 }
-// The title "You're in" stays. Brian approved the note above the Rejoin button, the button, the confirm, and the no-seat line.
-// waiting / askBody / askYes / askNo are the table-approval lines. They are new and still need his OK.
+// The title "You're in" stays.
+// 2026-11-16 (Brian, 12:47 PM PT): the rejoin prompt is "This game already started. Tap your animal to come back."
+// 2026-11-16 (Brian, 4:04 PM PT): no body under the confirm or under the table's ask.
+// Approved as written: "Rejoin as ...", "Rejoin", "Not me", the nobody-left line, "Waiting for someone in the game to let you in.",
+// "Someone wants to rejoin as the ...", "Let them in", and "Not them".
 const LATE_NOTE = "This game is already running. You'll play in the next one.";
-const LATE_NOTE_REJOIN = "Back in the game? Tap your animal.";
+const LATE_NOTE_REJOIN = "This game already started. Tap your animal to come back.";
 const REJOIN_WORDS = {
-  confirmBody: 'Only pick this if this was you.',
   confirmYes: 'Rejoin',
   confirmNo: 'Not me',
   waiting: 'Waiting for someone in the game to let you in.',
-  askBody: 'Only let them in if this was their seat.',
   askYes: 'Let them in',
   askNo: 'Not them',
 };
@@ -515,7 +527,7 @@ function benchView(room, a) {
     lobby: true, between: true, code: room.code, solo: false, you: a.name, host: false,
     note, clock: room.clock !== false, level: room.level || 'normal',
     humans: [], roles: [], canStart: false, reason: null, botsWanted: 0, maxBots: 0, total: 0,
-    offline, ask, rejoinWords: REJOIN_WORDS,
+    offline, ask, rejoinWords: REJOIN_WORDS, setup: runningMode(room), rules: rulePack(),
   };
 }
 // After a game: fold late joiners into the same setup when that is unique, otherwise back to the lobby.

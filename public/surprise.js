@@ -1,20 +1,17 @@
 // Shared surprise-moment policy for the Combined kick pattern, applied to every
 // sudden hit: kick, catch/pounce (and the flee), knock-out, stone, egg smash,
 // hidden-badger ambush, badger burst, and hunter shove.
-// Browser (window.SURPRISE) and Node. No new player-facing words live here;
-// "Look out!" and "Tap to go on." are the two Brian approved for this pattern.
+// Browser (window.SURPRISE) and Node. No new player-facing words live here.
+// "Look out!" is the beat before the cartoon. After the motion, the hit player
+// gets a reading pause (1s, or 0.3s a word) and the game continues on its own.
 (function (root) {
   const LOOKOUT_MS = 1000;
   const CARTOON_MS = 2000; // the approved cartoon length; the board stays frozen under it
   const STEP_MS = 600;     // real motion, 0.6s per square
-  const HOLD_CAP_MS = 8000;
-  // 8s cap after the motion: long enough to read the approved line and tap on a
-  // phone, shorter than one 10s shot clock, so a pocketed phone cannot freeze
-  // the table. The cap does not run anyone else's clock; if the affected player
-  // is next, their 10s clock starts only when they tap or this cap fires.
+  // After the motion, keep the result line up long enough to read, then continue.
+  // One second is the floor; a longer line gets 0.3s a word. There is no tap.
   const WORD_MS = 300;
-  const MIN_LINE_MS = 1000; // never a 2s-or-less flash; one second is a floor, then 0.3s per word
-  const GO_LINE = 'Tap to go on.';
+  const MIN_LINE_MS = 1000;
   const LOOKOUT_LINE = 'Look out!';
   const HIT_EVENTS = ['kick', 'catch', 'knockout', 'stone', 'smash', 'burst', 'shove'];
 
@@ -74,7 +71,9 @@
       const n = squaresOf(lc.at, lc.to, null, null);
       out.push({
         event: ev, seq: lc.seq, by: lc.by || h.kind, bird: lc.bird, at: lc.at, to: lc.to,
-        walked: !!lc.walked, ambush: !!lc.ambush, ko: !!lc.ko, cartoon: !!pointOk(lc.at),
+        walked: !!lc.walked, ambush: !!lc.ambush, ko: !!lc.ko,
+        // Every phone plays the animals-only cartoon. The slide length stays 0 unless this view was sent both squares.
+        cartoon: true,
         squares: ev === 'catch' && !lc.ko ? n : 0
       });
     }
@@ -173,10 +172,46 @@
     return isAffected(S, ev) && !isActor(S, ev);
   }
 
+  function catchText() {
+    if (root.CatchText) return root.CatchText;
+    if (typeof require === 'function') {
+      try { return require('./catchtext'); } catch (e) { return null; }
+    }
+    return null;
+  }
+  // The sentence this phone already shows for the hit. Existing lines only.
+  function lineFor(S, ev) {
+    const CT = catchText();
+    if (!CT || !S || !ev) return '';
+    try {
+      if (ev.event === 'kick') return CT.viewerEvent({ kind: 'kick', text: '' }, S) || '';
+      if (ev.event === 'catch' || ev.event === 'knockout') {
+        const h = S.h3 || {}, lc = h.lastCatch;
+        if (!lc) return '';
+        return CT.catchLine(lc, viewerSeat(S), lc.by || h.kind, CT.catchesLeft(h, lc)) || '';
+      }
+      if (ev.event === 'stone') return CT.viewerEvent({ kind: 'stone', text: (S.stoneNote && S.stoneNote.text) || '' }, S) || '';
+      if (ev.event === 'smash') return CT.viewerEvent({ kind: 'smash', text: '' }, S) || '';
+      if (ev.event === 'burst') return CT.viewerEvent({ kind: 'burst', text: '' }, S) || '';
+      if (ev.event === 'shove') return CT.viewerEvent({ kind: 'rival', text: '' }, S) || '';
+    } catch (e) { return ''; }
+    return '';
+  }
+  // A watcher may slide a hunter only while that hunter is still in this view.
+  // kick.to and the hunter lists are already limited to sight (server trailView).
+  function hunterStillSeen(S, ev) {
+    const who = ev && ev.who;
+    if (who !== 'hyena' && who !== 'badger' && who !== 'hunter') return true;
+    const k = S && S.kick;
+    if (k && pointOk(k.to)) return true;
+    const h = (S && S.h3) || {};
+    if (pointOk(h.hunter) && (!h.kind || h.kind === who || who === 'hunter')) return true;
+    return (h.hunters || []).some(x => x && x.kind === who && pointOk(x.p) && !(who === 'badger' && x.burrowed));
+  }
   function animMs(ev, role) {
     if (!ev) return 0;
     const look = (role === 'affected' && ev.lookout) ? LOOKOUT_MS : 0;
-    const cartoon = ev.cartoon ? CARTOON_MS : 0;
+    const cartoon = role === 'watcher' ? 0 : (ev.cartoon ? CARTOON_MS : 0);
     const motion = Math.max(0, ev.squares || 0) * STEP_MS;
     return look + cartoon + motion;
   }
@@ -197,10 +232,17 @@
       if ((a && !isAffected(S, pick)) || (ev.squares || 0) > (pick.squares || 0) || (ev.cartoon && !pick.cartoon)) pick = ev;
     }
     pick.lookout = lookout;
-    const role = affected ? 'affected' : 'other';
-    const motionDelay = (lookout ? LOOKOUT_MS : 0) + (pick.cartoon ? CARTOON_MS : 0);
-    const motionMs = Math.max(0, pick.squares || 0) * STEP_MS;
-    const animation = animMs(pick, role);
+    // A watcher is neither the kicker nor the animal that was hit. Their kick
+    // slide starts with the board, not after the cartoon. If the hunter is
+    // already outside this phone's sight, there is no slide and no "near" line.
+    const watchKick = pick.event === 'kick' && !affected && !actor;
+    const skipSlide = watchKick && !hunterStillSeen(S, pick);
+    const showCartoon = !!pick.cartoon && !watchKick;
+    const motionDelay = (lookout ? LOOKOUT_MS : 0) + (showCartoon ? CARTOON_MS : 0);
+    const motionMs = skipSlide ? 0 : Math.max(0, pick.squares || 0) * STEP_MS;
+    const animation = motionDelay + motionMs;
+    const line = affected ? lineFor(S, pick) : '';
+    const readMs = affected ? holdFor(line) : 0;
     return {
       ev: pick,
       events: evs,
@@ -208,36 +250,48 @@
       actor,
       bystander: !affected && !actor,
       lookout,
-      lineHold: affected ? (CARTOON_MS + motionMs + HOLD_CAP_MS) : null,
+      watchSlide: watchKick && !skipSlide,
+      skipSlide,
+      skipNear: skipSlide,
+      line,
+      readMs,
+      // The result line is spoken after Look out!, so this hold is the cartoon,
+      // the slide, and the reading pause. It does not include the 1s beat.
+      lineHold: affected ? ((showCartoon ? CARTOON_MS : 0) + motionMs + readMs) : null,
       motionDelay,
       motionMs,
       animMs: animation,
-      goLine: GO_LINE,
-      lookoutLine: LOOKOUT_LINE,
-      holdCap: HOLD_CAP_MS
+      lookoutLine: LOOKOUT_LINE
     };
+  }
+
+  // True when this phone must not play a kick slide: a watcher whose view no
+  // longer contains the hunter. Uses only the redacted view.
+  function skipKickSlide(S, prev) {
+    const pol = policy(S, prev);
+    return !!(pol && pol.skipSlide);
   }
 
   // How long the server should wait before starting the current player's 10s
   // clock. Bots: 0. A player who cannot see the event: 0. The affected current
-  // player: animation + 8s cap (they can start earlier by tapping). Anyone else
-  // who sees it: animation + a word-length auto-continue, so the cartoon is not
-  // eating their shot clock.
+  // player: the animation plus the reading pause, so the clock never runs while
+  // they are still watching. Anyone else who sees it: the animation plus the
+  // one-second line floor.
   function clockDelayMs(pol, opts) {
     opts = opts || {};
     if (!pol) return 0;
     if (opts.isBot) return 0;
     if (!opts.seesEvent && !pol.affected) return 0;
-    if (opts.isCurrent && pol.affected) return pol.animMs + HOLD_CAP_MS;
+    if (opts.isCurrent && pol.affected) return pol.animMs + (pol.readMs || 0);
     if (opts.isCurrent) return pol.animMs + MIN_LINE_MS;
     return 0;
   }
 
   const api = {
-    LOOKOUT_MS, CARTOON_MS, STEP_MS, HOLD_CAP_MS, WORD_MS, MIN_LINE_MS,
-    GO_LINE, LOOKOUT_LINE, HIT_EVENTS,
+    LOOKOUT_MS, CARTOON_MS, STEP_MS, WORD_MS, MIN_LINE_MS,
+    LOOKOUT_LINE, HIT_EVENTS,
     wordCount, holdFor, kindOf, viewerSeat, viewerKind, events, isAffected, isActor,
-    shouldLookOut, animMs, policy, clockDelayMs, squaresOf
+    shouldLookOut, animMs, policy, clockDelayMs, squaresOf, lineFor, skipKickSlide, hunterStillSeen
   };
   if (typeof module !== 'undefined') module.exports = api;
   root.SURPRISE = api;

@@ -1,7 +1,7 @@
 // Phone-size checks for the surprise-moment fixes: the cartoon covers the board
 // and hides the action bar, a stone's landing piece stays hidden while it slides,
-// an egg number stays inside its egg on the frozen board, and "Tap to go on."
-// waits until the cartoon has left.
+// an egg number stays inside its egg on the frozen board, and the hit continues
+// on its own after a reading pause. There is no "Tap to go on." button.
 process.env.PORT = '4017';
 process.env.BO_NOSTORE = '1';
 const assert = require('assert');
@@ -43,6 +43,10 @@ function boardHTML(pieceAt) {
     actions.style.display = 'flex';
     const prev = { ...base, smashNote: null };
     const S = { ...base, smashNote: { seq: 1, by: 'red', owner: 'blue' } };
+    window.__t0 = Date.now();
+    window.__sawGo = false;
+    const watch = setInterval(() => { if (document.getElementById('surprise-go')) window.__sawGo = true; }, 50);
+    window.__stopWatch = () => clearInterval(watch);
     window.CUTAWAYS.prepare(S, prev, board);
     window.CUTAWAYS.play(S, prev, board);
   }, { html: boardHTML([4, 3]), base });
@@ -82,12 +86,16 @@ function boardHTML(pieceAt) {
   assert.equal(mid.scene, 'egg-smash');
   assert.ok(mid.covers, 'the cartoon card is at least as wide as the board');
   assert.ok(mid.actionsHidden, 'Walk is hidden while the cartoon is up');
-  assert.ok(!mid.tap, 'Tap to go on. is not up during the cartoon');
+  assert.ok(!mid.tap, 'there is no continue button during the cartoon');
   assert.ok(!mid.overlap || mid.actionsHidden, 'the action bar does not paint over the cartoon');
 
-  await P.waitForFunction(() => !!document.getElementById('surprise-go') && !document.getElementById('cutaway'), null, { timeout: 6000 });
-  const tapText = await P.locator('#surprise-go button').evaluate(el => el.textContent);
-  assert.equal(tapText, 'Tap to go on.');
+  await P.waitForFunction(() => window.CUTAWAYS && !CUTAWAYS.busy(), null, { timeout: 8000 });
+  const done = await P.evaluate(() => {
+    window.__stopWatch && window.__stopWatch();
+    return { sawGo: !!window.__sawGo, go: !!document.getElementById('surprise-go'), ms: Date.now() - window.__t0 };
+  });
+  assert.ok(!done.sawGo && !done.go, 'the continue button never appears');
+  assert.ok(done.ms >= 4000 && done.ms < 7000, 'reading pause ends the smash on its own, not after an 8s tap: ' + done.ms);
 
   await P.close();
   // Stone, on a fresh page: the hyena already drawn on the landing square stays hidden while the copy slides.
@@ -156,8 +164,44 @@ function boardHTML(pieceAt) {
   assert.equal(top.hint, "You're on the egg!");
   assert.ok(!top.status.some(t => /hunts eggs/.test(t)), 'the hunt intro is not the status line: ' + top.status.join(' | '));
 
+  // A watcher who can still see the hunter plays the kick slide at once, with no cartoon in front of it.
+  const P3 = await c.newPage();
+  await P3.goto('http://localhost:4017/?theme=comic');
+  await P3.waitForSelector('#board');
+  await P3.evaluate(() => {
+    const cols = 9, rows = 7;
+    const board = document.getElementById('board');
+    board.style.gridTemplateColumns = 'repeat(9, 36px)';
+    board.style.gridTemplateRows = 'repeat(7, 36px)';
+    const cell = (x, y, inner) => `<div class="cell" style="position:relative;width:36px;height:36px">${inner || ''}</div>`;
+    let oldHtml = '';
+    for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) oldHtml += cell(x, y, (x === 6 && y === 3) ? '<div class="pc ph hhyena"></div>' : '');
+    board.innerHTML = oldHtml;
+    const cfg = { cols, rows };
+    const prev = { role: 'red', phase: 'play', cfg, vulture: [7, 5], ostrich: [3, 3], h3: { mySeat: 'red', kind: 'hyena', hunter: [6, 3] }, kick: null };
+    const S = { role: 'red', phase: 'play', cfg, vulture: [7, 5], ostrich: [3, 3], h3: { mySeat: 'red', kind: 'hyena', hunter: [7, 3] }, kick: { seq: 9, who: 'hyena', by: 'blue', target: 'hyena', key: 'hyena', moved: 2, to: [7, 3], trail: [[6, 3], [7, 3]] } };
+    window.__watchT = Date.now();
+    window.CUTAWAYS.prepare(S, prev, board);
+    let neu = '';
+    for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) neu += cell(x, y, (x === 7 && y === 3) ? '<div class="pc ph hhyena" id="landed"></div>' : '');
+    board.innerHTML = neu;
+    window.PUSH_MOTION.run(S, prev, board);
+    window.CUTAWAYS.play(S, prev, board);
+  });
+  await P3.waitForFunction(() => !!document.querySelector('.push-motion, .partial-motion'), null, { timeout: 1000 });
+  const watch = await P3.evaluate(() => ({
+    ms: Date.now() - window.__watchT,
+    cartoon: !!document.getElementById('cutaway'),
+    go: !!document.getElementById('surprise-go'),
+    slide: !!document.querySelector('.push-motion, .partial-motion')
+  }));
+  assert.ok(watch.slide, 'the watcher slide is playing');
+  assert.ok(watch.ms < 800, 'the watcher slide does not wait out the 2s cartoon: ' + watch.ms);
+  assert.ok(!watch.cartoon, 'a watcher does not get the kick cartoon in front of the slide');
+  assert.ok(!watch.go, 'a watcher has no continue button');
+
   await b.close();
   server.close();
-  console.log('PASS surprise fixes: cartoon covers the board, egg number stays put, stone landing stays hidden, tap waits');
+  console.log('PASS surprise fixes: cartoon covers the board, egg number stays put, stone landing stays hidden, reading pause, no tap');
   process.exit(0);
 })().catch(e => { console.error(e); try { server.close(); } catch (err) {} process.exit(1); });

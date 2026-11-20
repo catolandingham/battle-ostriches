@@ -21,6 +21,17 @@ const PIECE = { ostrich: '.pc.po', vulture: '.pc.pv', hyena: '.pc.ph.mine', badg
   // one visible YOU tag, inside the square that holds this phone's own piece, readable, and not tappable
   const reveal = p => p.evaluate(() => { const t = document.querySelector('.youtag'); if (t) t.scrollIntoView({ block: 'center' }); });
   const check = async (p, role, where) => {
+    // The tag is hidden while a cartoon is up, and while a piece is still sliding.
+    // A fixed pause reads it in that gap: the tag is in the page, and not visible.
+    await p.waitForFunction(() => {
+      if (window.CUTAWAYS && CUTAWAYS.busy && CUTAWAYS.busy()) return false;
+      if (document.getElementById('cutaway') || document.documentElement.classList.contains('cutaway-up')) return false;
+      if (document.querySelector('.push-motion, .partial-motion')) return false;
+      const tags = [...document.querySelectorAll('#stage > .youtag.youflag')].filter(t => !t.classList.contains('surprise-hidden') && !t.classList.contains('surprise-you'));
+      if (tags.length !== 1) return false;
+      const s = getComputedStyle(tags[0]), q = tags[0].getBoundingClientRect();
+      return s.display !== 'none' && s.visibility !== 'hidden' && +s.opacity > 0.9 && q.width > 4 && q.height > 4;
+    });
     await reveal(p);
     const r = await p.evaluate(sel => {
       const all = [...document.querySelectorAll('.youtag')], vis = all.filter(t => { const s = getComputedStyle(t), q = t.getBoundingClientRect(); return s.display !== 'none' && s.visibility !== 'hidden' && +s.opacity > 0.9 && q.width > 4 && q.height > 4; });
@@ -97,7 +108,8 @@ const PIECE = { ostrich: '.pc.po', vulture: '.pc.pv', hyena: '.pc.ph.mine', badg
   await A4.waitForSelector('#actions.mine', { state: 'attached', timeout: 20000 }); await A4.waitForTimeout(250);
   assert.ok((await pulses(A4)).adds >= 1, 'badger: pulse at turn start'); await A4.waitForTimeout(900); const pb = await pulses(A4); assert.equal(pb.live, 0); assert.ok(pb.lastRem - pb.first <= 1000);
   await A4.locator('#actions button').first().click({ force: true }); // burrow
-  await A4.waitForSelector('.pc.ph.bur', { state: 'attached', timeout: 8000 }); await A4.waitForTimeout(300);
+  await A4.waitForSelector('.pc.ph.bur', { state: 'attached', timeout: 8000 });
+  await A4.waitForFunction(() => { const t = document.querySelector('.youtag'); if (!t) return false; const s = getComputedStyle(t), q = t.getBoundingClientRect(); return s.display !== 'none' && s.visibility !== 'hidden' && +s.opacity > 0.9 && q.width > 4 && q.height > 4; }, null, { timeout: 8000 });
   await check(A4, 'badger', 'burrowed'); await shot(A4, 'badger'); await allThemes([[A4, 'badger']], 'burrowed');
   await A4.context().close(); await Y.context().close();
 

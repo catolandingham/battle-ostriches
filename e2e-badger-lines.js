@@ -19,9 +19,11 @@ const at = { state: 'attached' };
   await Y.waitForSelector('#actions.mine', { ...at, timeout: 20000 }); await Y.locator('#actions button').first().click({ force: true }); // the hyena stays put
   await A.waitForSelector('#actions.mine', { ...at, timeout: 20000 });
   const room = [...server.rooms.values()].find(r => r.hunt);
-  // the badger burrows: its own phone says the first-burrow line; the hyena's phone says nothing
+  // the badger burrows: its own phone says the first-burrow line; the hyena's phone says nothing.
+  // A tap during the previous cartoon is ignored, and the quote waits behind whatever line is already up, so wait until the board is free and give the line the same time as the later quotes.
+  await A.waitForFunction(() => { const S = UI._S(); const busy = !!(window.CUTAWAYS && CUTAWAYS.busy && CUTAWAYS.busy()); const btn = document.querySelector('#actions.mine button'); return !!(S && S.myTurn && !UI._locked() && !busy && btn && /Burrow/.test(btn.textContent)); }, null, { timeout: 20000 });
   await A.locator('#actions button').first().click({ force: true });
-  await A.waitForFunction(t => (document.getElementById('badgerline') || {}).textContent === t, BL.LINES.firstBurrow, { timeout: 5000 });
+  await A.waitForFunction(t => (document.getElementById('badgerline') || {}).textContent === t, BL.LINES.firstBurrow, { timeout: 15000 });
   await shot(A, '1-first-burrow-badger');
   assert.equal(await Y.locator('#badgerline').count(), 0, 'the hyena sees no burrow line'); assert.equal(room.g.hunt.hs.badger.burrowed, true);
   await A.waitForFunction(() => !document.getElementById('badgerline'), null, { timeout: 15000 }); // a quote stays up 1s plus 0.3s a word (the first-burrow quote is long)

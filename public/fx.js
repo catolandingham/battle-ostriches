@@ -35,19 +35,33 @@ const TH={storm:{sz:1.08,th:'stone'},volcano:{sz:1.08,th:'stone'},comic:{sz:1.1,
 let layer,spr={},last={},theme=()=>document.documentElement.getAttribute('data-theme');
 function cellRect(x,y,S){const b=document.getElementById('board');const c=b&&b.children[y*S.cfg.cols+x];if(!c)return null;const r=c.getBoundingClientRect();return{x:r.left+scrollX,y:r.top+scrollY,w:r.width,h:r.height};}
 function ensure(){if(!layer){layer=document.createElement('div');layer.id='fx';document.body.appendChild(layer);}}
-function sprite(id,svg,S,p,sz,off){let r=cellRect(p[0],p[1],S);if(!r)return;
- const cell=document.getElementById('board').children[p[1]*S.cfg.cols+p[0]],pc=cell&&cell.querySelector(id==='o'?'.pc.po':'.pc.pv');
+function birdKind(id){return id==='v'||/^v\d/.test(id)?'v':'o';}
+// The moving copy asks which overlay belongs to the animal that is sliding.
+// Your own bird keeps spr-o / spr-v. Every other bird the server sent uses its seat (o1, o2, v1, v2).
+function skinId(S,key){const me=S&&S.h3&&S.h3.mySeat;
+ if(key==='blue'||key==='ostrich')return 'o';
+ if(key==='red'||key==='vulture')return 'v';
+ if(key==='o1'||key==='o2')return me===key?'o':key;
+ if(key==='v1'||key==='v2')return me===key?'v':key;
+ return 'h';}
+function pieceEl(cell,id,used){if(!cell)return null;
+ const list=[...cell.querySelectorAll(birdKind(id)==='o'?'.pc.po':'.pc.pv')].filter(el=>!used.has(el));
+ const own=id==='o'||id==='v';
+ const pick=list.find(el=>el.classList.contains('other')!==own)||list[0]||null;
+ if(pick)used.add(pick);return pick;}
+function sprite(id,svg,S,p,sz,off,used){let r=cellRect(p[0],p[1],S);if(!r)return;
+ const cell=document.getElementById('board').children[p[1]*S.cfg.cols+p[0]],pc=pieceEl(cell,id,used||new Set());
  // The themed sprite must use the same animal slot as the SVG board piece (smaller and centred beside an egg, leaf or rock).
  if(cell&&cell.querySelector('.cm-egg,:scope>.ic-food,:scope>.ic-rock')&&pc){const q=pc.getBoundingClientRect();r={x:q.left+scrollX,y:q.top+scrollY,w:q.width,h:q.height};sz=1;off=0;}
  if(off){r={x:r.x+off*r.w*.2,y:r.y+off*r.h*.2,w:r.w*.6,h:r.h*.6};}let e=spr[id];
- if(!e||e.dataset.svg!==svg){if(e)e.remove();e=document.createElement('div');e.className='spr spr-'+id;e.innerHTML=svg;e.dataset.svg=svg;layer.appendChild(e);spr[id]=e;e.style.transition='none';}
+ if(!e||e.dataset.svg!==svg){if(e)e.remove();e=document.createElement('div');e.className='spr spr-'+id+' bird-'+birdKind(id);e.innerHTML=svg;e.dataset.svg=svg;layer.appendChild(e);spr[id]=e;e.style.transition='none';}
  const s=r.w*(sz||1),tx=r.x+(r.w-s)/2,ty=r.y+(r.h-s)/2,prev=e.dataset.pos,np=p.join(',');
  e.style.width=e.style.height=s+'px';
  if(prev&&prev!==np){const ang=0; // faces stay upright (the old top-down sprites turned toward the move)
   e.style.setProperty('--rot',ang+'deg');
   const C=TH[theme()]||{};if(C.hop){const ox=e._tx||tx,oy=e._ty||ty,rot=ang+'deg';e.style.transition='none';e.style.transform=`translate(${tx}px,${ty}px) rotate(${rot})`;e.animate([{transform:`translate(${ox}px,${oy}px) rotate(${rot}) scale(1)`},...(C.squash?[{transform:`translate(${ox}px,${oy}px) rotate(${rot}) scale(1.25,.75)`,offset:.15}]:[]),{transform:`translate(${(ox+tx)/2}px,${(oy+ty)/2-r.h*.55}px) rotate(${rot}) scale(1.18)`,offset:.5},...(C.squash?[{transform:`translate(${tx}px,${ty}px) rotate(${rot}) scale(1.3,.7)`,offset:.85}]:[]),{transform:`translate(${tx}px,${ty}px) rotate(${rot}) scale(1)`}],{duration:C.squash?620:520,easing:'ease-in-out'});}
   else requestAnimationFrame(()=>{e.style.transition=C.steps?'transform .45s steps(4,end)':'transform .45s cubic-bezier(.4,.1,.3,1)';e.style.transform=`translate(${tx}px,${ty}px) rotate(var(--rot))`;});
-  if(C.ring){ring(r.x+r.w/2,r.y+r.h/2,r.w*(C.rcol?1.6:.9),C.rcol||(id==='o'?'#38d6f0':'#e04cff'),C.rcol?.9:.5);}
+  if(C.ring){ring(r.x+r.w/2,r.y+r.h/2,r.w*(C.rcol?1.6:.9),C.rcol||(birdKind(id)==='o'?'#38d6f0':'#e04cff'),C.rcol?.9:.5);}
  } else {e.style.transform=`translate(${tx}px,${ty}px) rotate(var(--rot,0deg))`;}
  e.dataset.pos=np;e._tx=tx;e._ty=ty;}
 function ring(cx,cy,rad,col,dur,cls){const d=document.createElement('div');d.className='fxring '+(cls||'');d.style.cssText=`left:${cx-rad}px;top:${cy-rad}px;width:${rad*2}px;height:${rad*2}px;border-color:${col};animation-duration:${dur}s`;layer.appendChild(d);setTimeout(()=>d.remove(),dur*1000+50);}
@@ -75,6 +89,16 @@ function orientPrints(S){if(S.role!=='red'||!S.prints)return;const P=S.prints,b=
  for(const k in P){const[x,y]=k.split(',').map(Number);let best=null,bv=0;
   for(let dx=-1;dx<=1;dx++)for(let dy=-1;dy<=1;dy++){if(!dx&&!dy)continue;const v=P[(x+dx)+','+(y+dy)]||0;if(v>bv){bv=v;best=[dx,dy];}}
   const c=b.children[y*S.cfg.cols+x],n=c&&c.querySelector('.num');if(n&&best)n.style.setProperty('--prot',(Math.atan2(best[1],best[0])*180/Math.PI+90)+'deg');}}
+// The cell's number sits under this overlay, so a copy rides on the sprite, in the same corner.
+function pinTag(e,S,b){const board=document.getElementById('board');if(!e||!board||!b.p)return;
+ const cell=board.children[b.p[1]*S.cfg.cols+b.p[0]];if(!cell)return;const kind=birdKind(b.id);
+ const src=[...cell.querySelectorAll(':scope>b.snum')].find(n=>!n.dataset.pinned&&n.classList.contains(kind)&&(b.own?n.classList.contains('me'):b.mate?n.classList.contains('mate'):!n.classList.contains('me')&&!n.classList.contains('mate')));
+ if(!src){const old=e.querySelector(':scope>b.snum');if(old)old.remove();return;}
+ src.dataset.pinned='1';src.style.visibility='hidden';
+ let tag=e.querySelector(':scope>b.snum');if(!tag){tag=document.createElement('b');e.appendChild(tag);}
+ tag.className=src.className;tag.textContent=src.textContent;
+ const cr=cell.getBoundingClientRect(),er=e.getBoundingClientRect();
+ tag.style.right='auto';tag.style.left=(cr.left-er.left+4)+'px';tag.style.bottom=(er.bottom-cr.bottom+4)+'px';}
 window.FX={update(S,prev){const t=theme();ensure();layer.className=t||'';
  // A surprise owns the moving animal. Leave the theme sprites hidden, and forget
  // their last square so they do not slide into the landing spot when the cartoon ends.
@@ -85,16 +109,32 @@ window.FX={update(S,prev){const t=theme();ensure();layer.className=t||'';
  orientPrints(S);
  const sz=TH[t].sz;
  const onB=(p,side)=>{if(!p||p[0]<0||p[1]<0)return false;const b=S.h3&&S.h3.birds;if(!b)return true;if(S.h3.team){const me=S.h3.mySeat;if(side==='o'&&(me==='o1'||me==='o2')&&b[me]&&b[me].out)return false;if(side==='v'&&(me==='v1'||me==='v2')&&b[me]&&b[me].out)return false;return true;}if(side==='o'&&b.blue&&b.blue.out)return false;if(side==='v'&&b.red&&b.red.out)return false;return true;};
- const both=onB(S.ostrich,'o')&&onB(S.vulture,'v')&&S.ostrich+''===S.vulture+''; // share a square: shrink both and offset so neither hides the other
+ // One overlay per bird this phone is allowed to see. h3.pieces is everyone except you
+ // (teammate and the other side). Sharing a square shrinks and offsets, same as the old pair.
+ const used=new Set(),birds=[],mine=S.h3&&S.h3.mySeat,pcs=(S.h3&&S.h3.pieces)||[];
  const oArt=S.carried&&window.ART&&ART.ostrichCarry?ART.ostrichCarry:SPR[t].o;
- if(onB(S.ostrich,'o'))sprite('o',oArt,S,S.ostrich,S.carried?0.72:sz,both?1:0);else if(spr.o){spr.o.remove();delete spr.o;}
- if(onB(S.vulture,'v'))sprite('v',SPR[t].v,S,S.vulture,S.role==='blue'?.8:sz,both?-1:0);else if(spr.v){spr.v.remove();delete spr.v;}
+ if(onB(S.ostrich,'o'))birds.push({id:'o',p:S.ostrich,art:oArt,sz:S.carried?0.72:sz,own:true,mate:false});
+ if(onB(S.vulture,'v'))birds.push({id:'v',p:S.vulture,art:SPR[t].v,sz:S.role==='blue'?.8:sz,own:true,mate:false});
+ for(const q of pcs){if(!q||!q.p||q.p[0]<0||q.p[1]<0||q.seat===mine)continue;
+  if(S.h3.birds&&S.h3.birds[q.seat]&&S.h3.birds[q.seat].out)continue;
+  const id=/^[ov][12]$/.test(q.seat)?q.seat:'';if(!id||birds.some(b=>b.id===id))continue;
+  const os=q.type==='o'||birdKind(id)==='o';
+  const art=os&&q.carrying&&window.ART&&ART.ostrichCarry?ART.ostrichCarry:(os?SPR[t].o:SPR[t].v);
+  birds.push({id,p:q.p,art,sz:os?(q.carrying?0.72:sz):(S.role==='blue'?.8:sz),own:false,mate:!!q.mate});}
+ const groups={};for(const b of birds){const k=b.p[0]+','+b.p[1];(groups[k]||(groups[k]=[])).push(b);}
+ const keep=new Set();
+ for(const k in groups)groups[k].forEach((b,i)=>{const off=groups[k].length===2?(i===0?1:-1):0;
+  sprite(b.id,b.art,S,b.p,b.sz,off,used);const e=spr[b.id];if(!e)return;
+  e.classList.toggle('mate',!b.own&&!!b.mate);e.classList.toggle('opp',!b.own&&!b.mate);
+  pinTag(e,S,b);keep.add(b.id);});
+ for(const id in spr)if(!keep.has(id)){spr[id].remove();delete spr[id];}
  const la=S.lastAction,sig=la&&JSON.stringify([S.round,S.turn,la]);
  if(prev&&la&&sig!==last.sig&&prev.turn==='red'&&S.turn==='blue'){
   if(la.type==='throw'&&!window.SMASH)throwFx(S,S.vulture,la.p,la.result);
   if(la.type==='fly'&&la.smell&&S.role==='red'&&TH[t].ring){const r=cellRect(S.vulture[0],S.vulture[1],S);if(r)ring(r.x+r.w/2,r.y+r.h/2,r.w*(S.cfg.smellRange+.5),'#5effa0',1.4,'radar');}}
  last.sig=sig;},
- relayout(){for(const k in spr)spr[k].dataset.pos='';}};
+ relayout(){for(const k in spr)spr[k].dataset.pos='';},
+ skinId};
 addEventListener('resize',()=>FX.relayout());
 })();
 // Cause before result (Brian's D36: never show a result without its cause). Four short marks, each at most 0.7 s, each drawn only

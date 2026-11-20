@@ -77,25 +77,28 @@ const hint = p => p.evaluate(() => document.getElementById('hint').textContent.t
   // ================= classic: human vulture =================
   const V = await solo2(b, 'red'); let g = room2().g;
   await withMessages(V, 'vulture', sayAll); ok('vulture: nothing sits on the board and all 7 rows show, with each kind of message in the slot');
-  // --- a found egg right next to the vulture, stone in hand: the crosshair is on it and Throw pulses; one cue only
+  // --- a found egg right next to the vulture, stone in hand: the filled egg shows it, Throw pulses, no crosshair
   const E = g.eggs.filter(e => e.alive && e.pos && key(e.pos) !== key(g.ostrich))[0].pos.slice();
   const nb = [E[0] + (E[0] < 8 ? 1 : -1), E[1]];
   g.vulture = nb.slice(); g.marks[key(E)] = 'spotted'; g.stones = 1; g.lastAction = { type: 'fly', from: nb.slice(), spotted: E.slice() }; g.sniff = { p: nb.slice(), yes: true, round: g.round }; await push();
   await V.waitForFunction(() => !document.querySelector('#announce.show'), null, { timeout: 8000 }).catch(() => {});
   let cs = await cueState(V);
-  assert.deepEqual(cs.aimcue, [idx(...E)], 'the crosshair sits on the found egg'); assert.deepEqual(cs.btn, ['Throw'], 'the Throw button pulses'); assert.deepEqual(cs.rock, [], 'no rock cue while there is a stone');
-  const anim = await V.evaluate(i => { const a = document.querySelectorAll('#board .cell')[i].querySelector('.aim.cue'); return a ? getComputedStyle(a).animationName : null; }, idx(...E)); assert.ok(anim && anim !== 'none', 'the crosshair pulses (' + anim + ')');
+  assert.deepEqual(cs.aimcue, [], 'no crosshair on the found egg'); assert.equal(await V.evaluate(() => document.querySelectorAll('#board i.aim').length), 0, 'no aim mark on the board');
+  assert.equal(await V.evaluate(i => !!document.querySelectorAll('#board .cell')[i].querySelector('.ic-spot .cmark.cm-egg.is'), idx(...E)), true, 'the filled egg shows the find');
+  assert.deepEqual(cs.btn, ['Throw'], 'the Throw button pulses'); assert.deepEqual(cs.rock, [], 'no rock cue while there is a stone');
   const btnAnim = await V.evaluate(() => getComputedStyle(document.querySelector('#actions button.cuebtn')).animationName); assert.notEqual(btnAnim, 'none', 'the Throw button pulses');
-  ok('vulture with a stone next to a found egg: crosshair on the egg and the Throw button pulse, nothing else');
+  ok('vulture with a stone next to a found egg: the filled egg shows it and the Throw button pulses, with no crosshair');
   await checkLayout(V, 'vulture with cue');
   // squares you can move to are LIT: the whole square is filled, no dot or ring is drawn
   const lit = await V.evaluate(() => { const L = [...document.querySelectorAll('#board .cell.legal:not(.target)')], N = [...document.querySelectorAll('#board .cell:not(.legal)')].filter(c => !c.querySelector('.pc,.ic')); const bg = c => getComputedStyle(c).backgroundImage + ' ' + (document.documentElement.dataset.theme === 'bw' && getComputedStyle(c).backgroundColor === 'rgb(230, 230, 230)' ? 'rgba(255, 225, 77' : ''); return { n: L.length, allFilled: L.every(c => /rgba\(255, 225, 77/.test(bg(c))), noneFilled: N.every(c => !/rgba\(255, 225, 77/.test(bg(c))), dots: document.querySelectorAll('#board .mvdot,#board .mvring').length }; });
   assert.ok(lit.n >= 3 && lit.allFilled, 'every square you can fly to is lit ' + JSON.stringify(lit)); assert.ok(lit.noneFilled, 'no other square is lit'); assert.equal(lit.dots, 0, 'no move dots');
   ok('squares you can move to are lit, with no dots');
-  // tapping the crosshair in fly mode picks Throw; the found egg then throws on one tap (no confirm)
-  await cell(V, ...E).click(); await V.waitForFunction(() => UI._mode() === 'throw'); assert.equal((await cueState(V)).confirm, 0);
-  // wrong tap while in throw mode on a far square: "Too far." and the egg square pulses
-  const far = [E[0] < 4 ? 8 : 0, E[1] < 3 ? 6 : 0]; await cell(V, ...far).click(); await sleep(150);
+  // Throw is a button. The found egg then throws on one tap (no confirm, no crosshair shortcut).
+  await V.locator('#actions button:has-text("Throw")').click(); await V.waitForFunction(() => UI._mode() === 'throw'); assert.equal((await cueState(V)).confirm, 0);
+  // wrong tap while in throw mode on a far square: "Too far." and the egg square pulses.
+  // A tap during the short sniff pause is applied when that pause ends, so wait for the hint.
+  const far = [E[0] < 4 ? 8 : 0, E[1] < 3 ? 6 : 0]; await cell(V, ...far).click();
+  await V.waitForFunction(() => document.getElementById('hint').textContent.trim() === 'Too far.', null, { timeout: 4000 });
   assert.equal(await hint(V), 'Too far.'); const fixed = await V.evaluate(() => [...document.querySelectorAll('#board .cell.fix')].map(c => [...c.parentNode.children].indexOf(c))); assert.deepEqual(fixed, [idx(...E)], 'after a wrong tap the found egg pulses');
   ok('every wrong tap shows the right move (the found egg pulses)');
   await cell(V, ...E).click(); await V.waitForFunction(() => UI._S().turn === 'blue', null, { timeout: 5000 }); ok('a throw at the found egg needs only one tap');
@@ -246,7 +249,7 @@ const hint = p => p.evaluate(() => document.getElementById('hint').textContent.t
   const P = await phone(b); await P.goto(U); await P.click('#homeGear'); await P.click('#howBtn'); await sleep(500);
   const how = await P.evaluate(() => { const r = document.getElementById('rules'), h2 = r.querySelector('h2').getBoundingClientRect(), pics = [...r.querySelectorAll('figure.pic')], h3 = r.querySelector('h3').getBoundingClientRect();
     return { st: r.scrollTop, h2top: h2.top, h2vis: h2.top >= 0 && h2.bottom <= innerHeight, pics: pics.length, caps: pics.map(f => f.querySelector('figcaption').textContent), firstPicTop: pics[0].getBoundingClientRect().top, h3top: h3.top, picsBeforeText: pics[3].getBoundingClientRect().bottom <= h3.top + 1,
-      real: pics.every((f,i) => { const im=f.querySelector('img'); return im && im.complete && im.naturalWidth > 0 && im.src.endsWith('/tut/how/'+i+'.png') && Math.abs(im.naturalWidth/im.naturalHeight-2)<0.05; }), marks: { lit: pics[0].querySelectorAll('.cell.legal').length === 5, you: !!pics[0].querySelector('.youflag'), sat: !!pics[0].querySelector('.cell.sat .ic-myegg'), eggs: pics[1].querySelectorAll('.cmark.cm-egg').length === 5, found: !!pics[2].querySelector('.ic-spot .cmark.cm-egg.is') && !!pics[2].querySelector('.aim'), dashed: [...pics[1].querySelectorAll('.cmark.cm-egg')].every(m => !m.classList.contains('is')), filledOwn: !!pics[0].querySelector('.cell.sat .cmark.cm-egg.is'), wrecked: !!pics[3].querySelector('.cell.hit .ic-hit') }, sh: r.scrollHeight, ch: r.clientHeight }; });
+      real: pics.every((f,i) => { const im=f.querySelector('img'); return im && im.complete && im.naturalWidth > 0 && im.src.endsWith('/tut/how/'+i+'.png') && Math.abs(im.naturalWidth/im.naturalHeight-2)<0.05; }), marks: { lit: pics[0].querySelectorAll('.cell.legal').length === 5, you: !!pics[0].querySelector('.youflag'), sat: !!pics[0].querySelector('.cell.sat .ic-myegg'), eggs: pics[1].querySelectorAll('.cmark.cm-egg').length === 5, found: !!pics[2].querySelector('.ic-spot .cmark.cm-egg.is') && !pics[2].querySelector('.aim'), dashed: [...pics[1].querySelectorAll('.cmark.cm-egg')].every(m => !m.classList.contains('is')), filledOwn: !!pics[0].querySelector('.cell.sat .cmark.cm-egg.is'), wrecked: !!pics[3].querySelector('.cell.hit .ic-hit') }, sh: r.scrollHeight, ch: r.clientHeight }; });
   assert.equal(how.st, 0, 'How to play opens at its top'); assert.ok(how.h2vis, 'the heading is on screen'); assert.equal(how.pics, 4, 'four pictures'); assert.ok(how.picsBeforeText, 'the pictures come before the text sections'); assert.ok(how.firstPicTop < 664 / 2, 'the first picture is on the first screen');
   assert.ok(how.real || Object.values(how.marks).every(Boolean), 'each picture loads its real board crop or draws real marks ' + JSON.stringify(how)); for (const c of how.caps) assert.ok(c.split(/\s+/).length <= 6, 'one short line: ' + c);
   await P.screenshot({ path: OUT + 'how-to-play-top.png' });

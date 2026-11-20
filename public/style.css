@@ -175,6 +175,7 @@ body.coaching::before{content:"";position:fixed;inset:0;background:#000a;z-index
 #leaveAsk .gbox,#rejoinAsk .gbox{background:#fff;color:#111;border:5px solid #111;border-radius:20px;padding:22px;max-width:360px;width:100%;text-align:center}
 #leaveAsk .gt,#rejoinAsk .gt{font:900 30px/1.1 system-ui,sans-serif;margin:0 0 8px;color:#111}
 #leaveAsk p,#rejoinAsk p{font-weight:600;margin:0 0 14px;color:#111}
+#rejoinAsk p:empty,#rejoinAsk p[hidden]{display:none!important;margin:0!important}
 #leaveAsk .big,#rejoinAsk .big{width:100%;margin:0 0 8px}
 #leaveAsk #leaveYes,#rejoinAsk #rejoinAskYes{background:#111;color:#fff;-webkit-text-fill-color:#fff}
 #leaveAsk #leaveNo,#rejoinAsk #rejoinAskNo{background:#fff;color:#111;-webkit-text-fill-color:#111;border:2px solid #111}

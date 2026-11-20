@@ -37,7 +37,7 @@ const seatArt=(r,k)=>r==='hunter'?KIND[k].art:r==='hyena'||r==='badger'?KIND[r].
 const SUB={blue:'hide eggs',red:'hunt eggs',hunter:'catch birds',o1:'team ostrich',o2:'team ostrich',v1:'team vulture',v2:'team vulture',hyena:'Pounce',badger:'Burrow'};
 let mode='2',three=false;
 let myRole='blue',kind=localStorage.getItem('bo_kind')||'hyena',seat={};
-function rulesMode(m){document.querySelectorAll('.mrules').forEach(e=>e.classList.toggle('hidden',e.dataset.m!==m));}
+function rulesMode(m){document.querySelectorAll('.mrules').forEach(e=>e.classList.toggle('hidden',e.dataset.m!==m));if(window.UI&&UI.paintEggs)UI.paintEggs(m);}
 function endBits(S){const names=S&&S.arrivals||[];const note=names.length?`<p class="arrive">${names.map(n=>String(n).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))).join(', ')} joined — the next game adds them.</p>`:'';
  const change=S&&S.flow?`<button class="big alt" id="rematchChange" onclick="UI.rematch('change')">Rematch · Change roles</button>`:'';
  return `${note}<button class="big" id="rematchSame" onclick="UI.rematch('same')">Rematch · Same roles</button>${change}<button class="big ghost" id="newGame" onclick="UI.menu()">New Game</button>`;}
@@ -94,7 +94,7 @@ function tChips(S){let bar=$('h3bar');if(!bar){bar=document.createElement('div')
 function tPieces(S,board){const h=S.h3,me=h.mySeat;
  const badge=(c,r,mate)=>{const b=document.createElement('b');b.className='snum '+(isOs(r)?'o':'v')+(mate?' mate':'')+(r===me?' me':'');b.textContent=NUM(r);c.appendChild(b);};
  for(const q of h.pieces){if(h.birds&&h.birds[q.seat]&&h.birds[q.seat].out)continue;const c=cellAt(board,S,q.p);if(!c||q.p[0]<0)continue;const d=document.createElement('div');d.className='pc '+(q.type==='o'?'po':'pv')+' other'+(q.mate?' mate':' opp');
-  d.innerHTML=q.type==='o'?(q.carrying&&window.ART&&ART.ostrichCarry?ART.ostrichCarry:OSTI):VULI;if(q.carrying)d.classList.add('carrying');c.appendChild(d);c.dataset.seat=q.seat;badge(c,q.seat,q.mate);
+  if(q.camo){d.className='pc ph bur other'+(q.mate?' mate':' opp');d.innerHTML=MOUND;}else{d.innerHTML=q.type==='o'?(q.carrying&&window.ART&&ART.ostrichCarry?ART.ostrichCarry:OSTI):VULI;if(q.carrying)d.classList.add('carrying');}c.appendChild(d);c.dataset.seat=q.seat;badge(c,q.seat,q.mate);
   c.dataset.tip=(c.dataset.tip?c.dataset.tip+' · ':'')+SN[q.seat]+(q.mate?' (your teammate)':'')+(q.carrying?', carrying an egg':'');}
  const mine=me==='hunter'?null:cellAt(board,S,isOs(me)?S.ostrich:S.vulture);if(mine)badge(mine,me,false);
  const ms=h.mateSniff;if(ms){const c=cellAt(board,S,ms.p);if(c){const r=document.createElement('div');r.className='msniff '+(ms.yes?'yes':'no');r.textContent=ms.yes?'Egg near':'No egg';c.appendChild(r);
@@ -123,7 +123,7 @@ function hChips(S){let bar=$('h3bar');if(!bar){bar=document.createElement('div')
   const tip=`${BN[r]}${r===me?' (you)':''}: ${b.out?'out.':b.catches?b.catches+' of '+(h.ko.hyena===h.ko.badger?h.ko.hyena:h.ko.hyena)+' catches.':'not caught.'}`;
   return `<span class="bchip ${r}${b.out?' out':''}${b.catches&&!b.out?' injured':''}${live&&S.turn===r?' now':''}${r===me?' me':''}" data-tip="${tip}" data-b="${r}">${sp(r==='blue'?OSTI:VULI,22)}<span class="pips">${pips}</span>${b.out?'<b class="ko">OUT</b>':''}</span>`;};
  const hun=k=>{const now=live&&(S.turn===k||(S.turn==='hunter'&&me===k)),n=h.hkos[k];
-  const tip=k==='hyena'?`${KIND[k].n}${k===me?' (you)':''}: Pounce. When you miss, move 1 more square. ${h.ko[k]} catches knock a bird out. Knock-outs: ${n}.`:`${KIND[k].n}${k===me?' (you)':''}: ${KIND[k].pw}. ${h.ko[k]} catches knock a bird out. Knock-outs: ${n}.`;
+  const tip=S.simple?`${KIND[k].n}: catches birds.`:k==='hyena'?`${KIND[k].n}${k===me?' (you)':''}: Pounce. When you miss, move 1 more square. ${h.ko[k]} catches knock a bird out. Knock-outs: ${n}.`:`${KIND[k].n}${k===me?' (you)':''}: ${KIND[k].pw}. ${h.ko[k]} catches knock a bird out. Knock-outs: ${n}.`;
   return `<span class="bchip hunter h${k}${now?' now':''}${k===me?' me':''}" data-b="${k}" data-tip="${tip}">${sp(KIND[k].art,24)}${claws(h.hcatches?h.hcatches[k]|0:0,4)}</span>`;};
  bar.innerHTML=bird('red')+bird('blue')+hun('hyena')+hun('badger');}
 function hPieces(S,board,prev){const h=S.h3,me=h.mySeat;
@@ -146,8 +146,10 @@ function warnNear(S,board,prev){if(!window.BORing)return;if(!S||S.phase!=='play'
  // Look out! is a 1s beat after a hit: no "X near!" on that state, or on a
  // redraw during the beat. Remember who is already seen so the line does not
  // pop the moment the beat ends and cover the real event line.
+ // A kick whose hunter is already outside this phone's sight does not say "near".
  const pol=prev&&window.SURPRISE&&SURPRISE.policy?SURPRISE.policy(S,prev):null;
  const now=BORing.seenHunterKinds(S);
+ if(pol&&pol.skipNear){nearSeen=now.slice();if(window.STATUS_QUEUE&&STATUS_QUEUE.drop)STATUS_QUEUE.drop(isNearLine);document.querySelectorAll('#msgslot .h3pop.near,#msgslot .near').forEach(el=>el.remove());return;}
  if((pol&&pol.lookout)||Date.now()<lookoutUntil){nearSeen=now.slice();return;}
  const was=nearSeen;nearSeen=now.slice();
  const added=was?BORing.hunterAlerts(was,now):now;
@@ -156,7 +158,7 @@ function tag(S){if(S.h3&&S.h3.team&&S.h3.mySeat!=='hunter')return tTag(S);const 
 function waitMsg(S){return `Wait, it's the ${tname(S,S.turn)}'s turn.`;}
 function nopeMsg(S){return `Move up to ${S.h3.range} square${S.h3.range>1?'s':''}: tap a glowing square.`;}
 function hint(S,a){if(S.h3.team&&!hint.in){hint.in=1;try{return tHint(S,a);}finally{hint.in=0;}}const r=S.role,t=S.turn;
- if(r==='hunter'&&S.myTurn){const k=S.h3.kind;
+ if(r==='hunter'&&S.myTurn){if(S.simple){const n=S.hideLeft|0,me=S.h3.mySeat||S.kind||'hunter',hidden=S.veil&&(S.veil[me]||S.veil.hunter);a.innerHTML=(n>0&&!hidden?`<button type="button" onclick="UI.send({t:'act',a:'hide'})">Hide <b class="hidect">${n}</b></button>`:'')+'<button type="button" onclick="UI.send({t:\'act\',a:\'hstay\'})">Stay</button>';return 'Your turn. Tap to move.';}const k=S.h3.kind;
   a.innerHTML=S.pounce?'<button class="on" title="Skip this extra move. You will not catch the bird." onclick="UI.send({t:\'act\',a:\'hstay\'})">Stay</button>':`<button title="${k==='badger'?(S.burrowed?'Stay burrowed. Birds still cannot see you.':digWarn(S)):'Stay put and end your turn.'}" onclick="UI.send({t:'act',a:'hstay'})">${k==='badger'?(S.burrowed?'Stay':'Burrow'):'Stay'}</button>${S.canBurst?`<button title="Come up and shove the hyena back." onclick="UI.send({t:'act',a:'hburst'})">Burst out</button>`:''}`;
   if(S.pounce)return 'When you miss, move 1 more square.';
   if(S.h3.extra)return 'Your turn again. Tap to move.';
@@ -201,13 +203,56 @@ function outBanner(S,prev){const birds=S.h3.birds;if(!birds)return;
   const mine=r===(S.h3.mySeat||S.role);
   if(!first&&!mine&&S.phase==='play'){const txt=window.CatchText.outLine(r);outNote={txt,until:Date.now()+4000};noteBanner('no',txt,true);setTimeout(()=>{const bn=$('banner');if(bn&&bn.textContent===txt){bn.textContent='';bn.className='hidden';}},4000);}}
  if(outNote&&Date.now()<outNote.until)noteBanner('no',outNote.txt);}
-// The badger's quotes (public/badgerlines.js): one line at a time near the badger's square, about 1 second each. They sit in their own
-// element, not in the board, so the next state redrawing the board does not wipe them. The words and who may see them live in badgerlines.js.
-const BL=window.BadgerLines;let bPicker=BL.createPicker(),bLastS=null;
+// The badger's quotes (public/badgerlines.js): one line at a time in their own bubble near the badger's square
+// (about 1s, or 0.3s a word when the line is longer). The bubble is not in the board, so a redraw does not wipe it,
+// and it is not the status line. A saying already queued still plays if the turn changes first. A new saying is only taken for the turn on screen now. Who may see each line lives in badgerlines.js.
+const BL=window.BadgerLines;let bPicker=BL.createPicker(),bLastS=null,bubbleState=null;
 const winNote=S=>{const t=BL.winLine(S);return t?`<p class="badgerwin">${t}</p>`:'';};
-function badgerSay(text){window.STATUS_QUEUE.add({id:'badgerline',className:'h3pop badger',text,priority:0});}
+const bubble=window.BADGER_BUBBLE.create({
+ show(item){const old=document.getElementById('badgerline');if(old)old.remove();
+  const el=document.createElement('div');el.id='badgerline';el.className='badger-bubble';el.textContent=item.text;el.setAttribute('role','status');item.node=el;
+  placeBubble(el,bubbleState);},
+ hide(item){if(item&&item.node){item.node.remove();item.node=null;}},
+ schedule:setTimeout,cancel:clearTimeout
+});
+function badgerSquare(S){if(!S)return null;const h=S.h3||{},kind=S.role==='hunter'?(S.kind||h.kind):h.kind;
+ if(kind==='badger'&&S.hunter&&S.hunter[0]>=0)return S.hunter;
+ if(h.hunter&&h.hunter[0]>=0&&(h.kind==='badger'||kind==='badger'))return h.hunter;
+ const listed=(h.hunters||[]).find(x=>x&&x.kind==='badger'&&x.p&&x.p[0]>=0);return listed?listed.p:null;}
+// Sit the bubble beside the badger's square when this phone can already see that square. Never on top of a piece.
+// If it cannot sit clear of the pieces, it goes between the status line and the board, which names no square.
+function placeBubble(el,S){const stage=document.getElementById('stage'),board=document.getElementById('board'),app=document.getElementById('app');
+ const wide=()=>{const w=app?Math.max(140,app.clientWidth-16):280;el.style.width=w+'px';el.style.maxWidth=w+'px';};
+ const off=()=>{if(app&&stage&&el.parentNode!==app)app.insertBefore(el,stage);el.classList.add('offboard');el.style.left='';el.style.top='';wide();};
+ if(!stage||!board||!S||!S.cfg){off();return;}
+ off();
+ // A long saying needs the full phone width. It stays under the hint, where it can wrap without covering that text or a piece.
+ if(el.getBoundingClientRect().height>64)return;
+ const p=badgerSquare(S),cell=p?board.children[p[1]*S.cfg.cols+p[0]]:null;
+ if(!cell)return;
+ if(el.parentNode!==stage)stage.appendChild(el);
+ el.classList.remove('offboard');
+ const room=Math.max(120,Math.min(stage.clientWidth-8,220));
+ el.style.width=room+'px';el.style.maxWidth=room+'px';el.style.left='0px';el.style.top='0px';
+ const sr=stage.getBoundingClientRect(),br=el.getBoundingClientRect(),cr=cell.getBoundingClientRect();
+ const slot=document.getElementById('hint')||document.getElementById('msgslot'),srSlot=slot&&slot.getBoundingClientRect();
+ const pieces=[...board.querySelectorAll('.pc')].map(n=>n.getBoundingClientRect());
+ const hits=(x,y)=>{const box={l:x,t:y,r:x+br.width,b:y+br.height};
+  if(box.l<sr.left+1||box.r>sr.right-1||box.t<sr.top+1||box.b>sr.bottom-1)return true;
+  if(srSlot&&box.l<srSlot.right-1&&box.r>srSlot.left+1&&box.t<srSlot.bottom-1&&box.b>srSlot.top+1)return true;
+  return pieces.some(pc=>box.l<pc.right-0.5&&box.r>pc.left+0.5&&box.t<pc.bottom-0.5&&box.b>pc.top+0.5);};
+ const cx=cr.left+cr.width/2-br.width/2,spots=[];
+ spots.push([cx,cr.top-br.height-3],[cx,cr.bottom+3]);
+ spots.push([cr.right+3,cr.top+(cr.height-br.height)/2],[cr.left-br.width-3,cr.top+(cr.height-br.height)/2]);
+ for(const shift of [0,16,-16,36,-36,56,-56])spots.push([cx+shift,cr.top-br.height-3]);
+ let pick=null;
+ for(const [x,y] of spots){const px=Math.min(Math.max(x,sr.left+2),sr.right-br.width-2),py=Math.min(Math.max(y,sr.top+2),sr.bottom-br.height-2);if(!hits(px,py)){pick=[px,py];break;}}
+ if(!pick){off();return;}
+ el.style.left=(pick[0]-sr.left)+'px';el.style.top=(pick[1]-sr.top)+'px';}
 function badgerLines(S,prev){if(S===bLastS)return;bLastS=S;if(!prev||(prev.round!=null&&S.round<prev.round))bPicker=BL.createPicker();
- for(const e of BL.detect(prev,S,bPicker))badgerSay(e.text);}
+ bubbleState=S;bubble.note(S);
+ for(const e of BL.detect(prev,S,bPicker))bubble.add(e.text,S);
+ const el=document.getElementById('badgerline');if(el)placeBubble(el,S);}
 // One look per meaning, in one corner of the square (never over its middle). "May be here" is the animal's small outline, dashed and unfilled. "Is here" (known to be there) is the same small shape filled white with a dark edge. Animals themselves stay full size.
 // The shapes: an egg for the vulture's sniff and for eggs you know, a bird for the hunters' sense, a badger for a burrow a bird saw being dug. Style (dashed or filled) lives in part1.css.
 // The bird is a plain (not dashed) side-view line: dashes break a small detailed shape apart, and a hunter only ever sees "may be here" birds, so there is no filled bird to mix it up with.
@@ -326,7 +371,8 @@ function after(S,prev,board){
  outBanner(S,prev);
  warnNear(S,board,prev);
  // waiting panel text: which seats are still open
- if(!S.joined){const w=$('wait');const open=Object.entries(h.seats).filter(([,v])=>v==='open').map(([r])=>SN[r]);if(w)w.firstElementChild.nextElementSibling.textContent=`Waiting for: ${open.join(', ')}. Send them this link:`;}}
+ if(!S.joined){const w=$('wait');const open=Object.entries(h.seats||{}).filter(([,v])=>v==='open').map(([r])=>SN[r]);if(w)w.firstElementChild.nextElementSibling.textContent=`Waiting for: ${open.join(', ')}. Send them this link:`;}
+ const liveBubble=document.getElementById('badgerline');if(liveBubble)placeBubble(liveBubble,S);}
 function kindPick(S){let k=$('kindPick');if(!S.h3.needKind){k&&k.classList.add('hidden');return;}
  if(!k){k=document.createElement('div');k.id='kindPick';document.body.appendChild(k);}
  k.className='';k.innerHTML=`<div class="hbox"><h1>You're the hunter</h1><p>Pick your animal</p><div class="kindrow">${['hyena','badger'].map(x=>`<button class="kindbtn" id="pick-${x}" onclick="UI.send({t:'act',a:'kind',kind:'${x}'})"><span class="ka">${KIND[x].art}</span><b>${KIND[x].n}</b><small>${kindLine(x)}</small></button>`).join('')}</div></div>`;}
@@ -337,6 +383,6 @@ function over(S){if(S.h3.hunt)return hOver(S);if(S.h3.team)return tOver(S);const
   :w==='red'?(S.winBy==='cold'?`The last egg went cold in round ${S.round}.`:S.winBy==='starved'?'The ostrich was out and no eggs were left.':`The vulture smashed every egg by round ${S.round}.`)
   :S.winBy==='time'?'Time ran out: the ostrich was out and the vulture never got every egg.':'The eggs were lost, but the vulture was already out.';
  return endBox(S,endArt(S,art),endTitle(S,title),endWhyText(S,why));}
-window.T3UI={mark,markHTML,marksAround,after,events,startLine,preferEggLine,announce,hint,tag,waitMsg,nopeMsg,over,endBits,KIND,clock};
+window.T3UI={mark,markHTML,marksAround,after,events,startLine,preferEggLine,announce,hint,tag,waitMsg,nopeMsg,over,endBits,KIND,MOUND,rulesMode,clock};
 document.readyState==='loading'?document.addEventListener('DOMContentLoaded',lobby):lobby();
 })();
