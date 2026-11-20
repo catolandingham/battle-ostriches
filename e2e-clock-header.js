@@ -54,6 +54,6 @@ const server = require('./server.js');
   assert.equal(errs.length, 0, errs.join('\n'));
   await p.screenshot({ path: 'shots/clock-header.png' });
   console.log('PASS e2e-clock-header', JSON.stringify(box));
-  await b.close();
   server.close();
+  process.exit(0);
 })().catch(e => { console.error(e); process.exit(1); });
