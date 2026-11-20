@@ -145,20 +145,23 @@ function vultureFly(g, s, p) { clearOut(g);
     g.sniffs[s] = null; g.lastAction = { seat: s, type: 'fly', from: g.b[s].pos.slice(), stayed: true };
     next(g); return true;
   }
-  const b = g.b[s], from = b.pos.slice(); b.pos = p.slice();
+  const b = g.b[s], from = b.pos.slice(), snap = B.eggSnap(g, p); b.pos = p.slice();
   g.lastAction = { seat: s, type: 'fly', from };
-  const e = eggAt(g, p);
-  if (e && !OS.some(o => live(g, o) && K(g.b[o].pos) === K(p))) { g.marks[K(p)] = 'spotted'; g.lastAction.spotted = p.slice(); }
+  const e = eggAt(g, p), open = !!(e && !OS.some(o => live(g, o) && K(g.b[o].pos) === K(p)));
+  // Simple rules still find the egg. The last-round break is the normal game only.
+  if (!g.simple && open && B.isLastRound(g)) B.breakEgg(g, e, p, s, OS[e.nest] || null); // last round: break it (Brian, 2026-11-16). The nest ostrich owns the announcement.
+  else if (open) { g.marks[K(p)] = 'spotted'; g.lastAction.spotted = p.slice(); }
   if (B.isRock(g, p)) { g.lastAction.refill = b.stones < g.cfg.stones; b.stones = g.cfg.stones; }
   if (g.simple) { g.lastAction.smell = false; g.sniffs[s] = null; g.sniffKeeps[s] = null; }
   else {
     g.lastAction.smell = smells(g, p); g.sniffs[s] = { p: p.slice(), yes: g.lastAction.smell, round: g.round };
-    const foundHere = !!(e && !OS.some(o => live(g, o) && K(g.b[o].pos) === K(p)));
+    const foundHere = open && !g.lastAction.smashed;
     g.sniffKeeps[s] = (!foundHere && g.lastAction.smell) ? { p: p.slice(), yes: true, round: g.round } : null;
   }
   dropAll(g);
-  if (g.h && K(b.pos) === K(g.h.p)) { catchBird(g, s, () => { b.pos = from.slice(); }); g.lastCatch.walked = true; } // the vulture flew onto the buried badger
-  next(g); return true;
+  if (open && g.lastAction.smashed && !alive(g).length) checkEnd(g); // every egg broken: the vultures have won, before a catch on this same landing
+  if (g.phase !== 'over' && g.h && K(p) === K(g.h.p)) { catchBird(g, s, () => { b.pos = from.slice(); if (B.undoBreak(g, p, snap)) { g.lastAction.smell = smells(g, p); g.sniffs[s] = { p: p.slice(), yes: g.lastAction.smell, round: g.round }; g.sniffKeeps[s] = g.lastAction.smell ? { p: p.slice(), yes: true, round: g.round } : null; } }); g.lastCatch.walked = true; } // the vulture flew onto the buried badger
+  if (g.phase !== 'over') next(g); return true;
 }
 // The stone resolver's view of this mode: either ostrich kicks it back, the hunter is pushed 2 away from the vulture and a buried badger comes up.
 const stoneW = (g, s) => { const b = g.b[s]; return { thrower: () => b.pos.slice(), setThrower: q => { b.pos = q.slice(); },
@@ -241,7 +244,7 @@ function checkEnd(g, timeUp) {
   const allOut = OS.concat(VS).every(s => g.b[s].out), firstGoal = g.h && g.h.kos.o >= 1 && g.h.kos.v >= 1, kos = g.h ? g.h.kos.o + g.h.kos.v : 0;
   const simpleWin = !!(g.simple && g.h && kos >= 2);
   if (g.h && (allOut || simpleWin || (!g.simple && B.HUNTER_GOAL('5', g.cfg).kind === 'first' && firstGoal))) end(g, 'hunter', 'ko', simpleWin ? `The ${nm} knocked out 2 birds.` : allOut ? `The ${nm} knocked out every bird.` : `The ${nm} knocked out an ostrich and a vulture.`);
-  else if (eggs === 0 && vIn) end(g, 'red', g.lastAction && g.lastAction.type === 'throw' ? 'smashed' : 'cold', g.lastAction && g.lastAction.type === 'throw' ? 'The vultures smashed every egg.' : 'The last egg went cold, so the vultures win.');
+  else if (eggs === 0 && vIn) { const broke = g.lastAction && (g.lastAction.type === 'throw' || g.lastAction.smashed); end(g, 'red', broke ? 'smashed' : 'cold', broke ? 'The vultures smashed every egg.' : 'The last egg went cold, so the vultures win.'); }
   else if (timeUp && oIn) end(g, 'blue', 'survived', `An egg was still alive after round ${g.cfg.rounds}, so the ostriches win.`);
   else if (!vIn && !oIn) g.h ? end(g, 'hunter', 'last', `Both teams are out of the game, so the ${nm} wins.`) : end(g, 'none', 'all-out', 'Both teams are out of the game.');
   else if (!oIn && !g.h) end(g, 'red', 'ostriches-out', 'Both ostriches are out, so the vultures win.');

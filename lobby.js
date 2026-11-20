@@ -1,5 +1,16 @@
 // Pre-game lobby: joined humans set the size, setup is inferred, bots fill open roles at Start.
 // Does not touch combat, dig odds, or badger speed. Game objects are built by server.js from a plan.
+let RULE_PACK;
+function rulePack() { return RULE_PACK || (RULE_PACK = require('./public/roles.js').rulesFromModules()); }
+// The mode a game already in progress is using, so How to play can name that mode's egg count.
+function runningMode(room) {
+  if (!room || !room.g) return null;
+  if (room.setupId === '2' || room.setupId === '3' || room.setupId === '4' || room.setupId === '4h' || room.setupId === '5') return room.setupId;
+  if (room.hunt) return '4h';
+  if (room.team) return (room.n === 5 || room.g.n === 5) ? '5' : '4';
+  if (room.three) return '3';
+  return '2';
+}
 const SETUPS = {
   '2': { seats: ['blue', 'red'], label: 'Ostrich vs Vulture' },
   '3': { seats: ['blue', 'red', 'hunter'], label: 'Hunter' },
@@ -424,7 +435,7 @@ function view(room, hid) {
     computers: p.bots > 0 ? computerSeatNames(room).join(', ') : '',
     hunterKind: room.hunterKind || null,
     showHunterKind: (setupId === '3' || setupId === '5') && p.bots > 0 && !room.humans.some(h => animalOf(h) === 'hyena' || animalOf(h) === 'badger'),
-    needKind, canStart,
+    needKind, canStart, rules: rulePack(),
   };
 }
 // The title "You're in" stays.
@@ -516,7 +527,7 @@ function benchView(room, a) {
     lobby: true, between: true, code: room.code, solo: false, you: a.name, host: false,
     note, clock: room.clock !== false, level: room.level || 'normal',
     humans: [], roles: [], canStart: false, reason: null, botsWanted: 0, maxBots: 0, total: 0,
-    offline, ask, rejoinWords: REJOIN_WORDS,
+    offline, ask, rejoinWords: REJOIN_WORDS, setup: runningMode(room), rules: rulePack(),
   };
 }
 // After a game: fold late joiners into the same setup when that is unique, otherwise back to the lobby.

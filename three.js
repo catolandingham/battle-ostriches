@@ -97,8 +97,10 @@ function endHunter(g) {
 // --- actions ---
 function placeOstrich3(g, p) { if (p && K(p) === K(g.three.h)) return false; return B.placeOstrich(g, p); }
 function vultureFly3(g, p) {
-  const from = g.vulture.slice(); if (!B.vultureFly(g, p)) return false;
-  if (K(g.vulture) === K(g.three.h)) { catchBird(g, 'red', () => { g.vulture = from.slice(); }); g.three.lastCatch.walked = true; } // the vulture flew onto the buried badger (birds may not land on a hunter they can see)
+  const from = g.vulture.slice(), snap = B.eggSnap(g, p); if (!B.vultureFly(g, p)) return false;
+  // Landing effect (the break) is already done. A catch only follows if the game is still going. A move that is taken back puts the egg back.
+  // After a simple-rules stay the vulture is still on its old square, so the catch looks there.
+  if (g.phase !== 'over' && K(g.vulture) === K(g.three.h)) { catchBird(g, 'red', () => { g.vulture = from.slice(); B.undoBreak(g, p, snap); }); g.three.lastCatch.walked = true; } // the vulture flew onto the buried badger (birds may not land on a hunter they can see)
   if (!finish(g)) advance(g); return true;
 }
 // The stone resolver's view of this mode: the hunter is pushed 2 away from the vulture and a buried badger comes up.

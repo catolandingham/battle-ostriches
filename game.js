@@ -220,6 +220,35 @@ function throwTargets(g) {
     if (dist([x, y], g.vulture) <= g.cfg.throwRange && !wrecked(g, [x, y])) r.push([x, y]);
   return r;
 }
+// The round the ostrich is trying to survive. A vulture who finds an egg now has no later turn to throw.
+function isLastRound(g) { return !!(g && g.cfg && g.round >= g.cfg.rounds); }
+// Picture of one egg before a landing, so a move that is taken back can put it back.
+function eggSnap(g, p) {
+  const e = eggAt(g, p); if (!e) return null;
+  const k = key(p);
+  return { id: e.id, mark: Object.prototype.hasOwnProperty.call(g.marks, k) ? g.marks[k] : null, smash: g.lastSmash || null, seq: g.smashSeq || 0 };
+}
+// Last round (Brian, 2026-11-16): landing on an unguarded egg breaks it, the same way a stone does.
+// The egg is gone, the square is wrecked, and lastSmash carries the usual announcement. No stone is used.
+// Any earlier round only finds it. Returns 'smash', 'find', or null.
+function breakEgg(g, e, p, by, owner) {
+  e.alive = false;
+  if (!isFood(g, p) && !isRock(g, p)) g.marks[key(p)] = 'hit';
+  g.lastSmash = { seq: g.smashSeq = (g.smashSeq || 0) + 1, by: by || 'red', owner: owner || 'blue' };
+  if (g.lastAction) g.lastAction.smashed = p.slice();
+  if (!g.team && !aliveEggs(g).length) { g.winner = 'red'; g.winBy = 'smashed'; g.phase = 'over'; }
+}
+// A landing that was taken back did not break the egg. Puts the egg and the square back. No effect if this landing did not break one.
+function undoBreak(g, p, snap) {
+  if (!snap || !g.lastAction || !g.lastAction.smashed) return false;
+  const e = g.eggs.find(x => x.id === snap.id); if (e) e.alive = true;
+  const k = key(p); if (snap.mark == null) delete g.marks[k]; else g.marks[k] = snap.mark;
+  g.lastSmash = snap.smash; g.smashSeq = snap.seq; delete g.lastAction.smashed;
+  g.lastAction.smell = smellsEgg(g, p);
+  g.sniff = { p: p.slice(), yes: g.lastAction.smell, round: g.round };
+  g.sniffKeep = g.lastAction.smell ? { p: p.slice(), yes: true, round: g.round } : null;
+  return true;
+}
 function vultureFly(g, p) {
   if (!flyTargets(g).some(q => key(q) === key(p))) return false;
   if (g.simple && S.landKind(g, 'red', p) === 'stay') {
@@ -229,19 +258,24 @@ function vultureFly(g, p) {
   }
   const from = g.vulture.slice();
   g.vulture = p.slice(); g.lastAction = { type: 'fly', from };
-  const e = eggAt(g, p);
-  if (e && !ostrichGuards(g, p)) { g.marks[key(p)] = 'spotted'; g.lastAction.spotted = p.slice(); }
+  const e = eggAt(g, p), open = !!(e && !ostrichGuards(g, p));
+  // Simple rules still find the egg. The last-round break is the normal game only.
+  if (!g.simple && open && isLastRound(g)) breakEgg(g, e, p, 'red', 'blue'); // last round: break it, do not leave a found mark
+  else if (open) { g.marks[key(p)] = 'spotted'; g.lastAction.spotted = p.slice(); }
   if (isRock(g, p)) { g.lastAction.refill = g.stones < g.cfg.stones; g.stones = g.cfg.stones; }
   if (g.simple) { g.lastAction.smell = false; g.sniff = null; g.sniffKeep = null; }
   else {
-    g.lastAction.smell = smellsEgg(g, p);
+    g.lastAction.smell = smellsEgg(g, p); // after a break, the dead egg does not count as nearby
     // Snapshot for the "may be here" squares until the next landing. round stamps the sense
     // so a later turn can keep the memory without announcing it again as a current fact.
     g.sniff = { p: p.slice(), yes: g.lastAction.smell, round: g.round };
     // A find is the egg on this square, not a neighborhood. A throw must not refresh this copy.
-    g.sniffKeep = (e && !ostrichGuards(g, p)) || !g.lastAction.smell ? null : { p: p.slice(), yes: true, round: g.round };
+    // A last-round break is not a find: other eggs nearby still leave the usual outlines.
+    const found = open && !g.lastAction.smashed;
+    g.sniffKeep = found || !g.lastAction.smell ? null : { p: p.slice(), yes: true, round: g.round };
   }
-  g.turn = 'blue'; dropCarried(g); return true;
+  if (g.phase !== 'over') g.turn = 'blue';
+  dropCarried(g); return true;
 }
 const onBoard = p => !!(p && p[0] >= 0 && p[1] >= 0);
 function parkEliminated(g) { // an OUT bird is off the board, even if a position was left on an egg
@@ -385,5 +419,5 @@ function outlineSniff(v) {
 }
 
 const API = { slideN, CONFIG, HUNTER_GOAL, hunterUpAt, scrambleTo, relocateCaught, DIRS8, resolveThrow, wrecked, nearLeaf, myTurn, slide, awayFrom, canKick, kickable, kickTargets, kickPlans, kickDone, ostrichKick, newGame, canPlaceEgg, placeEgg, placeOstrich, ostrichMoves, ostrichStep, ostrichSit, canSit, canCarry, mustLeave, onEgg, dropCarried, hideTurn,
-  endRound, walkSquares, smellsEgg, flyTargets, throwTargets, vultureFly, vultureThrow, eggAt, aliveEggs, coldIn, sniffFresh, sniffAnnounce, outlineSniff, key, dist, visible, isFood, isRock, parkEliminated, ostrichGuards, foodRoute };
+  endRound, walkSquares, smellsEgg, flyTargets, throwTargets, vultureFly, vultureThrow, eggAt, aliveEggs, coldIn, sniffFresh, sniffAnnounce, outlineSniff, key, dist, visible, isFood, isRock, parkEliminated, ostrichGuards, foodRoute, isLastRound, breakEgg, eggSnap, undoBreak };
 if (typeof module !== 'undefined') module.exports = API; else window.BO = API;
