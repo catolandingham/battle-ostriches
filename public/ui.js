@@ -444,7 +444,8 @@ function render(prev){
   if(chips){const now=S.hungerLeft|0,was=prev&&prev.hungerLeft!=null?prev.hungerLeft|0:null,digit=hungerDigit(now,was),badge=play&&ateBadgeOn(prev),pop=play&&!!(window.ATE&&ATE.justAte(prev,S));
    const leaf=badge?`<span class="leaf-hold">${LEAF.replace('<svg ','<svg class="leaf-back" ')}${LEAF.replace('<svg ','<svg class="leaf-front" ')}</span>`:LEAF;
    const food=play?`<span class="hh${digit<=3?' low':''}${badge?' ate':''}${pop?' ate-pop':''}" data-tip="Ostrich food: turns left before it starves"><span class="hh-top">${leaf}<b id="hungerLeft">${digit}</b></span>${blue?`<i class="hbar"><i style="width:${Math.max(0,Math.min(100,100*digit/C.food))}%"></i></i>`:''}</span><span class="hs${S.stones<1?' empty':''}" data-tip="Vulture stones">${STONE}<b id="stonesLeft">${S.stones}/${C.stones}</b></span>`:'';
-   hud.innerHTML=food+`<span class="he">${EGG}EGGS <b id="eggsLeft">${S.eggsLeft}</b></span>`;
+   const alive=S.eggsLeft|0,placed=S.h3&&S.h3.eggsTotal!=null?S.h3.eggsTotal|0:0,start=Math.max(C.eggs|0,placed);
+   hud.innerHTML=food+`<span class="he">${EGG}<b id="eggsLeft">${alive}/${start}</b></span>`;
    if(play){if(was!=null&&now>was)hungerPlayer.play(was,now);
     else if(hungerPlayer.rising()){if(hungerPlayer.state().target!=null&&now<hungerPlayer.state().target)hungerPlayer.reset();else hungerPlayer.hold();}}
   }}
