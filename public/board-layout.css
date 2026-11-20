@@ -68,7 +68,7 @@ html.hunger-rise #hud:not(#_a):not(#_b):not(#_c){position:relative!important;z-i
 html.hunger-rise #stats:not(#_a):not(#_b),
 html.cutaway-up #hud #stats:not(#_a):not(#_b),
 html.surprise-slide #hud #stats:not(#_a):not(#_b){visibility:visible!important}
-html[data-theme] #stats:not(#_a):not(#_b){flex-wrap:nowrap!important;gap:4px!important}
+html[data-theme] #stats:not(#_a):not(#_b){flex-wrap:nowrap!important;gap:2px!important}
 html[data-theme] #stats>span:not(#_a):not(#_b){white-space:nowrap!important;padding:2px 5px!important}
 html[data-theme] #stats>.hh:not(#_a):not(#_b){flex-direction:column!important;align-items:stretch!important;gap:3px!important;padding:3px 6px 4px!important;overflow:visible!important}
 html[data-theme] #stats>.hh>.hh-top:not(#_a):not(#_b){display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:6px!important}
