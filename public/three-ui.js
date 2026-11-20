@@ -179,7 +179,8 @@ function chips(S){if(S.h3.hunt)return hChips(S);if(S.h3.team)return tChips(S);le
   return `<span class="bchip ${r}${b.out?' out':''}${b.catches&&!b.out?' injured':''}${live&&S.turn===r?' now':''}" data-tip="${tip}" data-b="${r}">${sp(r==='blue'?OSTI:VULI,24)}<span class="pips">${pips}</span>${b.out?'<b class="ko">OUT</b>':''}</span>`;};
  const k=h.kind||'hyena';
  bar.innerHTML=bird('red')+bird('blue')+`<span class="bchip hunter${live&&S.turn==='hunter'?' now':''}" data-tip="${KIND[k].n}: catches birds.">${sp(KIND[k].art,26)}${claws(caught(h),3)}</span>`;}
-function clock(S){let c=$('clock3');if(!c){c=document.createElement('div');c.id='clock3';c.innerHTML='<div class="cfill"></div><span class="ctxt"></span>';const anchor=$('h3bar')||$('turnTag')||$('board');if(anchor&&anchor.parentNode)anchor.parentNode.insertBefore(c,anchor.nextSibling);}
+function placeClock(c){const bar=$('h3bar');if(bar&&bar.parentNode){if(c.parentNode!==bar.parentNode||c.previousElementSibling!==bar)bar.parentNode.insertBefore(c,bar.nextSibling);return;}const hud=$('hud');if(hud&&c.parentNode!==hud)hud.appendChild(c);}
+function clock(S){let c=$('clock3');if(!c){c=document.createElement('div');c.id='clock3';c.innerHTML='<div class="cfill"></div><span class="ctxt"></span>';}placeClock(c);
  const src=S.h3&&S.h3.clockLeft!=null?S.h3:(S.clockLeft!=null?S:null);
  const on=S.phase==='play'&&!!src;c.classList.toggle('hidden',!on);if(!on){cancelAnimationFrame(raf);return;}
  if(src.clockMs)clockMs=src.clockMs;
