@@ -5,7 +5,7 @@
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.BORing = api;
 })(typeof window !== 'undefined' ? window : globalThis, function () {
-  const IDS = ['step', 'carry', 'sit', 'kick', 'fly', 'throw', 'hstay', 'hburst'];
+  const IDS = ['step', 'carry', 'sit', 'kick', 'fly', 'throw', 'hstay', 'hburst', 'hide'];
   function bearing(dx, dy) {
     if (!dx && !dy) return { key: 'here', name: 'here', dx: 0, dy: 0 };
     const ns = dy < 0 ? 'north' : dy > 0 ? 'south' : '';
@@ -26,11 +26,19 @@
     return !!(state && state.showTimers);
   }
   // Step and Fly stay on the ring so the default action can be selected. The glowing squares still do the move.
+  function hideItem(S) {
+    if (!S.simple || !(S.hideLeft > 0)) return null;
+    const me = (S.h3 && S.h3.mySeat) || S.role;
+    if (S.veil && (S.veil[me] || (S.role === 'blue' && S.veil.blue) || (S.role === 'red' && S.veil.red) || S.veil.hunter)) return null;
+    return { id: 'hide', label: 'Hide', detail: String(S.hideLeft | 0), enabled: true, run: 'hide', count: S.hideLeft | 0 };
+  }
   function legalActions(S, mode) {
     if (!S || S.god || S.phase !== 'play' || !S.myTurn) return [];
+    const hid = hideItem(S);
     const C = S.cfg || {};
     if (S.role === 'hunter') {
       const k = (S.h3 && S.h3.kind) || S.kind || 'hyena';
+      if (S.simple) return [hid, { id: 'hstay', label: 'Stay', detail: 'End your turn.', enabled: true, run: 'hstay' }].filter(Boolean);
       if (S.pounce) return [{ id: 'hstay', label: 'Stay', detail: 'Skip the extra move.', enabled: true, run: 'hstay' }];
       if (k === 'badger') {
         if (S.burrowed) return [{ id: 'hstay', label: 'Stay', detail: 'Stay hidden.', enabled: true, run: 'hstay' }].concat(S.canBurst ? [{ id: 'hburst', label: 'Burst out', detail: 'Come up and shove the hyena away.', enabled: true, run: 'hburst' }] : []);
@@ -45,12 +53,14 @@
       if (S.onEgg && S.can && S.can.carry) items.push({ id: 'carry', label: 'Carry', detail: 'Move the egg 1 square.', enabled: true, mode: 'carry' });
       if (S.onEgg && S.can && S.can.sit) items.push({ id: 'sit', label: 'Sit', detail: 'Warm the egg. The vulture sees you.', enabled: true, act: 'sit' });
       if (S.kickNear) items.push({ id: 'kick', label: 'Kick', detail: mode === 'carry' ? "You can't kick while carrying an egg." : `Push the animal next to you back ${C.kickPush || 2} squares.`, enabled: mode !== 'carry' && !!(S.can && S.can.kick), act: 'kick' });
+      if (hid) items.push(hid);
       return items;
     }
     const items = [];
     const stones = S.stones | 0;
     items.push({ id: 'fly', label: 'Fly', detail: '', enabled: true, mode: 'fly' });
     if (stones > 0) items.push({ id: 'throw', label: 'Throw', detail: `Throw at your square or one next to it. Stones ${stones}/${C.stones}.`, enabled: true, mode: 'throw' });
+    if (hid) items.push(hid);
     return items;
   }
   function omittedNotes(S) {
@@ -164,7 +174,7 @@
       const b = document.createElement('button');
       b.type = 'button';
       b.className = 'aring-btn' + (on === it.id ? ' on' : '');
-      b.textContent = it.label;
+      b.textContent = it.count != null ? it.label + ' ' + it.count : it.label;
       b.title = it.detail;
       b.setAttribute('role', 'menuitem');
       b.setAttribute('aria-label', it.label + '. ' + it.detail);
@@ -179,6 +189,7 @@
         if (it.mode) UI.setMode(it.mode);
         else if (it.act) UI.act(it.act);
         else if (it.run === 'hstay') UI.send({ t: 'act', a: 'hstay' });
+        else if (it.run === 'hide') UI.send({ t: 'act', a: 'hide' });
         else if (it.run === 'hburst') UI.send({ t: 'act', a: 'hburst' });
       });
       root.appendChild(b);
