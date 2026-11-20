@@ -46,9 +46,13 @@ async function check(browser, device, label) {
   assert.notEqual(await page.evaluate(() => SFX.state), 'none', label + ' engine exists after touchend');
   const clip = await page.evaluate(() => {
     const a = document.querySelector('audio');
-    return a ? { inDOM: !!a.parentNode, inline: a.hasAttribute('playsinline') } : null;
+    return a ? { inDOM: !!a.parentNode, inline: a.hasAttribute('playsinline'), loop: a.loop, paused: a.paused } : null;
   });
-  assert.ok(clip && clip.inDOM && clip.inline, label + ' silent clip is on the page ' + JSON.stringify(clip));
+  assert.ok(clip && clip.inDOM && clip.inline && clip.loop && !clip.paused, label + ' silent clip keeps looping on the page ' + JSON.stringify(clip));
+  await page.evaluate(() => SFX.toggle());
+  assert.equal(await page.evaluate(() => document.querySelector('audio').paused), true, label + ' mute pauses the silent clip');
+  assert.equal(await page.evaluate(() => localStorage.getItem('bo_muted')), '1', label + ' mute stays on this phone');
+  await page.evaluate(() => SFX.toggle());
   await ctx.close();
 
   const ctx2 = await browser.newContext({ ...devices[device] });
