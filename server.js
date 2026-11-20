@@ -49,7 +49,8 @@ function view(room, role) {
     kick: g.lastKick ? { who: g.lastKick.who, seq: g.lastKick.seq, round: g.lastKick.round, moved: kickMoved(g.lastKick), to: g.lastKick.to } : null, // classic: both birds always see each other
     lastCold: (g.lastCold || []).length, opponent: !!room.ai || !!room.pass || !!(room.players[role === 'blue' ? 'red' : 'blue'] || {}).ws, myTurn: mine,
     // 'joined' = the other seat has ever been taken; the invite panel is only for a seat nobody has claimed yet
-    joined: !!room.ai || !!room.pass || !!room.players[role === 'blue' ? 'red' : 'blue'], ai: room.ai ? room.level : null, pass: !!room.pass, showTimers: timersOn(room) };
+    joined: !!room.ai || !!room.pass || !!room.players[role === 'blue' ? 'red' : 'blue'], ai: room.ai ? room.level : null, pass: !!room.pass, showTimers: timersOn(room),
+    clockLeft: room.deadline && g.phase === 'play' ? Math.max(0, room.deadline - Date.now()) : null, clockMs: +process.env.BO_CLOCKMS || 10000 };
   // during setup the vulture doesn't see where the ostrich will stand until play starts (ostrich is null until then anyway)
   if (role === 'blue' || g.phase === 'over') {
     Object.assign(v, { eggs: g.eggs.map(e => ({ pos: e.pos, alive: e.alive, coldIn: B.coldIn(g, e), carried: g.carrying === e.id })),
@@ -68,7 +69,7 @@ function tellArrivals(room) {
     try { a.ws.send(JSON.stringify({ t: 'state', lobby: true, state: LB.benchView(room, a) })); } catch {}
   }
 }
-function broadcast(room) { persist(room); tellArrivals(room); if (room.hunt) return broadcastH(room); if (room.team) return broadcastT(room); if (room.three) return broadcast3(room); schedAI(room);
+function broadcast(room) { persist(room); tellArrivals(room); if (room.hunt) return broadcastH(room); if (room.team) return broadcastT(room); if (room.three) return broadcast3(room); schedAI(room); clock2(room);
   if (room.pass) { const p = room.players.blue; if (p && p.ws && p.ws.readyState === 1) p.ws.send(JSON.stringify({ t: 'state', pass: true, active: active(room.g), views: { blue: view(room, 'blue'), red: view(room, 'red') } })); return; }
   for (const r of ['blue', 'red']) { const p = room.players[r]; if (p && p.ws && p.ws.readyState === 1) p.ws.send(JSON.stringify({ t: 'state', state: view(room, r) })); } }
 function act(room, role, m) {
@@ -358,7 +359,16 @@ function seatsOwned(room, ws) {
   for (const s of Object.keys(room.players || {})) if (room.players[s] && room.players[s].ws === ws) out.push(s);
   return out;
 }
-// 10-second shot clock on every play turn (3 players only); runs once all seats are filled and the hunter is picked
+// 10-second shot clock on a classic 2-player game, once both seats exist and play has started.
+function clock2(room) {
+  const g = room.g;
+  if (!g || room.three || room.hunt || room.team) return;
+  const both = room.players && room.players.blue && room.players.red;
+  const k = room.clock !== false && g.phase === 'play' && both ? g.round + ':' + g.turn : null;
+  const delay = k ? clockDelayFor(room, view, g.turn) : 0;
+  armClock(room, k, +process.env.BO_CLOCKMS || 10000, () => { if (room.clockKey !== k || room.g !== g) return; room.clockKey = null; B.timeout(g); room.touched = Date.now(); broadcast(room); }, delay);
+}
+// 10-second shot clock on every play turn (3 players); runs once all seats are filled and the hunter is picked
 function clock3(room) {
   const g = room.g, k = room.clock !== false && g && g.phase === 'play' && ready3(room) ? g.round + ':' + g.turn + ':' + (g.three && g.three.extra ? '2' : '1') : null;
   const delay = k ? clockDelayFor(room, view3, g.turn) : 0;
@@ -651,6 +661,9 @@ function stamp(room, v, seat) {
   if (v && v.h3 && room && room.clockAskPause && room.g && room.g.phase === 'play') {
     v.h3.clockLeft = room.clockAskPause.left;
     v.h3.clockPaused = true;
+  } else if (v && !v.h3 && room && room.clockAskPause && room.g && room.g.phase === 'play') {
+    v.clockLeft = room.clockAskPause.left;
+    v.clockPaused = true;
   }
   if (v && room && room.g) v.stamp = turnStamp(room);
   if (v && room && room.g && room.g.simple) SIMPLE.expose(room.g, seat, v);
@@ -930,7 +943,7 @@ wss.on('connection', ws => {
       if (!room.lobby && m.a === 'clock') {
         const res = LB.setClock(room, m.on, b.hid);
         if (res && res.error) return send({ t: 'error', msg: res.error, soft: true });
-        if (room.three) clock3(room); else if (room.hunt) clockH(room); else if (room.team) clockT(room);
+        if (room.three) clock3(room); else if (room.hunt) clockH(room); else if (room.team) clockT(room); else clock2(room);
         room.touched = Date.now(); return broadcast(room);
       }
       if (!room.lobby) return send({ t: 'error', msg: 'No open lobby.', soft: true });

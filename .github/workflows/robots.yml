@@ -1,0 +1,58 @@
+# Free GitHub Actions robots. One job, many browsers, a local server.
+# Private repos on the free plan share 2,000 minutes a month with every other
+# private repo on the account, including Space Snack Quest.
+# A cached run is capped at 12 minutes. The nightly run is the one that
+# plays main. Pull requests run only when the game or these robots change.
+# 2026-11-16: Brian's approved rules fixes are on this branch.
+name: Robot players
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 8 * * *'
+  pull_request:
+    paths:
+      - 'robots/**'
+      - '.github/workflows/robots.yml'
+      - 'game.js'
+      - 'three.js'
+      - 'hunt.js'
+      - 'team.js'
+      - 'server.js'
+      - 'lobby.js'
+      - 'public/**'
+      - 'package.json'
+      - 'package-lock.json'
+
+concurrency:
+  group: robots-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  play:
+    # ubuntu-latest is 26.04. Playwright 1.59 cannot install Chromium dependencies there.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+      - run: npm ci
+      - run: npx playwright-core install chromium --with-deps
+      - run: node robots/guard-balance.js
+      - run: node robots/run.js
+        env:
+          ROBOT_BUDGET_MS: '360000'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: robot-findings
+          path: robots-out/
+          retention-days: 7
+          if-no-files-found: warn

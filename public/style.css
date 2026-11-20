@@ -154,7 +154,7 @@ body.coaching::before{content:"";position:fixed;inset:0;background:#000a;z-index
 /* Title gets its own row so "BATTLE OSTRICHES" stays whole on a phone. Controls sit on the next row. */
 #hud{gap:6px;flex-wrap:wrap;align-items:center}
 #hud>div:first-child{min-width:0;flex:1 1 100%}
-#hud>div:last-child{flex:1 1 auto;gap:4px;flex-wrap:nowrap;justify-content:flex-end;max-width:none}
+#hud>div:has(#turnTag){flex:1 1 auto;gap:4px;flex-wrap:nowrap;justify-content:flex-end;max-width:none}
 #hud .logo{display:block!important;font-size:clamp(16px,4.8vw,22px)!important;line-height:1.15;letter-spacing:.02em;white-space:nowrap;overflow:visible;text-overflow:clip}
 #hud .ctr{font-size:clamp(11px,3.4vw,15px)!important;white-space:nowrap}
 #hud #turnTag{padding:6px 8px!important;font-size:13px!important;min-width:0!important}

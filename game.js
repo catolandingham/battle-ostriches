@@ -347,6 +347,23 @@ function vultureThrow(g, p, mkW) {
   if (!aliveEggs(g).length) { g.winner = 'red'; g.winBy = 'smashed'; g.phase = 'over'; } else { g.turn = 'blue'; dropCarried(g); }
   return r.result;
 }
+// Shot clock ran out in a classic 2-player game. Same result as the bigger games: the vulture passes, the ostrich stays put.
+function timeout(g) {
+  if (!g || g.phase !== 'play' || g.three || g.hunt || g.team) return false;
+  if (g.turn === 'red') {
+    g.sniff = null;
+    g.lastAction = { type: 'pass', timeout: true };
+    g.turn = 'blue';
+    dropCarried(g);
+    return true;
+  }
+  if (g.turn !== 'blue') return false;
+  g.sitRun = 0; g.sitting = false; g.lastAction = { type: 'stay', timeout: true };
+  if (isFood(g, g.ostrich)) { g.hungerLeft = g.cfg.food; g.lastAction.ate = true; }
+  else if (--g.hungerLeft <= 0) { g.winner = 'red'; g.winBy = 'starved'; g.phase = 'over'; return true; }
+  endRound(g);
+  return true;
+}
 // Simple rules: hide in place. It spends the turn. An ostrich still warms an egg it is standing on.
 function hideTurn(g, seat) {
   if (!g.simple || !myTurn(g, seat) || !S.hide(g, seat)) return false;
@@ -419,5 +436,5 @@ function outlineSniff(v) {
 }
 
 const API = { slideN, CONFIG, HUNTER_GOAL, hunterUpAt, scrambleTo, relocateCaught, DIRS8, resolveThrow, wrecked, nearLeaf, myTurn, slide, awayFrom, canKick, kickable, kickTargets, kickPlans, kickDone, ostrichKick, newGame, canPlaceEgg, placeEgg, placeOstrich, ostrichMoves, ostrichStep, ostrichSit, canSit, canCarry, mustLeave, onEgg, dropCarried, hideTurn,
-  endRound, walkSquares, smellsEgg, flyTargets, throwTargets, vultureFly, vultureThrow, eggAt, aliveEggs, coldIn, sniffFresh, sniffAnnounce, outlineSniff, key, dist, visible, isFood, isRock, parkEliminated, ostrichGuards, foodRoute, isLastRound, breakEgg, eggSnap, undoBreak };
+  endRound, timeout, walkSquares, smellsEgg, flyTargets, throwTargets, vultureFly, vultureThrow, eggAt, aliveEggs, coldIn, sniffFresh, sniffAnnounce, outlineSniff, key, dist, visible, isFood, isRock, parkEliminated, ostrichGuards, foodRoute, isLastRound, breakEgg, eggSnap, undoBreak };
 if (typeof module !== 'undefined') module.exports = API; else window.BO = API;
