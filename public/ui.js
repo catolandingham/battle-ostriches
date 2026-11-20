@@ -486,7 +486,7 @@ function render(prev){
   if(!window.BORing||BORing.showSniffPop(blue,!!sn.yes,found)){window.STATUS_QUEUE.add({id:'snpop',className:(found?'yes found':sn.yes?'yes':'no')+(blue?' small':''),text:found?(blue?'Vulture found your egg!':'Found egg!'):sn.yes?(blue?'Vulture sniffed an egg.':'Egg nearby!'):'No egg nearby',priority:found?40:10});}}
  // sniff banner: the vulture's yes/no for this sense only (a later round must not repeat it), plus hunger
  const bn=$('banner');let bt='',bc='';
- const smashed=la&&la.type==='throw'&&la.result==='hit';
+ const smashed=la&&((la.type==='throw'&&la.result==='hit')||la.smashed); // a last-round landing uses the same smash lines as a stone
  if(smashed){bt='Smashed!';bc='yes';}
  else if(foodLead){bt=foodText;bc='hungry';}
  else if(BO.sniffAnnounce(S)){bt=BO.sniffAnnounce(S);bc=bt==='No egg nearby'?'no':'yes';}
@@ -529,7 +529,7 @@ function render(prev){
  if(!blue&&S.role==='red'&&S.phase==='play'&&S.myTurn&&S.marks[key(S.vulture)]==='spotted'&&S.stones<1&&!smashed)h=NOSTONE_FOUND; // standing on a found egg with no stone: say why you can't smash it
  // just-in-time tips (once each)
  if(window.TUT&&S.phase==='play'){const T=TUT.tip;
-  if(la&&la.type==='throw'&&la.result==='hit')T('hit','Smashed. Nobody can land here.');
+  if(la&&((la.type==='throw'&&la.result==='hit')||la.smashed))T('hit','Smashed. Nobody can land here.');
   if(la&&la.type==='throw'&&la.result==='miss')T('stone','Wrecked. Nobody can land here.');
   if(la&&la.spotted)T('spotted',blue?'Found! Sit on it or move it.':'Found. It stays found until moved.');
   if(!blue&&S.myTurn&&la&&la.type==='fly')T('sniff','Each landing sniffs the squares around you.');

@@ -90,7 +90,7 @@ function vulture(v, lvl = 'normal', mem = {}) {
 function redView(g) {
   const la = g.lastAction;
   return { cfg: g.cfg, round: g.round, phase: g.phase, turn: g.turn, vulture: g.vulture, ostrich: g.ostrich, marks: g.phase === 'over' ? g.marks : B.visible(g).marks,
-    lastAction: la ? (la.type === 'fly' ? { type: 'fly', from: la.from, spotted: la.spotted || null, smell: la.smell, refill: !!la.refill }
+    lastAction: la ? (la.type === 'fly' ? Object.assign({ type: 'fly', from: la.from, spotted: la.spotted || null, smell: la.smell, refill: !!la.refill }, la.smashed ? { smashed: la.smashed.slice() } : {})
       : la.type === 'throw' ? { type: 'throw', from: la.from, p: la.p, result: la.result, egg: !!la.egg } : { type: la.type, ate: !!la.ate }) : null,
     sniff: g.sniff, stones: g.stones, hungerLeft: g.hungerLeft, sitRun: g.sitRun, carrying: g.carrying !== null,
     fly: B.flyTargets(g), throw: B.throwTargets(g) };
