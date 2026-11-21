@@ -170,7 +170,7 @@ function closeGameMenu(){gameMenu=false;const m=$('gameMenu');if(m)m.classList.a
 tapper($('moreBtn'),()=>{gameMenu=!gameMenu;const m=$('gameMenu');if(m)m.classList.toggle('hidden',!gameMenu);$('moreBtn').setAttribute('aria-expanded',String(gameMenu));if(gameMenu)syncMenu();});
 tapper($('menuHelp'),()=>{closeGameMenu();UI.rules();});
 tapper($('menuRules'),()=>{closeGameMenu();const c=cardFor(S);if(!c){UI.rules();return;}showCard(Object.assign({},c,{title:'Rules for this game',mode:c.title}),false,true);});
-tapper($('menuSound'),()=>{const b=$('muteBtn');if(b)b.click();syncMenu();});
+tapper($('menuSound'),()=>{SFX.toggle();syncMenu();});
 tapper($('menuTheme'),()=>{if(window.THEME)THEME.next();});
 tapper($('menuTimer'),()=>{const b=$('timerToggle');if(b)b.click();syncMenu();});
 tapper($('menuLeave'),()=>{closeGameMenu();if(!S||S.phase==='over')return;const friends=!(S.pass||S.ai);$('leaveTitle').textContent='Leave this game?';$('leaveBody').textContent=friends?'This ends the game for everyone.':"You'll go back to the start.";$('leaveAsk').classList.remove('hidden');});
@@ -179,8 +179,8 @@ tapper($('leaveYes'),()=>{$('leaveAsk').classList.add('hidden');send({t:'act',a:
 tapper($('rejoinAskYes'),()=>{const el=$('rejoinAsk');if(!el||el.classList.contains('hidden'))return;send({t:'claim-answer',seat:el.dataset.seat,id:el.dataset.id,yes:true});});
 tapper($('rejoinAskNo'),()=>{const el=$('rejoinAsk');if(!el||el.classList.contains('hidden'))return;send({t:'claim-answer',seat:el.dataset.seat,id:el.dataset.id,yes:false});});
 document.addEventListener('mousedown',e=>{if(gameMenu&&!e.target.closest('#gameMenu,#moreBtn'))closeGameMenu();},true);
-function muteLabel(){const t=SFX.muted?'Sound off':'Sound on';$('muteBtn').innerHTML=SFX.muted?'<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M3 9v6h4l5 4V5L7 9H3z" fill="#fff" stroke="#111" stroke-width="1.5" stroke-linejoin="round"/><path d="M16 9l5 6M21 9l-5 6" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>':'<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M3 9v6h4l5 4V5L7 9H3z" fill="#fff" stroke="#111" stroke-width="1.5" stroke-linejoin="round"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>';$('muteBtn').setAttribute('aria-label',t);if($('muteBtn2')){$('muteBtn2').textContent=t;$('muteBtn2').setAttribute('aria-label',t);}}
-muteLabel();tapper($('muteBtn'),()=>{SFX.toggle();muteLabel();});tapper($('muteBtn2'),()=>{SFX.toggle();muteLabel();});
+function muteLabel(){if(window.SFX)SFX.paint();}
+muteLabel();tapper($('muteBtn'),()=>{SFX.toggle();});tapper($('muteBtn2'),()=>{SFX.toggle();});tapper($('soundBtn'),()=>{SFX.toggle();});
 // The throw just made pushed an animal (its stone note is new this update, or the action carries the push line): that is a hit on the animal, not a miss.
 function stoneHitAnimal(S,prev,la){if(!la||la.type!=='throw'||la.result==='hit'||la.result==='bounce')return false;if(la.line)return true;const n=S&&S.stoneNote;return !!(n&&(n.targets||[]).length&&(!prev||!prev.stoneNote||prev.stoneNote.seq!==n.seq));}
 function sounds(prev){if(!prev)return;const blue=S.role==='blue';
@@ -446,7 +446,8 @@ function render(prev){
   if(chips){const now=S.hungerLeft|0,was=prev&&prev.hungerLeft!=null?prev.hungerLeft|0:null,digit=hungerDigit(now,was),badge=play&&ateBadgeOn(prev),pop=play&&!!(window.ATE&&ATE.justAte(prev,S));
    const leaf=badge?`<span class="leaf-hold">${LEAF.replace('<svg ','<svg class="leaf-back" ')}${LEAF.replace('<svg ','<svg class="leaf-front" ')}</span>`:LEAF;
    const food=play?`<span class="hh${digit<=3?' low':''}${badge?' ate':''}${pop?' ate-pop':''}" data-tip="Ostrich food: turns left before it starves"><span class="hh-top">${leaf}<b id="hungerLeft">${digit}</b></span>${blue?`<i class="hbar"><i style="width:${Math.max(0,Math.min(100,100*digit/C.food))}%"></i></i>`:''}</span><span class="hs${S.stones<1?' empty':''}" data-tip="Vulture stones">${STONE}<b id="stonesLeft">${S.stones}/${C.stones}</b></span>`:'';
-   hud.innerHTML=food+`<span class="he">${EGG}EGGS <b id="eggsLeft">${S.eggsLeft}</b></span>`;
+   const alive=S.eggsLeft|0,placed=S.h3&&S.h3.eggsTotal!=null?S.h3.eggsTotal|0:0,start=Math.max(C.eggs|0,placed);
+   hud.innerHTML=food+`<span class="he">${EGG}<b id="eggsLeft">${alive}/${start}</b></span>`;
    if(play){if(was!=null&&now>was)hungerPlayer.play(was,now);
     else if(hungerPlayer.rising()){if(hungerPlayer.state().target!=null&&now<hungerPlayer.state().target)hungerPlayer.reset();else hungerPlayer.hold();}}
   }}

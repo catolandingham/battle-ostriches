@@ -1,5 +1,5 @@
 // LIVE smoke on real WebKit iPhone 13 against a deployed site (default https://ostriches.onrender.com). Usage: node e2e-live.js [url]
-// Covers: share-code-first lobby, sound context 'running' after a tap, a real 2-player game with vulture fly/bounce/smash
+// Covers: share-code-first lobby, sound stays off until the sound button, a real 2-player game with vulture fly/bounce/smash
 // (board must not jump on fly/miss/bounce; smash shake <=3px), no room code in the in-game header, and a 3-player game start. JPEGs -> shots/live/.
 const { webkit, devices } = require('playwright-core'); const assert = require('assert'), fs = require('fs');
 const U = (process.argv[2] || 'https://ostriches.onrender.com').replace(/\/?$/, '/'), OUT = 'shots/live/'; fs.mkdirSync(OUT, { recursive: true });
@@ -17,11 +17,12 @@ const passed = []; const ok = (c, m) => { assert.ok(c, m); passed.push(m); conso
     await fn(); await P.waitForTimeout(ms); const lg=await P.evaluate(()=>window.__log); if(lg.length>1)console.log(lg.slice(0,3).join('\n')); return P.evaluate(() => window.__dev); };
   const A = await mk(), V = await mk();
   // --- lobby: Classic default, share first
-  await A.goto(U); await shot(A, '1-lobby'); ok(await A.evaluate(() => SFX.muted) === false, 'sound not muted by default');
+  await A.goto(U); await shot(A, '1-lobby'); ok(await A.evaluate(() => SFX.muted) === true, 'sound off by default');
   await A.click('#playFriend'); await A.waitForSelector('#lobbyCode:not(:empty)', { timeout: 30000 });
   ok(await A.locator('#moreP').count() === 0, 'share code shown with no player-count screen');
   await A.waitForSelector('[data-role="red"]'); ok(true, 'roles under the code');
-  await A.waitForTimeout(300); ok(await A.evaluate(() => SFX.state) === 'running', "AudioContext 'running' after a tap");
+  await A.waitForTimeout(300); ok(await A.evaluate(() => SFX.state) === 'none', 'Play does not start sound');
+  ok(await A.locator('#lobbySound').count() === 1, 'the room screen has the sound button');
   await shot(A, '2-share-first');
   const code = (await A.textContent('#lobbyCode')).trim(), link = await A.inputValue('#lobbyLink');
   await V.goto(link); await V.waitForSelector('#roomLobby', { timeout: 30000 }); await A.click('#startGame');

@@ -28,6 +28,7 @@ let seed = 7; const rnd = n => { seed = (seed * 16807) % 2147483647; return seed
     };
     for (let turn = 0; turn < 400; turn++) {
       await P.waitForFunction(() => { const S = UI._S(); const busy = !!(window.CUTAWAYS && CUTAWAYS.busy && CUTAWAYS.busy()); return S && (S.phase === 'over' || ((S.myTurn || S.phase.startsWith('setup') && S.role === 'blue') && !UI._locked() && !busy && document.getElementById('handoff').classList.contains('hidden'))) || !document.getElementById('handoff').classList.contains('hidden'); }, null, { timeout: 20000 });
+      if ((await P.textContent('#hint')) === 'You ate.') { await P.waitForTimeout(4600); await P.evaluate(() => UI._rr()); }
       if (!(await P.locator('#handoff.hidden').count())) { await P.click('#hGo'); continue; }
       const st = await P.evaluate(() => { const S = UI._S(); return { phase: S.phase, role: S.role, legal: UI._legal(), hint: document.getElementById('hint').textContent,
         turn: S.turn, round: S.round, myTurn: S.myTurn, stones: S.stones, mustLeave: !!S.mustLeave, onEgg: !!S.onEgg,

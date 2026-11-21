@@ -113,19 +113,19 @@ const COLS = 9;
   await A.evaluate(() => UI.act('sit'));
   await A.waitForFunction(() => window.__ct.cold && window.__ct.ghost && window.__ct.held, null, { timeout: 3000 }); // recorded by the watcher, see above
   const eh = await A.evaluate(() => ({ text: window.__ct.held.text, old: window.__ct.held.old }));
-  assert.deepEqual(eh, { text: '2', old: '3' }, 'egg count: new number in the text, old number shown until the egg has dimmed');
+  assert.deepEqual(eh, { text: '2/3', old: '3/3' }, 'egg count: new number in the text, old number shown until the egg has dimmed');
   await A.screenshot({ path: OUT + '3-egg-dimming.jpg', type: 'jpeg', quality: 80 });
   await A.waitForTimeout(1300);
   c = await ct(A);
   assert.equal(c.cold.idx, 2 * COLS + 6, 'the dim is on the square (6,2) where the egg was');
   assert.ok(life(c.cold) <= 820 && life(c.ghost) <= 820 && life(c.held) <= 820, 'cold marks last at most 0.8 s: ' + [life(c.cold), life(c.ghost), life(c.held)]);
   assert.deepEqual(Object.keys(c).filter(k => KINDS.includes(k)).sort(), ['cold', 'ghost', 'held'], 'A saw only cold marks');
-  assert.equal(await A.textContent('#eggsLeft'), '2');
+  assert.equal(await A.textContent('#eggsLeft'), '2/3');
   await gone(A, 'A cold');
   // V never knew where that egg was, so V gets nothing (V also has no egg list at all)
   await none(V, 'V when an egg went cold');
   assert.equal(await V.evaluate(() => UI._S().eggs === undefined), true, 'the vulture view carries no egg list');
-  assert.equal(await V.textContent('#eggsLeft'), '2', 'the public count still drops for V, with no animation');
+  assert.equal(await V.textContent('#eggsLeft'), '2/3', 'the public count still drops for V, with no animation');
 
   // (4) A smash is not a cold egg: V (moved next to the egg at (2,1)) throws its stone at it; A's board must show no cold dim.
   await myTurn(V);
@@ -137,7 +137,7 @@ const COLS = 9;
   await A.waitForFunction(() => document.querySelectorAll('.cell.hit').length === 1, null, { timeout: 5000 });
   await A.waitForTimeout(1300);
   await none(A, 'A when V smashed an egg (a smash is not a cold egg)');
-  assert.equal(await A.textContent('#eggsLeft'), '1');
+  assert.equal(await A.textContent('#eggsLeft'), '1/3');
   const smashGo = A.locator('#surprise-go button');
   if (await smashGo.count()) await smashGo.click();
   if (await A.evaluate(() => !!(window.CUTAWAYS && CUTAWAYS.busy()))) await A.waitForFunction(() => !CUTAWAYS.busy(), null, { timeout: 15000 });

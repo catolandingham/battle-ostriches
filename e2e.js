@@ -36,7 +36,7 @@ const OUT = 'shots/balanced/'; fs.mkdirSync(OUT + 'frames', { recursive: true })
   await cell(V, 3, 4).click(); if (await V.evaluate(() => !!document.querySelector('#board .cell.confirm'))) await cell(V, 3, 4).click(); // the only stone at an unfound egg asks once more
   await A.waitForSelector('#actions.mine', { state: 'attached' }); await A.waitForTimeout(900);
   assert.ok(await A.locator('.cell.hit').count() === 1 && await V.locator('.cell.hit').count() === 1, 'hit mark on both');
-  assert.equal(await A.textContent('#eggsLeft'), '2'); assert.equal(await V.textContent('#stonesLeft'), '0/1');
+  assert.equal(await A.textContent('#eggsLeft'), '2/3'); assert.equal(await V.textContent('#stonesLeft'), '0/1');
   // The smash hold covers the board. Go on before the next sit, the way a player would.
   const go = A.locator('#surprise-go button');
   if (await go.count()) await go.click();
