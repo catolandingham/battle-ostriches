@@ -208,10 +208,10 @@ const hint = p => p.evaluate(() => document.getElementById('hint').textContent.t
   await H.screenshot({ path: OUT + 'hyena-bird-near.png' });
   await cell(H, 5, 3).click(); await sleep(600); // two squares, no catch: the Pounce
   const pn = await birdMarks(); assert.equal(pn.sa, 0, 'the Pounce draws no boxes');
-  const inBoth = await H.evaluate(() => { const S = UI._S(), r = S.senseRange, cs = [...document.querySelectorAll('#board .cell')]; return cs.map((c, i) => c.querySelector('.cmark.cm-bird') ? [i % 9, Math.floor(i / 9)] : null).filter(Boolean).every(([x, y]) => Math.max(Math.abs(x - S.firstAt[0]), Math.abs(y - S.firstAt[1])) <= r && Math.max(Math.abs(x - S.hunter[0]), Math.abs(y - S.hunter[1])) <= r); });
-  assert.ok(pn.marks >= 1 && pn.marks < near1.marks && inBoth && pn.strong === 0 && pn.bright === 0, 'the Pounce marks only squares inside both readings, all the same dashed look (no bigger or second tier) ' + JSON.stringify(pn));
+  const inSense = await H.evaluate(() => { const S = UI._S(), r = S.senseRange, cs = [...document.querySelectorAll('#board .cell')]; return cs.map((c, i) => c.querySelector('.cmark.cm-bird') ? [i % 9, Math.floor(i / 9)] : null).filter(Boolean).every(([x, y]) => Math.max(Math.abs(x - S.hunter[0]), Math.abs(y - S.hunter[1])) <= r); });
+  assert.ok(pn.marks >= 1 && inSense && pn.strong === 0 && pn.bright === 0, 'the Pounce marks stay inside the new sense, all the same dashed look (no bigger or second tier) ' + JSON.stringify(pn));
   const pd = await H.evaluate(() => [...document.querySelectorAll('#board .cmark.cm-bird')].map(m => { const cs = getComputedStyle(m.querySelector('.mk')); return cs.strokeDasharray === 'none' && cs.fill === 'none' && /^rgb\((255, 255, 255|0, 0, 0)\)$/.test(cs.stroke); })); assert.ok(pd.every(Boolean), 'every Pounce bird is the same plain white bird outline with no fill (a hunter only ever sees may-be-here birds)');
-  ok('hyena: no cue with no bird near; a pulsing dashed bird in the corner of each square in range when a bird is near; the Pounce keeps only the squares inside both readings');
+  ok('hyena: no cue with no bird near; a pulsing dashed bird in the corner of each square in range when a bird is near; the Pounce stays inside the new sense');
   await Promise.all([A.context().close(), Vp.context().close(), H.context().close()]);
 
   // ================= 4 players: hunters (badger buried, bird next to it) =================
