@@ -137,8 +137,7 @@ const near = (a, c) => Math.max(Math.abs(a[0] - c[0]), Math.abs(a[1] - c[1]));
       const ka=await A.evaluate(()=>UI._S().kick),kh=await H.evaluate(()=>UI._S().kick);
       const land=JSON.stringify(g.three.h);
       if(JSON.stringify(ka.to)!==land||!ka.trail||ka.trail.filter(Boolean).length!==(ka.moved||0)+1)throw new Error('kicker must see the full path and the real landing '+JSON.stringify(ka)+' '+land);
-      if(kh.to||kh.trail)throw new Error('kicked hunter must not be sent the path or the landing '+JSON.stringify(kh));
-      if(await H.locator('.push-motion .push-actor').count())throw new Error('kicked hunter must not play the slide');
+      if(JSON.stringify(kh.to)!==land||!kh.trail||kh.trail.filter(Boolean).length<2)throw new Error('kicked hunter must see the path and the landing '+JSON.stringify(kh)+' '+land);
       if(await H.locator('#board .pc.po').count())throw new Error('hunter learned a hidden ostrich position');
       // The kicker still shows who kicked. The hunter is not sent a path, so the same mark on their phone is not held for the slide.
       if(!await A.locator('#board .pc.po .kick-leg').count())throw new Error('missing kicker kick cause');

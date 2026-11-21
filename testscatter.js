@@ -1,4 +1,4 @@
-// Hunter kicks land on a random full-distance square. The kicked hunter is not sent the path.
+// Hunter kicks land on a random full-distance square. Every phone is sent that hunter's path.
 // The first catch knock-out tells every seat that the hunter now moves twice.
 process.env.PORT = '0';
 process.env.BO_NOSTORE = '1';

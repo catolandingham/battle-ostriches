@@ -580,7 +580,7 @@ function trailView(room,v,seat,key,from,to,wrap=false,n=3,points){
  });
 }
 // The animal that was kicked. A scattered hunter must not be handed the path: that path used to point straight back at the ostrich.
-// The hunter a stone just moved. That phone is not sent the path: the old straight shove pointed back at the vulture.
+// The hunter a stone just moved. The path is that hunter's squares, so every phone can see the shove.
 function stoneHitHunter(g, key, seat) {
   if (!seat || !key || !g) return false;
   if (g.three) return seat === 'hunter';
