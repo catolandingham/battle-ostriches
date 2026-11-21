@@ -42,6 +42,11 @@ async function run(browser, name, viewport) {
   const rules = await p.locator('#rolecard').innerText();
   assert.ok(rules.includes('Rules for this game'), name + ' rules title: ' + rules.slice(0, 180));
   assert.ok(/egg/i.test(rules), name + ' rules mention eggs');
+  assert.equal(await p.locator('text=Replay tips').count(), 0, name + ' no Replay tips button');
+  const eggs = await p.locator('#eggsLeft').innerText();
+  assert.ok(/^\d+\/\d+$/.test(eggs), name + ' egg chip is a count: ' + eggs);
+  const sound = await p.locator('#muteBtn').getAttribute('aria-label');
+  assert.ok(/off/i.test(sound || ''), name + ' sound starts off: ' + sound);
   assert.equal(errs.length, 0, name + ' page errors ' + errs.join('; '));
   console.log('ok', name, titles.join(' / '), round);
   await c.close();
