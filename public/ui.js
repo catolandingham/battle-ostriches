@@ -295,7 +295,9 @@ function legalNow(){if(!S)return[];const blue=S.role==='blue',M=curMode(),C=S.cf
 const BO_BANNER=(()=>{let shown='',at=0,want=null,timer=null;
  const need=t=>{const w=(String(t).trim().match(/\S+/g)||[]).length;return Math.max(1000,w*300);};
  function paint(t,c){const bn=document.getElementById('banner');if(!bn)return;if(bn.textContent!==t)bn.textContent=t;bn.className=t?c:'hidden';if(t!==shown){shown=t;at=Date.now();}}
+ function busy(){return !!document.querySelector('#msgslot .status-active, #badgerline');}
  function set(t,c){want={t,c};const bn=document.getElementById('banner');if(!bn)return;
+  if(busy()){clearTimeout(timer);timer=setTimeout(()=>{timer=null;if(want)set(want.t,want.c);},200);return;}
   if(t===shown){clearTimeout(timer);timer=null;paint(t,c);return;}
   const left=shown?need(shown)-(Date.now()-at):0;
   if(left>0&&bn.textContent===shown&&!bn.classList.contains('hidden')){clearTimeout(timer);timer=setTimeout(()=>{timer=null;if(want)paint(want.t,want.c);},left);return;}

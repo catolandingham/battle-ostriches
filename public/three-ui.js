@@ -204,8 +204,8 @@ function outBanner(S,prev){const birds=S.h3.birds;if(!birds)return;
   if(!b.out){delete outSeen[r];continue;}
   if(outSeen[r])continue;outSeen[r]=1;
   const mine=r===(S.h3.mySeat||S.role);
-  if(!first&&!mine&&S.phase==='play'){const txt=window.CatchText.outLine(r);outNote={txt,until:Date.now()+4000};noteBanner('no',txt,true);setTimeout(()=>{const bn=$('banner');if(bn&&bn.textContent===txt){bn.textContent='';bn.className='hidden';}},4000);}}
- if(outNote&&Date.now()<outNote.until)noteBanner('no',outNote.txt);}
+  if(!first&&!mine&&S.phase==='play'){const txt=window.CatchText.outLine(r);if(outNote&&outNote.txt===txt)continue;outNote={txt};announce(txt,60);}}
+}
 // The badger's quotes (public/badgerlines.js): one line at a time in their own bubble near the badger's square
 // (about 1s, or 0.3s a word when the line is longer). The bubble is not in the board, so a redraw does not wipe it,
 // and it is not the status line. A saying already queued still plays if the turn changes first. A new saying is only taken for the turn on screen now. Who may see each line lives in badgerlines.js.
@@ -216,8 +216,11 @@ const bubble=window.BADGER_BUBBLE.create({
   const el=document.createElement('div');el.id='badgerline';el.className='badger-bubble';el.textContent=item.text;el.setAttribute('role','status');item.node=el;
   placeBubble(el,bubbleState);},
  hide(item){if(item&&item.node){item.node.remove();item.node=null;}},
- schedule:setTimeout,cancel:clearTimeout
+ schedule:setTimeout,cancel:clearTimeout,
+ blocked:()=>!!document.querySelector('#msgslot .status-active')
 });
+window.BADGER_BUBBLE_PAUSE=()=>bubble.pause();
+window.BADGER_BUBBLE_RESUME=()=>bubble.resume();
 function badgerSquare(S){if(!S)return null;const h=S.h3||{},kind=S.role==='hunter'?(S.kind||h.kind):h.kind;
  if(kind==='badger'&&S.hunter&&S.hunter[0]>=0)return S.hunter;
  if(h.hunter&&h.hunter[0]>=0&&(h.kind==='badger'||kind==='badger'))return h.hunter;
@@ -358,7 +361,7 @@ function after(S,prev,board){
   const sk=S.round+':'+S.senseSeq;if(sk!==lastSense){lastSense=sk;UI.pause(1100);
    pop(board,S.sense?(S.pounce?'Still near.':'Bird near.'):'Nothing near.',S.sense?'yes':'no');
    window.SFX&&SFX.play(S.sense?'sniffYes':'sniffNo');}
-  if(S.pounce)noteBanner('pounce','Pounce!',true);}
+  if(S.pounce)announce('Pounce!',80);}
  if(false&&S.pounce&&S.myTurn&&me==='hunter'){const mine=board.querySelector('.pc.ph.mine');const cell=hc||(mine&&mine.closest('.cell'));
   if(cell&&!cell.querySelector('.pouncetag')){const t=document.createElement('span');t.className='pouncetag';t.textContent='';cell.appendChild(t);}}
  // catch + knockback feedback
