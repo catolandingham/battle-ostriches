@@ -46,7 +46,7 @@ me=loadMe();
 function tokenFor(code){const c=String(code||'').trim().toUpperCase();if(!c)return;if(me.code&&String(me.code).toUpperCase()===c&&me.token)return me.token;const t=lsGet(seatKey(c));if(t)return t;try{const ck=JSON.parse(cookieGet('bo_me')||'null');if(ck&&ck.code&&String(ck.code).toUpperCase()===c&&ck.token)return ck.token}catch(e){}const c2=cookieGet(seatKey(c));if(c2)return c2;}
 const key=p=>p[0]+','+p[1];
 // Open-skies icon set: ONE big simple mark per square, no corner badges. Same in every theme (vocab.css).
-window.addEventListener('DOMContentLoaded',()=>{const r=document.getElementById('roundsLeft');if(r)r.textContent='1';});
+window.addEventListener('DOMContentLoaded',()=>{const r=document.getElementById('roundsLeft');if(r)r.textContent='1 of '+(window.BO&&BO.CONFIG&&BO.CONFIG.rounds||30);});
 // the server lost this game (restart/deploy with no saved copy): say so plainly instead of leaving a frozen board
 function gameGone(){if(document.getElementById('gone'))return;pending=null;try{clearTimeout(pendTimer)}catch(e){}clearMe();
  const d=document.createElement('div');d.id='gone';d.innerHTML='<div class="gbox"><div class="gt">Game was reset</div><p>The server restarted and this game could not be restored.</p><button id="goneNew" class="big">Start a new game</button></div>';
@@ -440,7 +440,7 @@ function render(prev){
  syncRejoinAsk();
  if(window.TUT&&TUT.offer)TUT.offer(S);maybeCard();$('lobby').classList.add('hidden');const C=S.cfg,blue=S.role==='blue',body=document.body;body.className=(S.role==='hunter'?'hunter':blue?'blue':'red')+(S.three?' three':'')+(S.god?' godview':'');
  $('turnTag').innerHTML=S.role==='hunter'||(S.h3&&S.h3.team)?window.T3UI.tag(S):`<span style="display:inline-block;width:26px;height:26px;vertical-align:middle">${blue?OST:VUL}</span> ${blue?'OSTRICH':'VULTURE'}`;
- $('roundsLeft').textContent=S.round||1;
+ $('roundsLeft').textContent=(S.round||1)+' of '+(C.rounds||30);
  // HUD: food, stones, and eggs on one chip row. The food number is public.
  // A rise counts up from the old digit; a paint in the middle must not jump to the new one.
  const hud=$('stats');if(hud){const play=S.phase==='play'||S.phase==='over';const chips=play||S.phase==='setupEggs'||S.phase==='setupOstrich'||S.phase==='setup';hud.classList.toggle('hidden',!chips);

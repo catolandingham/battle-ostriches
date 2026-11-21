@@ -195,7 +195,7 @@ const hint = p => p.evaluate(() => document.getElementById('hint').textContent.t
   act('red', { a: 'fly', p: B.flyTargets(g3()).filter(c => !B.isRock(g3(), c) && !B.isFood(g3(), c))[0] }); act('blue', { a: 'step', p: B.ostrichMoves(g3()).filter(c => !B.eggAt(g3(), c))[0] });
   await myTurn(H); await sleep(1500); await quiet(H);
   await withMessages(H, 'hyena (3 players)', sayAll);
-  const ctr = await H.evaluate(() => document.querySelector('#hud .ctr').innerText.replace(/\s+/g, ' ')); assert.ok(/Round \d+/.test(ctr), 'the 3-player header shows the round number: ' + ctr);
+  const ctr = await H.evaluate(() => document.querySelector('#hud .ctr').innerText.replace(/\s+/g, ' ')); assert.ok(/Round \d+ of \d+/.test(ctr), 'the 3-player header shows rounds left: ' + ctr);
   const hudw = await H.evaluate(() => { const e = document.querySelector('#hud .ctr'); const p = e.parentNode; return [e.scrollWidth, e.clientWidth, p.scrollWidth, p.clientWidth]; }); assert.ok(hudw[0] <= hudw[1] + 1 && hudw[2] <= hudw[3] + 1, 'the round number is not clipped ' + hudw);
   ok('3 players: header shows the round number unclipped; no text over the board with any message showing');
   // no bird near -> nothing is cued; bird near -> the area pulses; pounce -> one area only
