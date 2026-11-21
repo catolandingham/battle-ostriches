@@ -127,7 +127,7 @@ function expose(g, seat, v) {
   v.seenBirds = [];
   if (v.can) v.can.carry = false;
   if (v.carryMoves) v.carryMoves = [];
-  if (v.h3) { v.h3.mateSniff = null; v.h3.extra = false; }
+  if (v.h3) v.h3.mateSniff = null;
   copyMarks(v, g);
   if (g.phase !== 'play') return v;
   v.veil = {};

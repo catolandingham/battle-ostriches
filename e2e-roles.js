@@ -36,7 +36,7 @@ const R = require('./public/roles.js'), THEMES = fs.readFileSync('./public/theme
   const has = (t, c) => lines(c).forEach(l => assert.ok(t.includes(l), `card is missing: ${l}\n--- got ---\n${t}`));
   has(ta, want('blue', 'hyena', '3')); has(tv, want('red', 'hyena', '3')); has(th, want('hunter', 'hyena', '3'));
   assert.ok(th.includes('You win when both birds are out.'), 'the hyena card states the both-birds goal (R5)');
-  assert.ok(th.includes('you move twice each round'), 'the hyena card states the double turn');
+  assert.ok(th.includes('you move 3 squares'), 'the hyena card states the faster move');
   // only its own: no other animal's title, and nobody was told "We picked" (all three chose)
   assert.ok(/You are the Ostrich/.test(ta) && !/You are the (Vulture|Hyena|Badger)/.test(ta), 'ostrich card is the ostrich card');
   assert.ok(/You are the Vulture/.test(tv) && !/You are the (Ostrich|Hyena|Badger)/.test(tv)); assert.ok(/You are the Hyena/.test(th) && !/You are the (Ostrich|Vulture|Badger)/.test(th));
@@ -69,7 +69,7 @@ const R = require('./public/roles.js'), THEMES = fs.readFileSync('./public/theme
   const P = await mk(); await P.goto(U); await P.click('#playSolo'); await P.click('[data-bots="2"]'); await P.click('#soloGo'); await P.click('[data-role="badger"]'); await P.click('#startGame');
   await P.waitForSelector('#rolecard:not(.hidden)', { timeout: 15000 });
   const tp = await cardText(P); has(tp, want('hunter', 'badger', '3')); assert.ok(/You are the Badger/.test(tp)); assert.ok(!/We picked/.test(tp), 'the player picked: no "We picked" line');
-  assert.ok(!/Missed/.test(tp), 'no hyena words on the badger card'); assert.ok(tp.includes('You win when both birds are out.') && tp.includes('you move twice each round'), 'badger card: both birds and the double turn'); assert.ok(!/tough ground|usually|one more still turn/i.test(tp), 'no tough-ground wording'); await fits(P, 'badger'); await P.screenshot({ path: OUT + '4-badger.png' });
+  assert.ok(!/Missed/.test(tp), 'no hyena words on the badger card'); assert.ok(tp.includes('You win when both birds are out.') && tp.includes('you move 3 squares'), 'badger card: both birds and the faster move'); assert.ok(!/tough ground|usually|one more still turn/i.test(tp), 'no tough-ground wording'); await fits(P, 'badger'); await P.screenshot({ path: OUT + '4-badger.png' });
   await P.click('#rolecard'); assert.equal(await shown(P).count(), 0);
 
   // Start chose the animal: friends room, host never picked, one computer -> the ostrich, and the card says so

@@ -23,7 +23,8 @@ assert.equal(T.T3.walk, 2);
 assert.equal(H.TH.walk, 2);
 assert.equal(TM.TM.walk, 2);
 assert.equal(T.T3.pounce, 1);
-assert.equal(T.T3.double, 2, 'double turn stays 2; it is not a speed change');
+assert.equal(T.T3.boost, 3, 'after a catch knock-out the one move is 3');
+assert.equal(T.T3.double, undefined, 'there is no second turn');
 assert.equal(T.T3.clockMs, 10000, 'shot clock');
 assert.equal(T.T3.ko.badger, 2);
 assert.equal(H.TH.ko.badger, 2);
@@ -45,13 +46,14 @@ function badgerRange(birdOut) {
   g.three.h = [4, 3];
   g.ostrich = [1, 1];
   g.vulture = [8, 6];
-  if (birdOut) g.three.birds.blue.out = true;
+  if (birdOut) { g.three.birds.blue.out = true; g.three.birds.blue.why = 'caught'; }
   const moves = T.hunterMoves(g);
   assert.ok(moves.length > 0, 'badger has a move');
   const far = moves.reduce((m, p) => Math.max(m, B.dist(g.three.h, p)), 0);
   return far;
 }
 
-assert.equal(badgerRange(false), 2, 'badger walks 2');
-assert.equal(badgerRange(true), 2, 'knocking a bird out does not boost the badger');
+assert.equal(badgerRange(false), 2, 'badger walks 2 before a catch knock-out');
+assert.equal(badgerRange(true), 3, 'after a catch knock-out the one move is 3');
+assert.ok(badgerRange(true) <= 3, 'the faster move never covers the whole board');
 console.log('ok balance and badger speed unchanged');

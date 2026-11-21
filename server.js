@@ -371,7 +371,7 @@ function clock2(room) {
 }
 // 10-second shot clock on every play turn (3 players); runs once all seats are filled and the hunter is picked
 function clock3(room) {
-  const g = room.g, k = room.clock !== false && g && g.phase === 'play' && ready3(room) ? g.round + ':' + g.turn + ':' + (g.three && g.three.extra ? '2' : '1') : null;
+  const g = room.g, k = room.clock !== false && g && g.phase === 'play' && ready3(room) ? g.round + ':' + g.turn : null;
   const delay = k ? clockDelayFor(room, view3, g.turn) : 0;
   armClock(room, k, +process.env.BO_CLOCKMS || T.T3.clockMs, () => { if (room.clockKey !== k || room.g !== g) return; room.clockKey = null; T.timeout(g); room.touched = Date.now(); broadcast(room); }, delay);
 }
@@ -595,7 +595,7 @@ function kickHitHunter(g, k, seat) {
   if (g.team) return k.seat === 'hunter' && seat === 'hunter';
   return false;
 }
-// Which decision the table is waiting on. A pounce, a bonus turn, and the next round are different turns even when the same animal is still moving.
+// Which decision the table is waiting on. A pounce and the next round are different turns even when the same animal is still moving.
 function senseNow(g) {
   if (!g) return 0;
   if (g.three) return g.three.senseSeq | 0;
@@ -603,7 +603,6 @@ function senseNow(g) {
   if (g.h) return g.h.senseSeq | 0;
   return 0;
 }
-function bonusNow(g) { return !!(g && g.three && g.three.extra); }
 function pounceNow(g) {
   if (!g) return false;
   if (g.three) return !!g.three.pounce;
@@ -612,7 +611,7 @@ function pounceNow(g) {
   return false;
 }
 function turnKey(g) {
-  return [g.phase, g.round | 0, g.turn, bonusNow(g) ? 1 : 0, senseNow(g), pounceNow(g) ? 1 : 0].join(':');
+  return [g.phase, g.round | 0, g.turn, 0, senseNow(g), pounceNow(g) ? 1 : 0].join(':');
 }
 function syncTurnSeq(g) {
   if (!g) return;
@@ -625,7 +624,7 @@ function turnStamp(room) {
   const g = room && room.g;
   if (!g) return null;
   syncTurnSeq(g);
-  return { round: g.round | 0, turn: g.turn, bonus: bonusNow(g), sense: senseNow(g), seq: g.turnSeq };
+  return { round: g.round | 0, turn: g.turn, bonus: false, sense: senseNow(g), seq: g.turnSeq };
 }
 function stampMatch(got, cur) {
   if (!got || !cur || typeof got !== 'object') return false;
