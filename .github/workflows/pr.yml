@@ -31,10 +31,11 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - name: Phone browser (WebKit) and its system libraries
+      - name: Phone browsers (WebKit and Chromium) and their system libraries
         run: |
-          sudo env "PATH=$PATH" node node_modules/playwright-core/cli.js install-deps webkit
+          sudo env "PATH=$PATH" node node_modules/playwright-core/cli.js install-deps webkit chromium
           npm run setup:e2e
+          PLAYWRIGHT_BROWSERS_PATH="$PWD/node_modules/.pw-browsers" node node_modules/playwright-core/cli.js install chromium
       - name: Test suites (${{ matrix.part }})
         run: set -o pipefail; node tests/run-all.js ${{ matrix.args }} 2>&1 | tee /tmp/test.log
       - name: Failed suites, in short

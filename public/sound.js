@@ -1,30 +1,42 @@
-// Battle Ostriches sound effects, synthesized with WebAudio (no audio files). Mute persists in localStorage.
+// Battle Ostriches sound effects, synthesized with WebAudio (no audio files).
+// Sound stays off until the speaker button. A later tap resumes it only if that choice is still on.
 (function(){
-let ctx=null,muted=localStorage.getItem('bo_muted')==='1';
-// iOS: WebAudio is silenced by the ringer switch unless the page's audio session is 'playback'. Ask for it (iOS 17+), and
-// also loop a silent <audio> on the first tap so the page plays on the media channel. Re-resume on return, rebuild if dead.
-try{if(navigator.audioSession)navigator.audioSession.type='playback';}catch(e){}
+let ctx=null,master=null;
+const saved=()=>{try{return localStorage.getItem('bo_muted');}catch(e){return null;}};
+const enabled=()=>saved()==='0';
+let muted=!enabled();
+const ON='<svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true"><path d="M3 9v6h4l5 4V5L7 9H3z" fill="currentColor" stroke="#111" stroke-width="1.5" stroke-linejoin="round"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+const OFF='<svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true"><path d="M3 9v6h4l5 4V5L7 9H3z" fill="currentColor" stroke="#111" stroke-width="1.5" stroke-linejoin="round"/><path d="M16 9l5 6M21 9l-5 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
 function silentWav(){const n=800,b=new Uint8Array(44+n),v=new DataView(b.buffer),w=(o,t)=>{for(let i=0;i<t.length;i++)b[o+i]=t.charCodeAt(i);};
  w(0,'RIFF');v.setUint32(4,36+n,true);w(8,'WAVEfmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);v.setUint32(24,8000,true);
  v.setUint32(28,8000,true);v.setUint16(32,1,true);v.setUint16(34,8,true);w(36,'data');v.setUint32(40,n,true);b.fill(128,44);
  let bin='';b.forEach(x=>bin+=String.fromCharCode(x));return 'data:audio/wav;base64,'+btoa(bin);}
 let tag=null;
-function unlock(){const A=window.AudioContext||window.webkitAudioContext;if(!A)return;
- if(ctx&&(ctx.state==='closed'||ctx.state==='interrupted')){try{ctx.close();}catch(e){}ctx=null;}
+function session(){try{if(navigator.audioSession)navigator.audioSession.type='playback';}catch(e){}}
+function level(v){if(!ctx||!master)return;const t=ctx.currentTime;try{master.gain.cancelScheduledValues(t);master.gain.setValueAtTime(v,t);}catch(e){}}
+function bus(){if(!ctx)return null;if(!master||master.context!==ctx){master=ctx.createGain();master.connect(ctx.destination);}level(muted?0:1);return master;}
+function clip(){if(tag)return tag;tag=document.createElement('audio');tag.src=silentWav();tag.loop=true;tag.setAttribute('playsinline','');tag.setAttribute('x-webkit-airplay','deny');tag.preload='auto';tag.setAttribute('aria-hidden','true');(document.body||document.documentElement).appendChild(tag);return tag;}
+function boot(){const A=window.AudioContext||window.webkitAudioContext;if(!A)return;
+ session();
+ if(ctx&&(ctx.state==='closed'||ctx.state==='interrupted')){try{ctx.close();}catch(e){}ctx=null;master=null;}
  if(!ctx)ctx=new A();
+ const out=bus();
  if(ctx.state!=='running')ctx.resume().catch(()=>{});
- try{const b=ctx.createBuffer(1,1,22050),s=ctx.createBufferSource();s.buffer=b;s.connect(ctx.destination);s.start(0);}catch(e){}
- if(!tag){tag=document.createElement('audio');tag.src=silentWav();tag.loop=true;tag.setAttribute('playsinline','');tag.setAttribute('x-webkit-airplay','deny');tag.preload='auto';}
- if(tag.paused&&!muted){const p=tag.play();p&&p.catch(()=>{});}}
-['touchstart','touchend','pointerdown','click','keydown'].forEach(e=>document.addEventListener(e,unlock,{capture:true,passive:true}));
-const wake=()=>{if(document.visibilityState==='visible'&&ctx)unlock();};
-document.addEventListener('visibilitychange',wake);window.addEventListener('pageshow',wake);window.addEventListener('focus',wake);
+ try{const b=ctx.createBuffer(1,1,22050),s=ctx.createBufferSource();s.buffer=b;s.connect(out);s.start(0);}catch(e){}
+ const a=clip();if(muted)a.pause();else if(a.paused){const p=a.play();p&&p.catch(()=>{});}}
+function resumeIfOn(){if(!enabled())return;muted=false;boot();}
+['touchend','click'].forEach(e=>document.addEventListener(e,resumeIfOn,{capture:true,passive:false}));
+function paint(){const on=enabled(),label=on?'Sound on':'Sound off',html=on?ON:OFF;
+ ['soundBtn','lobbySound','muteBtn'].forEach(id=>{const el=document.getElementById(id);if(!el)return;el.innerHTML=html;el.setAttribute('aria-label',label);el.setAttribute('aria-pressed',on?'true':'false');});
+ ['menuSound','muteBtn2'].forEach(id=>{const el=document.getElementById(id);if(!el)return;el.textContent=label;el.setAttribute('aria-label',label);});}
+function start(){try{localStorage.setItem('bo_muted','0');}catch(e){}muted=false;boot();paint();}
+function stop(){try{localStorage.setItem('bo_muted','1');}catch(e){}muted=true;level(0);if(tag)tag.pause();paint();}
 function tone(f,dur,{type='sine',vol=.25,at=0,to=null}={}){const t=ctx.currentTime+at,o=ctx.createOscillator(),g=ctx.createGain();
  o.type=type;o.frequency.setValueAtTime(f,t);if(to)o.frequency.exponentialRampToValueAtTime(to,t+dur);
- g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+dur);o.connect(g);g.connect(ctx.destination);o.start(t);o.stop(t+dur+.02);}
+ g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+dur);o.connect(g);g.connect(bus());o.start(t);o.stop(t+dur+.02);}
 function noise(dur,{vol=.3,at=0,freq=1000,q=1,type='bandpass'}={}){const t=ctx.currentTime+at,n=ctx.sampleRate*dur|0,b=ctx.createBuffer(1,n,ctx.sampleRate),d=b.getChannelData(0);
  for(let i=0;i<n;i++)d[i]=Math.random()*2-1;const s=ctx.createBufferSource();s.buffer=b;const f=ctx.createBiquadFilter();f.type=type;f.frequency.value=freq;f.Q.value=q;
- const g=ctx.createGain();g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+dur);s.connect(f);f.connect(g);g.connect(ctx.destination);s.start(t);}
+ const g=ctx.createGain();g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+dur);s.connect(f);f.connect(g);g.connect(bus());s.start(t);}
 const FX={
  thud(){tone(110,.25,{to:45,vol:.5});noise(.12,{freq:300,vol:.35});},
  crack(){FX.thud();noise(.08,{freq:3500,q:3,vol:.4,at:.06});noise(.1,{freq:2200,q:4,vol:.35,at:.12});tone(900,.12,{type:'square',vol:.08,at:.08,to:300});},
@@ -44,6 +56,9 @@ const FX={
  win(){[523,659,784,1047].forEach((f,i)=>tone(f,.35,{type:'triangle',vol:.2,at:i*.12}));},
  lose(){[392,330,262,196].forEach((f,i)=>tone(f,.4,{type:'sawtooth',vol:.08,at:i*.18}));},
 };
-window.SFX={play(n){if(muted||!ctx||!FX[n])return;try{if(ctx.state!=='running')unlock();FX[n]();}catch(e){}},get state(){return ctx?ctx.state:'none'},
- get muted(){return muted},toggle(){muted=!muted;localStorage.setItem('bo_muted',muted?'1':'0');if(tag){muted?tag.pause():unlock();}else if(!muted)unlock();return muted;},names:Object.keys(FX)};
+window.SFX={play(n){if(!enabled()||!ctx||ctx.state!=='running'||!FX[n])return;try{FX[n]();}catch(e){}},get state(){return ctx?ctx.state:'none'},
+ get muted(){return !enabled();},start,stop,toggle(){if(enabled())stop();else start();return !enabled();},
+ icon(id){const on=enabled();return `<button type="button" id="${id}" class="soundbtn" aria-pressed="${on?'true':'false'}" aria-label="${on?'Sound on':'Sound off'}">${on?ON:OFF}</button>`;},
+ paint,names:Object.keys(FX)};
+paint();
 })();
