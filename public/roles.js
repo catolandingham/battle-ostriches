@@ -6,7 +6,7 @@
   // The card's modes are the lobby's: '2' classic, '3' ostrich + vulture + hunter, '4' 2 vs 2, '4h' Hunters, '5' 2 vs 2 + hunter.
   function rulesFromModules() {
     const B = require('../game.js'), T = require('../three.js'), H = require('../hunt.js'), M = require('../team.js'), C = B.CONFIG;
-    const pick = (t, mode) => Object.assign({ ko: { hyena: t.ko.hyena, badger: t.ko.badger }, sense: t.sense, see: t.see, walk: t.walk, pounce: t.pounce }, t.double != null ? { double: t.double } : {}, mode ? { goal: B.HUNTER_GOAL(mode) } : {});
+    const pick = (t, mode) => Object.assign({ ko: { hyena: t.ko.hyena, badger: t.ko.badger }, sense: t.sense, see: t.see, walk: t.walk, pounce: t.pounce }, t.boost != null ? { boost: t.boost } : {}, mode ? { goal: B.HUNTER_GOAL(mode) } : {});
     // eggs: how many eggs each ostrich hides. Classic, 3-player and Hunters use CONFIG. Team modes (2 vs 2, 5 players) use TM.eggs.
     const nest = t => (t && t.eggs != null) ? t.eggs : C.eggs;
     const boxed = (t, mode) => Object.assign(pick(t, mode), { eggs: nest(t) });
@@ -123,7 +123,7 @@
       'You lose if every egg is broken or goes cold.',
       'If you don\'t eat in time, you are knocked out.',
       goalLine(mode, R, false),
-      'When the hunter knocks a bird out, they move twice each round. One move is 1 square. No pounce.',
+      `After a knock-out the hunter moves ${(R.modes['3'] && R.modes['3'].boost) || 3} squares.`,
     ]);
     return cardOf('You are the Ostrich.', 'ostrich', [
       `Keep at least 1 egg alive for ${c.rounds} rounds.`,
@@ -155,7 +155,7 @@
       `If a hunter gets to your square, they catch you. ${ko} catches knock you out.`,
       `You lose if an egg lasts ${c.rounds} rounds.`,
       goalLine(mode, R, false),
-      'When the hunter knocks a bird out, they move twice each round. One move is 1 square. No pounce.',
+      `After a knock-out the hunter moves ${(R.modes['3'] && R.modes['3'].boost) || 3} squares.`,
     ]);
     return cardOf('You are the Vulture.', 'vulture', [
       'You win if every egg is broken or goes cold.',
@@ -193,14 +193,14 @@
         goalLine(mode, R, true),
         `${ko} catches knock a bird out.`,
         pounceLine,
-        'When you knock a bird out, you move twice each round. One move is 1 square. No pounce.',
+        `After a knock-out you move ${(R.modes['3'] && R.modes['3'].boost) || 3} squares, with no pounce.`,
         `You lose if an egg lasts ${c.rounds} rounds, or every egg is broken.`,
       ];
     } else {
       lines = [
         goalLine(mode, R, true),
         `${ko} catches knock a bird out.`,
-        'After you knock a bird out, you move twice each round. One move is 1 square.',
+        `After a knock-out you move ${(R.modes['3'] && R.modes['3'].boost) || 3} squares.`,
         burrowLine,
         `You lose if an egg lasts ${c.rounds} rounds, or every egg is broken.`,
       ];

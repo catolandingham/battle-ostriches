@@ -81,21 +81,20 @@ const CARDS = [
   }
   console.log('ok every reminder card');
 
-  // --- 3p double-turn look T1 ---
-  const setExtra = async (page, seat) => page.evaluate((seat) => {
+  // --- after a knock-out the hint is still one ordinary turn ---
+  const setFast = async (page, seat) => page.evaluate((seat) => {
     const S = UI._S();
     S.phase = 'play'; S.turn = 'hunter'; S.pounce = false;
-    S.myTurn = S.role === 'hunter' || S.role === seat && seat === 'hunter';
     if (S.role === 'hunter') S.myTurn = true;
     else S.myTurn = false;
-    S.h3 = Object.assign(S.h3 || {}, { extra: true, kind: S.h3 && S.h3.kind || 'hyena' });
+    S.h3 = Object.assign(S.h3 || {}, { kind: S.h3 && S.h3.kind || 'hyena', range: 3 });
     UI._rr();
   }, seat);
-  await setExtra(H, 'hunter'); await setExtra(V, 'red');
+  await setFast(H, 'hunter'); await setFast(V, 'red');
   const hintH = await H.evaluate(() => (document.getElementById('hint') || {}).textContent || '');
   const hintV = await V.evaluate(() => (document.getElementById('hint') || {}).textContent || '');
-  assert.ok(hintH.includes('Your turn again. Tap to move.'), 'hunter second-turn hint: ' + hintH);
-  assert.ok(hintV.includes("Hyena's turn again."), 'other seat second-turn hint: ' + hintV);
+  assert.ok(!/turn again/i.test(hintH), 'hunter hint is one turn: ' + hintH);
+  assert.ok(!/turn again/i.test(hintV), 'other seat hint is one turn: ' + hintV);
   const chipH = await H.evaluate(() => !!document.querySelector('#h3bar .bchip.hunter.now, #h3bar .bchip.hhyena.now, #h3bar [data-b="hunter"].now'));
   const chipV = await V.evaluate(() => !!document.querySelector('#h3bar .bchip.hunter.now, #h3bar .bchip.hhyena.now, #h3bar [data-b="hunter"].now'));
   assert.ok(chipH && chipV, 'the turn chip stays on the hunter between the two turns');

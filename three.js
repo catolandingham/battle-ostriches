@@ -1,9 +1,9 @@
 // 3-player mode: ostrich (blue) + vulture (red) + a hunter (hyena or badger). Wraps the 2-player rules in game.js
 // without changing them. Turn order each round: vulture, ostrich, hunter. All tuning lives in T3.
 const B = require('./game.js'), K = B.key, D = B.dist, S = require('./simple.js');
-const T3 = { sense: 2, see: 2, walk: 2, pounce: 1, knock: 3, clockMs: 10000, ko: { hyena: 2, badger: 2 }, double: 2, starts: [[0, 3], [8, 3]] };
+const T3 = { sense: 2, see: 2, walk: 2, pounce: 1, knock: 3, clockMs: 10000, ko: { hyena: 2, badger: 2 }, boost: 3, starts: [[0, 3], [8, 3]] };
 // Shown once, to every seat, at the first catch knock-out that leaves the game going.
-const DOUBLE_NOTE = 'Hunter now moves twice each round.';
+const DOUBLE_NOTE = 'Hunter is faster now. It moves 3 squares.';
 const OFF = [-99, -99], BIRDS = ['red', 'blue'], NAME = { red: 'vulture', blue: 'ostrich', hunter: 'hunter' };
 const sgn = Math.sign;
 function newGame3(kind, cfg = B.CONFIG, start) {
@@ -48,7 +48,7 @@ function knockout(g, b, why) {
   if (b === 'blue') { if (g.carrying !== null) { const e = g.eggs[g.carrying]; g.carrying = null; if (e.alive) e.pos = g.ostrich.slice(); } g.ostrich = OFF.slice(); }
   else g.vulture = OFF.slice();
   settle(g);
-  // The extra turn starts only when the game continues. A knock-out that ends the game has no second move to announce.
+  // The faster move is announced only when the game continues. A knock-out that ends the game has nothing to announce.
   if (firstCatch && g.phase !== 'over') t.doubleNote = { seq: 1, round: g.round };
 }
 // A caught bird lands on a random open square exactly T3.knock (3) king-moves away. No missed turn. If it cannot move at all, whoever moved this turn goes back (back()).
@@ -83,7 +83,7 @@ function advance(g) {
   for (let i = 0; i < 6 && g.phase === 'play'; i++) {
     if (g.turn === 'red') { const st = g.three.birds.red; if (!st.out && !st.skip) return;
       if (st.skip) { st.skip--; g.three.lost = { bird: 'red', round: g.round }; }
-      g.sniff = null; g.lastAction = { type: 'pass' }; g.turn = 'blue'; B.dropCarried(g); if (beginShort(g)) return; continue; }
+      g.sniff = null; g.lastAction = { type: 'pass' }; g.turn = 'blue'; B.dropCarried(g); continue; }
     if (g.turn === 'blue') { const st = g.three.birds.blue; if (!st.out && !st.skip) return;
       if (st.out) { B.endRound(g); } else { st.skip--; g.three.lost = { bird: 'blue', round: g.round }; ostrichStay(g); }
       afterOstrich(g); continue; }
@@ -91,17 +91,11 @@ function advance(g) {
   }
 }
 function firstCaughtKo(g) { return BIRDS.some(b => g.three.birds[b].why === 'caught'); }
-// After the first catch knock-out the hunter moves twice each round. The birds move in between, so the two moves do not add up.
-// One of the two is only 1 square. There is no pounce after that knock-out. Simple rules have no second move.
+// After the first catch knock-out the hunter's one move is 3 squares. There is no second move and no pounce. Simple rules stay at a walk of 2.
 function startHunter(g) { const t = g.three; t.pounce = false; t.first = null; t.sense = senses(g); t.senseSeq++; t.senseAt = t.h.slice(); }
-function beginShort(g) {
-  if (g.simple || g.phase !== 'play' || !firstCaughtKo(g) || g.three.extra) return false;
-  g.turn = 'hunter'; g.three.extra = true; startHunter(g); return true;
-}
-function afterVulture(g) { if (g.phase === 'play' && !beginShort(g)) advance(g); }
+function afterVulture(g) { if (g.phase === 'play') advance(g); }
 function endHunter(g) {
   const t = g.three; t.pounce = false;
-  if (t.extra) { t.extra = false; g.turn = 'blue'; advance(g); return; } // the 1-square move is done; the ostrich goes next
   if (t.lastRound && g.phase === 'play') { g.phase = 'over'; g.winner = 'blue'; g.winBy = 'survived'; finish(g); return; } // the hunter's last move is done: time is up
   g.turn = 'red'; advance(g);
 }
@@ -185,11 +179,11 @@ function ostrichAct3(g, a, p) {
   afterOstrich(g); return true;
 }
 // Hunters walk T3.walk squares; the Pounce extra step is T3.pounce. They may pass over anything and land anywhere that is not wrecked.
-function hunterRange(g) { if (g.simple) return T3.walk; if (g.three.extra) return 1; return g.three.pounce ? T3.pounce : T3.walk; }
-// How far this hunter can get before the bird who just acted moves again. After the first catch knock-out the longer turn is still a walk of 2. The other turn is 1 square, and the birds move in between.
+function hunterRange(g) { if (g.simple) return T3.walk; if (!g.three.pounce && firstCaughtKo(g)) return T3.boost; return g.three.pounce ? T3.pounce : T3.walk; }
+// How far this hunter can reach on its next move. After the first catch knock-out that is 3, with no pounce, so it is never the whole board.
 const hunterReach = g => {
   if (g.simple) return T3.walk;
-  if (firstCaughtKo(g)) return T3.walk;
+  if (firstCaughtKo(g)) return T3.boost;
   return T3.walk + (g.three.kind === 'hyena' ? T3.pounce : 0);
 };
 function hunterMoves(g) {
@@ -209,7 +203,7 @@ function hunterMove(g, p) {
   if (g.phase === 'over') return true;
   // Pounce (rule 7.3): a hyena that sensed a bird at the start of its turn and did not catch senses again from its new square and may take one more step only if a bird is still in range
   const nowSense = senses(g);
-  if (!g.simple && !caught && !wasP && !t.extra && !firstCaughtKo(g) && t.kind === 'hyena' && t.sense && nowSense) { t.pounce = true; t.first = t.sense; t.firstAt = from.slice(); t.sense = nowSense; t.senseSeq++; t.senseAt = t.h.slice(); return true; }
+  if (!g.simple && !caught && !wasP && !firstCaughtKo(g) && t.kind === 'hyena' && t.sense && nowSense) { t.pounce = true; t.first = t.sense; t.firstAt = from.slice(); t.sense = nowSense; t.senseSeq++; t.senseAt = t.h.slice(); return true; }
   endHunter(g); return true;
 }
 function hunterStay(g, timedOut) { // timedOut: the shot clock ran out, so a badger that is not yet buried just loses its turn (Brian, 2026-11-15) // badger: staying still burrows it (invisible to birds). During a pounce: skip the extra move.
@@ -243,6 +237,6 @@ function hide3(g) {
   afterOstrich(g); return true;
 }
 function status3(g) { const t = g.three;
-  return { kind: t.kind, ko: koAt(g), birds: JSON.parse(JSON.stringify(t.birds)), order: ['red', 'blue', 'hunter'], extra: !!t.extra }; }
+  return { kind: t.kind, ko: koAt(g), birds: JSON.parse(JSON.stringify(t.birds)), order: ['red', 'blue', 'hunter'] }; }
 module.exports = { T3, DOUBLE_NOTE, OFF, NAME, newGame3, senses, hunterSeenBy, ambushSight, hunterMoves, hunterMove, hunterStay, hunterRange, hunterReach, kickable3, kickTargets3, kickPlans3, ostrichKick3, placeOstrich3, vultureFly3, vultureThrow3,
   ostrichAct3, finish, timeout, status3, isOut, pos, advance, catchBird, knockout, hide3 };

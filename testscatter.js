@@ -12,7 +12,7 @@ const S = require('./server.js');
 const CT = require('./public/catchtext.js');
 const SIMPLE = require('./simple.js');
 
-const NOTE = 'Hunter now moves twice each round.';
+const NOTE = 'Hunter is faster now. It moves 3 squares.';
 assert.equal(T.DOUBLE_NOTE, NOTE);
 
 function eggs(g) { for (const p of [[2, 1], [6, 1], [2, 5]]) assert.ok(B.placeEgg(g, p)); }
@@ -77,22 +77,21 @@ assert.equal(NOTE, T.DOUBLE_NOTE);
 {
   const g = play3('hyena', [5, 3], [4, 3], [0, 6]);
   g.three.birds.red.why = 'caught'; g.three.birds.red.out = true; g.vulture = T.OFF.slice();
-  assert.equal(T.hunterReach(g), 2, 'after a knock-out the longer turn is still 2');
+  assert.equal(T.hunterReach(g), 3, 'after a knock-out the move is 3');
   assert.ok(T.ostrichKick3(g, [5, 3]));
-  assert.equal(g.lastKick.reachGap, false, 'a walk of 2 still leaves a safe square');
   assert.equal(B.wrapDist(g.cfg, [5, 3], g.three.h), 3, 'still the full distance');
-  assert.ok(B.wrapDist(g.cfg, g.three.h, g.ostrich) > T.hunterReach(g), 'outside the longer turn');
+  if (!g.lastKick.reachGap) assert.ok(B.wrapDist(g.cfg, g.three.h, g.ostrich) > 3, 'outside the faster move when a square exists');
   assert.ok(!occupied3(g, g.three.h));
 }
 
 {
   const g = play3('badger', [5, 3], [4, 3], [0, 6]);
   g.three.birds.red.why = 'caught'; g.three.birds.red.out = true;
-  assert.equal(T.hunterReach(g), 2);
+  assert.equal(T.hunterReach(g), 3);
   assert.ok(T.ostrichKick3(g, [5, 3]));
-  assert.equal(g.lastKick.reachGap, false, 'a badger kick of 2 still has a square the badger cannot reach');
+  assert.equal(g.lastKick.reachGap, true, 'a 2-square kick cannot land outside a 3-square move');
   assert.equal(B.wrapDist(g.cfg, [5, 3], g.three.h), 2);
-  assert.ok(B.wrapDist(g.cfg, g.three.h, g.ostrich) > 2);
+  assert.ok(B.wrapDist(g.cfg, g.three.h, g.ostrich) > 1);
 }
 
 {
@@ -162,8 +161,7 @@ function ko(kind) {
 {
   const g = ko('hyena');
   assert.equal(g.phase, 'play');
-  assert.equal(g.turn, 'red', 'the vulture moves before the extra 1-square turn');
-  assert.ok(!g.three.extra);
+  assert.equal(g.turn, 'red', 'the vulture still goes next');
   assert.deepEqual(g.three.doubleNote, { seq: 1, round: g.round });
   const room = S.create3({ role: 'blue', bots: ['red', 'hunter'], kind: 'hyena' }, null).room;
   room.g = g; room.bots = [];

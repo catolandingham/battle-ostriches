@@ -70,27 +70,12 @@ const B = require('./game.js'), T = require('./three.js'), S = require('./server
   assert.equal(acts[0].turn, 'hunter');
   assert.equal(typeof acts[0].sense, 'number');
   assert.equal(typeof acts[0].seq, 'number');
-  await page.waitForFunction(() => UI._S() && UI._S().h3 && UI._S().h3.extra && UI._S().turn === 'hunter');
-  assert.equal(g.three.extra, true);
-  assert.equal(g.turn, 'hunter', 'the bonus turn was not spent');
+  await page.waitForFunction(() => UI._S() && UI._S().turn !== 'hunter');
   assert.equal(g.three.burrowed, true);
-
-  await page.waitForFunction(() => {
-    const s = UI._S();
-    return s && s.h3 && s.h3.extra && s.turn === 'hunter' && document.querySelector('#board .cell.legal');
-  });
-  await page.evaluate(() => {
-    const c = document.querySelector('#board .cell.legal');
-    c.click(); c.click();
-  });
-  const queued = await page.evaluate(() => window.__acts.map(a => a.a));
-  assert.deepEqual(queued, ['hstay'], 'a square double tap during the sense pause is not sent yet: ' + JSON.stringify(queued));
+  assert.notEqual(g.turn, 'hunter', 'one Stay ends the turn');
   await page.waitForTimeout(1500);
   const after = await page.evaluate(() => window.__acts.map(a => a.a));
-  assert.deepEqual(after, ['hstay', 'hmove'], 'the queued double tap sends one move: ' + JSON.stringify(after));
-  await page.waitForFunction(() => UI._S() && UI._S().turn !== 'hunter');
-  assert.notEqual(g.turn, 'hunter');
-  assert.equal(g.three.extra, false);
+  assert.deepEqual(after, ['hstay'], 'the queued taps do not send a second move: ' + JSON.stringify(after));
 
   await browser.close();
   S.close();
