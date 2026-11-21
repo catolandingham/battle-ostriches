@@ -6,9 +6,9 @@ const assert = require('assert'), BL = require('./public/badgerlines'), { create
 const lines = Object.values(BL.LINES).flat();
 const longest = lines.reduce((a, b) => words(b) > words(a) ? b : a);
 assert.equal(longest, BL.LINES.firstBurrow, 'the Guinness line is the longest saying');
-assert.equal(words(longest), 24);
+assert.equal(words(longest), 11);
 assert.equal(holdMs("Badger doesn't care."), 1000, 'a short saying is about 1s');
-assert.equal(holdMs(longest), 24 * 300, 'the longest line stays up 0.3s a word, long enough to read');
+assert.equal(holdMs(longest), 11 * 300, 'the longest saying stays up 0.3s a word');
 assert.ok(holdMs(longest) > holdMs("Badger doesn't care."));
 
 let now = 0, timers = [], id = 0, shown = [], hidden = [];
@@ -65,7 +65,7 @@ const turn = (name, extra) => ({ round: 3, turn: name, h3: extra ? { extra: true
 {
   const b = harness();
   const s = turn('hunter');
-  const kicked = "Ouch. I mean... badger doesn't care.";
+  const kicked = "The badger doesn't care.";
   b.note(s);
   b.add(longest, s);
   b.add(kicked, s);

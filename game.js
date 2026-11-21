@@ -382,7 +382,7 @@ function resolveThrow(g, W, target) {
       if (kicked) { out.used = true; out.result = 'bounce'; return out; } // a stone is never kicked back twice
       out.kicker = W.ostrichSeatAt ? W.ostrichSeatAt(p) : 'blue'; out.kickedBack = true; out.result = 'bounce'; kicked = true; out.line = 'The ostrich kicked the stone right back!';
       if (isFood(g, t) || isRock(g, t)) { // the vulture stands where a stone cannot land: it bounces off and goes one square on, straight past the vulture
-        out.line = isFood(g, t) ? 'Boing! The stone bounced off the leaf.' : 'Clang! The vulture batted it away with a rock.';
+        out.line = isFood(g, t) ? 'The stone bounced off the leaf.' : 'The vulture batted it away with a rock.';
         const n = [t[0] + sgn(t[0] - p[0]), t[1] + sgn(t[1] - p[1])];
         if (!inB(n, g.cfg) || isFood(g, n) || isRock(g, n)) { out.used = true; return out; }
         p = n; continue;

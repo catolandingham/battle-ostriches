@@ -173,7 +173,7 @@ const near = (a, c) => Math.max(Math.abs(a[0] - c[0]), Math.abs(a[1] - c[1]));
       if(await H.locator('.push-actor').count())throw new Error('hunter saw hidden scramble animation');
       const n=steps;
       const birdLine=await Vp.evaluate(()=>{const e=document.getElementById('announce');return e?e.textContent:'(no announce) '+(document.getElementById('msgslot')||{}).innerText;});
-      if(birdLine!==`You were caught! You fled ${n} square${n===1?'':'s'}.`)throw new Error('caught bird notice: '+JSON.stringify(birdLine));
+      if(birdLine!==`You were caught and fled ${n} square${n===1?'':'s'}.`)throw new Error('caught bird notice: '+JSON.stringify(birdLine));
       const hunterText=await hunterNote;if(hunterText!=='The hyena caught the vulture!')throw new Error('hunter notice: '+JSON.stringify(hunterText));
       await shot(Vp,'catch-scramble-1-start');bc();await sleep(300);if(!await Vp.locator('.push-actor').count())throw new Error('duplicate packet interrupted one-second motion');await shot(Vp,'catch-scramble-2-mid');await sleep(650);await shot(Vp,'catch-scramble-3-after');
       await quiet(Vp); await quiet(H);
