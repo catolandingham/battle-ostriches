@@ -10,8 +10,7 @@
   function holdMs(text) { return Math.max(1000, words(text) * 300); }
   function turnKey(S) {
     if (!S) return '';
-    const extra = S.h3 && S.h3.extra ? ':x' : '';
-    return (S.round == null ? '' : S.round) + ':' + (S.turn || '') + extra;
+    return (S.round == null ? '' : S.round) + ':' + (S.turn || '');
   }
   function create({ show, hide, schedule }) {
     let pending = [], active = null, timer = null, turn = null;

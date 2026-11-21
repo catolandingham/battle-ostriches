@@ -1,5 +1,5 @@
 // Hunter kicks land on a random full-distance square. The kicked hunter is not sent the path.
-// The first catch knock-out tells every seat that the hunter now moves twice.
+// The first catch knock-out tells every seat that the hunter's one move is now 3 squares.
 process.env.PORT = '0';
 process.env.BO_NOSTORE = '1';
 process.env.BO_BOTMS = '900000';
@@ -282,5 +282,5 @@ function stoneOk(cfg, from, land, vul) {
   assert.deepEqual(g.three.h, [7, 3], 'simple rules still slide straight');
 }
 
-console.log('PASS scatter kick and the double-turn notice');
+console.log('PASS scatter kick and the faster-move notice');
 process.exit(0);
