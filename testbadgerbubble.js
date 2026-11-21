@@ -95,5 +95,22 @@ const turn = (name, extra) => ({ round: 3, turn: name, h3: extra ? { extra: true
   assert.deepEqual(shown, ["Badger doesn't care."]);
 }
 
+// A status line parks the saying. The saying comes back whole, it is not cut off.
+{
+  const b = harness();
+  const s = turn('hunter');
+  b.note(s);
+  b.add(longest, s);
+  tick(0);
+  assert.equal(b.state().active.text, longest);
+  assert.equal(b.pause(), true);
+  assert.equal(b.state().active, null, 'the saying steps aside');
+  assert.equal(b.state().pending[0].text, longest);
+  b.resume();
+  assert.equal(b.state().active.text, longest, 'the same saying plays again from the start');
+  tick(holdMs(longest));
+  assert.equal(b.state().active, null);
+  assert.deepEqual(shown.filter(t => t === longest).length, 2);
+}
 console.log('PASS badger bubble: each queued saying shows, repeats are kept, a queued line survives the next turn');
 process.exit(0);
