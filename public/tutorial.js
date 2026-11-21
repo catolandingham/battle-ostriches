@@ -36,7 +36,7 @@ function showCards(cards){if(!el)build();list=cards&&cards.length?cards:FALLBACK
 function show(){showCards(linesFor(window.UI&&UI._S&&UI._S())||FALLBACK);}
 function offer(S){if(!S||S.lobby||S.simple||S.phase==='over'||!S.phase)return;const h=S.h3||{};
  const id=(h.mySeat||S.role||'')+':'+(S.kind||h.kind||'')+':'+(!S.three?'2':h.team?String(h.n||4):h.hunt?'4h':'3');
- const key='bo_tut_'+id;try{if(localStorage.getItem(key))return;}catch(e){return;}
+ const key='bo_tut_'+id;try{if(localStorage.getItem(key)||localStorage.getItem('bo_tut_seen'))return;}catch(e){return;}
  const cards=linesFor(S);if(!cards)return;try{localStorage.setItem(key,'1');}catch(e){}showCards(cards);}
 // just-in-time tips: shown once per id, small, dismissible, never blocks the board
 const seen=id=>{try{return localStorage.getItem('bo_tip_'+id)}catch(e){return 1}};
