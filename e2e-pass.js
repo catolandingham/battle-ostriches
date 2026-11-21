@@ -48,7 +48,7 @@ const OUT = 'shots/pass/'; fs.mkdirSync(OUT, { recursive: true });
   await P.click('#actions button:has-text("Throw")', { force: true }); await cell(3, 4).click(); if (await P.evaluate(() => !!document.querySelector('#board .cell.confirm'))) await cell(3, 4).click(); // smash (the only stone at an unfound egg asks once more)
   await P.waitForTimeout(500); await P.screenshot({ path: OUT + 'vulture-smash.jpg', type: 'jpeg', quality: 85 });
   await ostrichTurn(true);
-  assert.equal(await P.textContent('#eggsLeft'), '2'); assert.equal(await P.locator('.cell.hit').count(), 1);
+  assert.equal(await P.textContent('#eggsLeft'), '2/3'); assert.equal(await P.locator('.cell.hit').count(), 1);
   await P.screenshot({ path: OUT + 'ostrich-view.jpg', type: 'jpeg', quality: 85 });
   // Since 2026-11-11 the ostrich is shown the smash on its own turn and has to tap "Tap to go on." before it can move (taps on the board are ignored until then).
   // The button comes after the cartoon and goes by itself after 8 s, so wait for it or for the end of the cartoon, and tap it if it is there.

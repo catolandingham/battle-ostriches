@@ -1,5 +1,5 @@
 // Share-first: "Two phones" shows the code + link first, then you pick your side under it; during play the header has no room code.
-// Also checks iPhone sound: after a tap the WebAudio context is 'running' and the mute default is off. Screenshots in shots/share/.
+// Also checks iPhone sound: it stays off until the sound button, including after Play. Screenshots in shots/share/.
 const { webkit, devices } = require('playwright-core');
 const assert = require('assert'), fs = require('fs');
 process.env.PORT = 3994; const server = require('./server.js');
@@ -8,11 +8,12 @@ const OUT = 'shots/share/'; fs.mkdirSync(OUT, { recursive: true });
   const b = await webkit.launch();
   const mk = async () => { const c = await b.newContext({ ...devices['iPhone 13'] }); const p = await c.newPage(); await p.addInitScript(() => { localStorage.setItem('bo_tut_seen', '1'); localStorage.setItem('bo_walk_blue','1'); localStorage.setItem('bo_walk_red','1'); localStorage.setItem('bo_tips_off','1'); localStorage.setItem('bo_card_off', '1'); ['blue', 'red'].forEach(r => localStorage.setItem('bo_cs_' + r, '9')); }); p.on('pageerror', e => errs.push(e.message)); return p; };
   const A = await mk(), V = await mk(); const U = 'http://localhost:3994/';
-  await A.goto(U); assert.equal(await A.evaluate(() => SFX.muted), false, 'sound on by default');
+  await A.goto(U); assert.equal(await A.evaluate(() => SFX.muted), true, 'sound off by default');
   await A.click('#playFriend');
   await A.waitForSelector('#lobbyCode:not(:empty)'); assert.equal(await A.locator('#moreP').count(), 0, 'no player-count screen before the code');
   await A.waitForSelector('.openseat'); await A.waitForTimeout(400);
-  assert.equal(await A.evaluate(() => SFX.state), 'running', 'AudioContext running after a tap');
+  assert.equal(await A.evaluate(() => SFX.state), 'none', 'Play does not start sound');
+  assert.equal(await A.locator('#lobbySound').count(), 1, 'the room screen has the sound button');
   await A.screenshot({ path: OUT + '1-share-first.jpg', type: 'jpeg', quality: 85 });
   const link = await A.inputValue('#lobbyLink'); const code = (await A.textContent('#lobbyCode')).trim();
   await V.goto(link); await V.waitForSelector('#roomLobby'); await A.waitForSelector('[data-role="red"]');

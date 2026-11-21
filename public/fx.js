@@ -195,7 +195,8 @@ function detect(S,prev,board,ic){if(!prev||S.god||!S.cfg)return;
   S.eggs.forEach((e,i)=>{const pe=prev.eggs[i];if(!pe||!pe.alive||e.alive||!pe.pos||pe.pos[0]<0)return;
    if(S.marks&&S.marks[pe.pos[0]+','+pe.pos[1]]==='hit')return;
    if(la&&la.type==='throw'&&la.result==='hit'&&la.p&&la.p[0]===pe.pos[0]&&la.p[1]===pe.pos[1])return;
-   add('cold',{at:pe.pos.slice(),old:String(prev.eggsLeft),html:ic.egg+ic.ring(0)});});}
+   const shown=v=>{const n=v.eggsLeft|0,cfg=v.cfg&&v.cfg.eggs!=null?v.cfg.eggs|0:n,placed=v.h3&&v.h3.eggsTotal!=null?v.h3.eggsTotal|0:0;return n+'/'+Math.max(cfg,placed);};
+   add('cold',{at:pe.pos.slice(),old:shown(prev),html:ic.egg+ic.ring(0)});});}
  // 4. the badger's own burrow: the badger sinks into the mound
  if(S.role==='hunter'&&S.burrowed&&!prev.burrowed&&prev.phase==='play'&&S.hunter&&S.hunter[0]>=0&&once('burrow',S,null)){
   const k=window.T3UI&&T3UI.KIND&&T3UI.KIND.badger;add('burrow',{at:S.hunter.slice(),art:k?k.art:''});}}

@@ -24,6 +24,9 @@
 #roomLobby .sub{margin:4px 0 0;text-align:center;color:#4a6070;font-size:15px;font-weight:700}
 #roomLobby .toolbar{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}
 #roomLobby .gear{flex:none;width:44px;height:44px;padding:0;font-size:20px}
+.soundbtn{flex:none;width:52px;height:52px;padding:0;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:#fff;color:#111;border:3px solid #111;box-shadow:0 3px 0 #111}
+#homeStep .soundbtn{margin:0 auto 12px}
+#roomLobby .toolbar .bartools{display:flex;align-items:center;gap:8px}
 #roomLobby .menu{background:#fff;border:3px solid #1a2a3a;border-radius:14px;padding:10px;margin-bottom:8px}
 #roomLobby .menu.hidden{display:none}
 #roomLobby .toggle{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:6px 0}

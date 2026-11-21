@@ -80,7 +80,8 @@
     // The animal choice and Start appear once someone is in.
     if (!s.solo && s.host && (s.humans || []).length + (s.botsWanted || 0) < 2) {
       const mine = (s.humans || []).map(h => `<li><span class="seatwho"><b>${esc(h.you ? 'You' : h.name)}</b>${h.host ? ' · host' : ''}</span></li>`).join('');
-      box.innerHTML = `<div class="toolbar"><button class="linkbtn" id="lobbyHome" type="button">← Home</button><button class="gear" id="lobbyGear" type="button" aria-expanded="${gear}" aria-controls="lobbyMenu" aria-label="More">⚙</button></div>
+      const snd = window.SFX ? SFX.icon('lobbySound') : '';
+      box.innerHTML = `<div class="toolbar"><button class="linkbtn" id="lobbyHome" type="button">← Home</button><span class="bartools">${snd}<button class="gear" id="lobbyGear" type="button" aria-expanded="${gear}" aria-controls="lobbyMenu" aria-label="More">⚙</button></span></div>
       <div class="menu${gear ? '' : ' hidden'}" id="lobbyMenu" role="group" aria-label="Help and settings">
         <button type="button" data-tool="rules">How to play</button>
         <button type="button" data-tool="sound">${sound}</button>
@@ -91,7 +92,8 @@
       <ul class="who seats" aria-label="Roster">${mine}<li class="openseat"><span class="opentxt">Open seat</span>${max ? '<button type="button" id="botPlus" class="addcomp">+ Computer</button>' : ''}</li></ul>`;
       return;
     }
-    box.innerHTML = `<div class="toolbar"><button class="linkbtn" id="lobbyHome" type="button">← Home</button><button class="gear" id="lobbyGear" type="button" aria-expanded="${gear}" aria-controls="lobbyMenu" aria-label="More">⚙</button></div>
+    const snd = window.SFX ? SFX.icon('lobbySound') : '';
+    box.innerHTML = `<div class="toolbar"><button class="linkbtn" id="lobbyHome" type="button">← Home</button><span class="bartools">${snd}<button class="gear" id="lobbyGear" type="button" aria-expanded="${gear}" aria-controls="lobbyMenu" aria-label="More">⚙</button></span></div>
       <div class="menu${gear ? '' : ' hidden'}" id="lobbyMenu" role="group" aria-label="Help and settings">
         <button type="button" data-tool="rules">How to play</button>
         <button type="button" data-tool="sound">${sound}</button>
@@ -117,13 +119,14 @@
     const yes = e.target.closest('#claimYes'); if (yes && pendingClaim) { send({ t: 'claim', seat: pendingClaim }); return; }
     const no = e.target.closest('#claimNo'); if (no) { pendingClaim = null; draw(); return; }
     const gearBtn = e.target.closest('#lobbyGear'); if (gearBtn) { gear = !gear; draw(); return; }
+    const sndBtn = e.target.closest('#lobbySound'); if (sndBtn && window.SFX) { SFX.toggle(); draw(); return; }
     const clock = e.target.closest('#clockToggle'); if (clock && st && st.host) { send({ t: 'lobby', a: 'clock', on: !st.clock }); return; }
     const lvl = e.target.closest('[data-level]'); if (lvl && st && st.host) { send({ t: 'lobby', a: 'level', level: lvl.dataset.level }); return; }
     const minus = e.target.closest('#botMinus'); if (minus && st && st.host && !minus.disabled) { send({ t: 'lobby', a: 'bots', n: st.botsWanted - 1 }); return; }
     const plus = e.target.closest('#botPlus'); if (plus && st && st.host && !plus.disabled) { send({ t: 'lobby', a: 'bots', n: st.botsWanted + 1 }); return; }
     const tool = e.target.closest('[data-tool]'); if (tool) {
       if (tool.dataset.tool === 'rules' && window.UI) UI.rules();
-      else if (tool.dataset.tool === 'sound') { const b = $('muteBtn2'); if (b) b.click(); else if (window.SFX) SFX.toggle(); draw(); }
+      else if (tool.dataset.tool === 'sound') { if (window.SFX) SFX.toggle(); draw(); }
       else if (tool.dataset.tool === 'theme' && window.THEME) THEME.next();
       return;
     }
