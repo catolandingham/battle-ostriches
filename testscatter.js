@@ -1,4 +1,4 @@
-// Hunter kicks land on a random full-distance square. The kicked hunter is not sent the path.
+// Hunter kicks land on a random full-distance square. Every phone is sent that hunter's path.
 // The first catch knock-out tells every seat that the hunter's one move is now 3 squares.
 process.env.PORT = '0';
 process.env.BO_NOSTORE = '1';
@@ -111,11 +111,11 @@ assert.equal(NOTE, T.DOUBLE_NOTE);
   const blue = S.view3(room, 'blue'), hunter = S.view3(room, 'hunter'), red = S.view3(room, 'red');
   assert.deepEqual(blue.kick.to, g.three.h);
   assert.deepEqual(blue.kick.trail, g.lastKick.points);
-  assert.equal(hunter.kick.to, null);
-  assert.equal(hunter.kick.trail, null);
-  assert.equal(hunter.kick.card, true);
-  assert.ok(!JSON.stringify(hunter.kick).includes(JSON.stringify(g.ostrich)), 'the kick packet does not name the ostrich square');
-  assert.ok((red.kick.trail || []).every(p => p == null || B.dist(g.vulture, p) <= 2));
+  assert.deepEqual(hunter.kick.to, g.three.h, 'the kicked hunter sees the landing');
+  assert.deepEqual(hunter.kick.trail, g.lastKick.points, 'the path is the hunter squares, not a line back to the ostrich');
+  assert.deepEqual(hunter.ostrich, T.OFF, 'the ostrich square stays hidden');
+  assert.deepEqual(red.kick.to, g.three.h);
+  assert.deepEqual(red.kick.trail, g.lastKick.points);
 }
 
 {
@@ -241,8 +241,8 @@ function stoneOk(cfg, from, land, vul) {
   room.g = g; room.bots = [];
   for (const s of ['blue', 'red', 'hunter']) room.players[s] = { ws: null, token: s };
   const hunter = S.view3(room, 'hunter'), vul = S.view3(room, 'red');
-  assert.equal(hunter.stoneNote.trails[0].points, null);
-  assert.equal(hunter.stoneNote.trails[0].card, true);
+  assert.deepEqual(hunter.stoneNote.trails[0].points, vul.stoneNote.trails[0].points, 'every phone sees the stone shove');
+  assert.deepEqual(hunter.ostrich, T.OFF);
   assert.deepEqual(vul.stoneNote.trails[0].points[0], [5, 3]);
   assert.deepEqual(vul.stoneNote.trails[0].points[vul.stoneNote.trails[0].points.length - 1], land);
 }

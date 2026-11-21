@@ -1,6 +1,6 @@
 // Four Hunters phones (WebKit iPhone 13): the start-of-game line, then the first hunters meeting, on every phone.
 // Every phone gets the one-line announcement and it stays up about 1 second even though the board is redrawn under it.
-// Only the two hunters (who can see the hyena) get the square highlighted; the two far birds get the line and no location.
+// Every phone highlights where the shove lands. A far bird still does not see the hunter piece.
 process.env.PORT = 3960; process.env.BO_NOSTORE = '1'; process.env.BO_CLOCKMS = '600000'; process.env.BO_BOTMS = '600000';
 const { webkit, devices } = require('playwright-core'); const assert = require('assert'), fs = require('fs');
 const server = require('./server.js'), H = require('./hunt.js'), HA = require('./huntai.js');
@@ -72,8 +72,8 @@ const MEET = 'The badger shoved the hyena!';
     console.log(p.name.padEnd(8), 'meeting line up', secs.toFixed(2), 's, highlight', kbNow[p.name]);
   }
   // the square: only the hunters (who can see the hyena) get it; the far birds get the line and no location
-  assert.ok(kbNow.hyena >= 1 && kbNow.badger >= 1, 'both hunters see the hyena\'s square highlighted'); assert.equal(kbNow.ostrich, 0, 'the far ostrich has no highlight'); assert.equal(kbNow.vulture, 0, 'the far vulture has no highlight');
-  for (const p of [O, V]) assert.equal(await p.evaluate(() => UI._S().h3.rival.to), null, p.name + ' was not told the square');
+  assert.ok(kbNow.hyena >= 1 && kbNow.badger >= 1 && kbNow.ostrich >= 1 && kbNow.vulture >= 1, 'every phone highlights the shove landing ' + JSON.stringify(kbNow));
+  for (const p of [O, V]) assert.deepEqual(await p.evaluate(() => UI._S().h3.rival.to), to, p.name + ' is told where the shove landed');
   for (const p of [O, V]) assert.equal(await p.locator('.pc.ph').count(), 0, p.name + ' sees no hunter');
   await K.screenshot({ path: OUT + 'badger.png' }); await O.screenshot({ path: OUT + 'ostrich.png' });
   // How to play names only the animals in this game

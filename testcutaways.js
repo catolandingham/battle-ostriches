@@ -60,8 +60,7 @@ for (const mode of ['3p', 'Hunters', '5p']) {
   const nbefore = shot(near);
   assert.ok(mode === '5p' ? TT.ostrichKick(n, 'o1', [8, 3]) : mode === '3p' ? T.ostrichKick3(n, [8, 3]) : H.ostrichKickH(n, [8, 3]));
   const ngot = ids(near, nbefore);
-  assert.equal(ngot[near.red], 'kick', mode + ' nearby vulture sees the kick, not the hidden landing');
-  assert.notEqual(ngot[near.red], 'kick-wrap');
+  assert.equal(ngot[near.red], ngot[near.blue], mode + ' the vulture sees the same shove picture');
 }
 
 // ostrich kicks a badger, or a vulture. A wrap of those pairs still uses that pair's picture, not the hyena wrap.
@@ -71,7 +70,7 @@ for (const mode of ['3p', 'Hunters', '5p']) {
   const got = ids(f, prev);
   assert.equal(got.blue, 'kick-badger', 'kicker sees the badger kick');
   assert.equal(got.hunter, 'kick-badger', 'badger sees its own kick');
-  assert.equal(got.red, null, 'far vulture does not see the badger kick');
+  assert.equal(got.red, 'kick-badger', 'a far vulture still sees the badger shove');
   const around = make(S, '3p'), ag = around.g; ag.turn = 'blue'; ag.ostrich = [7, 3]; ag.vulture = [0, 6]; ag.three.kind = 'badger'; ag.three.h = [8, 3]; ag.three.burrowed = false;
   const ap = shot(around); assert.ok(T.ostrichKick3(ag, [8, 3]));
   assert.equal(C.sceneFor(around.view('blue'), ap.blue).id, 'kick-badger', 'a wrapping badger kick uses the badger picture');
@@ -226,15 +225,15 @@ for (const mode of ['3p', 'Hunters', '5p']) {
   const got = ids(f, prev);
   assert.equal(got.badger, 'burst', 'badger sees the burst cartoon');
   assert.equal(got.hyena, 'burst', 'hyena sees the burst cartoon');
-  assert.equal(got.blue, null, 'far ostrich does not see the burst');
-  assert.equal(got.red, null, 'far vulture does not see the burst');
+  assert.equal(got.blue, 'burst', 'a far ostrich still sees the burst picture');
+  assert.equal(got.red, 'burst', 'a far vulture still sees the burst picture');
   const near = make(S, 'Hunters'), ng = near.g;
   ng.turn = 'badger'; ng.hunt.hs.badger.p = [4, 3]; ng.hunt.hs.badger.burrowed = true; ng.hunt.hs.badger.pounce = false;
   ng.hunt.hs.hyena.p = [4, 3]; ng.hunt.hs.hyena.came = { to: [4, 3], dir: [1, 0] };
   ng.ostrich = [4, 5]; ng.vulture = [0, 0];
   const np = shot(near); assert.ok(H.hunterBurst(ng));
   assert.equal(C.sceneFor(near.view('blue'), np.blue).id, 'burst', 'an ostrich who can see the hyena sees the burst');
-  assert.equal(C.sceneFor(near.view('red'), np.red), null, 'a far vulture still does not');
+  assert.equal(C.sceneFor(near.view('red'), np.red).id, 'burst', 'a far vulture still sees the burst picture');
 }
 
 // classic and 2 vs 2: the ostrich kicking a vulture uses that picture. A wrap still uses it, not the hyena wrap.
@@ -275,13 +274,13 @@ for (const mode of ['3p', 'Hunters', '5p']) {
   const badger = push('badger');
   assert.equal(badger.got.badger, 'shove-badger-hyena');
   assert.equal(badger.got.hyena, 'shove-badger-hyena');
-  assert.equal(badger.got.blue, null, 'far ostrich does not see the shove');
-  assert.equal(badger.got.red, null, 'far vulture does not see the shove');
+  assert.equal(badger.got.blue, 'shove-badger-hyena', 'a far ostrich sees the shove');
+  assert.equal(badger.got.red, 'shove-badger-hyena', 'a far vulture sees the shove');
   const hyena = push('hyena');
   assert.equal(hyena.got.hyena, 'shove-hyena-badger');
   assert.equal(hyena.got.badger, 'shove-hyena-badger');
-  assert.equal(hyena.got.blue, null);
-  assert.equal(hyena.got.red, null);
+  assert.equal(hyena.got.blue, 'shove-hyena-badger');
+  assert.equal(hyena.got.red, 'shove-hyena-badger');
 }
 
 // the same view twice is not a second scene
