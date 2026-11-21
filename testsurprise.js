@@ -345,11 +345,11 @@ for (const mode of ['Hunters', '5p']) {
   const hit = pol(f, prev, 'hunter');
   assert.equal(hit.line, 'The ostrich kicked you 3 squares!');
   assert.equal(hit.readMs, 1800);
-  assert.equal(hit.motionMs, 0, 'the kicked hunter is not sent a slide');
-  assert.equal(hit.animMs, SUR.LOOKOUT_MS + SUR.CARTOON_MS);
+  assert.ok(hit.motionMs > 0, 'the kicked hunter sees the slide');
+  assert.equal(hit.animMs, SUR.LOOKOUT_MS + SUR.CARTOON_MS + hit.motionMs);
   const kickerPol = pol(f, prev, 'blue');
   assert.equal(kickerPol.motionMs, 3 * SUR.STEP_MS, 'the kicker still slides the full kick');
-  assert.equal(hit.animMs + hit.readMs, SUR.LOOKOUT_MS + SUR.CARTOON_MS + 1800);
+  assert.equal(hit.animMs + hit.readMs, SUR.LOOKOUT_MS + SUR.CARTOON_MS + hit.motionMs + 1800);
   assert.equal(SUR.clockDelayMs(hit, { isCurrent: true, seesEvent: true }), hit.animMs + hit.readMs);
   assert.equal(hit.lineHold, SUR.CARTOON_MS + hit.motionMs + hit.readMs);
 }
@@ -361,11 +361,10 @@ const P = require('./public/push-motion');
   assert.ok(T.ostrichKick3(g, [4, 3]), 'kick the hyena');
   assert.equal(B.wrapDist(g.cfg, [4, 3], g.three.h), 3, 'hyena lands the full 3');
   const watch = f.view('red'), kickr = f.view('blue'), hit = f.view('hunter');
-  assert.equal(hit.kick.trail, null, 'the kicked hunter is not sent the path');
-  assert.equal(hit.kick.to, null);
-  if (B.dist(g.vulture, g.three.h) <= 2) assert.deepEqual(watch.kick.to, g.three.h, 'landing inside sight is sent');
-  else assert.equal(watch.kick.to, null, 'a landing outside sight is not sent');
-  assert.ok(!watch.kick.trail || watch.kick.trail.every(p => p == null || B.dist(g.vulture, p) <= 2), 'the trail does not grow past sight');
+  assert.deepEqual(hit.kick.trail, g.lastKick.points, 'the kicked hunter is sent the hunter squares');
+  assert.deepEqual(hit.kick.to, g.three.h);
+  assert.deepEqual(watch.kick.to, g.three.h, 'every phone sees the landing');
+  assert.deepEqual(watch.kick.trail, g.lastKick.points, 'every phone sees the shove');
   const wp = SUR.policy(watch, prev.red);
   if (T.hunterSeenBy(g, 'red')) {
     assert.ok(wp.bystander && wp.watchSlide && !wp.skipSlide && !wp.skipNear, 'a watcher who can still see the hunter plays the slide');
@@ -374,7 +373,7 @@ const P = require('./public/push-motion');
     const ev = P.events(watch, prev.red).filter(e => e.key === 'hyena' || e.key === watch.kick.key);
     assert.equal(ev.length, 1, 'one slide, taken from the redacted trail');
     assert.deepEqual(ev[0].points, watch.kick.trail);
-  } else assert.ok(wp.skipSlide && wp.skipNear, 'a hunter already out of sight does not slide');
+  } else assert.ok(wp.watchSlide && !wp.skipSlide, 'a far watcher still plays the shove');
   const kp = SUR.policy(kickr, prev.blue), hp = SUR.policy(hit, prev.hunter);
   assert.equal(kp.motionDelay, SUR.CARTOON_MS, 'the kicker still waits for the cartoon');
   assert.equal(hp.motionDelay, SUR.LOOKOUT_MS + SUR.CARTOON_MS, 'the kicked hunter still gets Look out! and the cartoon');
@@ -386,16 +385,14 @@ const P = require('./public/push-motion');
   const prev = shot(f);
   assert.ok(T.ostrichKick3(g, [4, 3]));
   const watch = f.view('red');
-  assert.equal(watch.kick.to, null, 'a far watcher is not told the landing');
-  assert.ok(!watch.kick.trail || watch.kick.trail.every(p => p == null), 'a far trail is fully redacted');
+  assert.deepEqual(watch.kick.to, g.three.h, 'a far watcher is told the landing');
+  assert.deepEqual(watch.kick.trail, g.lastKick.points);
   const wp = SUR.policy(watch, prev.red);
-  assert.ok(wp.skipSlide && wp.skipNear, 'hunter already out of sight: skip the slide and the near line');
+  assert.ok(wp.watchSlide && !wp.skipSlide, 'a far watcher plays the shove');
   assert.equal(wp.motionDelay, 0);
-  assert.equal(wp.motionMs, 0);
-  assert.deepEqual(P.events(watch, prev.red).filter(e => e.key === 'hyena' || e.key === watch.kick.key), []);
-  // The view is unchanged by the client. Hidden steps are still hidden.
-  assert.ok(watch.kick.trail.every(p => p == null));
-  assert.notDeepEqual(watch.kick.trail, f.view('blue').kick.trail);
+  assert.ok(wp.motionMs > 0);
+  assert.equal(P.events(watch, prev.red).filter(e => e.key === 'hyena' || e.key === watch.kick.key).length, 1, 'the far phone gets a slide');
+  assert.ok(watch.kick.trail.every(p => p[0] !== g.ostrich[0] || p[1] !== g.ostrich[1]), 'the path does not name the ostrich square');
 }
 {
   const f = make(S, '3p'), g = f.g;
@@ -403,13 +400,10 @@ const P = require('./public/push-motion');
   const prev = shot(f);
   assert.ok(T.ostrichKick3(g, [4, 3]));
   const watch = f.view('red');
-  assert.ok(!watch.kick.trail || watch.kick.trail.every(p => p == null || B.dist([4, 5], p) <= 2), 'only squares inside sight');
-  if (watch.kick.trail && watch.kick.trail.some(p => p && p[0] >= 0)) assert.ok(watch.kick.trail.some(p => p == null), 'the rest stays null');
+  assert.deepEqual(watch.kick.trail, g.lastKick.points, 'the shove is sent whole');
   const wp = SUR.policy(watch, prev.red);
-  if (T.hunterSeenBy(g, 'red')) assert.ok(!wp.skipSlide, 'a hunter still in sight can slide');
-  else { assert.ok(wp.skipSlide && wp.skipNear, 'once the hunter has left sight, do not replay the path');
-    assert.deepEqual(P.events(watch, prev.red).filter(e => e.key === 'hyena' || e.key === watch.kick.key), []); }
-  assert.ok(!watch.kick.trail || watch.kick.trail.every(p => p == null || B.dist([4, 5], p) <= 2));
+  assert.ok(!wp.skipSlide, 'the watcher plays the shove');
+  assert.equal(P.events(watch, prev.red).filter(e => e.key === 'hyena' || e.key === watch.kick.key).length, 1);
 }
 
 // Every surprise that used to wait for a tap now uses the reading pause instead.

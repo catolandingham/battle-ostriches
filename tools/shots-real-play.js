@@ -137,10 +137,9 @@ const near = (a, c) => Math.max(Math.abs(a[0] - c[0]), Math.abs(a[1] - c[1]));
       const ka=await A.evaluate(()=>UI._S().kick),kh=await H.evaluate(()=>UI._S().kick);
       const land=JSON.stringify(g.three.h);
       if(JSON.stringify(ka.to)!==land||!ka.trail||ka.trail.filter(Boolean).length!==(ka.moved||0)+1)throw new Error('kicker must see the full path and the real landing '+JSON.stringify(ka)+' '+land);
-      if(kh.to||kh.trail)throw new Error('kicked hunter must not be sent the path or the landing '+JSON.stringify(kh));
-      if(await H.locator('.push-motion .push-actor').count())throw new Error('kicked hunter must not play the slide');
+      if(JSON.stringify(kh.to)!==land||!kh.trail||kh.trail.filter(Boolean).length<2)throw new Error('kicked hunter must see the path and the landing '+JSON.stringify(kh)+' '+land);
       if(await H.locator('#board .pc.po').count())throw new Error('hunter learned a hidden ostrich position');
-      // The kicker still shows who kicked. The hunter is not sent a path, so the same mark on their phone is not held for the slide.
+      // The kicker still shows who kicked. The hunter gets the path of their own squares, and still no ostrich piece.
       if(!await A.locator('#board .pc.po .kick-leg').count())throw new Error('missing kicker kick cause');
       bc();await sleep(300); // the repeated update goes out first and the check is made 0.3 s into the slide; the screenshots below take longer than the slide on a slow machine
       if(!await A.locator('.push-motion .push-actor').count())throw new Error('duplicate packet interrupted full kicker slide');
@@ -157,7 +156,8 @@ const near = (a, c) => Math.max(Math.abs(a[0] - c[0]), Math.abs(a[1] - c[1]));
       await A.emulateMedia({reducedMotion:'no-preference'});await H.emulateMedia({reducedMotion:'no-preference'});g.turn='blue';g.three.h=[4,3];g.marks['7,3']='stone';g.lastAction=null;g.lastKick=null;bc();await sleep(400);
       await shot(A,'kick-stopped-ostrich-0-before');await shot(H,'kick-stopped-hyena-0-before');act('blue',{a:'kick',p:[4,3]});await A.waitForSelector('.push-motion .push-actor');
       {const k=await A.evaluate(()=>UI._S().kick);if(!k||k.moved!==3||JSON.stringify(k.to)=== '[7,3]'||B.wrecked(g,[k.to[0],k.to[1]]))throw new Error('a wreck no longer shortens a hunter kick '+JSON.stringify(k));
-       const kh=await H.evaluate(()=>UI._S().kick);if(kh.to||kh.trail)throw new Error('kicked hunter still must not see the path');}
+       const kh=await H.evaluate(()=>UI._S().kick);if(JSON.stringify(kh.to)!==JSON.stringify(k.to)||!kh.trail||kh.trail.filter(Boolean).length<2)throw new Error('kicked hunter must see the path and the landing '+JSON.stringify(kh));
+       if(await H.locator('#board .pc.po').count())throw new Error('hunter learned a hidden ostrich position');}
       await shot(A,'kick-stopped-ostrich-1-start');await shot(H,'kick-stopped-hyena-1-start');await sleep(350);await shot(A,'kick-stopped-ostrich-2-mid');await shot(H,'kick-stopped-hyena-2-mid');await sleep(350);await shot(A,'kick-stopped-ostrich-2b-landing');await shot(H,'kick-stopped-hyena-2b-landing');await sleep(400);await shot(A,'kick-stopped-ostrich-3-after');await shot(H,'kick-stopped-hyena-3-after');
       for(const p of [A,Vp,H])await p.context().close();
     }

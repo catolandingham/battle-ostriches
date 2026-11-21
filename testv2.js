@@ -241,7 +241,7 @@ ok('Hunters: the hyena that walks onto the buried badger shares its square; the 
   assert.ok(H.hunterBurst(g)); assert.deepEqual(g.hunt.hs.hyena.p, [2, 3], 'back west the way it came'); assert.equal(g.hunt.hs.badger.burrowed, false); assert.deepEqual(g.hunt.hs.badger.p, [4, 3]); assert.equal(g.turn, 'red');
   const v = { blue: S.viewH(room, 'blue'), red: S.viewH(room, 'red'), hyena: S.viewH(room, 'hyena'), badger: S.viewH(room, 'badger') };
   for (const s of Object.keys(v)) { assert.equal(v[s].h3.burst.seq, 1, s); assert.equal(v[s].h3.burst.n, 2); }
-  assert.deepEqual(v.hyena.h3.burst.to, [2, 3]); assert.equal(v.red.h3.burst.to, null, 'a vulture too far to see the hyena is not told where it went');
+  assert.deepEqual(v.hyena.h3.burst.to, [2, 3]); assert.deepEqual(v.red.h3.burst.to, [2, 3], 'every phone is told where the hyena lands'); assert.equal(v.red.h3.burst.trail, null, 'a far vulture is not sent the path, because it starts in the badger hole');
   assert.equal(CT.burstLine(v.blue.h3.burst), 'The badger burst out and shoved the hyena 2 squares!');
   assert.equal(BLN.detect({ phase: 'play', h3: {} }, { phase: 'play', h3: { burst: { seq: 1 } }, role: 'blue' }, BLN.createPicker())[0].text, BLN.LINES.shove, 'the shove quote goes with it'); });
 ok('burst out: blocked by a wrecked square or an animal, the hyena moves less or not at all; nobody is hurt; unknown direction is random; only the badger on a shared square may burst', () => {

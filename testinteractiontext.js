@@ -7,7 +7,7 @@ for(const mode of ['3p','Hunters','5p']){const f=make(S,mode),g=f.g;g.turn=f.red
  const doer=f.view(f.red),target=f.view(mode==='Hunters'?'hyena':'hunter'),e={kind:'stone',text:g.lastStone.text};
  A.equal(CT.viewerEvent(e,doer),'Your stone hit the hyena!');A.equal(CT.viewerEvent(e,target),'A stone hit you!');
  const land=mode==='5p'?g.h.p:mode==='3p'?g.three.h:g.hunt.hs.hyena.p,path=doer.stoneNote.trails[0].points;
- A.deepEqual(path[0],[4,3]);A.deepEqual(path[path.length-1],land);A.equal(target.stoneNote.trails[0].points,null);A.equal(target.stoneNote.trails[0].card,true);
+ A.deepEqual(path[0],[4,3]);A.deepEqual(path[path.length-1],land);A.deepEqual(target.stoneNote.trails[0].points,path);
 }
 for(const mode of ['3p','Hunters','5p']){const f=make(S,mode),g=f.g;A(f.fly());g.turn=f.red;if(mode==='3p')A(T.vultureThrow3(g,[2,1]));else if(mode==='Hunters')A(H.vultureThrowH(g,[2,1]));else A(TT.vultureThrow(g,f.red,[2,1]));
  for(const r of f.roles){const v=f.view(r),e={kind:'smash',text:'The vulture smashed an egg.'};A.deepEqual(Object.keys(v.smashNote).sort(),['by','owner','seq']);if(v.role==='hunter'&&!v.god)A.equal(v.smashNote.owner,mode==='5p'?'o1':null);A.equal(CT.viewerEvent(e,v),r===f.red?'You smashed an egg!':r===f.blue?'The vulture smashed your egg!':mode==='5p'?"The vulture smashed Ostrich 1's egg!":'The vulture smashed an egg.');}
