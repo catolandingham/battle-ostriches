@@ -33,7 +33,7 @@ async function run(browser, name, viewport) {
   const card = p.locator('#rolecard .rok');
   if (await card.count()) await card.tap();
   const round = (await p.locator('#hud .ctr').innerText()).replace(/\s+/g, ' ');
-  assert.ok(/^Round \d+$/.test(round), name + ' round visible: ' + round);
+  assert.ok(/^Round \d+ of \d+$/.test(round), name + ' round visible: ' + round);
   const box = await p.locator('#hud .ctr').boundingBox();
   assert.ok(box && box.width > 20 && box.height > 8, name + ' round is on screen');
   await p.tap('#moreBtn');
@@ -66,11 +66,11 @@ async function three(browser, name, viewport) {
   const tut = p.locator('#tutNext');
   if (await tut.count() && await tut.isVisible()) { for (let i = 0; i < 3; i++) { if (!(await tut.isVisible())) break; await tut.tap(); await sleep(150); } }
   const before = (await p.locator('#hud .ctr').innerText()).replace(/\s+/g, ' ');
-  assert.ok(/^Round \d+$/.test(before), name + ' round before timer: ' + before);
+  assert.ok(/^Round \d+ of \d+$/.test(before), name + ' round before timer: ' + before);
   await p.tap('#timerToggle');
   await sleep(250);
   const after = (await p.locator('#hud .ctr').innerText()).replace(/\s+/g, ' ');
-  assert.ok(/^Round \d+$/.test(after), name + ' round with the timer changed: ' + after);
+  assert.ok(/^Round \d+ of \d+$/.test(after), name + ' round with the timer changed: ' + after);
   const clock = await p.locator('#clock3').boundingBox();
   const roundBox = await p.locator('#hud .ctr').boundingBox();
   assert.ok(roundBox && roundBox.width > 20, name + ' round stays on screen');
