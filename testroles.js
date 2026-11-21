@@ -67,18 +67,18 @@ ok('approved wording, with numbers from the rules constants', () => {
     `If a hunter gets to your square, they catch you. ${T.T3.ko.hyena} catches knock you out.`,
     'You lose if every egg is broken or goes cold, or if you don\'t eat in time.',
     'The hunter wins when both birds are out.',
-    `When the hunter knocks a bird out, they always take ${T.T3.double} turns in a row. The hyena can pounce only on the first.`,
+    'When the hunter knocks a bird out, they move twice each round. One move is 1 square. No pounce.',
   ]);
   assert.deepEqual(h3.lines, [
     'You win when both birds are out.',
     `${T.T3.ko.hyena} catches knock a bird out.`,
     'When you smell a bird and miss, you smell again and may move 1 more square.',
-    `When you knock a bird out, you always take ${T.T3.double} turns in a row. You can pounce only on the first.`,
+    'When you knock a bird out, you move twice each round. One move is 1 square. No pounce.',
     `You lose if an egg lasts ${C.rounds} rounds, or every egg is broken.`,
   ]);
   const badger3 = R.roleCard('hunter', 'badger', '3');
   assert.ok(!badger3.lines.some(l => /pounce/i.test(l)), 'the badger card does not mention pounce');
-  assert.ok(badger3.lines.includes(`After you knock a bird out, you always take ${T.T3.double} turns in a row.`));
+  assert.ok(badger3.lines.includes('After you knock a bird out, you move twice each round. One move is 1 square.'));
   assert.ok(R.roleCard('hyena', null, '4h').lines.includes('When you smell a bird and miss, you smell again and may move 1 more square.'));
   assert.ok(!R.roleCard('badger', null, '4h').lines.some(l => /pounce|smell a bird/i.test(l)));
   assert.ok(R.roleCard('hunter', 'hyena', '5').lines.includes('When you smell a bird and miss, you smell again and may move 1 more square.'));
@@ -101,9 +101,9 @@ ok('change every constant: every number on every card follows, and no other numb
   const o = R.roleCard('blue', null, '2', X); assert.equal(o.goal, 'Keep at least 1 egg alive for 41 rounds.');
   const v = R.roleCard('red', null, '2', X); assert.equal(v.lines[2], 'You lose if an egg lasts 41 rounds.');
   assert.equal(R.roleCard('hunter', 'hyena', '3', X).goal, 'You win at 34 catches.');
-  assert.ok(R.roleCard('hunter', 'hyena', '3', X).lines.includes('When you knock a bird out, you always take 8 turns in a row. You can pounce only on the first.'));
+  assert.ok(R.roleCard('hunter', 'hyena', '3', X).lines.includes('When you knock a bird out, you move twice each round. One move is 1 square. No pounce.'));
   assert.ok(R.roleCard('hunter', 'hyena', '3', X).lines.some(l => l.includes('26 more squares')));
-  assert.ok(R.roleCard('hunter', 'badger', '3', X).lines.includes('After you knock a bird out, you always take 8 turns in a row.'));
+  assert.ok(R.roleCard('hunter', 'badger', '3', X).lines.includes('After you knock a bird out, you move twice each round. One move is 1 square.'));
   assert.ok(R.roleCard('blue', 'hyena', '3', X).lines[1].includes('12 catches knock you out.'));
   assert.ok(R.roleCard('blue', 'badger', '3', X).lines[1].includes('13 catches knock you out.'));
   assert.equal(R.roleCard('hunter', 'hyena', '5', X).goal, 'You win by knocking out 1 ostrich and 1 vulture.');

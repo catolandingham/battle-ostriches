@@ -60,10 +60,10 @@ ok('kicked back onto a leaf or rock pile: the stone bounces and goes one square 
   assert.equal(m.marks['4,4'], 'stone', 'it landed past the vulture'); });
 ok('a stone pushes any animal on its square 2 away from the vulture and brings a buried badger up (3 players)', () => {
   const g = three('badger', [5, 3], [1, 1], [4, 3]); g.three.burrowed = true; g.turn = 'red'; g.stones = 1; g.sniff = null;
-  assert.ok(T.vultureThrow3(g, [5, 3])); assert.equal(g.three.burrowed, false); assert.deepEqual(g.three.h, [7, 3]); assert.ok(B.wrecked(g, [5, 3])); assert.ok(g.three.popout);
-  const b = three('hyena', [5, 3], [1, 1], [4, 3]); b.turn = 'red'; b.stones = 1; b.three.h = [5, 3]; b.ostrich = [6, 3]; assert.ok(T.vultureThrow3(b, [5, 3])); assert.deepEqual(b.three.h, [5, 3], 'blocked by the ostrich: stays'); });
+  assert.ok(T.vultureThrow3(g, [5, 3])); assert.equal(g.three.burrowed, false); assert.equal(B.wrapDist(g.cfg, [5, 3], g.three.h), 2, 'full distance'); assert.ok(!B.pointsBack(g.cfg, [5, 3], g.three.h, g.vulture), 'not straight away from the vulture'); assert.ok(B.wrecked(g, [5, 3])); assert.ok(g.three.popout);
+  const b = three('hyena', [5, 3], [1, 1], [4, 3]); b.turn = 'red'; b.stones = 1; b.three.h = [5, 3]; b.ostrich = [6, 3]; assert.ok(T.vultureThrow3(b, [5, 3])); assert.equal(B.wrapDist(b.cfg, [5, 3], b.three.h), 2); assert.notDeepEqual(b.three.h, [6, 3], 'not on the ostrich'); });
 ok('Hunters and 2 vs 2: the stone works on whichever hunter stands there; no stone at the teammate\'s square', () => {
-  const g = hunters([5, 3], [8, 6], [0, 6], [4, 3]); g.turn = 'red'; g.stones = 1; assert.ok(H.vultureThrowH(g, [5, 3])); assert.deepEqual(g.hunt.hs.hyena.p, [7, 3]);
+  const g = hunters([5, 3], [8, 6], [0, 6], [4, 3]); g.turn = 'red'; g.stones = 1; assert.ok(H.vultureThrowH(g, [5, 3])); assert.equal(B.wrapDist(g.cfg, [5, 3], g.hunt.hs.hyena.p), 2); assert.ok(!B.pointsBack(g.cfg, [5, 3], g.hunt.hs.hyena.p, g.vulture));
   const t = team('hyena', { h: [8, 3], o1: [1, 1], o2: [7, 1], v1: [3, 3], v2: [3, 4] }); t.turn = 'v1'; t.b.v1.stones = 1; assert.ok(!B.dist || !TT.throwTargets(t, 'v1').some(p => K(p) === '3,4'), 'not at the teammate');
   assert.ok(TT.throwTargets(t, 'v1').some(p => K(p) === '3,3')); });
 
@@ -78,7 +78,7 @@ ok('Kick pushes a vulture 3 squares, wraps around the edge, and stops before a w
   const w = classic(); w.turn = 'blue'; w.ostrich = [6, 3]; w.vulture = [7, 3]; assert.ok(B.ostrichKick(w, [7, 3])); assert.deepEqual(w.vulture, [1, 3], 'wrapped past the edge: 8, 0, 1'); assert.equal(w.lastKick.moved, 3);
   const x = classic(); x.turn = 'blue'; x.ostrich = [4, 3]; x.vulture = [5, 3]; x.marks['7,3'] = 'stone'; assert.ok(B.ostrichKick(x, [5, 3])); assert.deepEqual(x.vulture, [6, 3]); assert.equal(x.lastKick.moved, 1);
   const d = classic(); d.turn = 'blue'; d.ostrich = [7, 5]; d.vulture = [8, 6]; assert.ok(B.ostrichKick(d, [8, 6])); assert.deepEqual(d.vulture, [2, 2], 'diagonal wraps on both axes: (0,0) then (1,1) then (2,2)... from (8,6): (0,0),(1,1),(2,2)');
-  const t = three('badger', [5, 3], [4, 3], [0, 6]); t.turn = 'blue'; assert.ok(T.ostrichKick3(t, [5, 3])); assert.deepEqual(t.three.h, [7, 3], 'the badger goes only 2'); });
+  const t = three('badger', [5, 3], [4, 3], [0, 6]); t.turn = 'blue'; assert.ok(T.ostrichKick3(t, [5, 3])); assert.equal(B.wrapDist(t.cfg, [5, 3], t.three.h), t.cfg.kickPushBadger, 'the badger goes the full 2'); assert.ok(!B.pointsBack(t.cfg, [5, 3], t.three.h, t.ostrich) || t.lastKick.fallback, 'not straight back at the ostrich'); });
 
 // ---- 5 and 6: catches and pushes
 ok('a caught bird lands exactly 3 squares away on an open square; no missed turn; the egg drops on the catch square; hunters get the landing square only through the view rules', () => {
@@ -156,7 +156,7 @@ ok('views: birds (not hunters) see an ostrich that is sitting; the end screen ca
   g.phase = 'over'; g.endWhy = 'The hyena made 4 catches.'; assert.equal(S.view3(room, 'blue').endWhy, 'The hyena made 4 catches.'); });
 ok('views: Hunters and 2 vs 2 carry the same notes', () => {
   const rh = S.createH({ role: 'badger', bots: ['blue', 'red', 'hyena'] }, null).room, g = rh.g = hunters([5, 3], [8, 6], [0, 6], [4, 3]); g.turn = 'red'; g.stones = 1; assert.ok(H.vultureThrowH(g, [5, 3]));
-  assert.deepEqual(g.hunt.hs.hyena.p, [7, 3]); assert.deepEqual(S.viewH(rh, 'hyena').sittingAt, []);
+  assert.equal(B.wrapDist(g.cfg, [5, 3], g.hunt.hs.hyena.p), 2); assert.deepEqual(S.viewH(rh, 'hyena').sittingAt, []);
   const rt = S.createT({ team: 5, role: 'hunter', bots: ['v1', 'v2', 'o1', 'o2'], kind: 'hyena' }, null).room, t = rt.g = team('hyena', { h: [8, 3], o1: [2, 1], o2: [7, 1], v1: [3, 3], v2: [3, 4] }); t.turn = 'o1'; assert.ok(TT.ostrichAct(t, 'o1', 'sit'));
   assert.deepEqual(S.viewT(rt, 'v1').sittingAt, [[2, 1]]); assert.deepEqual(S.viewT(rt, 'hunter').sittingAt, []); });
 

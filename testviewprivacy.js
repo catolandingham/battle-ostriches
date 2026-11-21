@@ -17,10 +17,14 @@ for(const mode of ['3p','Hunters','5p']){
  for(const blocker of ['none','wreck','animal']){const k=make(S,mode),q=k.g;q.marks=blocker==='wreck'?{'7,3':'stone'}:{};q.turn=k.blue;
  if(mode==='5p'){q.b.o1.pos=[3,3];q.b.o2.pos=[0,0];q.b.v1.pos=[8,6];q.b.v2.pos=blocker==='animal'?[7,3]:[0,6];q.h.p=[4,3];A(TT.ostrichKick(q,k.blue,[4,3]));}
  else{q.ostrich=[3,3];q.vulture=blocker==='animal'&&mode!=='Hunters'?[7,3]:[8,6];if(mode==='3p'){q.three.h=[4,3];A(T.ostrichKick3(q,[4,3]));}else{q.hunt.hs.hyena.p=[4,3];q.hunt.hs.badger.p=blocker==='animal'?[7,3]:[8,0];A(H.ostrichKickH(q,[4,3]));}}
- const v=k.view(k.blue),end=blocker==='none'?[7,3]:[6,3],trail=blocker==='none'?[[4,3],[5,3],[6,3],[7,3]]:[[4,3],[5,3],[6,3]];
- A.deepEqual(v.kick.to,end,mode+' kicker actual landing '+blocker);A.deepEqual(v.lastAction.to,end,mode+' kicker move note actual landing');A.equal(v.kick.moved,trail.length-1);A.deepEqual(v.kick.trail,trail,mode+' kicker full slide');A.deepEqual(k.view(mode==='Hunters'?'hyena':'hunter').kick.trail,trail,mode+' kicked hunter sees own complete slide');
- if(blocker!=='animal'){const other=k.view(k.red);A.equal(other.kick.to,null,mode+' watching vulture has normal sight');A.equal(other.lastAction?.to,null);A(other.kick.trail.every(p=>p===null));}
- if(mode==='5p'){A.equal(k.view('o2').kick.to,null,'other ostrich gets no kicker exception');A(k.view('o2').kick.trail.every(p=>p===null));}
+ const B=require('./game'),v=k.view(k.blue),land=mode==='5p'?q.h.p:mode==='3p'?q.three.h:q.hunt.hs.hyena.p,n=q.lastKick.moved;
+ A.deepEqual(v.kick.to,land,mode+' kicker actual landing '+blocker);A.deepEqual(v.lastAction.to,land,mode+' kicker move note actual landing');A.equal(v.kick.moved,n);A.equal(B.wrapDist(q.cfg, [4,3], land), n, mode+' full distance '+blocker);
+ A.deepEqual(v.kick.trail,q.lastKick.points,mode+' kicker full path');
+ const hit=k.view(mode==='Hunters'?'hyena':'hunter');A.equal(hit.kick.to,null,mode+' kicked hunter is not sent the landing');A.equal(hit.kick.trail,null,mode+' kicked hunter is not sent the path');A.equal(hit.kick.card,true,mode+' kicked hunter still gets the cartoon');
+ const eyeOf=role=>{const w=k.view(role);if(role==='red'||role==='v1')return mode==='5p'?q.b.v1.pos:q.vulture;if(role==='o2')return q.b.o2.pos;return null;};
+ if(blocker!=='animal'){const other=k.view(k.red),eye=eyeOf(k.red);A.equal(other.lastAction?.to,null);
+  A((other.kick.trail||[]).every(p=>p===null||B.wrapDist(q.cfg,eye,p)<=2),mode+' watching vulture trail stays in sight');}
+ if(mode==='5p'){const o2=k.view('o2');A((o2.kick.trail||[]).every(p=>p===null||B.dist(q.b.o2.pos,p)<=2),'other ostrich trail stays in sight');if(!TT.hunterSeenBy(q,'o2'))A.equal(o2.kick.to,null,'other ostrich gets no kicker exception');}
  }
 
 }

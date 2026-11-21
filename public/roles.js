@@ -121,7 +121,7 @@
       `If a hunter gets to your square, they catch you. ${ko} catches knock you out.`,
       'You lose if every egg is broken or goes cold, or if you don\'t eat in time.',
       goalLine(mode, R, false),
-      `When the hunter knocks a bird out, they always take ${d} turns in a row. The hyena can pounce only on the first.`,
+      'When the hunter knocks a bird out, they move twice each round. One move is 1 square. No pounce.',
     ]);
     return cardOf('You are the Ostrich.', 'ostrich', [
       `Keep at least 1 egg alive for ${c.rounds} rounds.`,
@@ -153,7 +153,7 @@
       `If a hunter gets to your square, they catch you. ${ko} catches knock you out.`,
       `You lose if an egg lasts ${c.rounds} rounds.`,
       goalLine(mode, R, false),
-      `When the hunter knocks a bird out, they always take ${d} turns in a row. The hyena can pounce only on the first.`,
+      'When the hunter knocks a bird out, they move twice each round. One move is 1 square. No pounce.',
     ]);
     return cardOf('You are the Vulture.', 'vulture', [
       'You win if every egg is broken or goes cold.',
@@ -191,14 +191,14 @@
         goalLine(mode, R, true),
         `${ko} catches knock a bird out.`,
         pounceLine,
-        `When you knock a bird out, you always take ${d} turns in a row. You can pounce only on the first.`,
+        'When you knock a bird out, you move twice each round. One move is 1 square. No pounce.',
         `You lose if an egg lasts ${c.rounds} rounds, or every egg is broken.`,
       ];
     } else {
       lines = [
         goalLine(mode, R, true),
         `${ko} catches knock a bird out.`,
-        `After you knock a bird out, you always take ${d} turns in a row.`,
+        'After you knock a bird out, you move twice each round. One move is 1 square.',
         burrowLine,
         `You lose if an egg lasts ${c.rounds} rounds, or every egg is broken.`,
       ];

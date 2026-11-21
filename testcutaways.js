@@ -26,7 +26,11 @@ for (const mode of ['3p', 'Hunters', '5p']) {
   const kicker = straight.blue, hyena = mode === 'Hunters' ? 'hyena' : 'hunter';
   assert.equal(got[kicker], 'kick', mode + ' kicker sees the kick cartoon');
   assert.equal(got[hyena], 'kick', mode + ' hyena sees the kick cartoon');
-  for (const r of straight.roles) if (r !== kicker && r !== hyena) assert.equal(got[r], null, mode + ' ' + r + ' is too far for the kick cartoon');
+  for (const r of straight.roles) if (r !== kicker && r !== hyena) {
+    const view = straight.view(r), sent = !!(view.kick && ((view.kick.trail && view.kick.trail.some(p => p && p[0] >= 0)) || (view.kick.to && view.kick.to[0] >= 0)));
+    if (sent) assert.ok(got[r], mode + ' ' + r + ' sees a kick the server sent');
+    else assert.equal(got[r], null, mode + ' ' + r + ' is not sent the kick');
+  }
   assert.equal(C.sceneFor(straight.view(kicker), before[kicker]).by, 'ostrich');
   assert.equal(C.sceneFor(straight.view(kicker), before[kicker]).target, 'hyena');
 
@@ -38,11 +42,16 @@ for (const mode of ['3p', 'Hunters', '5p']) {
   const around = mode === '5p' ? TT.ostrichKick(w, 'o1', [8, 3]) : mode === '3p' ? T.ostrichKick3(w, [8, 3]) : H.ostrichKickH(w, [8, 3]);
   assert.ok(around, mode + ' wrap kick');
   const landing = mode === '5p' ? w.h.p : mode === '3p' ? w.three.h : w.hunt.hs.hyena.p;
-  assert.ok(landing[0] < 4, mode + ' hyena came back on the other side ' + landing);
+  assert.equal(B.wrapDist(w.cfg, [8, 3], landing), 3, mode + ' full distance ' + landing);
   const wgot = ids(wrap, wbefore);
-  assert.equal(wgot[wrap.blue], 'kick-wrap', mode + ' kicker sees the wrap cartoon');
-  assert.equal(wgot[hyena], 'kick-wrap', mode + ' hyena sees the wrap cartoon');
-  for (const r of wrap.roles) if (r !== wrap.blue && r !== hyena) assert.equal(wgot[r], null, mode + ' ' + r + ' does not see the wrap');
+  const kickerScene = w.lastKick.wrap ? 'kick-wrap' : 'kick';
+  assert.equal(wgot[wrap.blue], kickerScene, mode + ' kicker cartoon follows the real path');
+  assert.equal(wgot[hyena], w.lastKick.wrap ? 'kick-wrap' : 'kick', mode + ' hyena cartoon has no path, only the wrap flag');
+  for (const r of wrap.roles) if (r !== wrap.blue && r !== hyena) {
+    const view = wrap.view(r), sent = !!(view.kick && ((view.kick.trail && view.kick.trail.some(p => p && p[0] >= 0)) || (view.kick.to && view.kick.to[0] >= 0)));
+    if (sent) assert.ok(wgot[r], mode + ' ' + r + ' sees a kick the server sent');
+    else assert.equal(wgot[r], null, mode + ' ' + r + ' is not sent the kick');
+  }
   // a bird who can see the hyena leave, but not the far side, gets the plain kick picture
   const near = make(S, mode), n = near.g; n.turn = near.blue;
   if (mode === '5p') { n.b.o1.pos = [7, 3]; n.b.o2.pos = [0, 6]; n.b.v1.pos = [8, 5]; n.b.v2.pos = [0, 0]; n.h.p = [8, 3]; n.h.kind = 'hyena'; }
@@ -184,8 +193,12 @@ for (const mode of ['3p', 'Hunters', '5p']) {
   const got = ids(f, prev), hyena = mode === 'Hunters' ? 'hyena' : 'hunter';
   assert.equal(got[f.red], 'stone', mode + ' vulture sees the stone cartoon');
   assert.equal(got[hyena], 'stone', mode + ' hyena sees the stone cartoon');
-  assert.equal(got[f.blue], null, mode + ' far ostrich does not see the stone cartoon');
-  if (mode !== '3p') { const other = mode === '5p' ? 'v2' : 'badger'; assert.equal(got[other], null, mode + ' ' + other + ' does not see the stone cartoon'); }
+  for (const r of f.roles) if (r !== f.red && r !== hyena) {
+    const view = f.view(r), trails = (view.stoneNote && view.stoneNote.trails) || [];
+    const sent = trails.some(t => t.card || (t.points && t.points.some(p => p && p[0] >= 0)));
+    if (sent) assert.ok(got[r], mode + ' ' + r + ' sees a stone the server sent');
+    else assert.equal(got[r], null, mode + ' ' + r + ' is not sent the stone');
+  }
   const miss = make(S, mode), mg = miss.g; mg.turn = miss.red;
   if (mode === '5p') { mg.b.v1.pos = [3, 3]; mg.h.kind = 'badger'; mg.h.p = [4, 3]; mg.b.v1.stones = 1; mg.b.o1.pos = [8, 0]; mg.b.o2.pos = [0, 6]; mg.b.v2.pos = [0, 0]; }
   else if (mode === '3p') { mg.vulture = [3, 3]; mg.three.kind = 'badger'; mg.three.h = [4, 3]; mg.three.burrowed = false; mg.ostrich = [8, 0]; mg.stones = 1; }
@@ -195,7 +208,12 @@ for (const mode of ['3p', 'Hunters', '5p']) {
   const mgot = ids(miss, mp), badger = mode === 'Hunters' ? 'badger' : 'hunter';
   assert.equal(mgot[miss.red], 'stone-badger', mode + ' vulture sees the badger stone');
   assert.equal(mgot[badger], 'stone-badger', mode + ' badger sees the stone');
-  assert.equal(mgot[miss.blue], null, mode + ' far ostrich does not see the badger stone');
+  for (const r of miss.roles) if (r !== miss.red && r !== badger) {
+    const view = miss.view(r), trails = (view.stoneNote && view.stoneNote.trails) || [];
+    const sent = trails.some(t => t.card || (t.points && t.points.some(p => p && p[0] >= 0)));
+    if (sent) assert.ok(mgot[r], mode + ' ' + r + ' sees a badger stone the server sent');
+    else assert.equal(mgot[r], null, mode + ' ' + r + ' is not sent the badger stone');
+  }
 }
 
 // --- burst: badger shoves the hyena, only for phones that can see the hyena ---

@@ -403,8 +403,9 @@ function youTag(board){
  setTimeout(()=>document.querySelectorAll('.youpulse').forEach(e=>e.remove()),650-el);}
 // Kick preview (long-press tooltip): the direction and how far, nothing about what lies there. It wraps at the edge and may stop early.
 function kickTip(x,y){const o=S.ostrich,dx=Math.sign(x-o[0]),dy=Math.sign(y-o[1]),A={'0,-1':'up','0,1':'down','-1,0':'left','1,0':'right','-1,-1':'up and left','1,-1':'up and right','-1,1':'down and left','1,1':'down and right'};
- const h=S.h3||{},badgerHere=h.kind==='badger'||!!h.hunt; // only name an animal that is in this game
- return 'Kick it '+(A[dx+','+dy]||'away')+', up to '+S.cfg.kickPush+' squares'+(badgerHere?' ('+S.cfg.kickPushBadger+' for a badger)':'')+'.';}
+ const plan=(S.kickPlans||[]).find(p=>p.to&&p.to[0]===x&&p.to[1]===y);
+ if(plan&&plan.who&&plan.who!=='vulture'){const n=plan.who==='badger'?S.cfg.kickPushBadger:S.cfg.kickPush,name=plan.who==='badger'?'badger':plan.who==='hyena'?'hyena':'hunter';return 'The '+name+' lands '+n+' square'+(n===1?'':'s')+' away, on a random square.';}
+ return 'Kick it '+(A[dx+','+dy]||'away')+', up to '+S.cfg.kickPush+' squares.';}
 // How to play: four small pictures of the board, drawn with the real marks (the same classes and art the game uses), one short line each
 function howPics(){const box=$('howPics');if(!box)return;
  const mini=(cols,rows,cells,after)=>{const m=document.createElement('div');m.className='mini';m.style.gridTemplateColumns=`repeat(${cols},44px)`;m.style.gridTemplateRows=`repeat(${rows},44px)`;
@@ -583,7 +584,7 @@ function render(prev){
   if(S.round>1)T('warm','Stand on an egg to warm it.');
   if(S.hungerLeft<=C.food/2&&!foodLead)T('food',`Eat within ${S.hungerLeft} turns.`);
   if(!S.simple&&S.onEgg&&S.can.carry&&S.round>3)T('carry','Carry moves an egg 1 square.');
-  if(S.kickNear&&S.can&&S.can.kick)T('kick','Kick: push the animal next to you back '+C.kickPush+' squares instead of walking.');
+  if(S.kickNear&&S.can&&S.can.kick)T('kick','Kick: a vulture goes straight back. A hunter lands on a random square.');
 }
  if(window.TUT&&S.phase==='play'&&S.round>2)TUT.tip('marks','Hover or tap a square to see what it is.');
  // render the coach mark

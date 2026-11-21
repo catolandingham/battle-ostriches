@@ -147,6 +147,83 @@ function slideN(cfg, from, dir, n, blocked, marks, wrap) {
   return { to: q, moved, points };
 }
 const awayFrom = (from, p) => [sgn(p[0] - from[0]), sgn(p[1] - from[1])];
+// Shortest signed step from a to b on a wrapping board. A step longer than half the board is the long way around.
+function wrapOff(d, span) { if (d > span / 2) return d - span; if (d < -span / 2) return d + span; return d; }
+function wrapDelta(cfg, a, b) { return [wrapOff(b[0] - a[0], cfg.cols), wrapOff(b[1] - a[1], cfg.rows)]; }
+function wrapDist(cfg, a, b) { const d = wrapDelta(cfg, a, b); return Math.max(Math.abs(d[0]), Math.abs(d[1])); }
+// True when the landing sits on the straight-away ray. Reversing that ray points at the ostrich.
+function pointsBack(cfg, from, to, ostrich) {
+  const away = awayFrom(ostrich, from), d = wrapDelta(cfg, from, to);
+  if (away[0] && away[1]) return Math.sign(d[0]) === away[0] && Math.sign(d[1]) === away[1] && Math.abs(d[0]) === Math.abs(d[1]);
+  if (away[0]) return d[1] === 0 && Math.sign(d[0]) === away[0];
+  if (away[1]) return d[0] === 0 && Math.sign(d[1]) === away[1];
+  return false;
+}
+// King steps along the short wrap from `from` to `to`. Each step is one square, so a real edge crossing is the only jump.
+function wrapPath(cfg, from, to) {
+  const d = wrapDelta(cfg, from, to), steps = Math.max(Math.abs(d[0]), Math.abs(d[1])), points = [from.slice()];
+  if (!steps) return points;
+  let x = from[0], y = from[1], rx = Math.abs(d[0]), ry = Math.abs(d[1]);
+  const sx = sgn(d[0]), sy = sgn(d[1]);
+  for (let i = 0; i < steps; i++) {
+    if (rx > 0) { x += sx; rx--; }
+    if (ry > 0) { y += sy; ry--; }
+    points.push([(x % cfg.cols + cfg.cols) % cfg.cols, (y % cfg.rows + cfg.rows) % cfg.rows]);
+  }
+  return points;
+}
+function pathWraps(cfg, points) {
+  for (let i = 1; i < points.length; i++) {
+    const a = points[i - 1], b = points[i];
+    if (Math.abs(b[0] - a[0]) > cfg.cols / 2 || Math.abs(b[1] - a[1]) > cfg.rows / 2) return true;
+  }
+  return false;
+}
+function ringAt(cfg, from, n) {
+  const out = [];
+  for (let x = 0; x < cfg.cols; x++) for (let y = 0; y < cfg.rows; y++) if (wrapDist(cfg, from, [x, y]) === n) out.push([x, y]);
+  return out;
+}
+// Same pick for the preview and the kick, until the board changes. Tests may set g.kickRnd.
+// A stone uses the same picker as a kick, with its own seed so a throw and a kick from the same squares do not copy each other.
+function stoneRnd(g, from, vul) {
+  if (g && typeof g.kickRnd === 'function') return g.kickRnd;
+  return scatterRnd({ round: g && g.round, kickSeq: (((g && g.kickSeq) | 0) * 3 + ((g && g.stoneSeq) | 0) + 11) }, from, vul);
+}
+function scatterRnd(g, from, ostrich) {
+  if (g && typeof g.kickRnd === 'function') return g.kickRnd;
+  let s = (((g && g.round) | 0) * 131 + from[0] * 97 + from[1] * 13 + ((g && g.kickSeq) | 0) * 17 + (ostrich ? ostrich[0] * 3 + ostrich[1] * 5 : 0)) >>> 0;
+  if (!s) s = 1;
+  return function () {
+    s = (s + 0x6D2B79F5) | 0;
+    let t = Math.imul(s ^ s >>> 15, 1 | s);
+    t = (t + Math.imul(t ^ t >>> 7, 61 | t)) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+// A kicked hunter, on a wrapping board, lands on a random square at exact distance n.
+// open(q) is true when the square is not an animal and not wrecked. Eggs are open: a kick does not break them.
+// reach is how far that hunter can catch. The straight-away ray is refused, because reversing it points at the ostrich.
+// When nothing is outside reach, fall back to full distance, not on an animal,
+// and not next to the ostrich even around the edge. Non-wrapping edges are not handled here.
+function scatterKick(cfg, from, ostrich, n, open, reach, rnd) {
+  const all = ringAt(cfg, from, n).filter(q => open(q));
+  const outside = all.filter(q => wrapDist(cfg, q, ostrich) > reach);
+  const reachGap = !outside.length;
+  let pool = outside.filter(q => !pointsBack(cfg, from, q, ostrich));
+  let fallback = false;
+  if (!pool.length) {
+    fallback = true;
+    const loose = all.filter(q => wrapDist(cfg, q, ostrich) > 1);
+    pool = loose.filter(q => !pointsBack(cfg, from, q, ostrich));
+    if (!pool.length) pool = loose;
+    if (!pool.length) pool = all.slice();
+  }
+  if (!pool.length) return { to: from.slice(), moved: 0, points: [from.slice()], fallback: true, reachGap, wrap: false };
+  const i = Math.min(pool.length - 1, Math.floor(rnd() * pool.length));
+  const to = pool[i].slice(), points = wrapPath(cfg, from, to);
+  return { to, moved: n, points, fallback, reachGap, wrap: pathWraps(cfg, points) };
+}
 function canKick(g) { return myTurn(g, 'blue') && g.carrying === null; }
 // Animals next to the ostrich that it can see (classic: the vulture, always in sight), and the squares it may kick now.
 function kickable(g) {
@@ -317,7 +394,7 @@ function resolveThrow(g, W, target) {
     if (special && !kicked) out.line = isFood(g, p) ? 'The stone landed softly in the leaves.' : 'The stone clattered back onto the rock pile.';
     if (e) { e.alive = false; out.smashed = e.id; out.result = 'hit'; }
     const dir = [sgn(p[0] - t[0]), sgn(p[1] - t[1])];
-    if (dir[0] || dir[1]) out.pushed = W.pushAt(p, dir, 2); // any animal on the square is pushed 2 away from the vulture; a buried badger comes up
+    if (dir[0] || dir[1]) out.pushed = W.pushAt(p, dir, 2); // a hunter on the square is moved the full 2; a buried badger comes up. Wrapping games pick a random square.
     if (out.pushed.length) out.line = "The vulture's stone hit the " + out.pushed.map(x => x.kind).join(' and the ') + '.';
     if (!special) g.marks[key(p)] = e ? 'hit' : 'stone';
     else if (!out.kickedBack && !e) out.result = 'soft';
@@ -343,7 +420,7 @@ function vultureThrow(g, p, mkW) {
   g.lastAction = { type: 'throw', from, p: p.slice(), result: r.result, line: r.line, kickedBack: r.kickedBack, hop: r.hop, used: r.used };
   if (r.result === 'bounce') g.lastAction.egg = !!(g.carrying !== null || eggAt(g, p)); // a kicked stone does not say what the ostrich guards
   if (r.result === 'hit') g.lastSmash = {seq:g.smashSeq=(g.smashSeq||0)+1,by:'red',owner:'blue'};
-  if (r.line) g.lastStone = { seq: ++g.stoneSeq, text: r.line, by: 'red', targets: r.pushed.map(x => x.kind), kicker:r.kicker||null, trails: r.pushed.map(x=>({key:x.kind,from:x.from,to:x.to})), round: g.round };
+  if (r.line) g.lastStone = { seq: ++g.stoneSeq, text: r.line, by: 'red', targets: r.pushed.map(x => x.kind), kicker:r.kicker||null, trails: r.pushed.map(x=>({key:x.kind,from:x.from,to:x.to,points:x.points||null,scatter:!!x.scatter})), round: g.round };
   if (!aliveEggs(g).length) { g.winner = 'red'; g.winBy = 'smashed'; g.phase = 'over'; } else { g.turn = 'blue'; dropCarried(g); }
   return r.result;
 }
@@ -435,6 +512,6 @@ function outlineSniff(v) {
   return sn;
 }
 
-const API = { slideN, CONFIG, HUNTER_GOAL, hunterUpAt, scrambleTo, relocateCaught, DIRS8, resolveThrow, wrecked, nearLeaf, myTurn, slide, awayFrom, canKick, kickable, kickTargets, kickPlans, kickDone, ostrichKick, newGame, canPlaceEgg, placeEgg, placeOstrich, ostrichMoves, ostrichStep, ostrichSit, canSit, canCarry, mustLeave, onEgg, dropCarried, hideTurn,
+const API = { slideN, CONFIG, HUNTER_GOAL, hunterUpAt, scrambleTo, relocateCaught, DIRS8, resolveThrow, wrecked, nearLeaf, myTurn, slide, awayFrom, wrapDist, wrapDelta, wrapPath, pointsBack, scatterKick, scatterRnd, stoneRnd, canKick, kickable, kickTargets, kickPlans, kickDone, ostrichKick, newGame, canPlaceEgg, placeEgg, placeOstrich, ostrichMoves, ostrichStep, ostrichSit, canSit, canCarry, mustLeave, onEgg, dropCarried, hideTurn,
   endRound, timeout, walkSquares, smellsEgg, flyTargets, throwTargets, vultureFly, vultureThrow, eggAt, aliveEggs, coldIn, sniffFresh, sniffAnnounce, outlineSniff, key, dist, visible, isFood, isRock, parkEliminated, ostrichGuards, foodRoute, isLastRound, breakEgg, eggSnap, undoBreak };
 if (typeof module !== 'undefined') module.exports = API; else window.BO = API;

@@ -55,9 +55,9 @@ assert.deepEqual(B.slideN(B.CONFIG, [4, 6], [0, 1], 3, null, {}, true).points, [
   assert.equal(plans.length, 1);
   assert.equal(plans[0].key, 'badger');
   assert.deepEqual(plans[0].at, [3, 3]);
-  assert.deepEqual(plans[0].to, [5, 3], 'the badger is pushed 2, and that landing is the tap');
-  assert.ok(T.ostrichKick3(g, resolve(plans, [5, 3]).at));
-  assert.deepEqual(g.three.h, [5, 3]);
+  assert.equal(B.wrapDist(g.cfg, plans[0].at, plans[0].to), g.cfg.kickPushBadger, 'the badger landing is the full 2');
+  assert.ok(T.ostrichKick3(g, plans[0].at));
+  assert.deepEqual(g.three.h, plans[0].to, 'the tap and the kick use the same square');
 }
 
 console.log('PASS kick landing: one tap on the landing, including a wrap');
