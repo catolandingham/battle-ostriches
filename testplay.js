@@ -142,8 +142,7 @@ ok('an eliminated bird leaves the egg and no longer blocks a smash', () => {
   for (const p of [[6, 1], [2, 1], [2, 5]]) assert(B.placeEgg(ko, p));
   assert(T.placeOstrich3(ko, [6, 1])); ko.three.birds.blue.catches = 1; // hurt once, so this second catch knocks it out
   assert(T.vultureFly3(ko, [4, 1])); assert(T.ostrichAct3(ko, 'sit')); assert(T.hunterMove(ko, [6, 1]));
-  assert.equal(ko.three.birds.blue.out, true); assert.ok(ko.ostrich[0] < 0); assert.equal(ko.turn, 'hunter'); assert.equal(ko.three.extra, true);
-  assert(T.hunterStay(ko)); assert.equal(ko.turn, 'red');
+  assert.equal(ko.three.birds.blue.out, true); assert.ok(ko.ostrich[0] < 0); assert.equal(ko.turn, 'red'); assert.ok(!ko.three.extra);
   ko.vulture = [5, 1]; ko.stones = 1; assert.equal(T.vultureThrow3(ko, [6, 1]), 'hit');
   const live = T.newGame3('hyena', undefined, [0, 3]);
   for (const p of [[6, 1], [2, 1], [2, 5]]) assert(B.placeEgg(live, p));

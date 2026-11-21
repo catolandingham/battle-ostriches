@@ -580,6 +580,14 @@ function trailView(room,v,seat,key,from,to,wrap=false,n=3,points){
  });
 }
 // The animal that was kicked. A scattered hunter must not be handed the path: that path used to point straight back at the ostrich.
+// The hunter a stone just moved. That phone is not sent the path: the old straight shove pointed back at the vulture.
+function stoneHitHunter(g, key, seat) {
+  if (!seat || !key || !g) return false;
+  if (g.three) return seat === 'hunter';
+  if (g.hunt) return seat === key;
+  if (g.team) return seat === 'hunter';
+  return false;
+}
 function kickHitHunter(g, k, seat) {
   if (!k || !k.scatter || !seat) return false;
   if (g.three) return seat === 'hunter';
@@ -648,7 +656,12 @@ function stamp(room, v, seat) {
       if(hide){v.kick.trail=null;v.kick.to=null;v.kick.card=true;v.kick.wrap=!!k.wrap;}
       else if(seat===(v.kick.by||'blue')) v.kick.trail=k.scatter&&k.points?k.points.map(p=>p.slice()):motionPath(g.cfg,k.from,k.to,true,k.moved||3);
       else v.kick.trail=trailView(room,v,seat,key,k.from,k.to,true,k.moved||3,k.scatter?k.points:null);}
-    if(v.stoneNote)v.stoneNote.trails=(g.lastStone.trails||[]).map(t=>({key:t.key,points:trailView(room,v,seat,t.key,t.from,t.to,false,2)}));
+    if(v.stoneNote)v.stoneNote.trails=(g.lastStone.trails||[]).map(t=>{
+      const hide=t.scatter&&stoneHitHunter(g,t.key,seat)&&g.phase!=='over'&&!v.god;
+      if(hide)return {key:t.key,points:null,card:true};
+      if(t.scatter&&t.points&&seat===(g.lastStone.by||'red'))return {key:t.key,points:t.points.map(p=>p.slice())};
+      return {key:t.key,points:trailView(room,v,seat,t.key,t.from,t.to,!!t.scatter,2,t.scatter?t.points:null)};
+    });
     if(v.h3&&g.hunt){const rv=g.hunt.rival,bs=g.hunt.burst;if(v.h3.rival&&rv)v.h3.rival.trail=trailView(room,v,seat,rv.by==='hyena'?'badger':'hyena',rv.at,rv.to,false,2);if(v.h3.burst&&bs)v.h3.burst.trail=trailView(room,v,seat,'hyena',bs.at,bs.to,false,2);}
 
     // anyone who can see the ostrich sees it sit: birds always; hunters only through ambush sight (a buried badger with the ostrich next to it)

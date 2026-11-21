@@ -33,8 +33,11 @@
   if(fresh(h.rival,old.rival)&&valid(h.rival.to)){const key=h.rival.by==='badger'?'hyena':'badger';add(key,a[key],h.rival.to,false,2);}
   if(fresh(h.burst,old.burst)&&h.burst.trail&&h.burst.trail.some(valid)&&h.burst.trail.length>1)out.push({key:'hyena',points:h.burst.trail});
   if(fresh(h.burst,old.burst)&&valid(h.burst.to))add('hyena',a.hyena,h.burst.to,false,2);
-  if(fresh(s.stoneNote,prev.stoneNote))for(const t of s.stoneNote.trails||[])if(t.points.some(valid)&&t.points.length>1)out.push({key:t.key,points:t.points});
-  if(fresh(s.stoneNote,prev.stoneNote))for(const key in b)if(valid(a[key])&&!same(a[key],b[key]))add(key,a[key],b[key],false,2);
+  if(fresh(s.stoneNote,prev.stoneNote)){
+    const trails=s.stoneNote.trails||[],hidden=new Set();
+    for(const t of trails){if(t.card||!t.points){hidden.add(t.key);continue;}if(t.points.some(valid)&&t.points.length>1)out.push({key:t.key,points:t.points});}
+    for(const key in b)if(!hidden.has(key)&&valid(a[key])&&!same(a[key],b[key]))add(key,a[key],b[key],false,2);
+  }
   // A state applied when the surprise hold ends may include an ordinary move
   // that happened while this phone was watching the slide (in Hunters, the
   // shoved badger's turn starts at once, and a bot can walk during the cartoon).

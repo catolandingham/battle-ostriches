@@ -185,6 +185,11 @@ function ringAt(cfg, from, n) {
   return out;
 }
 // Same pick for the preview and the kick, until the board changes. Tests may set g.kickRnd.
+// A stone uses the same picker as a kick, with its own seed so a throw and a kick from the same squares do not copy each other.
+function stoneRnd(g, from, vul) {
+  if (g && typeof g.kickRnd === 'function') return g.kickRnd;
+  return scatterRnd({ round: g && g.round, kickSeq: (((g && g.kickSeq) | 0) * 3 + ((g && g.stoneSeq) | 0) + 11) }, from, vul);
+}
 function scatterRnd(g, from, ostrich) {
   if (g && typeof g.kickRnd === 'function') return g.kickRnd;
   let s = (((g && g.round) | 0) * 131 + from[0] * 97 + from[1] * 13 + ((g && g.kickSeq) | 0) * 17 + (ostrich ? ostrich[0] * 3 + ostrich[1] * 5 : 0)) >>> 0;
@@ -199,7 +204,7 @@ function scatterRnd(g, from, ostrich) {
 // A kicked hunter, on a wrapping board, lands on a random square at exact distance n.
 // open(q) is true when the square is not an animal and not wrecked. Eggs are open: a kick does not break them.
 // reach is how far that hunter can catch. The straight-away ray is refused, because reversing it points at the ostrich.
-// When nothing qualifies (the double turn can cover the whole board), fall back to full distance, not on an animal,
+// When nothing is outside reach, fall back to full distance, not on an animal,
 // and not next to the ostrich even around the edge. Non-wrapping edges are not handled here.
 function scatterKick(cfg, from, ostrich, n, open, reach, rnd) {
   const all = ringAt(cfg, from, n).filter(q => open(q));
@@ -389,7 +394,7 @@ function resolveThrow(g, W, target) {
     if (special && !kicked) out.line = isFood(g, p) ? 'The stone landed softly in the leaves.' : 'The stone clattered back onto the rock pile.';
     if (e) { e.alive = false; out.smashed = e.id; out.result = 'hit'; }
     const dir = [sgn(p[0] - t[0]), sgn(p[1] - t[1])];
-    if (dir[0] || dir[1]) out.pushed = W.pushAt(p, dir, 2); // any animal on the square is pushed 2 away from the vulture; a buried badger comes up
+    if (dir[0] || dir[1]) out.pushed = W.pushAt(p, dir, 2); // a hunter on the square is moved the full 2; a buried badger comes up. Wrapping games pick a random square.
     if (out.pushed.length) out.line = "The vulture's stone hit the " + out.pushed.map(x => x.kind).join(' and the ') + '.';
     if (!special) g.marks[key(p)] = e ? 'hit' : 'stone';
     else if (!out.kickedBack && !e) out.result = 'soft';
@@ -415,7 +420,7 @@ function vultureThrow(g, p, mkW) {
   g.lastAction = { type: 'throw', from, p: p.slice(), result: r.result, line: r.line, kickedBack: r.kickedBack, hop: r.hop, used: r.used };
   if (r.result === 'bounce') g.lastAction.egg = !!(g.carrying !== null || eggAt(g, p)); // a kicked stone does not say what the ostrich guards
   if (r.result === 'hit') g.lastSmash = {seq:g.smashSeq=(g.smashSeq||0)+1,by:'red',owner:'blue'};
-  if (r.line) g.lastStone = { seq: ++g.stoneSeq, text: r.line, by: 'red', targets: r.pushed.map(x => x.kind), kicker:r.kicker||null, trails: r.pushed.map(x=>({key:x.kind,from:x.from,to:x.to})), round: g.round };
+  if (r.line) g.lastStone = { seq: ++g.stoneSeq, text: r.line, by: 'red', targets: r.pushed.map(x => x.kind), kicker:r.kicker||null, trails: r.pushed.map(x=>({key:x.kind,from:x.from,to:x.to,points:x.points||null,scatter:!!x.scatter})), round: g.round };
   if (!aliveEggs(g).length) { g.winner = 'red'; g.winBy = 'smashed'; g.phase = 'over'; } else { g.turn = 'blue'; dropCarried(g); }
   return r.result;
 }
@@ -507,6 +512,6 @@ function outlineSniff(v) {
   return sn;
 }
 
-const API = { slideN, CONFIG, HUNTER_GOAL, hunterUpAt, scrambleTo, relocateCaught, DIRS8, resolveThrow, wrecked, nearLeaf, myTurn, slide, awayFrom, wrapDist, wrapDelta, wrapPath, pointsBack, scatterKick, scatterRnd, canKick, kickable, kickTargets, kickPlans, kickDone, ostrichKick, newGame, canPlaceEgg, placeEgg, placeOstrich, ostrichMoves, ostrichStep, ostrichSit, canSit, canCarry, mustLeave, onEgg, dropCarried, hideTurn,
+const API = { slideN, CONFIG, HUNTER_GOAL, hunterUpAt, scrambleTo, relocateCaught, DIRS8, resolveThrow, wrecked, nearLeaf, myTurn, slide, awayFrom, wrapDist, wrapDelta, wrapPath, pointsBack, scatterKick, scatterRnd, stoneRnd, canKick, kickable, kickTargets, kickPlans, kickDone, ostrichKick, newGame, canPlaceEgg, placeEgg, placeOstrich, ostrichMoves, ostrichStep, ostrichSit, canSit, canCarry, mustLeave, onEgg, dropCarried, hideTurn,
   endRound, timeout, walkSquares, smellsEgg, flyTargets, throwTargets, vultureFly, vultureThrow, eggAt, aliveEggs, coldIn, sniffFresh, sniffAnnounce, outlineSniff, key, dist, visible, isFood, isRock, parkEliminated, ostrichGuards, foodRoute, isLastRound, breakEgg, eggSnap, undoBreak };
 if (typeof module !== 'undefined') module.exports = API; else window.BO = API;

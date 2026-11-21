@@ -74,7 +74,7 @@
       for (const t of note.targets || []) {
         const target = kindOf(t);
         const trail = (note.trails || []).find(x => kindOf(x.key) === target);
-        if (trail && anyPoint(trail.points)) out.push({ event: 'stone', by: kindOf(note.by || 'vulture'), target, seq: note.seq });
+        if (trail && (anyPoint(trail.points) || trail.card)) out.push({ event: 'stone', by: kindOf(note.by || 'vulture'), target, seq: note.seq });
       }
     }
     const sm = S.smashNote; // every player is told about a smashed egg, so every player sees it

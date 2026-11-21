@@ -119,12 +119,15 @@ function vultureFlyH(g, p) {
   const h = g.phase !== 'over' && hunterAt(g, g.vulture); if (h) { catchBird(g, 'red', h, () => { g.vulture = from.slice(); B.undoBreak(g, p, snap); }); g.hunt.lastCatch.walked = true; } // the vulture flew onto a buried badger (birds may not land on a hunter they can see)
   if (!finish(g)) advance(g); return true;
 }
-// The stone resolver's view of this mode: any hunter on the square is pushed 2 away from the vulture and a buried badger comes up.
+// The stone resolver's view of this mode. On a wrapping board each hunter on the square lands on a random square the full distance away from the vulture. Simple rules still slide straight. A buried badger comes up.
 const stoneWH = g => { const t = g.hunt; return { thrower: () => g.vulture.slice(), setThrower: q => { g.vulture = q.slice(); },
   ostrichAt: p => !isOut(g, 'blue') && B.dist(p, g.ostrich) === 0 && g.ostrich[0] >= 0, eggAt: p => B.eggAt(g, p),
   pushAt: (p, dir, n) => { const moved = []; for (const h of HUNTERS) { const x = t.hs[h]; if (K(x.p) !== K(p)) continue; const from = x.p.slice(), wasBur = x.burrowed; x.burrowed = false; x.dig = 0;
       if (wasBur) t.popout = { seq: t.popSeq = (t.popSeq || 0) + 1, round: g.round };
-      x.p = B.slide(g.cfg, from, dir, n, m => upAt(g, m, h), g.marks); moved.push({ kind: h, from, to: x.p.slice() }); } return moved; },
+      if (g.simple) { x.p = B.slide(g.cfg, from, dir, n, m => upAt(g, m, h), g.marks); moved.push({ kind: h, from, to: x.p.slice() }); continue; }
+      const vul = g.vulture.slice(), open = q => !B.wrecked(g, q) && !(g.ostrich && g.ostrich[0] >= 0 && !isOut(g, 'blue') && K(q) === K(g.ostrich)) && !(g.vulture && g.vulture[0] >= 0 && !isOut(g, 'red') && K(q) === K(g.vulture)) && !HUNTERS.some(o => o !== h && K(t.hs[o].p) === K(q));
+      const s = B.scatterKick(g.cfg, from, vul, n, open, huntReach(g, h), B.stoneRnd(g, from, vul)); x.p = s.to;
+      moved.push({ kind: h, from, to: x.p.slice(), points: s.points, scatter: true }); } return moved; },
   open: q => !B.wrecked(g, q) && !upAt(g, q), ostrichPos: () => g.ostrich }; };
 function vultureThrowH(g, p) { const r = B.vultureThrow(g, p, stoneWH); if (!r) return false; if (!finish(g)) advance(g); return r; }
 // --- Kick (rules in game.js): the ostrich may kick the vulture, the hyena or the badger next to it (never a burrowed badger).

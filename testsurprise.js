@@ -250,15 +250,12 @@ function stop(room) { clearTimeout(room.clockT); clearTimeout(room.aiT); }
   g.turn = 'hunter'; g.three.h = [3, 3]; g.three.pounce = false; g.three.sense = false; g.three.extra = false;
   g.vulture = [4, 3];
   S.broadcast(f.room);
-  assert.ok(T.hunterMove(g, [4, 3]), 'hyena catches the vulture on the first of two turns');
-  assert.equal(g.three.extra, true); assert.equal(g.turn, 'hunter');
+  assert.ok(T.hunterMove(g, [4, 3]), 'hyena catches the vulture');
+  assert.equal(g.three.extra, false); assert.equal(g.turn, 'red', 'the vulture moves before the extra 1-square turn');
   S.broadcast(f.room);
-  assert.ok(f.room.holdUntil && f.room.holdUntil.red > Date.now() + 1000, 'the vulture hold survives the extra turn');
+  assert.ok(f.room.holdUntil && f.room.holdUntil.red > Date.now() + 1000, 'the vulture hold is waiting');
   assert.ok(f.room.holdUntil.red < Date.now() + 8000, 'the vulture hold is not an 8s tap');
-  assert.ok(T.hunterStay(g));
-  assert.equal(g.turn, 'red');
-  S.broadcast(f.room);
-  assert.ok(f.room.clockHoldKey && !f.room.deadline, 'after the double turn the vulture clock still waits');
+  assert.ok(f.room.clockHoldKey && !f.room.deadline, 'the vulture clock waits out the hold');
   stop(f.room);
 }
 for (const mode of ['Hunters', '5p']) {

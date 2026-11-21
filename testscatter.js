@@ -12,7 +12,7 @@ const S = require('./server.js');
 const CT = require('./public/catchtext.js');
 const SIMPLE = require('./simple.js');
 
-const NOTE = 'Hunter now moves twice each round. A badger reaches 4 squares, a hyena 5. No pounce on the second move.';
+const NOTE = 'Hunter now moves twice each round.';
 assert.equal(T.DOUBLE_NOTE, NOTE);
 
 function eggs(g) { for (const p of [[2, 1], [6, 1], [2, 5]]) assert.ok(B.placeEgg(g, p)); }
@@ -77,22 +77,22 @@ assert.equal(NOTE, T.DOUBLE_NOTE);
 {
   const g = play3('hyena', [5, 3], [4, 3], [0, 6]);
   g.three.birds.red.why = 'caught'; g.three.birds.red.out = true; g.vulture = T.OFF.slice();
-  assert.equal(T.hunterReach(g), 5);
+  assert.equal(T.hunterReach(g), 2, 'after a knock-out the longer turn is still 2');
   assert.ok(T.ostrichKick3(g, [5, 3]));
-  assert.equal(g.lastKick.reachGap, true, 'after a knock-out no square is outside reach 5');
-  assert.equal(g.lastKick.fallback, true);
-  assert.equal(B.wrapDist(g.cfg, [5, 3], g.three.h), 3, 'fallback still goes the full distance');
-  assert.ok(B.wrapDist(g.cfg, g.three.h, g.ostrich) > 1, 'not next to the ostrich, even around the edge');
+  assert.equal(g.lastKick.reachGap, false, 'a walk of 2 still leaves a safe square');
+  assert.equal(B.wrapDist(g.cfg, [5, 3], g.three.h), 3, 'still the full distance');
+  assert.ok(B.wrapDist(g.cfg, g.three.h, g.ostrich) > T.hunterReach(g), 'outside the longer turn');
   assert.ok(!occupied3(g, g.three.h));
 }
 
 {
   const g = play3('badger', [5, 3], [4, 3], [0, 6]);
   g.three.birds.red.why = 'caught'; g.three.birds.red.out = true;
-  assert.equal(T.hunterReach(g), 4);
+  assert.equal(T.hunterReach(g), 2);
   assert.ok(T.ostrichKick3(g, [5, 3]));
-  assert.equal(g.lastKick.reachGap, true, 'a badger reach of 4 covers this board');
+  assert.equal(g.lastKick.reachGap, false, 'a badger kick of 2 still has a square the badger cannot reach');
   assert.equal(B.wrapDist(g.cfg, [5, 3], g.three.h), 2);
+  assert.ok(B.wrapDist(g.cfg, g.three.h, g.ostrich) > 2);
 }
 
 {
@@ -162,7 +162,8 @@ function ko(kind) {
 {
   const g = ko('hyena');
   assert.equal(g.phase, 'play');
-  assert.equal(g.three.extra, true);
+  assert.equal(g.turn, 'red', 'the vulture moves before the extra 1-square turn');
+  assert.ok(!g.three.extra);
   assert.deepEqual(g.three.doubleNote, { seq: 1, round: g.round });
   const room = S.create3({ role: 'blue', bots: ['red', 'hunter'], kind: 'hyena' }, null).room;
   room.g = g; room.bots = [];
@@ -215,6 +216,72 @@ function ko(kind) {
   assert.ok(T.hunterMove(g, [6, 2]));
   assert.equal(g.phase, 'over');
   assert.equal(g.three.doubleNote, undefined, 'a knock-out that ends the game has no extra turn to announce');
+}
+
+function stoneOk(cfg, from, land, vul) {
+  assert.equal(B.wrapDist(cfg, from, land), 2, 'a stone lands the full 2');
+  assert.ok(!B.pointsBack(cfg, from, land, vul), 'not on the straight-away line');
+  assert.ok(B.wrapDist(cfg, land, vul) > 1, 'not next to the vulture');
+}
+
+{
+  const g = play3('badger', [5, 3], [1, 1], [4, 3]);
+  g.three.burrowed = true; g.turn = 'red'; g.stones = 1;
+  const egg = g.eggs[0]; egg.pos = [7, 4]; egg.alive = true;
+  g.marks['6,5'] = 'stone';
+  assert.ok(T.vultureThrow3(g, [5, 3]));
+  const land = g.three.h;
+  assert.equal(g.three.burrowed, false, 'a buried badger comes up');
+  assert.equal(B.wrapDist(g.cfg, [5, 3], land), 2);
+  assert.ok(!B.pointsBack(g.cfg, [5, 3], land, g.vulture));
+  assert.ok(B.wrapDist(g.cfg, land, g.vulture) > T.hunterReach(g), 'a badger lands outside catch range when it can');
+  assert.ok(!occupied3(g, land));
+  assert.ok(!B.wrecked(g, land));
+  assert.notDeepEqual(land, [6, 5]);
+  assert.equal(egg.alive, true, 'an egg on the landing stays whole');
+  const room = S.create3({ role: 'blue', bots: ['red', 'hunter'], kind: 'badger' }, null).room;
+  room.g = g; room.bots = [];
+  for (const s of ['blue', 'red', 'hunter']) room.players[s] = { ws: null, token: s };
+  const hunter = S.view3(room, 'hunter'), vul = S.view3(room, 'red');
+  assert.equal(hunter.stoneNote.trails[0].points, null);
+  assert.equal(hunter.stoneNote.trails[0].card, true);
+  assert.deepEqual(vul.stoneNote.trails[0].points[0], [5, 3]);
+  assert.deepEqual(vul.stoneNote.trails[0].points[vul.stoneNote.trails[0].points.length - 1], land);
+}
+
+{
+  const g = play3('hyena', [5, 3], [8, 6], [4, 3]);
+  g.turn = 'red'; g.stones = 1;
+  assert.ok(T.vultureThrow3(g, [5, 3]));
+  stoneOk(g.cfg, [5, 3], g.three.h, g.vulture);
+  assert.ok(B.wrapDist(g.cfg, g.three.h, g.vulture) <= T.hunterReach(g), 'a hyena next to the vulture has no square outside reach 3');
+}
+
+{
+  const g = H.newHunt();
+  g.vulture = [4, 3]; g.ostrich = [8, 6]; g.hunt.hs.hyena.p = [5, 3]; g.hunt.hs.badger.p = [0, 0];
+  g.turn = 'red'; g.stones = 1; g.phase = 'play';
+  assert.ok(H.vultureThrowH(g, [5, 3]));
+  stoneOk(g.cfg, [5, 3], g.hunt.hs.hyena.p, g.vulture);
+  assert.notDeepEqual(g.hunt.hs.hyena.p, g.hunt.hs.badger.p);
+  assert.notDeepEqual(g.hunt.hs.hyena.p, g.ostrich);
+  assert.notDeepEqual(g.hunt.hs.hyena.p, g.vulture);
+}
+
+{
+  const g = TT.newTeam(5, 'hyena', undefined, [5, 3]);
+  g.turn = 'v1'; g.phase = 'play'; g.b.v1.pos = [4, 3]; g.b.v1.stones = 1; g.h.p = [5, 3];
+  g.b.o1.pos = [0, 0]; g.b.o2.pos = [8, 6]; g.b.v2.pos = [0, 6];
+  assert.ok(TT.vultureThrow(g, 'v1', [5, 3]));
+  stoneOk(g.cfg, [5, 3], g.h.p, [4, 3]);
+  for (const s of ['o1', 'o2', 'v1', 'v2']) assert.notDeepEqual(g.h.p, g.b[s].pos);
+}
+
+{
+  const g = play3('hyena', [5, 3], [1, 1], [4, 3]);
+  SIMPLE.arm(g); g.turn = 'red'; g.stones = 1;
+  assert.ok(T.vultureThrow3(g, [5, 3]));
+  assert.deepEqual(g.three.h, [7, 3], 'simple rules still slide straight');
 }
 
 console.log('PASS scatter kick and the double-turn notice');

@@ -193,8 +193,12 @@ for (const mode of ['3p', 'Hunters', '5p']) {
   const got = ids(f, prev), hyena = mode === 'Hunters' ? 'hyena' : 'hunter';
   assert.equal(got[f.red], 'stone', mode + ' vulture sees the stone cartoon');
   assert.equal(got[hyena], 'stone', mode + ' hyena sees the stone cartoon');
-  assert.equal(got[f.blue], null, mode + ' far ostrich does not see the stone cartoon');
-  if (mode !== '3p') { const other = mode === '5p' ? 'v2' : 'badger'; assert.equal(got[other], null, mode + ' ' + other + ' does not see the stone cartoon'); }
+  for (const r of f.roles) if (r !== f.red && r !== hyena) {
+    const view = f.view(r), trails = (view.stoneNote && view.stoneNote.trails) || [];
+    const sent = trails.some(t => t.card || (t.points && t.points.some(p => p && p[0] >= 0)));
+    if (sent) assert.ok(got[r], mode + ' ' + r + ' sees a stone the server sent');
+    else assert.equal(got[r], null, mode + ' ' + r + ' is not sent the stone');
+  }
   const miss = make(S, mode), mg = miss.g; mg.turn = miss.red;
   if (mode === '5p') { mg.b.v1.pos = [3, 3]; mg.h.kind = 'badger'; mg.h.p = [4, 3]; mg.b.v1.stones = 1; mg.b.o1.pos = [8, 0]; mg.b.o2.pos = [0, 6]; mg.b.v2.pos = [0, 0]; }
   else if (mode === '3p') { mg.vulture = [3, 3]; mg.three.kind = 'badger'; mg.three.h = [4, 3]; mg.three.burrowed = false; mg.ostrich = [8, 0]; mg.stones = 1; }
@@ -204,7 +208,12 @@ for (const mode of ['3p', 'Hunters', '5p']) {
   const mgot = ids(miss, mp), badger = mode === 'Hunters' ? 'badger' : 'hunter';
   assert.equal(mgot[miss.red], 'stone-badger', mode + ' vulture sees the badger stone');
   assert.equal(mgot[badger], 'stone-badger', mode + ' badger sees the stone');
-  assert.equal(mgot[miss.blue], null, mode + ' far ostrich does not see the badger stone');
+  for (const r of miss.roles) if (r !== miss.red && r !== badger) {
+    const view = miss.view(r), trails = (view.stoneNote && view.stoneNote.trails) || [];
+    const sent = trails.some(t => t.card || (t.points && t.points.some(p => p && p[0] >= 0)));
+    if (sent) assert.ok(mgot[r], mode + ' ' + r + ' sees a badger stone the server sent');
+    else assert.equal(mgot[r], null, mode + ' ' + r + ' is not sent the badger stone');
+  }
 }
 
 // --- burst: badger shoves the hyena, only for phones that can see the hyena ---
