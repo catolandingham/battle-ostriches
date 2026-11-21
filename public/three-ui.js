@@ -283,7 +283,7 @@ function doubleNow(S){const n=S&&S.h3&&S.h3.doubleNote;return !!(n&&n.text&&S.h3
 function pop(board,txt,cls){if(Date.now()<lookoutUntil)return;window.STATUS_QUEUE.add({className:'h3pop '+cls,text:txt,priority:10});}
 // Shared with sniff/fact notices: one one-second message, personal events before background facts.
 function announce(txt,priority,hold,preempt,heldEvent){window.STATUS_QUEUE.add({id:'announce',className:'show'+(/you/i.test(txt)?' bad':''),text:txt,priority:priority==null?(/\byou\b/i.test(txt)?100:50):priority,hold:hold||undefined,preempt:!!preempt,heldEvent:!!heldEvent});}
-let lookoutKey='',lookoutUntil=0,lineGen=0;
+let lookoutKey='',lookoutUntil=0,lineGen=0,senseMem=null;
 function releaseHeldLine(){
  lineGen++;
  if(window.STATUS_QUEUE&&STATUS_QUEUE.drop)STATUS_QUEUE.drop(item=>item.heldEvent);
@@ -349,11 +349,11 @@ function after(S,prev,board){
   const rg=document.createElement('i');rg.className='kring cue';c.appendChild(rg); // the act-on ring: a bird you can catch
   c.dataset.tip=(c.dataset.tip?c.dataset.tip+' · ':'')+'Bird next to you.';c.setAttribute('aria-label',(c.getAttribute('aria-label')?c.getAttribute('aria-label')+'. ':'')+'Bird next to you');}
  // sense: hunter only. The shaded box is yes or no. It does not name a direction or draw a compass.
- if(me==='hunter'&&S.phase==='play'&&S.sense!=null&&S.myTurn){
-  const hx=S.hunter[0],hy=S.hunter[1],range=h.senseRange,area=!!(window.NextStep&&NextStep.compute(S).kind==='area');
-  if(S.sense){for(let y=0;y<S.cfg.rows;y++)for(let x=0;x<S.cfg.cols;x++){const dx=x-hx,dy=y-hy;if(!dx&&!dy)continue;if(Math.max(Math.abs(dx),Math.abs(dy))>range)continue;
-   const c=board.children[y*S.cfg.cols+x];if(!c||!c.classList||!c.classList.contains('cell'))continue;if(c.querySelector('.pc.po,.pc.pv'))continue;
-   const both=S.pounce&&S.firstAt&&Math.max(Math.abs(x-S.firstAt[0]),Math.abs(y-S.firstAt[1]))<=range;if(S.pounce&&!both)continue; // the Pounce marks only the squares inside both readings
+ if(me==='hunter'&&S.phase==='play'&&S.sense!=null&&S.myTurn&&window.SENSE_HINT){
+  const area=!!(window.NextStep&&NextStep.compute(S).kind==='area');
+  const hint=SENSE_HINT.update(senseMem,S);senseMem=hint.memory;
+  if(S.sense){for(const p of hint.squares){
+   const c=board.children[p[1]*S.cfg.cols+p[0]];if(!c||!c.classList||!c.classList.contains('cell'))continue;if(c.querySelector('.pc.po,.pc.pv'))continue;
    c.classList.add('maybird');mark(c,'bird',area?'cue':'');const had=c.getAttribute('aria-label')||'';if(!/Bird may be here/.test(had))c.setAttribute('aria-label',had?had+'. Bird may be here':'Bird may be here');}}
   const sk=S.round+':'+S.senseSeq;if(sk!==lastSense){lastSense=sk;UI.pause(1100);
    pop(board,S.sense?(S.pounce?'Still near.':'Bird near.'):'Nothing near.',S.sense?'yes':'no');
