@@ -16,21 +16,18 @@
   }
   // viewer: your seat ('blue', 'red', 'o1'..'v2', 'hunter', 'hyena', 'badger'). kind: 'hyena' or 'badger', the animal that made the catch.
   // catchesLeft: catches the caught bird can still take after this one (ignored when lastCatch.ko).
-  // A catch by the badger ends with one of its quotes, said to every player who sees the catch (the words live in badgerlines.js):
-  // out of the burrow (lc.ambush), a bird that walked onto it (lc.walked), or a catch in the open.
-  const BL = typeof module !== 'undefined' ? require('./badgerlines.js') : window.BadgerLines;
+  // A catch is one short sentence. The badger's saying, if any, is its own line.
   function catchLine(lc, viewer, kind, left) {
     if(!lc.ko){
-      if(viewer===lc.bird){const n=lc.at&&lc.to?Math.max(Math.abs(lc.to[0]-lc.at[0]),Math.abs(lc.to[1]-lc.at[1])):0;return `You were caught! You fled ${n} square${n===1?'':'s'}.`;}
+      if(viewer===lc.bird){const n=lc.at&&lc.to?Math.max(Math.abs(lc.to[0]-lc.at[0]),Math.abs(lc.to[1]-lc.at[1])):0;return `You were caught and fled ${n} square${n===1?'':'s'}.`;}
       return `The ${hunterWord(kind||lc.by)} caught ${birdObject(lc.bird)}!`;
     }
-    const line = baseLine(lc, viewer, kind, left);
-    return hunterWord(kind || lc.by) === 'badger' ? line + ' ' + BL.catchTail(lc) : line;
+    return baseLine(lc, viewer, kind, left);
   }
   function baseLine(lc, viewer, kind, left) {
     const hunter = hunterWord(kind || lc.by), bird = birdWord(lc.bird);
     if (viewer === lc.bird) {
-      const line = lc.ko ? `The ${hunter} knocked you out.` : left === 1 ? 'Caught! One more and you\'re out.' : `Caught! ${more(left)} and you're out.`;
+      const line = lc.ko ? `The ${hunter} knocked you out.` : left === 1 ? "One more catch and you're out." : `${more(left)} and you're out.`;
       return lc.walked && !lc.ko ? `A hidden ${hunter} caught you!` : line;
     }
     if (viewer === 'hunter' || (lc.by && viewer === lc.by))

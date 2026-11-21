@@ -8,22 +8,22 @@ ok('the words are Brian\'s, exactly', () => {
   assert.equal(BL.LINES.ambush, "Badger doesn't care.");
   assert.equal(BL.LINES.openCatch, "Nothing can stop the badger when it's hungry.");
   assert.equal(BL.LINES.walkIn, 'Thanks for the treat, stupid birds!');
-  assert.equal(BL.LINES.popOut, "Look at it run in slow-motion, it's pretty badass.");
-  assert.equal(BL.LINES.firstBurrow, 'The badger has been referred to by the Guinness Book of World Records as the most fearless animal in all of the animal kingdom.');
+  assert.equal(BL.LINES.popOut, 'The badger pops up and keeps going.');
+  assert.equal(BL.LINES.firstBurrow, 'Guinness World Records says the badger is the most fearless animal.');
   assert.deepEqual(BL.LINES.rotate, ["Badger doesn't care.", 'Look at this nasty badass.']);
   assert.equal(BL.LINES.sight, "Nothing can stop the badger when it's hungry.");
-  assert.equal(BL.LINES.shove, "Look! It's chasing a jackal! ... Badger doesn't care, it doesn't give a #$%!, it just takes what it wants.");
+  assert.equal(BL.LINES.shove, "The badger doesn't care and takes what it wants.");
+  assert.equal(BL.LINES.kicked, "The badger doesn't care.");
   assert.equal(BL.LINES.win, 'Look at this nasty badass.');
-  const all = [].concat(...Object.values(BL.LINES)); assert.equal(all.filter(l => /\#\$%!/.test(l)).length, 1, 'the grawlix appear only in the shove line'); });
+  const all = [].concat(...Object.values(BL.LINES)); assert.equal(all.filter(l => /\#\$%!/.test(l)).length, 0, 'sayings do not use the grawlix'); });
 
 ok('KO quotes retain their mapping; approved non-KO notices have no appended quote', () => {
   const lc = o => Object.assign({ bird: 'blue', ko: false, seq: 1, round: 2 }, o);
   assert.equal(BL.catchTail(lc({ ambush: true })), BL.LINES.ambush); assert.equal(BL.catchTail(lc({ walked: true })), BL.LINES.walkIn); assert.equal(BL.catchTail(lc()), BL.LINES.openCatch);
   for (const viewer of ['blue', 'red', 'hunter', 'hyena']) {
-    assert.ok(CT.catchLine(lc({ ambush: true, ko: true }), viewer, 'badger', 1).endsWith(" Badger doesn't care."), viewer);
-    assert.ok(CT.catchLine(lc({ walked: true, ko: true }), viewer, 'badger', 1).endsWith(' Thanks for the treat, stupid birds!'), viewer);
-    assert.ok(CT.catchLine(lc({ ko: true }), viewer, 'badger', 1).endsWith(" Nothing can stop the badger when it's hungry."), viewer);
-    for (const o of [{}, { walked: true }, { ambush: true }]) {assert.equal(CT.catchLine(lc({...o,at:[1,1],to:[3,1]}),viewer,'badger',1),viewer==='blue'?'You were caught! You fled 2 squares.':'The badger caught the ostrich!');} for (const o of [{}, { walked: true }, { ambush: true }]) assert.ok(!/stupid birds|hungry|don't care/.test(CT.catchLine(lc(o), viewer, 'hyena', 1)), 'hyena catches get no quote'); } });
+    assert.equal(CT.catchLine(lc({ ambush: true, ko: true }), viewer, 'badger', 1), viewer === 'blue' ? 'The badger knocked you out.' : viewer === 'hunter' ? 'Ostrich knocked out!' : 'The badger knocked out the ostrich.', viewer);
+    assert.ok(!/hungry|stupid birds|doesn't care/.test(CT.catchLine(lc({ ko: true }), viewer, 'badger', 1)), viewer + ' catch notice is one sentence');
+    for (const o of [{}, { walked: true }, { ambush: true }]) {assert.equal(CT.catchLine(lc({...o,at:[1,1],to:[3,1]}),viewer,'badger',1),viewer==='blue'?'You were caught and fled 2 squares.':'The badger caught the ostrich!');} for (const o of [{}, { walked: true }, { ambush: true }]) assert.ok(!/stupid birds|hungry|don't care/.test(CT.catchLine(lc(o), viewer, 'hyena', 1)), 'hyena catches get no quote'); } });
 
 ok('rotation: later burrows and stays alternate the two lines, never the same twice in a row; the first burrow has its own line', () => {
   const p = BL.createPicker(), view = (o) => Object.assign({ role: 'hunter', phase: 'play', turn: 'hunter', myTurn: true, burrowed: false, kind: 'badger', seenBirds: [], h3: { kind: 'badger' } }, o);

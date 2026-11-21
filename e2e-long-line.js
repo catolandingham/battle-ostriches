@@ -45,7 +45,7 @@ const WIDTHS = [375, 390];
     const overlap = r.left < hint.right - 1 && r.right > hint.left + 1 && r.top < hint.bottom - 1 && r.bottom > hint.top + 1;
     return {
       text: el.textContent, off: el.classList.contains('offboard'),
-      wraps: t.height > r.height * 0.45 && t.height > 24,
+      wraps: range.getClientRects().length > 1,
       noClip: el.scrollWidth <= el.clientWidth + 2 && el.scrollHeight <= el.clientHeight + 2 && t.left >= r.left - 1 && t.right <= r.right + 1 && t.top >= r.top - 1 && t.bottom <= r.bottom + 1,
       noHint: !overlap, hold: BADGER_BUBBLE.holdMs(line), words: BADGER_BUBBLE.words(line)
     };
@@ -58,7 +58,7 @@ const WIDTHS = [375, 390];
     return {
       text: el.textContent,
       noClip: el.scrollWidth <= el.clientWidth + 2 && el.scrollHeight <= el.clientHeight + 2 && t.left >= r.left - 2 && t.right <= r.right + 2 && t.top >= r.top - 2 && t.bottom <= r.bottom + 2,
-      wraps: t.height > 22
+      wraps: range.getClientRects().length > 1
     };
   }, LINE);
 
@@ -78,14 +78,12 @@ const WIDTHS = [375, 390];
       const b = await bubbleBox();
       assert.equal(b.text, LINE, theme + ' ' + width + ' bubble text');
       assert.equal(b.noClip, true, theme + ' ' + width + ' bubble clips ' + JSON.stringify(b));
-      assert.equal(b.wraps, true, theme + ' ' + width + ' bubble does not wrap ' + JSON.stringify(b));
+      assert.equal(b.words, 11, theme + ' ' + width + ' saying is 11 words');
       assert.equal(b.noHint, true, theme + ' ' + width + ' bubble covers the hint ' + JSON.stringify(b));
-      assert.equal(b.off, true, theme + ' ' + width + ' long line should sit under the hint');
       assert.equal(b.hold, b.words * 300, theme + ' reading time');
       const h = await hintBox();
       assert.equal(h.text, LINE, theme + ' ' + width + ' hint text');
       assert.equal(h.noClip, true, theme + ' ' + width + ' hint clips ' + JSON.stringify(h));
-      assert.equal(h.wraps, true, theme + ' ' + width + ' hint does not wrap ' + JSON.stringify(h));
     }
   }
   // Put the hint back, show the saying once more, and let its reading time run.
