@@ -13,11 +13,12 @@
     const extra = S.h3 && S.h3.extra ? ':x' : '';
     return (S.round == null ? '' : S.round) + ':' + (S.turn || '') + extra;
   }
-  function create({ show, hide, schedule }) {
+  function create({ show, hide, schedule, cancel, blocked }) {
     let pending = [], active = null, timer = null, turn = null;
     function pump() {
       timer = null;
       if (active) return;
+      if (blocked && blocked()) return;
       if (!pending.length) return;
       active = pending.shift();
       show(active);
@@ -38,6 +39,18 @@
         if (!active && timer == null) pump();
         return true;
       },
+      // A status line needs the screen. Park this saying and play it again, whole.
+      pause() {
+        if (!active) return false;
+        if (timer != null && cancel) cancel(timer);
+        timer = null;
+        const item = active;
+        active = null;
+        hide(item);
+        pending.unshift(item);
+        return true;
+      },
+      resume() { if (!active && timer == null) pump(); },
       state: () => ({ active, pending: pending.slice(), turn })
     };
   }
