@@ -4,7 +4,7 @@ process.env.BO_BOTMS = '900000';
 process.env.BO_CLOCKMS = '900000';
 const { webkit, chromium } = require('playwright-core');
 const assert = require('assert');
-require('/agent/repos/battle-ostriches/server.js');
+require('./server.js');
 const U = 'http://127.0.0.1:3991/';
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
