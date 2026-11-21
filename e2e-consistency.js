@@ -24,7 +24,7 @@ let seed = 7; const rnd = n => { seed = (seed * 16807) % 2147483647; return seed
         if (st.btns.some(x => x.pressed && /Throw/.test(x.t))) return /Tap to throw\./.test(h);
         return /Your turn\. Tap to fly\./.test(h);
       }
-      return /Tap to move|Pick where the egg goes|Tap where they go|Your turn|Hide your eggs|Pick your start/i.test(h);
+      return /Tap to move|Pick where the egg goes|Tap where they go|Your turn|Hide your eggs|Pick your start|You ate\.|Kick:/i.test(h);
     };
     for (let turn = 0; turn < 400; turn++) {
       await P.waitForFunction(() => { const S = UI._S(); const busy = !!(window.CUTAWAYS && CUTAWAYS.busy && CUTAWAYS.busy()); return S && (S.phase === 'over' || ((S.myTurn || S.phase.startsWith('setup') && S.role === 'blue') && !UI._locked() && !busy && document.getElementById('handoff').classList.contains('hidden'))) || !document.getElementById('handoff').classList.contains('hidden'); }, null, { timeout: 20000 });
@@ -63,7 +63,7 @@ let seed = 7; const rnd = n => { seed = (seed * 16807) % 2147483647; return seed
           const i = st.btns.indexOf(bt); if (await P.locator('#actions button').nth(i).isDisabled()) continue; // an earlier click (+ Carry) can disable a later button (Kick)
           await P.locator('#actions button').nth(i).click({ force: true });
           const after = await P.evaluate(() => ({ on: [...document.querySelectorAll('#actions button')].findIndex(x => x.getAttribute('aria-pressed') === 'true'), n: document.querySelectorAll('.cell.legal').length, kick: UI._mode && UI._mode() === 'kick' ? UI._legal().length : 0, hint: document.getElementById('hint').textContent }));
-          assert.equal(after.on, i, 'tapped mode becomes selected'); assert.ok((after.n > 0 || after.kick > 0) && /Tap to move|Tap to fly|Tap to throw|Pick where the egg goes|Tap where they go|Your turn|No stone\. Go to rocks|Found it\. Get a stone first|Throw on your own square|You're on the egg!/.test(after.hint), 'mode shows targets + hint: ' + after.hint); // a found egg under the vulture swaps in the smash hints; throw mode names its targets "red-orange squares", not "glowing"; this wording dates from 3eb803b
+          assert.equal(after.on, i, 'tapped mode becomes selected'); assert.ok((after.n > 0 || after.kick > 0) && /Tap to move|Tap to fly|Tap to throw|Pick where the egg goes|Tap where they go|Your turn|No stone\. Go to rocks|Found it\. Get a stone first|Throw on your own square|You're on the egg!|You ate\.|Kick:/.test(after.hint), 'mode shows targets + hint: ' + after.hint); // a found egg under the vulture swaps in the smash hints; throw mode names its targets "red-orange squares", not "glowing"; this wording dates from 3eb803b. "You ate." stays up after a leaf. The kick tip is the one-time kick sentence.
         }
       }
       // tap a non-glowing square: explained locally, no server error. "Non-glowing" means legal in NO mode for this player,
