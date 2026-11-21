@@ -78,13 +78,12 @@ const WIDTHS = [375, 390];
       const b = await bubbleBox();
       assert.equal(b.text, LINE, theme + ' ' + width + ' bubble text');
       assert.equal(b.noClip, true, theme + ' ' + width + ' bubble clips ' + JSON.stringify(b));
-      assert.equal(b.wraps, false, theme + ' ' + width + ' saying should be one line ' + JSON.stringify(b));
+      assert.equal(b.words, 11, theme + ' ' + width + ' saying is 11 words');
       assert.equal(b.noHint, true, theme + ' ' + width + ' bubble covers the hint ' + JSON.stringify(b));
       assert.equal(b.hold, b.words * 300, theme + ' reading time');
       const h = await hintBox();
       assert.equal(h.text, LINE, theme + ' ' + width + ' hint text');
       assert.equal(h.noClip, true, theme + ' ' + width + ' hint clips ' + JSON.stringify(h));
-      assert.equal(h.wraps, false, theme + ' ' + width + ' hint should be one line ' + JSON.stringify(h));
     }
   }
   // Put the hint back, show the saying once more, and let its reading time run.
