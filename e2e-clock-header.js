@@ -1,4 +1,4 @@
-// The classic shot clock sits on its own row. EGGS must not run into the animal box.
+// The classic shot clock sits on its own row. The egg count must not run into the animal box.
 const { webkit } = require('playwright-core');
 const assert = require('assert');
 process.env.PORT = '3964';
@@ -50,7 +50,22 @@ const server = require('./server.js');
   assert.equal(box.overlapClock, false, 'EGGS runs into the shot clock ' + JSON.stringify(box));
   assert.equal(box.inside, true, 'EGGS sits inside the header ' + JSON.stringify(box));
   assert.ok(box.clockTop >= box.eggsBottom - 1, 'the clock is on its own row under the chips ' + JSON.stringify(box));
-  assert.ok(/EGGS/.test(box.text), box.text);
+  assert.ok(/^\d+\/\d+$/.test(box.text), box.text);
+  const label = await p.evaluate(() => {
+    const chip = document.querySelector('#stats .he');
+    const num = document.getElementById('eggsLeft');
+    const stones = document.getElementById('stonesLeft');
+    const es = getComputedStyle(num), ss = getComputedStyle(stones);
+    const words = [...chip.childNodes].filter(n => n.nodeType === 3).map(n => n.textContent.trim()).filter(Boolean);
+    return {
+      words,
+      letters: (chip.textContent || '').replace(/[^A-Za-z]+/g, ''),
+      font: es.fontFamily === ss.fontFamily && es.fontWeight === ss.fontWeight && es.fontSize === ss.fontSize
+    };
+  });
+  assert.deepEqual(label.words, [], 'the egg chip has a text label');
+  assert.equal(label.letters, '', 'the egg chip has a text label: ' + label.letters);
+  assert.equal(label.font, true, 'the egg count does not match the stone count');
   assert.equal(errs.length, 0, errs.join('\n'));
   await p.screenshot({ path: 'shots/clock-header.png' });
   console.log('PASS e2e-clock-header', JSON.stringify(box));
