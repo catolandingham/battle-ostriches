@@ -149,7 +149,7 @@
    const last=ev.points[ev.points.length-1],cell=board.children[last[1]*s.cfg.cols+last[0]];if(!cell)continue;
    const cls=ev.key==='blue'||/^o\d/.test(ev.key)?'.po':ev.key==='red'||/^v\d/.test(ev.key)?'.pv':'.ph.h'+ev.key;
    let actor=cell.querySelector('.pc'+cls),temporary=false;
-   if(!actor&&s.kick&&ev.key===s.kick.key&&s.kick.trail&&s.kick.trail.every(valid)&&(ev.key==='hyena'||ev.key==='badger')){actor=document.createElement('div');actor.className='pc ph h'+ev.key;actor.innerHTML=window.T3UI.KIND[ev.key].art;cell.appendChild(actor);temporary=true;}
+   if(!actor&&(ev.key==='hyena'||ev.key==='badger'||ev.key==='hunter')&&ev.points.every(valid)){const kind=ev.key==='hunter'?'hyena':ev.key;const art=window.T3UI&&T3UI.KIND&&T3UI.KIND[kind]&&T3UI.KIND[kind].art;if(art){actor=document.createElement('div');actor.className='pc ph h'+kind;actor.innerHTML=art;cell.appendChild(actor);temporary=true;}}
    if(!actor)continue;
    const sr=stage.getBoundingClientRect(),ar=actor.getBoundingClientRect();
    if(temporary)actor.remove();
