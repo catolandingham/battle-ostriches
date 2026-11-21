@@ -3,9 +3,19 @@
 const C=window.BO.CONFIG;
 const OST=ART.ostrich;
 const VUL=ART.vulture;
-const INTRO=[
- {art:`<div class="tart"><div class="tbird">${OST}</div><div class="tvs">vs</div><div class="tbird">${VUL}</div></div><div class="tlogo">Battle Ostriches</div>`,t:'Welcome!',d:'A hide-and-seek game for 2 to 5 players.'},
+const FALLBACK=[
+ {t:'Welcome',d:'A hide-and-seek game for 2 to 5 players.'},
+ {t:'Your move',d:'Tap a lit square on your turn.'},
+ {t:'The clock',d:'Each turn has a short timer. When it runs out, the turn ends.'},
 ];
+function linesFor(S){
+ if(!S||!window.Roles||!S.rules)return null;
+ const h=S.h3||{},mode=!S.three?'2':h.team?String(h.n||4):h.hunt?'4h':'3';
+ const card=Roles.roleCard(h.mySeat||S.role,S.role==='hunter'?(S.kind||h.kind):h.kind,mode,S.rules);
+ if(!card||!card.lines||!card.lines.length)return null;
+ const bits=card.lines.slice(0,3);while(bits.length<3)bits.push('Tap a lit square on your turn.');
+ return [{t:card.title,d:bits[0]},{t:'Your move',d:bits[1]},{t:'Remember',d:bits[2]}];
+}
 let list=[],i=0,el,after=null;
 function build(){el=document.createElement('div');el.id='tut';el.className='screen hidden';el.innerHTML=
  `<div class="tutcard"><button class="tutskip" id="tutSkip">Skip</button><div class="tutimg" id="tutImg"></div>
@@ -17,21 +27,24 @@ function build(){el=document.createElement('div');el.id='tut';el.className='scre
  let x0=null;el.addEventListener('touchstart',e=>{x0=e.touches[0].clientX;},{passive:true});
  el.addEventListener('touchend',e=>{if(x0===null)return;const dx=e.changedTouches[0].clientX-x0;x0=null;if(Math.abs(dx)>50)go(i+(dx<0?1:-1));});}
 function go(n){if(n<0||n>=list.length)return;i=n;const s=list[i];
- document.getElementById('tutImg').innerHTML=s.art||`<img src="/tut/${s.img}" alt="">`;document.getElementById('tutImg').className='tutimg'+(s.art?' art':'');
+ document.getElementById('tutImg').innerHTML=s.art||(s.img?`<img src="/tut/${s.img}" alt="">`:'');document.getElementById('tutImg').className='tutimg'+(s.art?' art':'');
  document.getElementById('tutT').textContent=s.t;document.getElementById('tutD').textContent=s.d;
  document.getElementById('tutDots').innerHTML=list.map((_,k)=>`<span class="${k===i?'on':''}"></span>`).join('');
  document.getElementById('tutBack').disabled=i===0;document.getElementById('tutNext').textContent=i===list.length-1?"Let's play":'Next';}
 function close(){el.classList.add('hidden');}
-function show(role){if(!el)build();
- list=INTRO;
- el.classList.remove('hidden');go(0);}
+function showCards(cards){if(!el)build();list=cards&&cards.length?cards:FALLBACK;el.classList.remove('hidden');go(0);}
+function show(){showCards(linesFor(window.UI&&UI._S&&UI._S())||FALLBACK);}
+function offer(S){if(!S||S.lobby||S.simple||S.phase==='over'||!S.phase)return;const h=S.h3||{};
+ const id=(h.mySeat||S.role||'')+':'+(S.kind||h.kind||'')+':'+(!S.three?'2':h.team?String(h.n||4):h.hunt?'4h':'3');
+ const key='bo_tut_'+id;try{if(localStorage.getItem(key)||localStorage.getItem('bo_tut_seen'))return;}catch(e){return;}
+ const cards=linesFor(S);if(!cards)return;try{localStorage.setItem(key,'1');}catch(e){}showCards(cards);}
 // just-in-time tips: shown once per id, small, dismissible, never blocks the board
 const seen=id=>{try{return localStorage.getItem('bo_tip_'+id)}catch(e){return 1}};
 // tips go to the inline tip bar under the hint (never covers the board, no dismiss needed, clears on the next action)
 let shownThisTurn=false;
 function tip(id,text){if(localStorage.getItem('bo_tips_off')||seen(id))return;const b=document.getElementById('tipbar');if(b&&!b.classList.contains('hidden'))return; // one at a time
  try{localStorage.setItem('bo_tip_'+id,'1')}catch(e){}window.UI&&UI._tip&&UI._tip(text);}
-window.TUT={show,tip,intro:INTRO,
+window.TUT={show,tip,offer,intro:FALLBACK,
  maybeShow(){},
- firstVisit(){if(localStorage.getItem('bo_tut_seen'))return;localStorage.setItem('bo_tut_seen','1');show('intro');}};
+ firstVisit(){offer(window.UI&&UI._S&&UI._S());}};
 })();

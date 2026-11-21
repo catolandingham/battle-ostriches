@@ -67,7 +67,8 @@ function ostrichAct(g, s, a, p) {
       const egg = eggAt(g, b.pos); if (egg) egg.lastWarm = g.round;
       feed(g, s); next(g); return true;
     }
-    if (carry) { const e = eggAt(g, b.pos); e.pos = null; b.carrying = e.id; if (g.marks[K(b.pos)] === 'spotted') delete g.marks[K(b.pos)]; }
+    if (carry) { const e = eggAt(g, b.pos); e.pos = null; b.carrying = e.id; if (g.marks[K(b.pos)] === 'spotted') delete g.marks[K(b.pos)];
+      g.carryNote = { seq: (g.carrySeq = (g.carrySeq || 0) + 1), round: g.round, seat: s, text: 'Egg will drop here next turn.' }; }
     b.pos = p.slice(); b.sitRun = 0; b.sitting = false; }
   g.lastAction = { seat: s, type: a === 'sit' ? 'sit' : a === 'carry' ? 'carry' : 'step' };
   const e = b.carrying !== null ? null : eggAt(g, b.pos); if (e) e.lastWarm = g.round; // either ostrich may warm any egg; a carried egg is not warmed
@@ -159,9 +160,8 @@ function vultureFly(g, s, p) { clearOut(g);
   const b = g.b[s], from = b.pos.slice(), snap = B.eggSnap(g, p); b.pos = p.slice();
   g.lastAction = { seat: s, type: 'fly', from };
   const e = eggAt(g, p), open = !!(e && !OS.some(o => live(g, o) && K(g.b[o].pos) === K(p)));
-  // Simple rules still find the egg. The last-round break is the normal game only.
-  if (!g.simple && open && B.isLastRound(g)) B.breakEgg(g, e, p, s, OS[e.nest] || null); // last round: break it (Brian, 2026-11-16). The nest ostrich owns the announcement.
-  else if (open) { g.marks[K(p)] = 'spotted'; g.lastAction.spotted = p.slice(); }
+  // A landing finds the egg. A vulture has to throw a stone to break it.
+  if (open) { g.marks[K(p)] = 'spotted'; g.lastAction.spotted = p.slice(); }
   if (B.isRock(g, p)) { g.lastAction.refill = b.stones < g.cfg.stones; b.stones = g.cfg.stones; }
   if (g.simple) { g.lastAction.smell = false; g.sniffs[s] = null; g.sniffKeeps[s] = null; }
   else {
@@ -280,7 +280,7 @@ function next(g) {
   for (let n = 0; n < 20; n++) {
     i++; if (i >= g.order.length) { endRound(g); if (g.phase === 'over') return; i = 0; }
     const s = g.order[i];
-    if (s === 'hunter') { g.turn = 'hunter'; startHunter(g); return; }
+    if (s === 'hunter') { g.turn = 'hunter'; if (g.round >= g.cfg.rounds && !g.lastMoveNote) g.lastMoveNote = { seq: 1, round: g.round, text: 'Hunter gets one last move.' }; startHunter(g); return; }
     const b = g.b[s]; if (b.out) continue;
     if (b.skip) { b.skip--; g.lost = { bird: s, round: g.round };
       if (isO(s)) { ostrichStay(g, s, 'lost'); if (checkEnd(g)) return; } else { g.sniffs[s] = null; dropAll(g); }
@@ -289,7 +289,7 @@ function next(g) {
   }
 }
 function timeout(g) { // shot clock ran out: vulture passes, ostrich stays put (an egg under it is warmed, still hungry), hunter stays put
-  if (g.phase !== 'play') return false; const s = g.turn;
+  if (g.phase !== 'play') return false; B.markTime(g); const s = g.turn;
   if (s === 'hunter') return hunterStay(g, true);
   if (isV(s)) { g.sniffs[s] = null; g.lastAction = { seat: s, type: 'pass', timeout: true }; dropAll(g); }
   else { const b = g.b[s], e = b.carrying === null && b.pos ? eggAt(g, b.pos) : null; if (e) e.lastWarm = g.round; ostrichStay(g, s, 'timeout'); } // time ran out on an egg: it is still warmed (Brian, 2026-11-15)

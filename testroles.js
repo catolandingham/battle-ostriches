@@ -65,7 +65,8 @@ ok('approved wording, with numbers from the rules constants', () => {
   assert.deepEqual(o3.lines, [
     `Keep at least 1 egg alive for ${C.rounds} rounds.`,
     `If a hunter gets to your square, they catch you. ${T.T3.ko.hyena} catches knock you out.`,
-    'You lose if every egg is broken or goes cold, or if you don\'t eat in time.',
+    'You lose if every egg is broken or goes cold.',
+    'If you don\'t eat in time, you are knocked out.',
     'The hunter wins when both birds are out.',
     'When the hunter knocks a bird out, they move twice each round. One move is 1 square. No pounce.',
   ]);

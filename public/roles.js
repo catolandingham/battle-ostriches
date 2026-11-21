@@ -101,25 +101,27 @@
     const c = R.cfg, ko = koFor(mode, kind, R), n = hunterGoalObj(mode, R).n, d = doubleTurns(mode, R);
     if (mode === '5') return cardOf('You are an Ostrich.', 'ostrich', [
       `Keep at least 1 egg alive for ${c.rounds} rounds.`,
-      'You can help warm your teammate\'s eggs, but don\'t forget to eat.',
+      'You can help warm your teammate\'s eggs. If you don\'t eat in time, you are knocked out.',
       `If a hunter gets to your square, they catch you. ${ko} catches knock you out.`,
       'You lose if no egg is left, or the hunter knocks out 1 ostrich and 1 vulture.',
     ]);
     if (mode === '4') return cardOf('You are an Ostrich.', 'ostrich', [
       `Keep at least 1 egg alive for ${c.rounds} rounds.`,
-      'You can help warm your teammate\'s eggs, but don\'t forget to eat.',
+      'You can help warm your teammate\'s eggs. If you don\'t eat in time, you are knocked out.',
       'You lose if every egg is broken or goes cold.',
     ]);
     if (mode === '4h') return cardOf('You are the Ostrich.', 'ostrich', [
       `Keep at least 1 egg alive for ${c.rounds} rounds.`,
       `If a hunter gets to your square, they catch you. ${ko} catches knock you out.`,
-      'You lose if every egg is broken or goes cold, or if you don\'t eat in time.',
+      'You lose if every egg is broken or goes cold.',
+      'If you don\'t eat in time, you are knocked out.',
       'Both hunters hunt you.',
     ]);
     if (mode === '3') return cardOf('You are the Ostrich.', 'ostrich', [
       `Keep at least 1 egg alive for ${c.rounds} rounds.`,
       `If a hunter gets to your square, they catch you. ${ko} catches knock you out.`,
-      'You lose if every egg is broken or goes cold, or if you don\'t eat in time.',
+      'You lose if every egg is broken or goes cold.',
+      'If you don\'t eat in time, you are knocked out.',
       goalLine(mode, R, false),
       'When the hunter knocks a bird out, they move twice each round. One move is 1 square. No pounce.',
     ]);
