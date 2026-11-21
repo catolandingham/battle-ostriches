@@ -161,6 +161,7 @@ function hint(S,a){if(S.h3.team&&!hint.in){hint.in=1;try{return tHint(S,a);}fina
  if(r==='hunter'&&S.myTurn){if(S.simple){const n=S.hideLeft|0,me=S.h3.mySeat||S.kind||'hunter',hidden=S.veil&&(S.veil[me]||S.veil.hunter);a.innerHTML=(n>0&&!hidden?`<button type="button" onclick="UI.send({t:'act',a:'hide'})">Hide <b class="hidect">${n}</b></button>`:'')+'<button type="button" onclick="UI.send({t:\'act\',a:\'hstay\'})">Stay</button>';return 'Your turn. Tap to move.';}const k=S.h3.kind;
   a.innerHTML=S.pounce?'<button class="on" title="Skip this extra move. You will not catch the bird." onclick="UI.send({t:\'act\',a:\'hstay\'})">Stay</button>':`<button title="${k==='badger'?(S.burrowed?'Stay burrowed. Birds still cannot see you.':digWarn(S)):'Stay put and end your turn.'}" onclick="UI.send({t:'act',a:'hstay'})">${k==='badger'?(S.burrowed?'Stay':'Burrow'):'Stay'}</button>${S.canBurst?`<button title="Come up and shove the hyena back." onclick="UI.send({t:'act',a:'hburst'})">Burst out</button>`:''}`;
   if(S.pounce)return 'When you miss, move 1 more square.';
+  if(doubleNow(S))return S.h3.doubleNote.text;
   if(S.h3.extra)return 'Your turn again. Tap to move.';
   if(k==='badger'&&!S.burrowed)return 'Tap to move, or Burrow. '+digWarn(S);
   return 'Your turn. Tap to move. '+(S.sense?'':'No bird near.');}
@@ -169,6 +170,7 @@ function digWarn(S){return S.sense?'A bird will see you dig in.':'No bird will s
  if(!S.h3.ready)return S.h3.needKind?'Pick your hunter.':`Waiting for all ${S.h3.hunt?4:3} players…`;
  if(r!=='hunter'&&S.h3.birds[r]&&S.h3.birds[r].out)return 'You\'re out. Watching.';
  if(r==='blue'&&window.UI&&UI._S()&&UI._S().sittingAt&&UI._S().ostrich&&UI._S().sittingAt.some(q=>q[0]===UI._S().ostrich[0]&&q[1]===UI._S().ostrich[1]))return 'The vulture sees you sit.';
+ if(t==='hunter'&&doubleNow(S))return S.h3.doubleNote.text;
  if(t==='hunter'&&S.h3&&S.h3.extra)return tname(S,t)+"'s turn again.";
  return `${tname(S,t)}'s turn…`;}
 function chips(S){if(S.h3.hunt)return hChips(S);if(S.h3.team)return tChips(S);let bar=$('h3bar');if(!bar){bar=document.createElement('div');bar.id='h3bar';$('hud').after(bar);
@@ -277,6 +279,7 @@ function marksAround(board,S,cx,cy,range,kind,cls){const C=S.cfg;let n=0;
  for(let y=Math.max(0,cy-range);y<=Math.min(C.rows-1,cy+range);y++)for(let x=Math.max(0,cx-range);x<=Math.min(C.cols-1,cx+range);x++){if(x===cx&&y===cy)continue;if(kind==='egg'&&S.cfg&&noEgg(S,x,y))continue;const c=board.children[y*C.cols+x];if(c&&c.classList&&c.classList.contains('cell')&&mark(c,kind,cls))n++;}
  return n;}
 function isNearLine(item){const t=(item&&item.text||'').trim(),c=item&&item.className||'';return /\bnear[!.]?$/i.test(t)||/(^|\s)near(\s|$)/.test(c);}
+function doubleNow(S){const n=S&&S.h3&&S.h3.doubleNote;return !!(n&&n.text&&S.h3.extra&&n.round===S.round);}
 function pop(board,txt,cls){if(Date.now()<lookoutUntil)return;window.STATUS_QUEUE.add({className:'h3pop '+cls,text:txt,priority:10});}
 // Shared with sniff/fact notices: one one-second message, personal events before background facts.
 function announce(txt,priority,hold,preempt,heldEvent){window.STATUS_QUEUE.add({id:'announce',className:'show'+(/you/i.test(txt)?' bad':''),text:txt,priority:priority==null?(/\byou\b/i.test(txt)?100:50):priority,hold:hold||undefined,preempt:!!preempt,heldEvent:!!heldEvent});}
@@ -307,7 +310,7 @@ const evSeen={kick:0,pop:0,rival:0,stone:0,dug:0,burst:0};
 function events(S,prev,board){
  if(!S)return;if(!S.three)rulesMode('2');
  const h=S.h3||{};
- for(const e of window.CatchText.newEvents(evSeen,S,prev)){const big=e.kind==='kick'||e.kind==='burst'||e.kind==='rival'||e.kind==='smash'||(e.kind==='stone'&&S.stoneNote&&(S.stoneNote.targets||[]).length);speak(S,prev,window.CatchText.viewerEvent(e,S),null,big);
+ for(const e of window.CatchText.newEvents(evSeen,S,prev)){if(e.kind==='double'){const wait=window.SURPRISE?SURPRISE.LOOKOUT_MS+SURPRISE.CARTOON_MS:0;setTimeout(()=>announce(e.text,70),wait);continue;}const big=e.kind==='kick'||e.kind==='burst'||e.kind==='rival'||e.kind==='smash'||(e.kind==='stone'&&S.stoneNote&&(S.stoneNote.targets||[]).length);speak(S,prev,window.CatchText.viewerEvent(e,S),null,big);
   // the square highlight: the hyena's landing square for the meeting; the badger's own square for a pop-out, only if this phone can see the badger
   const sq=e.kind==='rival'||e.kind==='kick'||e.kind==='burst'?e.square:e.kind==='dug'?null:e.seen?(h.hunters?(h.hunters.find(x=>x.kind==='badger')||{}).p:h.hunter):null,c=cellAt(board,S,sq);c&&c.classList.add('h3kb');}}
 // One plain line at the start of every game: who hunts what, naming only the animals in the game (roles.js).

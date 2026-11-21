@@ -125,6 +125,7 @@ function view3(room, role) {
   const lc = t.lastCatch && { bird: t.lastCatch.bird, ko: t.lastCatch.ko, walked: !!t.lastCatch.walked, ambush: !!t.lastCatch.ambush, seq: t.lastCatch.seq, round: t.lastCatch.round,
     at: role === t.lastCatch.bird || role === 'hunter' || over || T.hunterSeenBy(g, role) ? t.lastCatch.at : null, to: role !== 'hunter' || over ? t.lastCatch.to : null }; // a bird sees where the catch was only if it can see the hunter now (birds see birds, so `to` is public to them)
   const h3 = Object.assign(T.status3(g), { seats, ready: ready3(room), needKind: role === 'hunter' && !t.kind, lastCatch: lc, lost: t.lost || null,
+    doubleNote: t.doubleNote ? { seq: t.doubleNote.seq, round: t.doubleNote.round, text: T.DOUBLE_NOTE } : null,
     clockLeft: room.deadline && g.phase === 'play' ? Math.max(0, room.deadline - Date.now()) : null, clockMs: T.T3.clockMs, senseRange: T.T3.sense,
     hunter: over || role === 'hunter' || T.hunterSeenBy(g, role) ? t.h : null, burrowed: role === 'hunter' || over ? t.burrowed : false, range: role === 'hunter' ? T.hunterRange(g) : 1,
     popout: popView(t.popout, role === 'hunter' || over || T.hunterSeenBy(g, role)) });
@@ -569,14 +570,22 @@ function viewerIsHost(room, v) {
 // picked: true means Start gave this seat to the player; they did not choose it (lobby.js plan). Roster seat = view seat.
 // Motion packets contain ONLY squares this viewer may see. Null steps preserve public timing, not hidden destinations.
 const motionPath=require('./public/push-motion').path;
-function trailView(room,v,seat,key,from,to,wrap=false,n=3){
- const g=room.g,pts=motionPath(g.cfg,from,to,wrap,n),isHunter=['hunter','hyena','badger'].includes(seat),ownKind=v.kind||(v.h3||{}).kind;
+function trailView(room,v,seat,key,from,to,wrap=false,n=3,points){
+ const g=room.g,pts=points||motionPath(g.cfg,from,to,wrap,n),isHunter=['hunter','hyena','badger'].includes(seat),ownKind=v.kind||(v.h3||{}).kind;
  return pts.map(p=>{if(g.phase==='over'||v.god)return p;
   const bird=key==='blue'||key==='red'||/^[ov][12]$/.test(key);
   if(bird)return isHunter?null:p;
   if(isHunter){if(key===ownKind||key===seat)return p;return g.hunt&&v.hunter&&B.dist(v.hunter,p)<=2?p:null;}
   const eye=v.role==='blue'?v.ostrich:v.vulture;return eye&&eye[0]>=0&&B.dist(eye,p)<=2?p:null;
  });
+}
+// The animal that was kicked. A scattered hunter must not be handed the path: that path used to point straight back at the ostrich.
+function kickHitHunter(g, k, seat) {
+  if (!k || !k.scatter || !seat) return false;
+  if (g.three) return seat === 'hunter';
+  if (g.hunt) return seat === k.who;
+  if (g.team) return k.seat === 'hunter' && seat === 'hunter';
+  return false;
 }
 // Which decision the table is waiting on. A pounce, a bonus turn, and the next round are different turns even when the same animal is still moving.
 function senseNow(g) {
@@ -634,7 +643,11 @@ function stamp(room, v, seat) {
       const bs = g.hunt && g.hunt.burst; v.h3.burst = bs ? { seq: bs.seq, round: bs.round, n: bs.n, to: over || v.god || ['hyena', 'badger'].includes(seat) || HU.seen(g, seat, 'hyena') ? bs.to : null } : null; } }
   if (v && room && room.g) { const g = room.g; v.endWhy = g.phase === 'over' ? g.endWhy || null : null; v.leftName = g.phase === 'over' && g.winBy === 'left' ? (g.leftName || null) : null; v.leftArt = g.phase === 'over' && g.winBy === 'left' ? (g.leftArt || null) : null; v.stoneNote = g.lastStone ? { seq: g.lastStone.seq, text: g.lastStone.text, by: g.lastStone.by, targets: g.lastStone.targets || [], kicker:g.lastStone.kicker||null } : null;
     v.smashNote = g.lastSmash ? {seq:g.lastSmash.seq,by:g.lastSmash.by,owner:g.team||v.role==='blue'||v.god?g.lastSmash.owner:null} : null;
-    if(v.kick&&g.lastKick){const k=g.lastKick,key=g.team?(k.seat==='hunter'?g.h.kind:k.seat):k.who==='vulture'?'red':k.who;v.kick.trail=seat===(v.kick.by||'blue')?motionPath(g.cfg,k.from,k.to,true,k.moved||3):trailView(room,v,seat,key,k.from,k.to,true,k.moved||3);v.kick.key=key;}
+    if(v.kick&&g.lastKick){const k=g.lastKick,key=g.team?(k.seat==='hunter'?g.h.kind:k.seat):k.who==='vulture'?'red':k.who;v.kick.key=key;
+      const hide=kickHitHunter(g,k,seat)&&g.phase!=='over'&&!v.god;
+      if(hide){v.kick.trail=null;v.kick.to=null;v.kick.card=true;v.kick.wrap=!!k.wrap;}
+      else if(seat===(v.kick.by||'blue')) v.kick.trail=k.scatter&&k.points?k.points.map(p=>p.slice()):motionPath(g.cfg,k.from,k.to,true,k.moved||3);
+      else v.kick.trail=trailView(room,v,seat,key,k.from,k.to,true,k.moved||3,k.scatter?k.points:null);}
     if(v.stoneNote)v.stoneNote.trails=(g.lastStone.trails||[]).map(t=>({key:t.key,points:trailView(room,v,seat,t.key,t.from,t.to,false,2)}));
     if(v.h3&&g.hunt){const rv=g.hunt.rival,bs=g.hunt.burst;if(v.h3.rival&&rv)v.h3.rival.trail=trailView(room,v,seat,rv.by==='hyena'?'badger':'hyena',rv.at,rv.to,false,2);if(v.h3.burst&&bs)v.h3.burst.trail=trailView(room,v,seat,'hyena',bs.at,bs.to,false,2);}
 

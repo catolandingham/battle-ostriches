@@ -58,11 +58,11 @@
       // cartoon or a slide this phone cannot see (and must not pause the
       // board for a picture that never appears). Mixed visible/hidden steps
       // still use the public length so the slide duration is not a tell.
-      const seen = pointOk(k.to) || (Array.isArray(k.trail) && k.trail.some(pointOk));
+      const pathSeen = pointOk(k.to) || (Array.isArray(k.trail) && k.trail.some(pointOk));
       out.push({
         event: 'kick', seq: k.seq, by: k.by || 'blue', who: k.who, key: k.key, target: k.target,
-        trail: k.trail, to: k.to, moved: k.moved, cartoon: !!seen,
-        squares: seen ? squaresOf(null, k.to, k.trail, k.moved) : 0
+        trail: k.trail, to: k.to, moved: k.moved, cartoon: pathSeen || !!k.card,
+        squares: pathSeen ? squaresOf(null, k.to, k.trail, k.moved) : 0
       });
     }
     const lc = h.lastCatch, olc = oh.lastCatch;

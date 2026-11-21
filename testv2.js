@@ -78,7 +78,7 @@ ok('Kick pushes a vulture 3 squares, wraps around the edge, and stops before a w
   const w = classic(); w.turn = 'blue'; w.ostrich = [6, 3]; w.vulture = [7, 3]; assert.ok(B.ostrichKick(w, [7, 3])); assert.deepEqual(w.vulture, [1, 3], 'wrapped past the edge: 8, 0, 1'); assert.equal(w.lastKick.moved, 3);
   const x = classic(); x.turn = 'blue'; x.ostrich = [4, 3]; x.vulture = [5, 3]; x.marks['7,3'] = 'stone'; assert.ok(B.ostrichKick(x, [5, 3])); assert.deepEqual(x.vulture, [6, 3]); assert.equal(x.lastKick.moved, 1);
   const d = classic(); d.turn = 'blue'; d.ostrich = [7, 5]; d.vulture = [8, 6]; assert.ok(B.ostrichKick(d, [8, 6])); assert.deepEqual(d.vulture, [2, 2], 'diagonal wraps on both axes: (0,0) then (1,1) then (2,2)... from (8,6): (0,0),(1,1),(2,2)');
-  const t = three('badger', [5, 3], [4, 3], [0, 6]); t.turn = 'blue'; assert.ok(T.ostrichKick3(t, [5, 3])); assert.deepEqual(t.three.h, [7, 3], 'the badger goes only 2'); });
+  const t = three('badger', [5, 3], [4, 3], [0, 6]); t.turn = 'blue'; assert.ok(T.ostrichKick3(t, [5, 3])); assert.equal(B.wrapDist(t.cfg, [5, 3], t.three.h), t.cfg.kickPushBadger, 'the badger goes the full 2'); assert.ok(!B.pointsBack(t.cfg, [5, 3], t.three.h, t.ostrich) || t.lastKick.fallback, 'not straight back at the ostrich'); });
 
 // ---- 5 and 6: catches and pushes
 ok('a caught bird lands exactly 3 squares away on an open square; no missed turn; the egg drops on the catch square; hunters get the landing square only through the view rules', () => {

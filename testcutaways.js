@@ -26,7 +26,11 @@ for (const mode of ['3p', 'Hunters', '5p']) {
   const kicker = straight.blue, hyena = mode === 'Hunters' ? 'hyena' : 'hunter';
   assert.equal(got[kicker], 'kick', mode + ' kicker sees the kick cartoon');
   assert.equal(got[hyena], 'kick', mode + ' hyena sees the kick cartoon');
-  for (const r of straight.roles) if (r !== kicker && r !== hyena) assert.equal(got[r], null, mode + ' ' + r + ' is too far for the kick cartoon');
+  for (const r of straight.roles) if (r !== kicker && r !== hyena) {
+    const view = straight.view(r), sent = !!(view.kick && ((view.kick.trail && view.kick.trail.some(p => p && p[0] >= 0)) || (view.kick.to && view.kick.to[0] >= 0)));
+    if (sent) assert.ok(got[r], mode + ' ' + r + ' sees a kick the server sent');
+    else assert.equal(got[r], null, mode + ' ' + r + ' is not sent the kick');
+  }
   assert.equal(C.sceneFor(straight.view(kicker), before[kicker]).by, 'ostrich');
   assert.equal(C.sceneFor(straight.view(kicker), before[kicker]).target, 'hyena');
 
@@ -38,11 +42,16 @@ for (const mode of ['3p', 'Hunters', '5p']) {
   const around = mode === '5p' ? TT.ostrichKick(w, 'o1', [8, 3]) : mode === '3p' ? T.ostrichKick3(w, [8, 3]) : H.ostrichKickH(w, [8, 3]);
   assert.ok(around, mode + ' wrap kick');
   const landing = mode === '5p' ? w.h.p : mode === '3p' ? w.three.h : w.hunt.hs.hyena.p;
-  assert.ok(landing[0] < 4, mode + ' hyena came back on the other side ' + landing);
+  assert.equal(B.wrapDist(w.cfg, [8, 3], landing), 3, mode + ' full distance ' + landing);
   const wgot = ids(wrap, wbefore);
-  assert.equal(wgot[wrap.blue], 'kick-wrap', mode + ' kicker sees the wrap cartoon');
-  assert.equal(wgot[hyena], 'kick-wrap', mode + ' hyena sees the wrap cartoon');
-  for (const r of wrap.roles) if (r !== wrap.blue && r !== hyena) assert.equal(wgot[r], null, mode + ' ' + r + ' does not see the wrap');
+  const kickerScene = w.lastKick.wrap ? 'kick-wrap' : 'kick';
+  assert.equal(wgot[wrap.blue], kickerScene, mode + ' kicker cartoon follows the real path');
+  assert.equal(wgot[hyena], w.lastKick.wrap ? 'kick-wrap' : 'kick', mode + ' hyena cartoon has no path, only the wrap flag');
+  for (const r of wrap.roles) if (r !== wrap.blue && r !== hyena) {
+    const view = wrap.view(r), sent = !!(view.kick && ((view.kick.trail && view.kick.trail.some(p => p && p[0] >= 0)) || (view.kick.to && view.kick.to[0] >= 0)));
+    if (sent) assert.ok(wgot[r], mode + ' ' + r + ' sees a kick the server sent');
+    else assert.equal(wgot[r], null, mode + ' ' + r + ' is not sent the kick');
+  }
   // a bird who can see the hyena leave, but not the far side, gets the plain kick picture
   const near = make(S, mode), n = near.g; n.turn = near.blue;
   if (mode === '5p') { n.b.o1.pos = [7, 3]; n.b.o2.pos = [0, 6]; n.b.v1.pos = [8, 5]; n.b.v2.pos = [0, 0]; n.h.p = [8, 3]; n.h.kind = 'hyena'; }

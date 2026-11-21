@@ -61,8 +61,8 @@
     const h = S.h3 || {}, oh = prev.h3 || {};
     const k = S.kick;
     if (fresh(k, prev.kick)) {
-      const seen = anyPoint(k.trail) || pointOk(k.to);
-      if (seen) out.push({ event: 'kick', by: kindOf(k.by || 'ostrich'), target: kindOf(k.who), wrap: seenWrap(k.trail, S.cfg), seq: k.seq, trail: k.trail });
+      const seen = anyPoint(k.trail) || pointOk(k.to) || !!k.card;
+      if (seen) out.push({ event: 'kick', by: kindOf(k.by || 'ostrich'), target: kindOf(k.who), wrap: !!(k.wrap || seenWrap(k.trail, S.cfg)), seq: k.seq, trail: k.trail });
     }
     const lc = h.lastCatch;
     // The square (lc.at) is only on phones that may see the hunter. The cartoon does not use it.

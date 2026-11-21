@@ -52,7 +52,7 @@
       else if ((S.moves || []).length) items.push({ id: 'step', label: 'Walk', detail: '', enabled: true, mode: 'step' });
       if (S.onEgg && S.can && S.can.carry) items.push({ id: 'carry', label: 'Carry', detail: 'Move the egg 1 square.', enabled: true, mode: 'carry' });
       if (S.onEgg && S.can && S.can.sit) items.push({ id: 'sit', label: 'Sit', detail: 'Warm the egg. The vulture sees you.', enabled: true, act: 'sit' });
-      if (S.kickNear) items.push({ id: 'kick', label: 'Kick', detail: mode === 'carry' ? "You can't kick while carrying an egg." : `Push the animal next to you back ${C.kickPush || 2} squares.`, enabled: mode !== 'carry' && !!(S.can && S.can.kick), act: 'kick' });
+      if (S.kickNear) items.push({ id: 'kick', label: 'Kick', detail: mode === 'carry' ? "You can't kick while carrying an egg." : 'A vulture goes straight back. A hunter lands on a random square.', enabled: mode !== 'carry' && !!(S.can && S.can.kick), act: 'kick' });
       if (hid) items.push(hid);
       return items;
     }

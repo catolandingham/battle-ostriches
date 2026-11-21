@@ -32,7 +32,7 @@ function three(kind = 'hyena', h = [5, 2], ost = [4, 2], vul = [3, 3]) { const g
   assert(T.vultureFly3(g, [4, 1])); g.vulture = vul.slice(); g.turn = 'blue'; return g; }
 ok('3 players: kick the hunter or the vulture; the hunter is pushed 2 and its turn then starts from the new square', () => {
   const g = three(); assert.deepEqual(T.kickTargets3(g), [[3, 3], [5, 2]]);
-  assert.ok(T.ostrichAct3(g, 'kick', [5, 2])); assert.deepEqual(g.three.h, [7, 2]); assert.deepEqual(g.ostrich, [4, 2]); assert.equal(g.turn, 'hunter'); assert.equal(g.lastKick.who, 'hyena'); assert.deepEqual(g.three.h, g.lastKick.to);
+  assert.ok(T.ostrichAct3(g, 'kick', [5, 2])); assert.equal(B.wrapDist(g.cfg, [5, 2], g.three.h), C.kickPush); assert.deepEqual(g.ostrich, [4, 2]); assert.equal(g.turn, 'hunter'); assert.equal(g.lastKick.who, 'hyena'); assert.deepEqual(g.three.h, g.lastKick.to);
   const v = three(); assert.ok(T.ostrichAct3(v, 'kick', [3, 3])); assert.deepEqual(v.vulture, [1, 5]); assert.equal(v.turn, 'hunter'); assert.equal(v.lastKick.who, 'vulture'); assert.equal(v.stones, 1, 'it keeps its stone');
   const b = three('badger'); assert.ok(T.ostrichAct3(b, 'kick', [5, 2])); assert.equal(b.lastKick.who, 'badger'); });
 ok('3 players: a burrowed badger can\'t be kicked (it can\'t be seen); one that is not burrowed can', () => {

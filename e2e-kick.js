@@ -42,15 +42,16 @@ const at = { state: 'attached' };
   // a burrowed badger can't be seen, so the button goes away
   g.hunt.hs.badger.burrowed = true; server.broadcast(room); await A.waitForFunction(() => !/Kick/.test(document.getElementById('actions').textContent));
   g.hunt.hs.badger.burrowed = false; server.broadcast(room); await A.waitForSelector('#actions button:has-text("Kick")');
-  // kick: the badger flies 2 squares east
+  // kick: the badger lands 2 squares away, on the square the ostrich is shown
   await A.locator('#actions button:has-text("Kick")').click({ force: true });
   await A.waitForFunction(() => document.getElementById('hint').textContent === 'Tap where they go.');
-  assert.deepEqual(await A.evaluate(() => UI._legal()), [[5, 5]], 'the landing square is the tap');
+  const land = await A.evaluate(() => UI._legal()[0]);
+  assert.ok(land, 'the ostrich is shown one landing');
   assert.equal(await A.locator('#board .kpath,#board .karrow,#board .kring,#board .cell.target,#board .cell.legal').count(), 0, 'no dots, arrows, landing boxes, or circles');
   assert.ok(await A.locator('.kick-preview .kick-ghost').count() >= 1, 'a faint copy slides along the path');
-  await cell(A, 5, 5).click();
+  await cell(A, land[0], land[1]).click();
   for (let i = 0; i < 100 && !g.lastKick; i++) await A.waitForTimeout(50);
-  assert.deepEqual(g.hunt.hs.badger.p, [5, 5], 'pushed 2 squares straight away: ' + JSON.stringify([g.hunt.hs.badger.p, g.hunt.hs.hyena.p, g.vulture, g.ostrich])); assert.deepEqual(g.ostrich, [2, 5], 'the ostrich stays'); assert.equal(g.lastKick.who, 'badger');
+  assert.deepEqual(g.hunt.hs.badger.p, land, 'lands on the tapped square: ' + JSON.stringify([g.hunt.hs.badger.p, g.hunt.hs.hyena.p, g.vulture, g.ostrich])); assert.deepEqual(g.ostrich, [2, 5], 'the ostrich stays'); assert.equal(g.lastKick.who, 'badger');
   for (const [P, name] of [[A, 'ostrich'], [Y, 'badger']]) await P.waitForFunction(t => (document.getElementById('announce') || {}).textContent === t, name==='ostrich'?'You kicked the badger 2 squares!':'The ostrich kicked you 2 squares!', { timeout: 8000 }).catch(e => { throw new Error(name + ' phone never showed the kick line: ' + e.message); });
   // The quote waits behind the result line's reading pause, then any line already queued. There is no button to skip ahead.
   for (const [P, name] of [[A, 'ostrich'], [Y, 'badger']]) await P.waitForFunction(t => (document.getElementById('badgerline') || {}).textContent === t, BL.LINES.kicked, { timeout: 25000 }).catch(e => { throw new Error(name + ' phone never showed the badger quote: ' + e.message); });
@@ -60,7 +61,7 @@ const at = { state: 'attached' };
   for (const P of [A, Y]) await P.waitForFunction(() => !document.getElementById('cutaway') && !document.querySelector('.push-motion,.partial-motion'), null, { timeout: 12000 });
   // Both participants get the actual landing; this does not grant ongoing sight.
   const ka = await A.evaluate(() => UI._S().kick), ky = await Y.evaluate(() => UI._S().kick);
-  assert.equal(ka.who, 'badger'); assert.equal(ky.who, 'badger'); assert.deepEqual(ka.to, [5, 5], 'the kicker sees the actual landing beyond ordinary sight'); assert.deepEqual(ky.to, [5, 5]);
+  assert.equal(ka.who, 'badger'); assert.equal(ky.who, 'badger'); assert.deepEqual(ka.to, land, 'the kicker sees the actual landing beyond ordinary sight'); assert.equal(ky.to, null, 'the kicked badger is not sent the landing'); assert.equal(ky.trail, null, 'the kicked badger is not sent the path');
   assert.equal(await A.locator('#board .pc.ph').count(), 0, 'no hunter drawn on the ostrich\'s board'); assert.equal(await Y.locator('.pc.ph.mine').count(), 1);
   // the turn passed to the next seat, and the Kick button is gone
   await A.waitForFunction(() => !document.querySelector('#actions.mine'));

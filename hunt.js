@@ -141,21 +141,34 @@ function kickableH(g) {
   return r;
 }
 const kickTargetsH = g => B.canKick(g) ? kickableH(g) : [];
+// Hunters have no double turn. Reach is one walk, plus the hyena's pounce.
+function huntReach(g, kind) { return g.simple ? TH.walk : TH.walk + (kind === 'hyena' ? TH.pounce : 0); }
+function hunterScatterH(g, from, n, self) {
+  const open = q => !B.wrecked(g, q) && !(g.ostrich && g.ostrich[0] >= 0 && !isOut(g, 'blue') && K(q) === K(g.ostrich)) && !(g.vulture && g.vulture[0] >= 0 && !isOut(g, 'red') && K(q) === K(g.vulture)) && !HUNTERS.some(h => h !== self && K(g.hunt.hs[h].p) === K(q));
+  return B.scatterKick(g.cfg, from, g.ostrich, n, open, huntReach(g, self), B.scatterRnd(g, from, g.ostrich));
+}
 function kickPlansH(g) {
   if (!B.canKick(g)) return [];
   return kickableH(g).map(at => {
     const h = hunterAt(g, at), n = !g.simple && h === 'badger' ? g.cfg.kickPushBadger : g.cfg.kickPush;
-    const path = B.slideN(g.cfg, at, B.awayFrom(g.ostrich, at), n, m => upAt(g, m, h || 'red'), g.marks, !g.simple);
     const who = h || 'vulture';
+    if (h && !g.simple) { const s = hunterScatterH(g, at, n, h); return { at: at.slice(), to: s.to.slice(), points: s.points, who, key: h }; }
+    const path = B.slideN(g.cfg, at, B.awayFrom(g.ostrich, at), n, m => upAt(g, m, h || 'red'), g.marks, !g.simple);
     return { at: at.slice(), to: path.to.slice(), points: path.points, who, key: h || 'red' };
   });
 }
 function ostrichKickH(g, p) {
   if (!kickTargetsH(g).some(q => K(q) === K(p))) return false;
   const h = hunterAt(g, p), from = p.slice(), n = !g.simple && h === 'badger' ? g.cfg.kickPushBadger : g.cfg.kickPush;
-  const kr = B.slideN(g.cfg, from, B.awayFrom(g.ostrich, from), n, m => upAt(g, m, h || 'red'), g.marks, !g.simple), to = kr.to; // wraps at the edge; stops before a wrecked square or an animal that is up (simple rules stop at the edge)
+  let to, moved, scatter = null;
+  if (h && !g.simple) { scatter = hunterScatterH(g, from, n, h); to = scatter.to; moved = scatter.moved; }
+  else {
+    const kr = B.slideN(g.cfg, from, B.awayFrom(g.ostrich, from), n, m => upAt(g, m, h || 'red'), g.marks, !g.simple); // wraps at the edge; stops before a wrecked square or an animal that is up (simple rules stop at the edge)
+    to = kr.to; moved = kr.moved;
+  }
   if (h) g.hunt.hs[h].p = to; else g.vulture = to;
-  B.kickDone(g, h || 'vulture', from, to, kr.moved);
+  B.kickDone(g, h || 'vulture', from, to, moved);
+  if (scatter) Object.assign(g.lastKick, { scatter: true, fallback: scatter.fallback, reachGap: scatter.reachGap, points: scatter.points, wrap: scatter.wrap });
   afterOstrich(g); return true;
 }
 function ostrichActH(g, a, p) {

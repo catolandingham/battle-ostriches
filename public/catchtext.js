@@ -58,11 +58,13 @@
   function newEvents(seen, S, prev) {
     const out = [], h = (S && S.h3) || {};
     if (!S) return out;
-    if (S.phase && S.phase.startsWith('setup')) { seen.pop = seen.rival = seen.kick = seen.stone = seen.dug = seen.burst = seen.smash = 0; return out; }
+    if (S.phase && S.phase.startsWith('setup')) { seen.pop = seen.rival = seen.kick = seen.stone = seen.dug = seen.burst = seen.smash = seen.double = 0; return out; }
     const po = h.popout, rv = h.rival, k = S.kick;
     if(S.smashNote&&S.smashNote.seq!==seen.smash){seen.smash=S.smashNote.seq;if(prev)out.push({kind:'smash',text:'The vulture smashed an egg.'});}
     const la=S.lastAction;if(prev&&h.team&&S.role==='red'&&la&&la.type==='fly'&&la.spotted&&la.seat!==h.mySeat&&JSON.stringify(la)!==JSON.stringify(prev.lastAction))out.push({kind:'teamFound',text:`${SEAT[la.seat]} found an egg.`});
     if (k && k.seq !== seen.kick) { seen.kick = k.seq; if (prev) out.push({ kind: 'kick', text: kickLine(k.who, k.moved, S.cfg && S.cfg.kickPush), square: k.to || null }); }
+    const dn = h.doubleNote;
+    if (dn && dn.seq !== seen.double) { seen.double = dn.seq; if (prev && dn.text) out.push({ kind: 'double', text: dn.text }); }
     if (S.stoneNote && S.stoneNote.seq !== seen.stone) { seen.stone = S.stoneNote.seq; if (prev) out.push({ kind: 'stone', text: S.stoneNote.text }); }
     if (h.dug && h.dug.seq !== seen.dug) { seen.dug = h.dug.seq; if (prev) out.push({ kind: 'dug', text: h.dugSeen ? 'A bird saw you dig in.' : dugLine() }); } // the server sends dug only to the badger and to a bird that saw the dig (Brian, 2026-11-16); the badger's phone is told when a bird saw it (Brian, 2026-11-15)
     if (h.burst && h.burst.seq !== seen.burst) { seen.burst = h.burst.seq; if (prev) out.push({ kind: 'burst', text: burstLine(h.burst), square: h.burst.to || null }); }
@@ -75,6 +77,7 @@
     const h=S.h3||{},seat=h.mySeat||S.role,viewer=S.role==='hunter'?(S.kind||h.kind||seat):seat;
     const name=x=>SEAT[x]?SEAT[x].toLowerCase():x==='blue'?'ostrich':x==='red'?'vulture':x;
     if(e.kind==='smash'){const n=S.smashNote;if(seat===n.by)return 'You smashed an egg!';if(S.role==='blue'&&seat===n.owner||S.role==='blue'&&!h.team)return 'The vulture smashed your egg!';if(h.team&&SEAT[n.owner])return `The vulture smashed ${SEAT[n.owner]}'s egg!`;return 'The vulture smashed an egg.';}
+    if(e.kind==='double') return e.text;
     if(e.kind==='kick') {const k=S.kick,n=k.moved==null?(S.cfg||{}).kickPush:k.moved,who=kickWho(k.who),unit=n===1?'square':'squares';
       if(n===0)return e.text;
       if(seat===(k.by||'blue'))return `You kicked the ${who} ${n} ${unit}!`;

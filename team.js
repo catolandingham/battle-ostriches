@@ -91,27 +91,38 @@ function kickable(g, s) {
   return r;
 }
 const kickTargets = (g, s) => canKick(g, s) ? kickable(g, s) : [];
+function hunterScatterT(g, from, n, ostrich) {
+  const open = q => !B.wrecked(g, q) && !birdsIn(g).some(o => K(g.b[o].pos) === K(q));
+  return B.scatterKick(g.cfg, from, ostrich, n, open, hunterReach(g), B.scatterRnd(g, from, ostrich));
+}
 function kickPlans(g, s) {
   if (!canKick(g, s)) return [];
   const at0 = g.b[s].pos;
   return kickable(g, s).map(at => {
     const hunter = !!(g.h && K(g.h.p) === K(at)), v = VS.find(x => live(g, x) && K(g.b[x].pos) === K(at));
     const n = !g.simple && hunter && g.h.kind === 'badger' ? g.cfg.kickPushBadger : g.cfg.kickPush;
+    const who = hunter ? (g.h.kind || 'hyena') : 'vulture';
+    if (hunter && !g.simple) { const sc = hunterScatterT(g, at, n, at0); return { at: at.slice(), to: sc.to.slice(), points: sc.points, who, key: who }; }
     const blocked = m => (g.h && K(g.h.p) === K(m) && !g.h.burrowed && !hunter) || birdsIn(g).some(o => o !== v && K(g.b[o].pos) === K(m));
     const path = B.slideN(g.cfg, at, B.awayFrom(at0, at), n, blocked, g.marks, !g.simple);
-    const who = hunter ? (g.h.kind || 'hyena') : 'vulture';
     return { at: at.slice(), to: path.to.slice(), points: path.points, who, key: hunter ? who : 'red' };
   });
 }
 function ostrichKick(g, s, p) {
   if (!kickTargets(g, s).some(q => K(q) === K(p))) return false;
   const b = g.b[s]; b.sitting = false; const from = p.slice(), hunter = !!(g.h && K(g.h.p) === K(from)), v = VS.find(x => live(g, x) && K(g.b[x].pos) === K(from));
-  // a pushed animal wraps around the edge and stops before a wrecked square or any animal that is up
   const n = !g.simple && hunter && g.h.kind === 'badger' ? g.cfg.kickPushBadger : g.cfg.kickPush;
-  const kr = B.slideN(g.cfg, from, B.awayFrom(b.pos, from), n, m => (g.h && K(g.h.p) === K(m) && !g.h.burrowed && !hunter) || birdsIn(g).some(o => o !== v && K(g.b[o].pos) === K(m)), g.marks, !g.simple), to = kr.to;
+  let to, moved, scatter = null;
+  if (hunter && !g.simple) { scatter = hunterScatterT(g, from, n, b.pos); to = scatter.to; moved = scatter.moved; }
+  else {
+    // a pushed vulture wraps around the edge and stops before a wrecked square or any animal that is up
+    const kr = B.slideN(g.cfg, from, B.awayFrom(b.pos, from), n, m => (g.h && K(g.h.p) === K(m) && !g.h.burrowed && !hunter) || birdsIn(g).some(o => o !== v && K(g.b[o].pos) === K(m)), g.marks, !g.simple);
+    to = kr.to; moved = kr.moved;
+  }
   if (hunter) g.h.p = to; else g.b[v].pos = to;
   const who = hunter ? (g.h.kind || 'hyena') : 'vulture';
-  g.lastKick = { seq: ++g.kickSeq, who, by: s, seat: hunter ? 'hunter' : v, from, to: to.slice(), round: g.round, moved: kr.moved };
+  g.lastKick = { seq: ++g.kickSeq, who, by: s, seat: hunter ? 'hunter' : v, from, to: to.slice(), round: g.round, moved };
+  if (scatter) Object.assign(g.lastKick, { scatter: true, fallback: scatter.fallback, reachGap: scatter.reachGap, points: scatter.points, wrap: scatter.wrap });
   g.lastAction = { seat: s, type: 'kick', who };
   const e = eggAt(g, b.pos); if (e) e.lastWarm = g.round; // an egg under the ostrich is warmed, as when it sits
   feed(g, s); next(g); return true;
