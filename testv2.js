@@ -50,11 +50,11 @@ ok('a stone thrown at the ostrich is kicked back: it wrecks the vulture\'s squar
   assert.ok(B.dist(g.vulture, g.ostrich) === 2, 'of the 7 open squares next to (5,3) the ones at distance 2 from the ostrich win'); });
 ok('kicked back onto a leaf or rock pile: the stone bounces and goes one square past the vulture; never kicked back twice', () => {
   const g = classic(); g.vulture = [0, 0]; g.ostrich = [1, 1]; g.stones = 1; B.vultureThrow(g, [1, 1]);
-  assert.equal(g.lastStone.text, 'Boing! The stone bounced off the leaf.'); assert.ok(!B.wrecked(g, [0, 0]), 'the leaf is never wrecked'); assert.ok(g.lastAction.used, 'past (0,0) is off the board: used up');
-  const h = classic(); h.vulture = [4, 0]; h.ostrich = [4, 1]; h.stones = 1; B.vultureThrow(h, [4, 1]); assert.equal(h.lastStone.text, 'Clang! The vulture batted it away with a rock.'); assert.ok(h.lastAction.used, 'past (4,0) is off the board');
+  assert.equal(g.lastStone.text, 'The stone bounced off the leaf.'); assert.ok(!B.wrecked(g, [0, 0]), 'the leaf is never wrecked'); assert.ok(g.lastAction.used, 'past (0,0) is off the board: used up');
+  const h = classic(); h.vulture = [4, 0]; h.ostrich = [4, 1]; h.stones = 1; B.vultureThrow(h, [4, 1]); assert.equal(h.lastStone.text, 'The vulture batted it away with a rock.'); assert.ok(h.lastAction.used, 'past (4,0) is off the board');
   const i = classic(); i.vulture = [4, 6]; i.ostrich = [4, 5]; i.stones = 1; B.vultureThrow(i, [4, 5]); assert.ok(i.lastAction.used);
   const j = classic(); j.vulture = [1, 1]; j.ostrich = [2, 2]; j.stones = 1; j.cfg = { ...j.cfg, foods: [[1, 1], [8, 6]] }; B.vultureThrow(j, [2, 2]); // vulture on a leaf: continues one square past, onto (0,0)
-  assert.equal(j.lastStone.text, 'Boing! The stone bounced off the leaf.'); assert.ok(B.wrecked(j, [0, 0]), 'it landed one square past the vulture as a normal stone');
+  assert.equal(j.lastStone.text, 'The stone bounced off the leaf.'); assert.ok(B.wrecked(j, [0, 0]), 'it landed one square past the vulture as a normal stone');
   const k = classic(); k.vulture = [1, 1]; k.ostrich = [0, 0]; k.stones = 1; k.cfg = { ...k.cfg, foods: [[1, 1], [8, 6]] }; B.vultureThrow(k, [0, 0]); assert.ok(k.lastAction.used || true);
   const m = classic(); m.vulture = [3, 3]; m.ostrich = [2, 2]; m.stones = 1; m.cfg = { ...m.cfg, foods: [[3, 3], [8, 6]] }; B.resolveThrow(m, { thrower: () => [3, 3], setThrower() {}, ostrichAt: p => K(p) === '1,1' || K(p) === '2,2', eggAt: () => null, pushAt: () => [], open: () => true, ostrichPos: () => [2, 2] }, [2, 2]);
   assert.equal(m.marks['4,4'], 'stone', 'it landed past the vulture'); });

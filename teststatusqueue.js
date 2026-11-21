@@ -1,7 +1,7 @@
 const A=require('assert'),{create}=require('./public/status-queue');let now=0,timers=[],id=0,shown=[],hidden=[];
 const q=create({show:x=>shown.push([x.text,now]),hide:x=>hidden.push([x.text,now]),schedule:(fn,ms)=>{timers.push({fn,at:now+ms,id:++id});return id;},cancel:i=>timers=timers.filter(t=>t.id!==i)});
 function tick(ms){const end=now+ms;while(timers.some(t=>t.at<=end)){timers.sort((a,b)=>a.at-b.at||a.id-b.id);const t=timers.shift();now=t.at;t.fn();}now=end;}
-q.add({text:'Bird near.',priority:10});q.add({text:'The hyena caught the vulture!',priority:50});q.add({text:'You were caught! You fled 2 squares.',priority:100});tick(0);A.equal(shown[0][0],'You were caught! You fled 2 squares.');tick(2099);A.equal(shown.length,1,'7 words: up for 2.1s');tick(1);A.equal(hidden[0][1]-shown[0][1],2100);A.equal(shown[1][0],'The hyena caught the vulture!');tick(1499);A.equal(shown.length,2,'5 words: up for 1.5s');tick(1);A.equal(shown[2][0],'Bird near.');tick(1000);A.equal(q.state().active,null,'2 words: the 1s floor');A.equal(q.state().pending.length,0);
+q.add({text:'Bird near.',priority:10});q.add({text:'The hyena caught the vulture!',priority:50});q.add({text:'You were caught and fled 2 squares.',priority:100});tick(0);A.equal(shown[0][0],'You were caught and fled 2 squares.');tick(2099);A.equal(shown.length,1,'7 words: up for 2.1s');tick(1);A.equal(hidden[0][1]-shown[0][1],2100);A.equal(shown[1][0],'The hyena caught the vulture!');tick(1499);A.equal(shown.length,2,'5 words: up for 1.5s');tick(1);A.equal(shown[2][0],'Bird near.');tick(1000);A.equal(q.state().active,null,'2 words: the 1s floor');A.equal(q.state().pending.length,0);
 // A new moment's line goes up at once and stays for its own full hold. The line it covered waits, then plays whole.
 const q2=create({show:x=>shown.push([x.text,now]),hide:x=>hidden.push([x.text,now]),schedule:(fn,ms)=>{timers.push({fn,at:now+ms,id:++id});return id;},cancel:i=>timers=timers.filter(t=>t.id!==i)});
 q2.add({text:'The vulture hunts eggs. The hyena hunts birds.',priority:20,hold:1000});tick(0);
@@ -15,13 +15,13 @@ tick(1999);A.equal(q2.state().active.text,'You kicked the vulture 3 squares!','i
 tick(1);A.equal(q2.state().active.text,'The vulture hunts eggs. The hyena hunts birds.','the covered line comes back whole');
 tick(1000);A.equal(q2.state().active,null);
 q2.add({text:'You kicked the hyena 3 squares!',priority:100,hold:2000,preempt:true});tick(0);
-tick(1000);q2.add({text:'You were caught! You fled 2 squares.',priority:100,hold:2000,preempt:true});
-A.equal(q2.state().active.text,'You were caught! You fled 2 squares.');
+tick(1000);q2.add({text:'You were caught and fled 2 squares.',priority:100,hold:2000,preempt:true});
+A.equal(q2.state().active.text,'You were caught and fled 2 squares.');
 A.equal(q2.state().pending[0].text,'You kicked the hyena 3 squares!','the line that was up waits its turn');
 q2.add({text:'The hyena caught the ostrich.',priority:90});
 tick(400);q2.add({text:'The ostrich kicked the hyena 3 squares!',priority:50,hold:2000,preempt:true});
 A.equal(q2.state().active.text,'The ostrich kicked the hyena 3 squares!','a line already waiting does not cover the new moment');
-tick(2000);A.equal(q2.state().active.text,'You were caught! You fled 2 squares.');
+tick(2000);A.equal(q2.state().active.text,'You were caught and fled 2 squares.');
 // A near warning waiting behind Look out! is dropped, so it cannot replace the beat.
 const q3=create({show:x=>shown.push([x.text,now]),hide:x=>hidden.push([x.text,now]),schedule:(fn,ms)=>{timers.push({fn,at:now+ms,id:++id});return id;},cancel:i=>timers=timers.filter(t=>t.id!==i)});
 const near=item=>/\bnear[!.]?$/i.test((item.text||'').trim());

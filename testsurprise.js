@@ -416,8 +416,8 @@ const P = require('./public/push-motion');
   const caught = SUR.policy(
     { role: 'blue', phase: 'play', h3: { mySeat: 'blue', lastCatch: { seq: 2, bird: 'blue', by: 'hyena', at: [3, 3], to: [3, 6], ko: false } } },
     { role: 'blue', phase: 'play', h3: { mySeat: 'blue' } });
-  assert.equal(caught.line, 'You were caught! You fled 3 squares.');
-  assert.equal(caught.readMs, SUR.holdFor('You were caught! You fled 3 squares.'));
+  assert.equal(caught.line, 'You were caught and fled 3 squares.');
+  assert.equal(caught.readMs, SUR.holdFor('You were caught and fled 3 squares.'));
   assert.equal(caught.motionMs, 3 * SUR.STEP_MS);
   assert.equal(SUR.clockDelayMs(caught, { isCurrent: true, seesEvent: true }), caught.animMs + caught.readMs);
   const ko = SUR.policy(
