@@ -20,11 +20,10 @@ for(const mode of ['3p','Hunters','5p']){
  const B=require('./game'),v=k.view(k.blue),land=mode==='5p'?q.h.p:mode==='3p'?q.three.h:q.hunt.hs.hyena.p,n=q.lastKick.moved;
  A.deepEqual(v.kick.to,land,mode+' kicker actual landing '+blocker);A.deepEqual(v.lastAction.to,land,mode+' kicker move note actual landing');A.equal(v.kick.moved,n);A.equal(B.wrapDist(q.cfg, [4,3], land), n, mode+' full distance '+blocker);
  A.deepEqual(v.kick.trail,q.lastKick.points,mode+' kicker full path');
- const hit=k.view(mode==='Hunters'?'hyena':'hunter');A.equal(hit.kick.to,null,mode+' kicked hunter is not sent the landing');A.equal(hit.kick.trail,null,mode+' kicked hunter is not sent the path');A.equal(hit.kick.card,true,mode+' kicked hunter still gets the cartoon');
- const eyeOf=role=>{const w=k.view(role);if(role==='red'||role==='v1')return mode==='5p'?q.b.v1.pos:q.vulture;if(role==='o2')return q.b.o2.pos;return null;};
- if(blocker!=='animal'){const other=k.view(k.red),eye=eyeOf(k.red);A.equal(other.lastAction?.to,null);
-  A((other.kick.trail||[]).every(p=>p===null||B.wrapDist(q.cfg,eye,p)<=2),mode+' watching vulture trail stays in sight');}
- if(mode==='5p'){const o2=k.view('o2');A((o2.kick.trail||[]).every(p=>p===null||B.dist(q.b.o2.pos,p)<=2),'other ostrich trail stays in sight');if(!TT.hunterSeenBy(q,'o2'))A.equal(o2.kick.to,null,'other ostrich gets no kicker exception');}
+ const hit=k.view(mode==='Hunters'?'hyena':'hunter');A.deepEqual(hit.kick.to,land,mode+' every phone sees where the hunter lands');A.deepEqual(hit.kick.trail,q.lastKick.points,mode+' the shove path is the hunter squares only');
+ A.deepEqual(hit.ostrich,[-99,-99],mode+' the kick still hides the ostrich');A.deepEqual(hit.vulture,[-99,-99],mode+' the kick still hides the vulture');
+ if(blocker!=='animal'){const other=k.view(k.red);A.deepEqual(other.kick.to,land,mode+' a far bird sees the landing');A.deepEqual(other.kick.trail,q.lastKick.points);}
+ if(mode==='5p'){const o2=k.view('o2');A.deepEqual(o2.kick.to,land);A.deepEqual(o2.kick.trail,q.lastKick.points);}
  }
 
 }

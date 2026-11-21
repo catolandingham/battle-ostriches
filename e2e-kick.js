@@ -61,7 +61,7 @@ const at = { state: 'attached' };
   for (const P of [A, Y]) await P.waitForFunction(() => !document.getElementById('cutaway') && !document.querySelector('.push-motion,.partial-motion'), null, { timeout: 12000 });
   // Both participants get the actual landing; this does not grant ongoing sight.
   const ka = await A.evaluate(() => UI._S().kick), ky = await Y.evaluate(() => UI._S().kick);
-  assert.equal(ka.who, 'badger'); assert.equal(ky.who, 'badger'); assert.deepEqual(ka.to, land, 'the kicker sees the actual landing beyond ordinary sight'); assert.equal(ky.to, null, 'the kicked badger is not sent the landing'); assert.equal(ky.trail, null, 'the kicked badger is not sent the path');
+  assert.equal(ka.who, 'badger'); assert.equal(ky.who, 'badger'); assert.deepEqual(ka.to, land, 'the kicker sees the actual landing beyond ordinary sight'); assert.deepEqual(ky.to, land, 'the kicked badger sees where it lands'); assert.ok(ky.trail && ky.trail.length > 1, 'the kicked badger sees the shove');
   assert.equal(await A.locator('#board .pc.ph').count(), 0, 'no hunter drawn on the ostrich\'s board'); assert.equal(await Y.locator('.pc.ph.mine').count(), 1);
   // the turn passed to the next seat, and the Kick button is gone
   await A.waitForFunction(() => !document.querySelector('#actions.mine'));
