@@ -181,7 +181,30 @@ const THEMES = ['bw', 'classic', 'nature', 'notes', 'golden', 'paper', 'arcade',
   for (const theme of THEMES) {
     for (const [page, who] of [[V, 'vulture'], [A, 'ostrich']]) {
       await page.evaluate(t => THEME.set(t), theme);
-      await page.waitForFunction(() => document.querySelectorAll('#board .pc.po, #board .pc.pv').length >= 4 && !!document.querySelector('#board .pc.po.carrying'));
+      const unsettled = await page.evaluate(async (theme) => {
+        const plain = theme === 'bw' || theme === 'classic';
+        const end = performance.now() + 1200;
+        let sample = 'no sample';
+        while (performance.now() < end) {
+          const birds = [...document.querySelectorAll('#board .pc.po, #board .pc.pv')];
+          if (birds.length >= 4 && document.querySelector('#board .pc.po.carrying')) {
+            const shown = el => { const s = getComputedStyle(el); if (s.visibility === 'hidden' || s.display === 'none' || +s.opacity === 0) return false; const r = el.getBoundingClientRect(); return r.width > 2 && r.height > 2; };
+            const badges = [...document.querySelectorAll(plain ? '#board .cell > b.snum' : '#fx b.snum')].filter(shown);
+            let ok = birds.length > 0;
+            for (const pc of birds) {
+              const cell = pc.closest('.cell'), cr = cell.getBoundingClientRect();
+              const badge = badges.find(b => { const r = b.getBoundingClientRect(); return r.left < cr.right && r.right > cr.left && r.top < cr.bottom && r.bottom > cr.top; });
+              if (!badge) { ok = false; sample = 'no badge ' + pc.className + ' badges ' + badges.length; break; }
+              const br = badge.getBoundingClientRect();
+              if (br.left < cr.left + 3 || br.bottom > cr.bottom - 3) { ok = false; sample = pc.className + ' left ' + Math.round(br.left - cr.left) + ' bottom ' + Math.round(cr.bottom - br.bottom); break; }
+            }
+            if (ok) return '';
+          }
+          await new Promise(r => setTimeout(r, 50));
+        }
+        return sample;
+      }, theme);
+      assert.equal(unsettled, '', who + ' numbers ' + theme + ' ' + unsettled);
       await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
       const got = await page.evaluate(numberCheck);
       assert.deepEqual(got, [], who + ' numbers ' + theme + ' ' + JSON.stringify(got));
