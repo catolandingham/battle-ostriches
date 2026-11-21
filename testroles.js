@@ -18,9 +18,9 @@ const ALL = [
 ok('rules from the modules are plain numbers and nothing else (no start squares)', () => {
   const r = R.rulesFromModules();
   assert.deepEqual(r.cfg, { eggs: C.eggs, rounds: C.rounds, warmth: C.warmth, food: C.food, stones: C.stones, fly: C.vultureFly, throwRange: C.throwRange, smell: C.smellRange, walk: C.ostrichWalk, carryWalk: C.carryWalk, kick: C.kickPush, kickBadger: C.kickPushBadger });
-  const pk = (t, g) => Object.assign({ ko: t.ko, sense: t.sense, see: t.see, walk: t.walk, pounce: t.pounce, eggs: t.eggs != null ? t.eggs : C.eggs }, t.double != null ? { double: t.double } : {}, g ? { goal: B.HUNTER_GOAL(g) } : {});
+  const pk = (t, g) => Object.assign({ ko: t.ko, sense: t.sense, see: t.see, walk: t.walk, pounce: t.pounce, eggs: t.eggs != null ? t.eggs : C.eggs }, t.boost != null ? { boost: t.boost } : {}, g ? { goal: B.HUNTER_GOAL(g) } : {});
   assert.deepEqual(r.modes['3'], pk(T.T3, '3')); assert.deepEqual(r.modes['4h'], pk(H.TH)); assert.deepEqual(r.modes['5'], pk(TT.TM, '5'));
-  assert.equal(r.modes['3'].double, 2);
+  assert.equal(r.modes['3'].boost, 3);
   assert.ok(!/starts|clockMs/.test(JSON.stringify(r)), 'no start squares or clocks in what the server sends');
 });
 
@@ -68,18 +68,18 @@ ok('approved wording, with numbers from the rules constants', () => {
     'You lose if every egg is broken or goes cold.',
     'If you don\'t eat in time, you are knocked out.',
     'The hunter wins when both birds are out.',
-    'When the hunter knocks a bird out, they move twice each round. One move is 1 square. No pounce.',
+    'After a knock-out the hunter moves 3 squares.',
   ]);
   assert.deepEqual(h3.lines, [
     'You win when both birds are out.',
     `${T.T3.ko.hyena} catches knock a bird out.`,
     'When you smell a bird and miss, you smell again and may move 1 more square.',
-    'When you knock a bird out, you move twice each round. One move is 1 square. No pounce.',
+    'After a knock-out you move 3 squares, with no pounce.',
     `You lose if an egg lasts ${C.rounds} rounds, or every egg is broken.`,
   ]);
   const badger3 = R.roleCard('hunter', 'badger', '3');
   assert.ok(!badger3.lines.some(l => /pounce/i.test(l)), 'the badger card does not mention pounce');
-  assert.ok(badger3.lines.includes('After you knock a bird out, you move twice each round. One move is 1 square.'));
+  assert.ok(badger3.lines.includes('After a knock-out you move 3 squares.'));
   assert.ok(R.roleCard('hyena', null, '4h').lines.includes('When you smell a bird and miss, you smell again and may move 1 more square.'));
   assert.ok(!R.roleCard('badger', null, '4h').lines.some(l => /pounce|smell a bird/i.test(l)));
   assert.ok(R.roleCard('hunter', 'hyena', '5').lines.includes('When you smell a bird and miss, you smell again and may move 1 more square.'));
@@ -93,7 +93,7 @@ ok('approved wording, with numbers from the rules constants', () => {
 
 ok('change every constant: every number on every card follows, and no other number appears', () => {
   const X = { cfg: { eggs: 7, rounds: 41, warmth: 19, food: 11, stones: 5, fly: 6, throwRange: 4, smell: 8, walk: 9, carryWalk: 10, kick: 30, kickBadger: 31 },
-    modes: { '3': { ko: { hyena: 12, badger: 13 }, sense: 14, see: 32, walk: 33, pounce: 26, double: 8, goal: { kind: 'catches', n: 34 } }, '4h': { ko: { hyena: 15, badger: 16 }, sense: 17, see: 35, walk: 36, pounce: 27 }, '4': { ko: { hyena: 18, badger: 21 }, sense: 22, see: 37, walk: 38, pounce: 28 }, '5': { ko: { hyena: 23, badger: 24 }, sense: 25, see: 39, walk: 40, pounce: 29, goal: { kind: 'first', n: 0 } } } };
+    modes: { '3': { ko: { hyena: 12, badger: 13 }, sense: 14, see: 32, walk: 33, pounce: 26, boost: 3, goal: { kind: 'catches', n: 34 } }, '4h': { ko: { hyena: 15, badger: 16 }, sense: 17, see: 35, walk: 36, pounce: 27 }, '4': { ko: { hyena: 18, badger: 21 }, sense: 22, see: 37, walk: 38, pounce: 28 }, '5': { ko: { hyena: 23, badger: 24 }, sense: 25, see: 39, walk: 40, pounce: 29, goal: { kind: 'first', n: 0 } } } };
   const allowed = new Set(); (function walk(o) { for (const v of Object.values(o)) typeof v === 'object' ? walk(v) : allowed.add(String(v)); })(X);
   for (const [role, kind, mode] of ALL) {
     const c = R.roleCard(role, kind, mode, X), at = `${role}/${kind}/${mode}`;
@@ -102,9 +102,9 @@ ok('change every constant: every number on every card follows, and no other numb
   const o = R.roleCard('blue', null, '2', X); assert.equal(o.goal, 'Keep at least 1 egg alive for 41 rounds.');
   const v = R.roleCard('red', null, '2', X); assert.equal(v.lines[2], 'You lose if an egg lasts 41 rounds.');
   assert.equal(R.roleCard('hunter', 'hyena', '3', X).goal, 'You win at 34 catches.');
-  assert.ok(R.roleCard('hunter', 'hyena', '3', X).lines.includes('When you knock a bird out, you move twice each round. One move is 1 square. No pounce.'));
+  assert.ok(R.roleCard('hunter', 'hyena', '3', X).lines.includes('After a knock-out you move 3 squares, with no pounce.'));
   assert.ok(R.roleCard('hunter', 'hyena', '3', X).lines.some(l => l.includes('26 more squares')));
-  assert.ok(R.roleCard('hunter', 'badger', '3', X).lines.includes('After you knock a bird out, you move twice each round. One move is 1 square.'));
+  assert.ok(R.roleCard('hunter', 'badger', '3', X).lines.includes('After a knock-out you move 3 squares.'));
   assert.ok(R.roleCard('blue', 'hyena', '3', X).lines[1].includes('12 catches knock you out.'));
   assert.ok(R.roleCard('blue', 'badger', '3', X).lines[1].includes('13 catches knock you out.'));
   assert.equal(R.roleCard('hunter', 'hyena', '5', X).goal, 'You win by knocking out 1 ostrich and 1 vulture.');

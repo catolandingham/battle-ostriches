@@ -11,31 +11,21 @@ const ok = (name, fn) => { fn(); n++; console.log('ok', name); };
 function eggs(g) { for (const p of [[2, 1], [6, 1], [2, 5]]) assert.ok(B.placeEgg(g, p)); }
 function flyOpen(g) { return B.flyTargets(g).find(p => !B.isFood(g, p) && !B.isRock(g, p)) || B.flyTargets(g)[0]; }
 
-ok('a double Stay on the turn a badger has already knocked someone out does not spend the bonus turn', () => {
+ok('after a knock-out one Stay ends the turn, and the old tap cannot play again', () => {
   const g = T.newGame3('badger', undefined, [5, 2]);
   eggs(g); assert.ok(T.placeOstrich3(g, [0, 6]));
-  g.turn = 'hunter'; g.three.h = [5, 2]; g.three.pounce = false; g.three.extra = false; g.three.burrowed = false; g.three.sense = false;
+  g.turn = 'hunter'; g.three.h = [5, 2]; g.three.pounce = false; g.three.burrowed = false; g.three.sense = false;
   g.three.birds.red.out = true; g.three.birds.red.why = 'caught'; g.three.birds.red.catches = 2; g.vulture = [-99, -99];
   const room = { three: true, g, players: seats(['blue', 'red', 'hunter']), bots: [] };
   const stamp = copy(S.turnStamp(room));
   assert.equal(stamp.bonus, false);
   assert.equal(S.acceptAct(room, 'hunter', { a: 'hstay', stamp }), true);
-  assert.equal(g.turn, 'hunter');
-  assert.equal(g.three.extra, true, 'the first Stay starts the bonus turn');
+  assert.equal(g.turn, 'blue', 'the vulture is out, so the ostrich is next');
   assert.equal(g.three.burrowed, true);
-  const seq = g.three.senseSeq, at = g.three.h.slice();
-  assert.equal(S.acceptAct(room, 'hunter', { a: 'hstay', stamp }), false, 'the second Stay is the same tap');
-  assert.equal(g.turn, 'hunter');
-  assert.equal(g.three.extra, true, 'the bonus turn is still there');
+  assert.equal(T.hunterRange(g), 3);
+  assert.equal(S.acceptAct(room, 'hunter', { a: 'hstay', stamp }), false, 'the same tap does not play again');
+  assert.equal(g.turn, 'blue');
   assert.equal(g.three.burrowed, true);
-  assert.equal(g.three.senseSeq, seq);
-  assert.deepEqual(g.three.h, at);
-  const again = S.turnStamp(room);
-  assert.equal(again.bonus, true);
-  assert.notEqual(again.seq, stamp.seq);
-  assert.equal(S.acceptAct(room, 'hunter', { a: 'hstay', stamp: again }), true, 'the bonus turn itself can still be played');
-  assert.equal(g.three.extra, false);
-  assert.equal(g.turn, 'blue', 'the vulture is already out, so the ostrich is next');
 });
 
 function rejectLate(name, room, seat, moves, advance) {

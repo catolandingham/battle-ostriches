@@ -247,11 +247,11 @@ function stop(room) { clearTimeout(room.clockT); clearTimeout(room.aiT); }
   const f = make(S, '3p'), g = f.g;
   humans(f.room);
   g.three.birds.blue.out = true; g.three.birds.blue.why = 'caught'; g.three.birds.blue.catches = 2; g.ostrich = [-99, -99];
-  g.turn = 'hunter'; g.three.h = [3, 3]; g.three.pounce = false; g.three.sense = false; g.three.extra = false;
+  g.turn = 'hunter'; g.three.h = [3, 3]; g.three.pounce = false; g.three.sense = false;
   g.vulture = [4, 3];
   S.broadcast(f.room);
   assert.ok(T.hunterMove(g, [4, 3]), 'hyena catches the vulture');
-  assert.equal(g.three.extra, false); assert.equal(g.turn, 'red', 'the vulture moves before the extra 1-square turn');
+  assert.equal(g.three.extra, undefined); assert.equal(g.turn, 'red', 'the catch ends the hunter turn');
   S.broadcast(f.room);
   assert.ok(f.room.holdUntil && f.room.holdUntil.red > Date.now() + 1000, 'the vulture hold is waiting');
   assert.ok(f.room.holdUntil.red < Date.now() + 8000, 'the vulture hold is not an 8s tap');
