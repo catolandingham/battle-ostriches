@@ -58,13 +58,14 @@
   function newEvents(seen, S, prev) {
     const out = [], h = (S && S.h3) || {};
     if (!S) return out;
-    if (S.phase && S.phase.startsWith('setup')) { seen.pop = seen.rival = seen.kick = seen.stone = seen.dug = seen.burst = seen.smash = seen.double = 0; return out; }
+    if (S.phase && S.phase.startsWith('setup')) { seen.pop = seen.rival = seen.kick = seen.stone = seen.dug = seen.burst = seen.smash = seen.double = seen.lastMove = seen.time = seen.carry = 0; return out; }
     const po = h.popout, rv = h.rival, k = S.kick;
     if(S.smashNote&&S.smashNote.seq!==seen.smash){seen.smash=S.smashNote.seq;if(prev)out.push({kind:'smash',text:'The vulture smashed an egg.'});}
     const la=S.lastAction;if(prev&&h.team&&S.role==='red'&&la&&la.type==='fly'&&la.spotted&&la.seat!==h.mySeat&&JSON.stringify(la)!==JSON.stringify(prev.lastAction))out.push({kind:'teamFound',text:`${SEAT[la.seat]} found an egg.`});
     if (k && k.seq !== seen.kick) { seen.kick = k.seq; if (prev) out.push({ kind: 'kick', text: kickLine(k.who, k.moved, S.cfg && S.cfg.kickPush), square: k.to || null }); }
     const dn = h.doubleNote;
     if (dn && dn.seq !== seen.double) { seen.double = dn.seq; if (prev && dn.text) out.push({ kind: 'double', text: dn.text }); }
+    for (const key of ['lastMove', 'time', 'carry']) { const n = S[key + 'Note']; if (n && n.seq !== seen[key]) { seen[key] = n.seq; if (prev && n.text) out.push({ kind: key, text: n.text }); } }
     if (S.stoneNote && S.stoneNote.seq !== seen.stone) { seen.stone = S.stoneNote.seq; if (prev) out.push({ kind: 'stone', text: S.stoneNote.text }); }
     if (h.dug && h.dug.seq !== seen.dug) { seen.dug = h.dug.seq; if (prev) out.push({ kind: 'dug', text: h.dugSeen ? 'A bird saw you dig in.' : dugLine() }); } // the server sends dug only to the badger and to a bird that saw the dig (Brian, 2026-11-16); the badger's phone is told when a bird saw it (Brian, 2026-11-15)
     if (h.burst && h.burst.seq !== seen.burst) { seen.burst = h.burst.seq; if (prev) out.push({ kind: 'burst', text: burstLine(h.burst), square: h.burst.to || null }); }

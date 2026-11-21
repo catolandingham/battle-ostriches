@@ -46,7 +46,7 @@ me=loadMe();
 function tokenFor(code){const c=String(code||'').trim().toUpperCase();if(!c)return;if(me.code&&String(me.code).toUpperCase()===c&&me.token)return me.token;const t=lsGet(seatKey(c));if(t)return t;try{const ck=JSON.parse(cookieGet('bo_me')||'null');if(ck&&ck.code&&String(ck.code).toUpperCase()===c&&ck.token)return ck.token}catch(e){}const c2=cookieGet(seatKey(c));if(c2)return c2;}
 const key=p=>p[0]+','+p[1];
 // Open-skies icon set: ONE big simple mark per square, no corner badges. Same in every theme (vocab.css).
-window.addEventListener('DOMContentLoaded',()=>{const r=document.getElementById('roundsLeft');if(r&&window.BO)r.textContent=BO.CONFIG.rounds;});
+window.addEventListener('DOMContentLoaded',()=>{const r=document.getElementById('roundsLeft');if(r)r.textContent='1';});
 // the server lost this game (restart/deploy with no saved copy): say so plainly instead of leaving a frozen board
 function gameGone(){if(document.getElementById('gone'))return;pending=null;try{clearTimeout(pendTimer)}catch(e){}clearMe();
  const d=document.createElement('div');d.id='gone';d.innerHTML='<div class="gbox"><div class="gt">Game was reset</div><p>The server restarted and this game could not be restored.</p><button id="goneNew" class="big">Start a new game</button></div>';
@@ -169,6 +169,7 @@ function syncMenu(){const s=$('menuSound');if(s)s.textContent=SFX.muted?'Sound o
 function closeGameMenu(){gameMenu=false;const m=$('gameMenu');if(m)m.classList.add('hidden');const b=$('moreBtn');if(b)b.setAttribute('aria-expanded','false');}
 tapper($('moreBtn'),()=>{gameMenu=!gameMenu;const m=$('gameMenu');if(m)m.classList.toggle('hidden',!gameMenu);$('moreBtn').setAttribute('aria-expanded',String(gameMenu));if(gameMenu)syncMenu();});
 tapper($('menuHelp'),()=>{closeGameMenu();UI.rules();});
+tapper($('menuRules'),()=>{closeGameMenu();const c=cardFor(S);if(!c){UI.rules();return;}showCard(Object.assign({},c,{title:'Rules for this game',mode:c.title}),false,true);});
 tapper($('menuSound'),()=>{const b=$('muteBtn');if(b)b.click();syncMenu();});
 tapper($('menuTheme'),()=>{if(window.THEME)THEME.next();});
 tapper($('menuTimer'),()=>{const b=$('timerToggle');if(b)b.click();syncMenu();});
@@ -193,7 +194,7 @@ function sounds(prev){if(!prev)return;const blue=S.role==='blue';
  if(S.myTurn&&!prev.myTurn&&S.phase==='play')setTimeout(()=>SFX.play('turn'),450);
  if(!blue&&la&&la.type==='fly'&&prev.turn==='red'&&S.turn==='blue')setTimeout(()=>SFX.play(la.smell?'sniffYes':'sniffNo'),350);}
 const roomQ=new URLSearchParams(location.search).get('room');
-if(!roomQ)TUT.firstVisit();
+if(window.TUT)TUT.arm=true;
 if(roomQ){$('codeIn').value=roomQ;open({t:'join',code:roomQ,token:tokenFor(roomQ)});}
 $('shareBtn').onclick=()=>{const u=$('shareLink').value;if(navigator.share)navigator.share({title:'Battle Ostriches',text:'Play Battle Ostriches with me! Code '+S.code,url:u}).catch(()=>{});else{navigator.clipboard&&navigator.clipboard.writeText(u);$('shareBtn').textContent='Copied!';}};
 // --- walkthrough (same chips as the board) ---
@@ -436,9 +437,9 @@ function syncRejoinAsk(){const el=$('rejoinAsk');if(!el)return;const a=S&&S.rejo
 function hideBtn(){if(!S||!S.simple||!S.myTurn||!(S.hideLeft>0))return '';const me=S.h3&&S.h3.mySeat||S.role;if(S.veil&&(S.veil[me]||(S.role==='blue'&&S.veil.blue)||(S.role==='red'&&S.veil.red)))return '';return `<button type="button" onclick="UI.send({t:'act',a:'hide'})">Hide <b class="hidect">${S.hideLeft|0}</b></button>`;}
 function render(prev){
  syncRejoinAsk();
- maybeCard();$('lobby').classList.add('hidden');const C=S.cfg,blue=S.role==='blue',body=document.body;body.className=(S.role==='hunter'?'hunter':blue?'blue':'red')+(S.three?' three':'')+(S.god?' godview':'');
+ if(window.TUT&&TUT.offer)TUT.offer(S);maybeCard();$('lobby').classList.add('hidden');const C=S.cfg,blue=S.role==='blue',body=document.body;body.className=(S.role==='hunter'?'hunter':blue?'blue':'red')+(S.three?' three':'')+(S.god?' godview':'');
  $('turnTag').innerHTML=S.role==='hunter'||(S.h3&&S.h3.team)?window.T3UI.tag(S):`<span style="display:inline-block;width:26px;height:26px;vertical-align:middle">${blue?OST:VUL}</span> ${blue?'OSTRICH':'VULTURE'}`;
- $('roundsLeft').textContent=C.rounds-S.round+1;
+ $('roundsLeft').textContent=S.round||1;
  // HUD: food, stones, and eggs on one chip row. The food number is public.
  // A rise counts up from the old digit; a paint in the middle must not jump to the new one.
  const hud=$('stats');if(hud){const play=S.phase==='play'||S.phase==='over';const chips=play||S.phase==='setupEggs'||S.phase==='setupOstrich'||S.phase==='setup';hud.classList.toggle('hidden',!chips);

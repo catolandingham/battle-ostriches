@@ -649,7 +649,11 @@ function stamp(room, v, seat) {
       v.h3.dug = t.dug && (isBadger || saw) ? { seq: t.dug.seq, round: t.dug.round } : null; v.h3.mound = !over && bur && saw ? m.at.slice() : null;
       v.h3.dugSeen = isBadger && t.dug && m ? (m.seenBy || []).length > 0 : null;
       const bs = g.hunt && g.hunt.burst; v.h3.burst = bs ? { seq: bs.seq, round: bs.round, n: bs.n, to: over || v.god || ['hyena', 'badger'].includes(seat) || HU.seen(g, seat, 'hyena') ? bs.to : null } : null; } }
-  if (v && room && room.g) { const g = room.g; v.endWhy = g.phase === 'over' ? g.endWhy || null : null; v.leftName = g.phase === 'over' && g.winBy === 'left' ? (g.leftName || null) : null; v.leftArt = g.phase === 'over' && g.winBy === 'left' ? (g.leftArt || null) : null; v.stoneNote = g.lastStone ? { seq: g.lastStone.seq, text: g.lastStone.text, by: g.lastStone.by, targets: g.lastStone.targets || [], kicker:g.lastStone.kicker||null } : null;
+  if (v && room && room.g) { const g = room.g; v.endWhy = g.phase === 'over' ? g.endWhy || null : null; v.leftName = g.phase === 'over' && g.winBy === 'left' ? (g.leftName || null) : null; v.leftArt = g.phase === 'over' && g.winBy === 'left' ? (g.leftArt || null) : null;
+    v.lastMoveNote = g.lastMoveNote || null;
+    v.timeNote = g.timeNote ? { seq: g.timeNote.seq, text: seat === g.timeNote.seat ? 'Out of time.' : "Time's up. Turn skipped." } : null;
+    v.carryNote = g.carryNote && seat === g.carryNote.seat ? { seq: g.carryNote.seq, text: g.carryNote.text } : null;
+    v.stoneNote = g.lastStone ? { seq: g.lastStone.seq, text: g.lastStone.text, by: g.lastStone.by, targets: g.lastStone.targets || [], kicker:g.lastStone.kicker||null } : null;
     v.smashNote = g.lastSmash ? {seq:g.lastSmash.seq,by:g.lastSmash.by,owner:g.team||v.role==='blue'||v.god?g.lastSmash.owner:null} : null;
     if(v.kick&&g.lastKick){const k=g.lastKick,key=g.team?(k.seat==='hunter'?g.h.kind:k.seat):k.who==='vulture'?'red':k.who;v.kick.key=key;
       const hide=kickHitHunter(g,k,seat)&&g.phase!=='over'&&!v.god;

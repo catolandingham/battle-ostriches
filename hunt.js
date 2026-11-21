@@ -91,7 +91,7 @@ function ostrichStay(g) {
 function afterOstrich(g) {
   if (g.phase === 'over' && g.winBy === 'starved' && !g.hunt.final) { g.phase = 'play'; g.winner = g.winBy = null; knockout(g, 'blue', 'starved'); if (g.phase === 'over') return; B.endRound(g); }
   // Round 30: the eggs survived the ostrich's turn, but both hunters still take their last move before anyone wins (Brian, 2026-11-15).
-  if (g.phase === 'over' && g.winBy === 'survived' && !g.hunt.final) { g.phase = 'play'; g.winner = g.winBy = null; g.hunt.lastRound = true; }
+  if (g.phase === 'over' && g.winBy === 'survived' && !g.hunt.final) { g.phase = 'play'; g.winner = g.winBy = null; g.hunt.lastRound = true; if (!g.lastMoveNote) g.lastMoveNote = { seq: 1, round: g.round, text: 'Hunter gets one last move.' }; }
   if (finish(g)) return;
   startHunter(g, 'hyena');
 }
@@ -237,6 +237,7 @@ function hunterStay(g, timedOut) { // timedOut: the shot clock ran out, so a bad
 }
 function timeout(g) {
   if (g.phase !== 'play') return false;
+  B.markTime(g);
   if (isH(g.turn)) return hunterStay(g, true);
   if (g.turn === 'red') { g.sniff = null; g.lastAction = { type: 'pass', timeout: true }; g.turn = 'blue'; B.dropCarried(g); advance(g); return true; }
   const e = g.carrying === null && g.ostrich && g.ostrich[0] >= 0 ? B.eggAt(g, g.ostrich) : null; if (e) e.lastWarm = g.round; // time ran out on an egg: it is still warmed (Brian, 2026-11-15)

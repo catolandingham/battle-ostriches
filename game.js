@@ -263,7 +263,8 @@ function ostrichStep(g, p, carry = false) {
     g.sitting = false; g.lastAction = { type: 'step', stayed: true }; endOstrich(g); return true;
   }
   if (carry) { const e = eggAt(g, g.ostrich); e.pos = null; g.carrying = e.id;
-    if (g.marks[key(g.ostrich)] === 'spotted') delete g.marks[key(g.ostrich)]; } // the egg moved: found mark clears
+    if (g.marks[key(g.ostrich)] === 'spotted') delete g.marks[key(g.ostrich)]; // the egg moved: found mark clears
+    g.carryNote = { seq: (g.carrySeq = (g.carrySeq || 0) + 1), round: g.round, seat: 'blue', text: 'Egg will drop here next turn.' }; }
   g.ostrich = p.slice(); g.sitRun = 0; g.sitting = false;
   g.lastAction = { type: carry ? 'carry' : 'step' };
   endOstrich(g); return true;
@@ -305,7 +306,7 @@ function eggSnap(g, p) {
   const k = key(p);
   return { id: e.id, mark: Object.prototype.hasOwnProperty.call(g.marks, k) ? g.marks[k] : null, smash: g.lastSmash || null, seq: g.smashSeq || 0 };
 }
-// Last round (Brian, 2026-11-16): landing on an unguarded egg breaks it, the same way a stone does.
+// Landing on an egg finds it. A stone is what breaks an egg (Brian delegated, 2026-11-21).
 // The egg is gone, the square is wrecked, and lastSmash carries the usual announcement. No stone is used.
 // Any earlier round only finds it. Returns 'smash', 'find', or null.
 function breakEgg(g, e, p, by, owner) {
@@ -337,8 +338,7 @@ function vultureFly(g, p) {
   g.vulture = p.slice(); g.lastAction = { type: 'fly', from };
   const e = eggAt(g, p), open = !!(e && !ostrichGuards(g, p));
   // Simple rules still find the egg. The last-round break is the normal game only.
-  if (!g.simple && open && isLastRound(g)) breakEgg(g, e, p, 'red', 'blue'); // last round: break it, do not leave a found mark
-  else if (open) { g.marks[key(p)] = 'spotted'; g.lastAction.spotted = p.slice(); }
+  if (open) { g.marks[key(p)] = 'spotted'; g.lastAction.spotted = p.slice(); }
   if (isRock(g, p)) { g.lastAction.refill = g.stones < g.cfg.stones; g.stones = g.cfg.stones; }
   if (g.simple) { g.lastAction.smell = false; g.sniff = null; g.sniffKeep = null; }
   else {
@@ -425,8 +425,10 @@ function vultureThrow(g, p, mkW) {
   return r.result;
 }
 // Shot clock ran out in a classic 2-player game. Same result as the bigger games: the vulture passes, the ostrich stays put.
+function markTime(g) { if (!g || g.phase !== 'play') return; g.timeNote = { seq: (g.timeSeq = (g.timeSeq || 0) + 1), seat: g.turn, round: g.round }; }
 function timeout(g) {
   if (!g || g.phase !== 'play' || g.three || g.hunt || g.team) return false;
+  markTime(g);
   if (g.turn === 'red') {
     g.sniff = null;
     g.lastAction = { type: 'pass', timeout: true };
@@ -512,6 +514,6 @@ function outlineSniff(v) {
   return sn;
 }
 
-const API = { slideN, CONFIG, HUNTER_GOAL, hunterUpAt, scrambleTo, relocateCaught, DIRS8, resolveThrow, wrecked, nearLeaf, myTurn, slide, awayFrom, wrapDist, wrapDelta, wrapPath, pointsBack, scatterKick, scatterRnd, stoneRnd, canKick, kickable, kickTargets, kickPlans, kickDone, ostrichKick, newGame, canPlaceEgg, placeEgg, placeOstrich, ostrichMoves, ostrichStep, ostrichSit, canSit, canCarry, mustLeave, onEgg, dropCarried, hideTurn,
+const API = { slideN, CONFIG, HUNTER_GOAL, hunterUpAt, scrambleTo, relocateCaught, DIRS8, resolveThrow, wrecked, nearLeaf, myTurn, slide, awayFrom, wrapDist, wrapDelta, wrapPath, pointsBack, scatterKick, scatterRnd, stoneRnd, markTime, canKick, kickable, kickTargets, kickPlans, kickDone, ostrichKick, newGame, canPlaceEgg, placeEgg, placeOstrich, ostrichMoves, ostrichStep, ostrichSit, canSit, canCarry, mustLeave, onEgg, dropCarried, hideTurn,
   endRound, timeout, walkSquares, smellsEgg, flyTargets, throwTargets, vultureFly, vultureThrow, eggAt, aliveEggs, coldIn, sniffFresh, sniffAnnounce, outlineSniff, key, dist, visible, isFood, isRock, parkEliminated, ostrichGuards, foodRoute, isLastRound, breakEgg, eggSnap, undoBreak };
 if (typeof module !== 'undefined') module.exports = API; else window.BO = API;

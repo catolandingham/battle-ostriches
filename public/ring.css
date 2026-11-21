@@ -10,6 +10,7 @@
 #aring .aring-btn.on{background:#ffd21f}
 html[data-theme] #aring .aring-btn,html[data-theme] .ring-tap{animation:none!important;text-transform:none!important;letter-spacing:0!important}
 body.timers-off #clock3{visibility:hidden!important}
+#hud .ctr,#roundsLeft{visibility:visible!important}
 #hud #timerToggle{display:none}
 body.three #hud #timerToggle{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;width:auto;max-width:none;min-width:0;height:28px;min-height:28px;padding:0 8px;margin:0;border:2px solid #111;border-radius:8px;background:#243044;color:#fff;font:800 11px/1 system-ui,-apple-system,sans-serif;box-shadow:none;touch-action:manipulation;letter-spacing:0;text-transform:none;white-space:nowrap}
 body.three #hud #timerToggle.on{background:#ffd21f;color:#111}
