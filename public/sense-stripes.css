@@ -1,10 +1,18 @@
-/* Sense stripes, loaded last so every theme draws them. A square inside the piece's sensing range gets thick "\" stripes (class .sense, set in ui.js render).
-   Light stripes on a plain square, darker yellow-brown stripes on a yellow move square (.legal), so a square you can both sense and reach reads as
-   the normal move highlight with stripes on it. The move highlight itself (border, tap target) is not touched. Wrecked squares keep their X. */
-#board .cell.sense:not(.legal):not(.hit):not(.stone):not(#_a):not(#_b){background-image:repeating-linear-gradient(-45deg,rgba(255,255,255,.42) 0 3px,transparent 3px 8px),linear-gradient(rgba(0,0,0,.13),rgba(0,0,0,.13))!important}
-#board .cell.alt.sense:not(.legal):not(.hit):not(.stone):not(#_a):not(#_b){background-image:repeating-linear-gradient(-45deg,rgba(255,255,255,.42) 0 3px,transparent 3px 8px),linear-gradient(rgba(255,255,255,.13),rgba(255,255,255,.13))!important}
-#board .cell.sense.legal:not(.target):not(.hit):not(.stone):not(#_a):not(#_b){background-image:repeating-linear-gradient(-45deg,rgba(120,75,0,.6) 0 3px,transparent 3px 8px),linear-gradient(rgba(255,225,77,.84),rgba(255,225,77,.84))!important}
-#board .cell.sense.legal.toward:not(.target):not(.hit):not(.stone):not(#_a):not(#_b){background-image:repeating-linear-gradient(-45deg,rgba(120,75,0,.6) 0 3px,transparent 3px 8px),linear-gradient(#ffe650,#ffe650)!important}
-/* black and white: black stripes on the white square (and on the grey move square) */
-html[data-theme="bw"] #board .cell.sense:not(.hit):not(.stone):not(#_a):not(#_b){background-image:repeating-linear-gradient(-45deg,#000 0 3px,transparent 3px 8px),linear-gradient(var(--bg),var(--bg))!important}
-html[data-theme="bw"] #board .cell.sense.legal:not(.hit):not(.stone):not(#_a):not(#_b){background-image:repeating-linear-gradient(-45deg,#000 0 3px,transparent 3px 8px),linear-gradient(var(--litbg),var(--litbg))!important}
+/* Sense stripes, loaded last so every theme draws them. A square inside the piece's sensing range (class .sense, set in ui.js render) gets a frame of
+   thick "\" stripes in a band along its edge; the middle stays plain. The frame is its own layer (.sframe) behind everything drawn on the square and
+   it stops short of what is there: a square with a piece on it has no frame (the piece fills the square), a rock or a wrecked mark gets a thinner
+   frame, and a square with an egg outline, warmth number or "can walk" bird mark leaves that top-left corner out. The yellow move highlight (.legal) is
+   not touched: a square you can sense and reach is the yellow square with a striped frame. Light stripes in color themes, darker yellow-brown on
+   yellow squares, black in black and white. The sniff flash uses ::before on the square and does not share this layer. */
+#board .cell.sense{isolation:isolate;--sb:13%;--sc:0%;--sby:var(--sb);--scy:var(--sc)}
+#board .cell.sense.ytag{--sby:calc(var(--sb) / .62);--scy:calc(var(--sc) / .62)} /* the YOU tag covers the bottom of the square above your piece, so that square's frame ends higher */
+#board .cell.sense.ytag .sframe{bottom:38%}
+#board .cell.sense:has(> .cmark){--sc:58%}
+#board .cell.sense:has(> .cmark.cm-egg, > .ic-myegg){--sc:46%}
+#board .cell.sense:has(> .ic){--sb:9%}
+#board .cell .sframe{position:absolute;inset:0;z-index:-1;pointer-events:none;border-radius:4px;background:repeating-linear-gradient(-45deg,rgba(255,255,255,.42) 0 3px,transparent 3px 8px);
+  clip-path:polygon(evenodd,0 0,100% 0,100% 100%,0 100%,0 0,var(--sb) var(--sby),var(--sb) calc(100% - var(--sby)),calc(100% - var(--sb)) calc(100% - var(--sby)),calc(100% - var(--sb)) var(--sby),var(--sb) var(--sby))}
+#board .cell.sense:has(> .cmark, > .ic-myegg) .sframe{clip-path:polygon(var(--sc) 0,100% 0,100% 100%,0 100%,0 var(--scy),var(--sb) var(--scy),var(--sb) calc(100% - var(--sby)),calc(100% - var(--sb)) calc(100% - var(--sby)),calc(100% - var(--sb)) var(--sby),var(--sc) var(--sby))}
+#board .cell.sense:has(> .pc) .sframe{display:none}
+#board .cell.legal .sframe{background:repeating-linear-gradient(-45deg,rgba(120,75,0,.6) 0 3px,transparent 3px 8px)}
+html[data-theme="bw"] #board .cell .sframe:not(#_a):not(#_b){background:repeating-linear-gradient(-45deg,#000 0 3px,transparent 3px 8px)!important}

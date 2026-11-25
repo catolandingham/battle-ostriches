@@ -495,12 +495,12 @@ function render(prev){
  const onBoard=p=>p&&p[0]>=0&&p[1]>=0;
  const noStone=!blue&&S.role==='red'&&S.phase==='play'&&S.myTurn&&S.stones<1,throwing=!blue&&M==='throw',kicking=blue&&M==='kick',ok=onBoard(S.ostrich)&&!birdGone('o')?key(S.ostrich):'',vk=onBoard(S.vulture)&&!birdGone('v')?key(S.vulture):'';
  const fogP=S.phase==='play'&&!S.god&&S.role!=='hunter'?(S.role==='blue'?S.ostrich:S.role==='red'?S.vulture:null):null,fogOf=fogP&&fogP[0]>=0?fogP:null;
- const senseSet=new Set(window.SENSE_ZONE?SENSE_ZONE.squares(C,SENSE_ZONE.zone(S,M)):[]); // stripes: squares within how far this player's own piece senses (senserange.js, sense-stripes.css)
+ const senseZone=window.SENSE_ZONE?SENSE_ZONE.zone(S,M):null,senseSet=new Set(window.SENSE_ZONE?SENSE_ZONE.squares(C,senseZone):[]),tagAbove=senseZone?senseZone.c[0]+','+(senseZone.c[1]-1):''; // tagAbove: the YOU tag sits on the square above your piece // stripes: squares within how far this player's own piece senses (senserange.js, sense-stripes.css)
  for(let y=0;y<C.rows;y++)for(let x=0;x<C.cols;x++){const k=x+','+y,d=document.createElement('div');d.className='cell'+((x+y)%2?' alt':'');
   const m=S.role==='hunter'&&!S.simple&&S.phase!=='over'&&S.marks[k]==='spotted'?null:S.marks[k];if(m)d.classList.add(m);const tags=[],tip=[];
   if(!S.simple&&fogOf&&Math.max(Math.abs(x-fogOf[0]),Math.abs(y-fogOf[1]))>SENSE_ZONE.SEE)d.classList.add('fog'); // fog of war: a bird sees hunters only within 2 (hunters get none). Simple rules: everyone sees every animal.
   const legal=lk.has(k)||(setup&&legalNow().some(q=>key(q)===k));
-  if(senseSet.has(k))d.classList.add('sense');
+  if(senseSet.has(k)){d.classList.add('sense');if(k===tagAbove)d.classList.add('ytag');}
   if(nsT.has(k)&&NS.kind!=='rocks'&&!kicking)d.classList.add('cue','cue-'+NS.kind);
   if(legal&&kicking){d.setAttribute('aria-label','Tap where they go.');}
   else if(legal){d.classList.add('legal');if(setup)d.classList.add('setupsq');if(throwing)d.classList.add('target');tags.push(throwing?'target':'legal');d.setAttribute('aria-label',throwing?'Throw here':'Legal step');if(nsW.has(k))d.classList.add('toward');}
@@ -524,7 +524,7 @@ function render(prev){
   if(k===vk){h+=veil.red&&mound?`<div class="pc ph bur">${mound}</div>`:`<div class="pc pv">${VUL}</div>`;tip.push(blue?'The vulture':'You.');tags.push(blue?'vul':'me');}
   if(k===ok){if(blue&&e){d.classList.add('sat');}h+=veil.blue&&mound?`<div class="pc ph bur">${mound}</div>`:`<div class="pc po${S.carried?' carrying':''}">${S.carried&&ART.ostrichCarry?ART.ostrichCarry:OST}</div>`;tip.push(blue?'You.':'The ostrich');tags.push(blue?'me':'ost');}
   if(legal)tip.push(kicking?kickTip(x,y):throwing?'Throw here.':setup?(S.phase==='setupEggs'?'Hide an egg here':'Start here'):blue||S.role==='hunter'?'Move here':'Fly here'); // a hunter walks; only the vulture flies
-  d.innerHTML=h;d.dataset.tip=[...new Set(tip)].join(' · ');
+  d.innerHTML=(d.classList.contains('sense')?'<i class="sframe"></i>':'')+h;d.dataset.tip=[...new Set(tip)].join(' · ');
   d.dataset.tags=tags.join(' ');if(tags.includes('me'))d.id='current';d.onclick=()=>{if(Date.now()<noClick)return;tap(x,y);};board.appendChild(d);}
  {const cs=getComputedStyle(board),gap=parseFloat(cs.columnGap)||0,pad=parseFloat(cs.paddingLeft)+parseFloat(cs.paddingRight),inner=board.clientWidth-pad,w=(inner-gap*(C.cols-1))/C.cols;if(w>1){board.style.gridAutoRows='0';board.style.gridTemplateRows=`repeat(${C.rows},${w}px)`;}}
  const ateNow=!!(window.ATE&&ATE.justAte(prev,S));
