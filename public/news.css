@@ -1,0 +1,22 @@
+/* News: one look per meaning, in every theme except Black and white (which keeps its own black-and-white look).
+   Green is good for the player holding this phone, red is bad for that player, navy is neither (news.js, catchtext.js).
+   Themes restyle the floor and the animals, not these three. Every pair of colors keeps white text readable (contrast above 4.5 to 1). */
+html:not([data-theme="bw"]) #app #msgslot > :is(#banner, #announce, #snpop, .h3pop, #hint).news-good:not(#_a):not(#_b):not(#_c),
+html:not([data-theme="bw"]) #board .msniff.news-good:not(#_a):not(#_b):not(#_c),
+html:not([data-theme="bw"]) #over h1.news-good:not(#_a):not(#_b):not(#_c) {
+  background-color: #167a2e !important; background-image: none !important; color: #fff !important; -webkit-text-fill-color: #fff !important; text-shadow: none !important;
+}
+html:not([data-theme="bw"]) #app #msgslot > :is(#banner, #announce, #snpop, .h3pop, #hint).news-bad:not(#_a):not(#_b):not(#_c),
+html:not([data-theme="bw"]) #board .msniff.news-bad:not(#_a):not(#_b):not(#_c),
+html:not([data-theme="bw"]) #over h1.news-bad:not(#_a):not(#_b):not(#_c) {
+  background-color: #b3123f !important; background-image: none !important; color: #fff !important; -webkit-text-fill-color: #fff !important; text-shadow: none !important;
+}
+html:not([data-theme="bw"]) #app #msgslot > :is(#banner, #announce, #snpop, .h3pop).news-plain:not(#_a):not(#_b):not(#_c),
+html:not([data-theme="bw"]) #board .msniff.news-plain:not(#_a):not(#_b):not(#_c) {
+  background-color: #1b2540 !important; background-image: none !important; color: #fff !important; -webkit-text-fill-color: #fff !important; text-shadow: none !important;
+}
+/* The end title is a pill, so the color has something to sit on. */
+html:not([data-theme="bw"]) #over h1.news-good:not(#_a):not(#_b):not(#_c),
+html:not([data-theme="bw"]) #over h1.news-bad:not(#_a):not(#_b):not(#_c) {
+  display: inline-block; margin: 0 auto 8px; padding: 4px 14px; border-radius: 12px;
+}

@@ -6,7 +6,7 @@ const src=fs.readFileSync(__dirname+'/public/ui.js','utf8');
 const fn=src.match(/function stoneHitAnimal\(S,prev,la\)\{.*\}\n/);A(fn,'ui.js has stoneHitAnimal');
 const stoneHitAnimal=new Function(fn[0]+';return stoneHitAnimal;')();
 // the two miss lines go through it, and the right-square pulse only follows a miss line
-A(/'Egg smashed\.':stoneHitAnimal\(S,prev,la\)\?'':'Missed\.'/.test(src),'the ostrich line checks for a hit animal');
+A(/la\.result==='hit'\?'':stoneHitAnimal\(S,prev,la\)\?'':'Missed\.'/.test(src),'the ostrich line checks for a hit animal, and a smash has no separate line');
 A(/:stoneHitAnimal\(S,prev,la\)\?'':'Miss\.';/.test(src),'the vulture line checks for a hit animal');
 A(/if\(\/\^\(Missed\\\.\|Miss\\\.\)\/\.test\(ev\)\)setTimeout\(\(\)=>flashRight\(\)/.test(src),'the pulse only follows a miss line');
 const lineFor=(v,prev)=>{const la=v.lastAction;if(!la||la.type!=='throw')return null;return la.result==='bounce'?'bounce':la.result==='hit'?'hit':stoneHitAnimal(v,prev,la)?'':'Missed.';};
