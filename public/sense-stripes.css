@@ -1,0 +1,10 @@
+/* Sense stripes, loaded last so every theme draws them. A square inside the piece's sensing range gets thick "\" stripes (class .sense, set in ui.js render).
+   Light stripes on a plain square, darker yellow-brown stripes on a yellow move square (.legal), so a square you can both sense and reach reads as
+   the normal move highlight with stripes on it. The move highlight itself (border, tap target) is not touched. Wrecked squares keep their X. */
+#board .cell.sense:not(.legal):not(.hit):not(.stone):not(#_a):not(#_b){background-image:repeating-linear-gradient(-45deg,rgba(255,255,255,.42) 0 3px,transparent 3px 8px),linear-gradient(rgba(0,0,0,.13),rgba(0,0,0,.13))!important}
+#board .cell.alt.sense:not(.legal):not(.hit):not(.stone):not(#_a):not(#_b){background-image:repeating-linear-gradient(-45deg,rgba(255,255,255,.42) 0 3px,transparent 3px 8px),linear-gradient(rgba(255,255,255,.13),rgba(255,255,255,.13))!important}
+#board .cell.sense.legal:not(.target):not(.hit):not(.stone):not(#_a):not(#_b){background-image:repeating-linear-gradient(-45deg,rgba(120,75,0,.6) 0 3px,transparent 3px 8px),linear-gradient(rgba(255,225,77,.84),rgba(255,225,77,.84))!important}
+#board .cell.sense.legal.toward:not(.target):not(.hit):not(.stone):not(#_a):not(#_b){background-image:repeating-linear-gradient(-45deg,rgba(120,75,0,.6) 0 3px,transparent 3px 8px),linear-gradient(#ffe650,#ffe650)!important}
+/* black and white: black stripes on the white square (and on the grey move square) */
+html[data-theme="bw"] #board .cell.sense:not(.hit):not(.stone):not(#_a):not(#_b){background-image:repeating-linear-gradient(-45deg,#000 0 3px,transparent 3px 8px),linear-gradient(var(--bg),var(--bg))!important}
+html[data-theme="bw"] #board .cell.sense.legal:not(.hit):not(.stone):not(#_a):not(#_b){background-image:repeating-linear-gradient(-45deg,#000 0 3px,transparent 3px 8px),linear-gradient(var(--litbg),var(--litbg))!important}
