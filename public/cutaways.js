@@ -110,7 +110,16 @@
   api.busy = () => busyUntil > Date.now();
   // true while the egg-smash cartoon is about to play or playing: smash.js then skips its own little egg-crack on the board
   api.smashCartoon = () => !!((nextCard && nextCard.scene.id === 'egg-smash') || document.querySelector('#cutaway[data-scene="egg-smash"]'));
-  api.defer = state => { if (busyUntil > Date.now()) { queue.push(state); return true; } return false; };
+  // A held state is kept for the board (only the newest is applied when the cartoon ends), but api.note still sees every one, so the turn line and the clock can follow it.
+  api.note = null;
+  api.defer = state => {
+    if (busyUntil > Date.now()) {
+      queue.push(state);
+      try { if (api.note) api.note(state); } catch (e) { console.error(e); }
+      return true;
+    }
+    return false;
+  };
   api.policy = null;
   function hideGo() {
     const el = document.getElementById('surprise-go'); if (el) el.remove();
