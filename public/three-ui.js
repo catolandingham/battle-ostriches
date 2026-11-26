@@ -82,7 +82,7 @@ function tHint(S,a){const r=S.h3.mySeat,t=S.turn,h=S.h3;
  if(!h.ready)return h.needKind?'Pick your hunter.':`Waiting for all ${h.n} players…`;
  if(h.setupStep==='done'&&h.teamSetup&&h.teamSetup!=='done')return h.teamSetup==='eggs'?'Partner is hiding eggs…':'Partner is placing…';
  const me=h.birds[r];if(me&&me.out)return 'You\'re out. Watching.';
- if((r==='blue'||r==='o1'||r==='o2')&&window.UI&&UI._S()&&UI._S().sittingAt&&UI._S().ostrich&&UI._S().sittingAt.some(q=>q[0]===UI._S().ostrich[0]&&q[1]===UI._S().ostrich[1]))return 'The vulture sees you sit.';return `${tname(S,t)}'s turn…`;}
+ return `${tname(S,t)}'s turn…`;}
 function tChips(S){let bar=$('h3bar');if(!bar){bar=document.createElement('div');bar.id='h3bar';$('hud').after(bar);
   bar.addEventListener('click',e=>{const c=e.target.closest('[data-tip]');if(c&&UI._tip)UI._tip(c.dataset.tip);});}
  const h=S.h3,live=S.phase==='play',five=h.n===5,ko=h.ko;bar.classList.add('team');
@@ -167,7 +167,6 @@ function hint(S,a){if(S.h3.team&&!hint.in){hint.in=1;try{return tHint(S,a);}fina
 function digWarn(S){return S.sense?'A bird will see you dig in.':'No bird will see you dig in.';}
  if(!S.h3.ready)return S.h3.needKind?'Pick your hunter.':`Waiting for all ${S.h3.hunt?4:3} players…`;
  if(r!=='hunter'&&S.h3.birds[r]&&S.h3.birds[r].out)return 'You\'re out. Watching.';
- if(r==='blue'&&window.UI&&UI._S()&&UI._S().sittingAt&&UI._S().ostrich&&UI._S().sittingAt.some(q=>q[0]===UI._S().ostrich[0]&&q[1]===UI._S().ostrich[1]))return 'The vulture sees you sit.';
  return `${tname(S,t)}'s turn…`;}
 function chips(S){if(S.h3.hunt)return hChips(S);if(S.h3.team)return tChips(S);let bar=$('h3bar');if(!bar){bar=document.createElement('div');bar.id='h3bar';$('hud').after(bar);
   bar.addEventListener('click',e=>{const c=e.target.closest('[data-tip]');if(c&&UI._tip)UI._tip(c.dataset.tip);});}
@@ -178,8 +177,10 @@ function chips(S){if(S.h3.hunt)return hChips(S);if(S.h3.team)return tChips(S);le
  const k=h.kind||'hyena';
  bar.innerHTML=bird('red')+bird('blue')+`<span class="bchip hunter${live&&S.turn==='hunter'?' now':''}" data-tip="${KIND[k].n}: catches birds.">${sp(KIND[k].art,26)}${claws(caught(h),3)}</span>`;}
 function placeClock(c){const bar=$('h3bar');if(bar&&bar.parentNode){if(c.parentNode!==bar.parentNode||c.previousElementSibling!==bar)bar.parentNode.insertBefore(c,bar.nextSibling);return;}const hud=$('hud');if(hud&&c.parentNode!==hud)hud.appendChild(c);}
-function clock(S){let c=$('clock3');if(!c){c=document.createElement('div');c.id='clock3';c.innerHTML='<div class="cfill"></div><span class="ctxt"></span>';}placeClock(c);
- const src=S.h3&&S.h3.clockLeft!=null?S.h3:(S.clockLeft!=null?S:null);
+function clock(S,o){let c=$('clock3');if(!c){c=document.createElement('div');c.id='clock3';c.innerHTML='<div class="cfill"></div><span class="ctxt"></span>';}placeClock(c);
+ let src=S.h3&&S.h3.clockLeft!=null?S.h3:(S.clockLeft!=null?S:null);
+ // Your own turn while the board is still held (a cartoon is up, or the held state has just been put on screen before the server has started the countdown): the clock shows paused at this turn's full time (a time the server sent earlier belongs to the turn before, so it is not shown). It never counts down while the buttons are not there.
+ if(S.phase==='play'&&S.myTurn&&!S.pass&&S.showTimers!==false&&!S.clockStopped&&((o&&o.held)||(!src&&window.CUTAWAYS&&CUTAWAYS.flushing))){const base=S.h3&&S.h3.clockMs?S.h3:S;src={clockLeft:base.clockMs||clockMs,clockMs:base.clockMs||clockMs,clockPaused:true};}
  const on=S.phase==='play'&&!!src;c.classList.toggle('hidden',!on);if(!on){cancelAnimationFrame(raf);return;}
  if(src.clockMs)clockMs=src.clockMs;
  if(src.clockPaused){cancelAnimationFrame(raf);lastTurnKey='';const left=Math.max(0,src.clockLeft),s=Math.ceil(left/1000);c.firstChild.style.width=(100*left/clockMs)+'%';
