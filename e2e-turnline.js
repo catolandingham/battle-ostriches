@@ -74,6 +74,7 @@ const WATCH = /^(Ostrich|Vulture|Hyena|Badger|Hunter)'s turn(…| again\.)$/;
     const clocks = [...new Set(during.map(s => s.clock))];
     A.ok(during.every(s => s.clock), 'her clock is on screen during the hold');
     A.equal(clocks.length, 1, 'her clock does not count down while she has no buttons: ' + clocks.join(','));
+    A.equal(clocks[0], (T.T3.clockMs / 1000) + 's', 'her clock shows the new turn\'s full time during the hold (not a leftover from the turn before): ' + clocks.join(','));
     A.ok(handsOn != null, 'Walk and Kick come up');
     A.ok(holdEnded != null && handsOn - holdEnded <= 500, 'the buttons are up within 0.5 s of the hold ending: ' + Math.round(handsOn - holdEnded) + ' ms');
     const first = samples.find(s => s.btns.some(b => /Walk/.test(b)));

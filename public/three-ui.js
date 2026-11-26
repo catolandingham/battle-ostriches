@@ -179,8 +179,8 @@ function chips(S){if(S.h3.hunt)return hChips(S);if(S.h3.team)return tChips(S);le
 function placeClock(c){const bar=$('h3bar');if(bar&&bar.parentNode){if(c.parentNode!==bar.parentNode||c.previousElementSibling!==bar)bar.parentNode.insertBefore(c,bar.nextSibling);return;}const hud=$('hud');if(hud&&c.parentNode!==hud)hud.appendChild(c);}
 function clock(S,o){let c=$('clock3');if(!c){c=document.createElement('div');c.id='clock3';c.innerHTML='<div class="cfill"></div><span class="ctxt"></span>';}placeClock(c);
  let src=S.h3&&S.h3.clockLeft!=null?S.h3:(S.clockLeft!=null?S:null);
- // Your own turn while the board is still held (a cartoon is up, or the held state has just been put on screen before the server has started the countdown): the clock shows paused, at the time the server last said (full when it has not started). It never counts down while the buttons are not there.
- if(S.phase==='play'&&S.myTurn&&!S.pass&&S.showTimers!==false&&!S.clockStopped&&((o&&o.held)||(!src&&window.CUTAWAYS&&CUTAWAYS.flushing))){const base=S.h3&&S.h3.clockMs?S.h3:S;src={clockLeft:src?src.clockLeft:(base.clockMs||clockMs),clockMs:base.clockMs||clockMs,clockPaused:true};}
+ // Your own turn while the board is still held (a cartoon is up, or the held state has just been put on screen before the server has started the countdown): the clock shows paused at this turn's full time (a time the server sent earlier belongs to the turn before, so it is not shown). It never counts down while the buttons are not there.
+ if(S.phase==='play'&&S.myTurn&&!S.pass&&S.showTimers!==false&&!S.clockStopped&&((o&&o.held)||(!src&&window.CUTAWAYS&&CUTAWAYS.flushing))){const base=S.h3&&S.h3.clockMs?S.h3:S;src={clockLeft:base.clockMs||clockMs,clockMs:base.clockMs||clockMs,clockPaused:true};}
  const on=S.phase==='play'&&!!src;c.classList.toggle('hidden',!on);if(!on){cancelAnimationFrame(raf);return;}
  if(src.clockMs)clockMs=src.clockMs;
  if(src.clockPaused){cancelAnimationFrame(raf);lastTurnKey='';const left=Math.max(0,src.clockLeft),s=Math.ceil(left/1000);c.firstChild.style.width=(100*left/clockMs)+'%';
