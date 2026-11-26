@@ -72,3 +72,4 @@ A.equal(end(ost, 'none'), ''); A.equal(end(ost, 'blue', { pass: true }), ''); A.
   }
 }
 console.log('PASS news: good, bad and neither for every animal on the lines that are news');
+process.exit(0);
