@@ -78,7 +78,8 @@ const WATCH = /^(Ostrich|Vulture|Hyena|Badger|Hunter)'s turn(…| again\.)$/;
     A.ok(handsOn != null, 'Walk and Kick come up');
     A.ok(holdEnded != null && handsOn - holdEnded <= 500, 'the buttons are up within 0.5 s of the hold ending: ' + Math.round(handsOn - holdEnded) + ' ms');
     const first = samples.find(s => s.btns.some(b => /Walk/.test(b)));
-    A.equal(first.hint, 'Your turn. Tap to move.', 'when the buttons come up the line is exactly "Your turn. Tap to move."');
+    // The computer vulture's landing is random: when it found an egg, the game's own event line comes first, as it always has. Only that one sentence may precede the turn line.
+    A.ok(/^(The vulture found an egg! Move it or sit on it\. )?Your turn\. Tap to move\.$/.test(first.hint), 'when the buttons come up the line is "Your turn. Tap to move." (after the game\'s own found-an-egg line, if the vulture found one): ' + first.hint);
     await p.close();
   }
 
