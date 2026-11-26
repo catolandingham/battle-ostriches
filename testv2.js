@@ -148,7 +148,7 @@ ok('views: a hunter is never told where a caught bird scrambled to; the bird is;
   assert.equal(v.red.h3.lastCatch.at, null, 'the vulture at (0,6) cannot see the hyena'); });
 ok('views: a stone line goes to every seat with no square; kick lines say how far it really went (wrapped kicks included)', () => {
   const room = room3('hyena'), g = room.g = three('hyena', [5, 2], [4, 3], [5, 3]); g.turn = 'red'; g.stones = 1; assert.ok(T.vultureThrow3(g, [4, 3]));
-  for (const s of SEATS3) { const v = S.view3(room, s); assert.equal(v.stoneNote.text, 'The ostrich kicked the stone right back!'); assert.deepEqual(Object.keys(v.stoneNote).sort(), ['by', 'kicker', 'seq', 'targets', 'text', 'trails']); }
+  for (const s of SEATS3) { const v = S.view3(room, s); assert.equal(v.stoneNote.text, 'The ostrich kicked the stone right back!'); assert.deepEqual(Object.keys(v.stoneNote).sort(), ['bounce', 'by', 'carrying', 'kicker', 'seq', 'targets', 'text', 'trails']); }
   const r2 = room3('hyena'), k = r2.g = three('hyena', [1, 6], [6, 3], [7, 3]); k.turn = 'blue'; assert.ok(T.ostrichKick3(k, [7, 3])); assert.equal(S.view3(r2, 'blue').kick.moved, 3); assert.deepEqual(k.vulture, [1, 3]); });
 ok('views: birds (not hunters) see an ostrich that is sitting; the end screen carries one plain reason', () => {
   const room = room3('hyena'), g = room.g = three('hyena', [0, 6], [2, 1], [5, 5]); g.turn = 'blue'; assert.ok(T.ostrichAct3(g, 'sit'));
