@@ -97,7 +97,7 @@ function tPieces(S,board){const h=S.h3,me=h.mySeat;
   if(q.camo){d.className='pc ph bur other'+(q.mate?' mate':' opp');d.innerHTML=MOUND;}else{d.innerHTML=q.type==='o'?(q.carrying&&window.ART&&ART.ostrichCarry?ART.ostrichCarry:OSTI):VULI;if(q.carrying)d.classList.add('carrying');}c.appendChild(d);c.dataset.seat=q.seat;badge(c,q.seat,q.mate);
   c.dataset.tip=(c.dataset.tip?c.dataset.tip+' · ':'')+SN[q.seat]+(q.mate?' (your teammate)':'')+(q.carrying?', carrying an egg':'');}
  const mine=me==='hunter'?null:cellAt(board,S,isOs(me)?S.ostrich:S.vulture);if(mine)badge(mine,me,false);
- const ms=h.mateSniff;if(ms){const c=cellAt(board,S,ms.p);if(c){const r=document.createElement('div');r.className='msniff '+(ms.yes?'yes':'no');r.textContent=ms.yes?'Egg near':'No egg';c.appendChild(r);
+ const ms=h.mateSniff;if(ms){const c=cellAt(board,S,ms.p);if(c){const r=document.createElement('div');r.className='msniff '+(ms.yes?'yes':'no')+' '+newsCls(News.tone(ms.yes?'Egg near':'No egg',S));r.textContent=ms.yes?'Egg near':'No egg';c.appendChild(r);
   c.dataset.tip=(c.dataset.tip?c.dataset.tip+' · ':'')+(isOs(me)?'':'Your teammate sniffed here: ')+(ms.yes?'an egg is on or next to this square':'no egg on or next to this square');}}
  if(isOs(me)&&S.eggs)S.eggs.forEach(e=>{if(!e.alive||!e.pos||e.mine)return;const c=cellAt(board,S,e.pos);c&&c.classList.add('mateegg');});}
 const HUNT_TIE_WHY='Both birds are out. The hunters tie: you have the same number of knock-outs, and the same number of catches.';
@@ -107,7 +107,7 @@ function isHuntTie(S){return !!(S&&S.h3&&S.h3.hunt&&S.winner==='none'&&S.winBy!=
 function endTitle(S,winTitle){return isHuntTie(S)?"It's a tie.":S.winner==='none'?"It's a draw.":winTitle;}
 function endArt(S,winArt){return isHuntTie(S)?'<span>'+KIND.hyena.art+'</span><span>'+KIND.badger.art+'</span>':S.winner==='none'?'<span>'+OSTI+'</span><span>'+VULI+'</span>':winArt;}
 function endWhyText(S,fallback){return S.endWhy||(isHuntTie(S)?HUNT_TIE_WHY:S.winner==='none'?DRAW_WHY:fallback);}
-function endBox(S,art,title,why){return `<div class="lobbybox"><div class="bigost${S.winner==='none'?' pair':''}">${art}</div><h1>${title}</h1><p>${why}</p>${winNote(S)}${endBits(S)}</div>`;}
+function endBox(S,art,title,why){return `<div class="lobbybox"><div class="bigost${S.winner==='none'?' pair':''}">${art}</div><h1 class="${newsCls(News.endTone(S))}">${title}</h1><p>${why}</p>${winNote(S)}${endBits(S)}</div>`;}
 function tOver(S){const h=S.h3,w=S.winner,me=h.mySeat,C=S.cfg,mySide=me==='hunter'?'hunter':isOs(me)?'blue':'red';
  const art=w==='hunter'?KIND[h.kind||'hyena'].art:w==='blue'?OSTI:w==='red'?VULI:'';
  const title=w===mySide?(me==='hunter'?'You win!':'Your team wins!'):w==='hunter'?`${hName(S)} wins!`:w==='blue'?'Ostriches win!':'Vultures win!';
@@ -153,7 +153,7 @@ function warnNear(S,board,prev){if(!window.BORing)return;if(!S||S.phase!=='play'
  if((pol&&pol.lookout)||Date.now()<lookoutUntil){nearSeen=now.slice();return;}
  const was=nearSeen;nearSeen=now.slice();
  const added=was?BORing.hunterAlerts(was,now):now;
- added.forEach(k=>pop(board,BORing.hunterNearLabel(k),'near'));}
+ added.forEach(k=>pop(board,BORing.hunterNearLabel(k),'near',S));}
 function tag(S){if(S.h3&&S.h3.team&&S.h3.mySeat!=='hunter')return tTag(S);const k=S.h3&&S.h3.kind||'hyena';return `<span style="display:inline-block;width:30px;height:30px;vertical-align:middle">${KIND[k].art}</span> ${KIND[k].n.toUpperCase()}`;}
 function waitMsg(S){return `Wait, it's the ${tname(S,S.turn)}'s turn.`;}
 function nopeMsg(S){return `Move up to ${S.h3.range} square${S.h3.range>1?'s':''}: tap a glowing square.`;}
@@ -201,7 +201,7 @@ function outBanner(S,prev){const birds=S.h3.birds;if(!birds)return;
   if(!b.out){delete outSeen[r];continue;}
   if(outSeen[r])continue;outSeen[r]=1;
   const mine=r===(S.h3.mySeat||S.role);
-  if(!first&&!mine&&S.phase==='play'){const txt=window.CatchText.outLine(r);if(outNote&&outNote.txt===txt)continue;outNote={txt};announce(txt,60);}}
+  if(!first&&!mine&&S.phase==='play'){const txt=window.CatchText.outLine(r);if(outNote&&outNote.txt===txt)continue;outNote={txt};announce(txt,60,undefined,false,false,window.CatchText.outTone(r,S));}}
 }
 // The badger's quotes (public/badgerlines.js): one line at a time in their own bubble near the badger's square
 // (about 1s, or 0.3s a word when the line is longer). The bubble is not in the board, so a redraw does not wipe it,
@@ -279,15 +279,18 @@ function marksAround(board,S,cx,cy,range,kind,cls){const C=S.cfg;let n=0;
  for(let y=Math.max(0,cy-range);y<=Math.min(C.rows-1,cy+range);y++)for(let x=Math.max(0,cx-range);x<=Math.min(C.cols-1,cx+range);x++){if(x===cx&&y===cy)continue;if(kind==='egg'&&S.cfg&&noEgg(S,x,y))continue;const c=board.children[y*C.cols+x];if(c&&c.classList&&c.classList.contains('cell')&&mark(c,kind,cls))n++;}
  return n;}
 function isNearLine(item){const t=(item&&item.text||'').trim(),c=item&&item.className||'';return /\bnear[!.]?$/i.test(t)||/(^|\s)near(\s|$)/.test(c);}
-function pop(board,txt,cls){if(Date.now()<lookoutUntil)return;window.STATUS_QUEUE.add({className:'h3pop '+cls,text:txt,priority:10});}
+// Green, red or navy for this phone (news.js). The words and the older yes / no / near classes stay as they were.
+const newsCls=t=>window.News?News.cls(t||'plain'):'';
+function pop(board,txt,cls,S){if(Date.now()<lookoutUntil)return;window.STATUS_QUEUE.add({className:'h3pop '+cls+' '+newsCls(window.News?News.tone(txt,S):'plain'),text:txt,priority:10});}
 // Shared with sniff/fact notices: one one-second message, personal events before background facts.
-function announce(txt,priority,hold,preempt,heldEvent){window.STATUS_QUEUE.add({id:'announce',className:'show'+(/you/i.test(txt)?' bad':''),text:txt,priority:priority==null?(/\byou\b/i.test(txt)?100:50):priority,hold:hold||undefined,preempt:!!preempt,heldEvent:!!heldEvent});}
+// tone is 'good', 'bad' or 'plain' for this phone. It is not whether the sentence says "you".
+function announce(txt,priority,hold,preempt,heldEvent,tone){window.STATUS_QUEUE.add({id:'announce',className:'show '+newsCls(tone||'plain'),text:txt,priority:priority==null?(/\byou\b/i.test(txt)?100:50):priority,hold:hold||undefined,preempt:!!preempt,heldEvent:!!heldEvent});}
 let lookoutKey='',lookoutUntil=0,lineGen=0,senseMem=null;
 function releaseHeldLine(){
  lineGen++;
  if(window.STATUS_QUEUE&&STATUS_QUEUE.drop)STATUS_QUEUE.drop(item=>item.heldEvent);
 }
-function speak(S,prev,txt,priority,preempt){
+function speak(S,prev,txt,priority,preempt,tone){
  const pol=window.SURPRISE&&SURPRISE.policy&&S&&prev?SURPRISE.policy(S,prev):null;
  const ended=S&&S.phase==='over';
  const held=!!(pol&&pol.affected&&!ended);
@@ -299,17 +302,17 @@ function speak(S,prev,txt,priority,preempt){
   lookoutUntil=Date.now()+SURPRISE.LOOKOUT_MS+400;
   if(window.STATUS_QUEUE.drop)STATUS_QUEUE.drop(isNearLine);
   document.querySelectorAll('#msgslot .h3pop.near').forEach(el=>el.remove());
-  if(lookoutKey!==k){lookoutKey=k;announce(SURPRISE.LOOKOUT_LINE,120,SURPRISE.LOOKOUT_MS,true);}
-  setTimeout(()=>{if(gen!==lineGen)return;if(window.STATUS_QUEUE.drop)STATUS_QUEUE.drop(isNearLine);announce(txt,priority,hold,true,held);},SURPRISE.LOOKOUT_MS);return;
+  if(lookoutKey!==k){lookoutKey=k;announce(SURPRISE.LOOKOUT_LINE,120,SURPRISE.LOOKOUT_MS,true,false,'bad');}
+  setTimeout(()=>{if(gen!==lineGen)return;if(window.STATUS_QUEUE.drop)STATUS_QUEUE.drop(isNearLine);announce(txt,priority,hold,true,held,tone);},SURPRISE.LOOKOUT_MS);return;
  }
- announce(txt,priority,hold,preempt,held);
+ announce(txt,priority,hold,preempt,held,tone);
 }
 if(window.CUTAWAYS)CUTAWAYS.onDone=releaseHeldLine;
 const evSeen={kick:0,pop:0,rival:0,stone:0,dug:0,burst:0};
 function events(S,prev,board){
  if(!S)return;if(!S.three)rulesMode('2');
  const h=S.h3||{};
- for(const e of window.CatchText.newEvents(evSeen,S,prev)){if(e.kind==='double'){const wait=window.SURPRISE?SURPRISE.LOOKOUT_MS+SURPRISE.CARTOON_MS:0;setTimeout(()=>announce(e.text,70),wait);continue;}const big=e.kind==='kick'||e.kind==='burst'||e.kind==='rival'||e.kind==='smash'||(e.kind==='stone'&&S.stoneNote&&(S.stoneNote.targets||[]).length);speak(S,prev,window.CatchText.viewerEvent(e,S),null,big);
+ for(const e of window.CatchText.newEvents(evSeen,S,prev)){if(e.kind==='double'){const wait=window.SURPRISE?SURPRISE.LOOKOUT_MS+SURPRISE.CARTOON_MS:0;setTimeout(()=>announce(e.text,70,undefined,false,false,'plain'),wait);continue;}const big=e.kind==='kick'||e.kind==='burst'||e.kind==='rival'||e.kind==='smash'||(e.kind==='stone'&&S.stoneNote&&(S.stoneNote.targets||[]).length);speak(S,prev,window.CatchText.viewerEvent(e,S),null,big,window.CatchText.eventTone(e,S));
   // the square highlight: the hyena's landing square for the meeting; the badger's own square for a pop-out, only if this phone can see the badger
   const sq=e.kind==='rival'||e.kind==='kick'||e.kind==='burst'?e.square:e.kind==='dug'?null:e.seen?(h.hunters?(h.hunters.find(x=>x.kind==='badger')||{}).p:h.hunter):null,c=cellAt(board,S,sq);c&&c.classList.add('h3kb');}}
 // One plain line at the start of every game: who hunts what, naming only the animals in the game (roles.js).
@@ -355,9 +358,9 @@ function after(S,prev,board){
    const c=board.children[p[1]*S.cfg.cols+p[0]];if(!c||!c.classList||!c.classList.contains('cell'))continue;if(c.querySelector('.pc.po,.pc.pv'))continue;
    c.classList.add('maybird');mark(c,'bird',area?'cue':'');const had=c.getAttribute('aria-label')||'';if(!/Bird may be here/.test(had))c.setAttribute('aria-label',had?had+'. Bird may be here':'Bird may be here');}}
   const sk=S.round+':'+S.senseSeq;if(sk!==lastSense){lastSense=sk;UI.pause(1100);
-   pop(board,S.sense?(S.pounce?'Still near.':'Bird near.'):'Nothing near.',S.sense?'yes':'no');
+   pop(board,S.sense?(S.pounce?'Still near.':'Bird near.'):'Nothing near.',S.sense?'yes':'no',S);
    window.SFX&&SFX.play(S.sense?'sniffYes':'sniffNo');}
-  if(S.pounce)announce('Pounce!',80);}
+  if(S.pounce)announce('Pounce!',80,undefined,false,false,News.tone('Pounce!',S));}
  if(false&&S.pounce&&S.myTurn&&me==='hunter'){const mine=board.querySelector('.pc.ph.mine');const cell=hc||(mine&&mine.closest('.cell'));
   if(cell&&!cell.querySelector('.pouncetag')){const t=document.createElement('span');t.className='pouncetag';t.textContent='';cell.appendChild(t);}}
  // catch + knockback feedback
@@ -369,7 +372,7 @@ function after(S,prev,board){
    if(tc)tc.classList.add('h3kb');
    // what the catch means, in words: hurt or out, and who did it (catchtext.js)
    const CT=window.CatchText,seat=h.mySeat||me,by=lc.by||k;
-   speak(S,prev,CT.catchLine(lc,seat,by,CT.catchesLeft(h,lc)),seat===lc.bird?100:50,true);
+   speak(S,prev,CT.catchLine(lc,seat,by,CT.catchesLeft(h,lc)),seat===lc.bird?100:50,true,CT.catchTone(lc,seat));
    const ch=document.querySelector('#h3bar .bchip.'+lc.bird);ch&&ch.classList.add('hitnow');window.SFX&&SFX.play(me==='hunter'?'win':'warn');}}
  outBanner(S,prev);
  warnNear(S,board,prev);

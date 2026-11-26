@@ -100,6 +100,53 @@
     }
     return e.text;
   }
-  const API = { catchLine, catchesLeft, outLine, kickLine, dugLine, burstLine, popOutLine, rivalLine, newEvents, viewerEvent };
+  // Good or bad news for the phone holding this phone, never for "who the sentence says you" about (news.css gives the colors).
+  // Returns 'good', 'bad' or 'plain'. It reads who did what from the same state the words come from, so it never guesses from the wording.
+  const sideOfSeat = s => /^(blue|o1|o2)$/.test(s) ? 'ostrich' : /^(red|v1|v2)$/.test(s) ? 'vulture' : 'hunter';
+  const viewerOf = S => { const h = S.h3 || {}, seat = h.mySeat || S.role; return { seat, kind: S.role === 'hunter' ? (S.kind || h.kind || seat) : seat }; };
+  // The line above the board for a catch. viewer is your seat, as for catchLine.
+  function catchTone(lc, viewer) {
+    if (viewer === lc.bird) return 'bad';
+    if (viewer === 'hunter' || (lc.by && viewer === lc.by)) return 'good';
+    if (sideOfSeat(viewer) === sideOfSeat(lc.bird) && sideOfSeat(viewer) !== 'hunter') return 'bad'; // the caught bird's partner
+    if (sideOfSeat(viewer) === 'hunter') return 'bad'; // the other hunter got a catch you did not
+    return 'plain';
+  }
+  // "The ostrich is out." is said to everyone but the bird itself.
+  function outTone(bird, S) {
+    const me = viewerOf(S).seat;
+    if (sideOfSeat(me) === 'hunter') return 'good';
+    return sideOfSeat(me) === sideOfSeat(bird) ? 'bad' : 'plain';
+  }
+  const STONE_BACK = /^(The ostrich|Ostrich \d) kicked the stone right back!/, STONE_BOUNCE = /^(The stone bounced off the leaf\.|The vulture batted it away with a rock\.)/, STONE_DEAD = /^(The stone landed softly in the leaves\.|The stone clattered back onto the rock pile\.)/;
+  function eventTone(e, S) {
+    const h = S.h3 || {}, v = viewerOf(S), seat = v.seat, viewer = v.kind, side = sideOfSeat(seat);
+    if (e.kind === 'smash') return side === 'ostrich' ? 'bad' : side === 'vulture' ? 'good' : 'plain';
+    if (e.kind === 'kick') {
+      const k = S.kick, n = k.moved == null ? (S.cfg || {}).kickPush : k.moved, who = kickWho(k.who);
+      if (n === 0) return seat === (k.by || 'blue') ? 'bad' : 'plain';
+      if (seat === (k.by || 'blue')) return 'good';
+      if (viewer === (k.target || (who === 'vulture' ? 'red' : who))) return 'bad';
+      return 'plain';
+    }
+    if (e.kind === 'stone') {
+      const n = S.stoneNote || {};
+      if (n.targets && n.targets.length) { if (seat === n.by) return 'good'; if (n.targets.includes(viewer)) return 'bad'; return side === 'vulture' ? 'good' : 'plain'; }
+      const t = n.text || e.text || '';
+      if (STONE_BACK.test(t)) return side === 'ostrich' ? 'good' : side === 'vulture' ? 'bad' : 'plain';
+      if (STONE_BOUNCE.test(t)) return side === 'vulture' ? 'bad' : side === 'ostrich' ? 'good' : 'plain';
+      if (STONE_DEAD.test(t)) return side === 'vulture' ? 'bad' : 'plain';
+      return 'plain';
+    }
+    if (e.kind === 'rival') { const by = h.rival.by, other = by === 'hyena' ? 'badger' : 'hyena'; return viewer === by ? 'good' : viewer === other ? 'bad' : 'plain'; }
+    if (e.kind === 'burst') return viewer === 'badger' ? 'good' : viewer === 'hyena' ? 'bad' : 'plain';
+    if (e.kind === 'popout') return side === 'hunter' ? 'plain' : 'bad';
+    if (e.kind === 'dug') return h.dugSeen ? 'bad' : 'plain';
+    if (e.kind === 'teamFound') return 'good';
+    // Brian, 2026-11-25: the player whose clock ran out is told "Out of time." (red); every other phone gets "Time's up. Turn skipped." (navy).
+    if (e.kind === 'time') return e.text === 'Out of time.' ? 'bad' : 'plain';
+    return 'plain'; // double, last move, carry: facts, not good or bad
+  }
+  const API = { catchLine, catchesLeft, outLine, kickLine, dugLine, burstLine, popOutLine, rivalLine, newEvents, viewerEvent, catchTone, outTone, eventTone };
   if (typeof module !== 'undefined') module.exports = API; else window.CatchText = API;
 })();
