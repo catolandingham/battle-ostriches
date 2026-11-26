@@ -534,15 +534,15 @@ function render(prev){
  // "may be here" is a small outline of the animal in the corner of each square it may be on: here, an egg in each of the 8 squares around where the vulture last landed. A throw keeps that landing's outlines; the next landing replaces them.
  if(snShow&&S.phase==='play'&&window.T3UI)T3UI.marksAround(board,S,snShow.p[0],snShow.p[1],1,'egg');
  if(snNew){const vc=board.children[sn.p[1]*C.cols+sn.p[0]];if(vc&&!found){const w=document.createElement('div');w.className='snwave '+(sn.yes?'yes':'no');vc.appendChild(w);}
-  if(!window.BORing||BORing.showSniffPop(blue,!!sn.yes,found)){window.STATUS_QUEUE.add({id:'snpop',className:(found?'yes found':sn.yes?'yes':'no')+(blue?' small':''),text:found?(blue?'Vulture found your egg!':'Found egg!'):sn.yes?(blue?'Vulture sniffed an egg.':'Egg nearby!'):'No egg nearby',priority:found?40:10});}}
+  if(!window.BORing||BORing.showSniffPop(blue,!!sn.yes,found)){{const sniffText=found?(blue?'Vulture found your egg!':'Found egg!'):sn.yes?(blue?'Vulture sniffed an egg.':'Egg nearby!'):'No egg nearby';window.STATUS_QUEUE.add({id:'snpop',className:(found?'yes found':sn.yes?'yes':'no')+(blue?' small':'')+' '+News.cls(News.tone(sniffText,S)),text:sniffText,priority:found?40:10});}}}
  // sniff banner: the vulture's yes/no for this sense only (a later round must not repeat it), plus hunger
  const bn=$('banner');let bt='',bc='';
  const smashed=la&&((la.type==='throw'&&la.result==='hit')||la.smashed); // a last-round landing uses the same smash lines as a stone
- if(smashed){bt='Smashed!';bc='yes';}
- else if(foodLead){bt=foodText;bc='hungry';}
- else if(BO.sniffAnnounce(S)){bt=BO.sniffAnnounce(S);bc=bt==='No egg nearby'?'no':'yes';}
+ // A smash is said once, in each player's own line (catchtext.js). There is no separate "Smashed!" banner, and a page opened after a smash does not replay one.
+ if(foodLead){bt=foodText;bc='hungry';}
+ else if(BO.sniffAnnounce(S)){bt=BO.sniffAnnounce(S);bc=News.cls(News.tone(bt,S));}
  else if(S.phase==='play'&&blue&&S.ostrich&&S.ostrich[0]>=0&&!BO.foodRoute(C,S.ostrich,S.marks)&&S.hungerLeft<=2){bt='Hungry. No way to food.';bc='hungry';}
- if(prev&&S.phase==='play'&&(S.lastCold|0)>(prev.lastCold|0)&&!smashed){bt='An egg went cold.';bc='no';}
+ if(prev&&S.phase==='play'&&(S.lastCold|0)>(prev.lastCold|0)&&!smashed){bt='An egg went cold.';bc=News.cls(News.tone(bt,S));}
  {const left=C.rounds-S.round+1;if(S.phase==='play'&&left<=3&&!bt){bt=left===1?'Last round!':`Final ${left} rounds!`;bc='final';}}
  if(bn)BO_BANNER.set(bt,bc);
  $('warm').innerHTML='';
@@ -563,12 +563,12 @@ function render(prev){
  // ONE message per turn: the most important event wins
  let ev='';const myNew=newTurn&&S.myTurn;
  if(myNew&&la){
-  if(blue&&la.type==='throw')ev=la.result==='bounce'?'Kicked it back!':la.result==='hit'?'Egg smashed.':stoneHitAnimal(S,prev,la)?'':'Missed.'; // a stone that pushed the badger or hyena is not a miss
+  if(blue&&la.type==='throw')ev=la.result==='bounce'?'Kicked it back!':la.result==='hit'?'':stoneHitAnimal(S,prev,la)?'':'Missed.'; // a hit is the one smash line, not "Egg smashed."; a stone that pushed the badger or hyena is not a miss
   if(blue&&!ev&&la.spotted)ev='The vulture found an egg! Move it or sit on it.';
   if(!blue&&la.type==='fly'&&la.spotted)ev='Found an egg. Throw on it.';
   if(S.lastCold&&!ev&&!smashed)ev='An egg went cold.';
  }
- if(smashed)ev='Smashed!';
+ if(smashed){/* said once, in the viewer's own line (catchtext.js) */}
  else if(!blue&&prev&&prev.turn==='red'&&la&&la.type==='throw'&&S.turn==='blue')ev=la.result==='bounce'?(la.egg?'Bounced! Egg under ostrich.':'Bounced! No egg.'):stoneHitAnimal(S,prev,la)?'':'Miss.';
  else if(!blue&&S.role==='red'&&S.phase==='play'&&!S.myTurn&&la&&la.type==='fly'){ // the vulture's own landing, shown while the ostrich takes its turn
   if(la.spotted&&S.stones<1)ev=NOSTONE_FOUND;else if(la.refill)ev='Picked up a stone.';}
@@ -611,7 +611,7 @@ function render(prev){
  if(mt&&(!h||/turn…$/.test(h))){const what=S.role==='red'?'Tap to fly':S.role==='hunter'?'Tap to move':'Tap to move';h=(h&&!/turn…$/.test(h)?h:'Your turn. '+what+'.');}
  if(blue&&M==='kick')h='Tap where they go.';
  if(ateShow)h=ATE.LINE;
- $('hint').textContent=h;if(typeof preferEggLine==='function')preferEggLine();if(!ateShow&&h&&(G||(W&&W.txt))&&!(blue&&M==='kick')){const sb=document.createElement('button');sb.className='skipguide';sb.id='skipGuide';sb.textContent='Skip guide';$('hint').appendChild(sb);tapper(sb,()=>{UI.guides(false)});}$('hint').classList.toggle('empty',!h);$('hint').classList.toggle('guide',!!G||!!(W&&W.txt));$('hint').classList.toggle('cold',!G&&!!(W&&W.txt));$('hint').classList.toggle('urgent',!G&&!!(W&&W.urgent));$('log').textContent=S.joined&&!S.opponent&&S.phase!=='over'?'Opponent offline… they can rejoin with the same link.':'';
+ $('hint').textContent=h;if(typeof preferEggLine==='function')preferEggLine();if(!ateShow&&h&&(G||(W&&W.txt))&&!(blue&&M==='kick')){const sb=document.createElement('button');sb.className='skipguide';sb.id='skipGuide';sb.textContent='Skip guide';$('hint').appendChild(sb);tapper(sb,()=>{UI.guides(false)});}$('hint').classList.toggle('empty',!h);{const ht=ateShow?News.tone(ATE.LINE,S):News.hintTone(h,S);$('hint').classList.toggle('news-good',ht==='good');$('hint').classList.toggle('news-bad',ht==='bad');}$('hint').classList.toggle('guide',!!G||!!(W&&W.txt));$('hint').classList.toggle('cold',!G&&!!(W&&W.txt));$('hint').classList.toggle('urgent',!G&&!!(W&&W.urgent));$('log').textContent=S.joined&&!S.opponent&&S.phase!=='over'?'Opponent offline… they can rejoin with the same link.':'';
  // cause before result (D36): stone into the count, carried egg slide, cold egg dims, badger sinks; each only on a screen that already held the facts (fx.js)
  if(window.CAUSE)CAUSE.run(S,prev,board,{stone:STONE,egg:MYEGG,ring:n=>warmRing(n,C.warmth)});
  if(window.PUSH_MOTION)PUSH_MOTION.run(S,prev,board);
@@ -625,10 +625,10 @@ function render(prev){
  else if(S.phase==='over'&&S.winBy==='left'){const pop=document.getElementById('snpop');if(pop)pop.remove();const art=S.leftArt==='vulture'?VUL:S.leftArt==='hyena'&&window.T3UI?T3UI.KIND.hyena.art:S.leftArt==='badger'&&window.T3UI?T3UI.KIND.badger.art:OST;const title=String(S.leftName||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));o.classList.remove('hidden');o.innerHTML=`<div class="lobbybox"><div class="bigost">${art}</div><h1>${title}</h1><p>This game is over.</p><button class="big ghost" id="newGame" onclick="UI.menu()">New Game</button></div>`;}
  else if(S.phase==='over'&&S.three){const pop=document.getElementById('snpop');if(pop)pop.remove();o.classList.remove('hidden');o.innerHTML=window.T3UI.over(S);}
  else if(S.phase==='over'){const pop=document.getElementById('snpop');if(pop)pop.remove();const won=S.winner===S.role;o.classList.remove('hidden');
-  o.innerHTML=`<div class="lobbybox"><div class="bigost">${S.winner==='blue'?OST:VUL}</div><h1>${S.pass?(S.winner==='blue'?'Ostrich wins!':'Vulture wins!'):won?'You win!':'You lose'}</h1>${S.ai?`<p>vs computer (${S.ai})</p>`:''}<p>${S.endWhy||(S.winner==='blue'?`The ostrich kept ${S.eggsLeft} egg(s) alive for ${C.rounds} rounds.`:S.winBy==='starved'?`The ostrich starved in round ${S.round}.`:S.winBy==='cold'?`The last egg went cold in round ${S.round}.`:`The vulture smashed every egg by round ${S.round}.`)}</p>${window.T3UI.endBits(S)}</div>`;}
+  o.innerHTML=`<div class="lobbybox"><div class="bigost">${S.winner==='blue'?OST:VUL}</div><h1 class="${News.cls(News.endTone(S))}">${S.pass?(S.winner==='blue'?'Ostrich wins!':'Vulture wins!'):won?'You win!':'You lose'}</h1>${S.ai?`<p>vs computer (${S.ai})</p>`:''}<p>${S.endWhy||(S.winner==='blue'?`The ostrich kept ${S.eggsLeft} egg(s) alive for ${C.rounds} rounds.`:S.winBy==='starved'?`The ostrich starved in round ${S.round}.`:S.winBy==='cold'?`The last egg went cold in round ${S.round}.`:`The vulture smashed every egg by round ${S.round}.`)}</p>${window.T3UI.endBits(S)}</div>`;}
  else o.classList.add('hidden');
  // Last, so a line queued earlier in this paint (a turn line, a cold egg, a cartoon caption) cannot cover it.
- if(window.STATUS_QUEUE){if(ateShow)STATUS_QUEUE.add({text:ATE.LINE,key:'you-ate',className:'ate-line',priority:90,preempt:true,hold:ATE.LINE_MS});
+ if(window.STATUS_QUEUE){if(ateShow)STATUS_QUEUE.add({text:ATE.LINE,key:'you-ate',className:'ate-line '+News.cls(News.tone(ATE.LINE,S)),priority:90,preempt:true,hold:ATE.LINE_MS});
   else if(STATUS_QUEUE.drop)STATUS_QUEUE.drop(item=>item.key==='you-ate');}
 }
 })();
