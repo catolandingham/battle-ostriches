@@ -19,6 +19,8 @@
     const r = { blue: 'Ostrich', red: 'Vulture', o1: 'Ostrich 1', o2: 'Ostrich 2', v1: 'Vulture 1', v2: 'Vulture 2', hyena: 'Hyena', badger: 'Badger' };
     return r[role] || role;
   };
+  // The one line shown under the seat list while a seat is still open for a person. Brian approves the exact words; change them here only.
+  const STAY_LINE = 'Stay on this screen. When friends join, you\'ll see them here.';
   let gear = false, botsOpen = false, kindOpen = false, st = null, pendingClaim = null;
   const send = o => window.UI && UI.send(o);
   function show(state) {
@@ -89,7 +91,8 @@
         <div class="toggle"><span>Turn timer</span><button type="button" class="switch${s.clock ? '' : ' off'}" id="clockToggle" aria-pressed="${s.clock ? 'true' : 'false'}" aria-label="Turn timer ${s.clock ? 'on' : 'off'}"></button></div>
       </div>
       ${share}
-      <ul class="who seats" aria-label="Roster">${mine}<li class="openseat"><span class="opentxt">Open seat</span>${max ? '<button type="button" id="botPlus" class="addcomp">+ Computer</button>' : ''}</li></ul>`;
+      <ul class="who seats" aria-label="Roster">${mine}<li class="openseat"><span class="opentxt">Open seat</span>${max ? '<button type="button" id="botPlus" class="addcomp">+ Computer</button>' : ''}</li></ul>
+      <p class="footnote stayline" id="stayLine">${esc(STAY_LINE)}</p>`;
       return;
     }
     const snd = window.SFX ? SFX.icon('lobbySound') : '';
