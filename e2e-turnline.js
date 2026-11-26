@@ -1,5 +1,5 @@
-// Phone-width checks for the turn line (390 x 664, WebKit): a caught ostrich sees her turn during the cartoon
-// and her clock does not run while she has no buttons, a sitting ostrich sees whose turn it is, and a fast
+// Phone-width checks for the turn line (390 x 664, WebKit): a caught ostrich sees "Your turn." during the cartoon and "Your turn. Tap to move." with the buttons
+// and her clock does not run while she has no buttons, a sitting ostrich gets "The vulture sees you sit." once as a news line, and a fast
 // computer turn does not flash by. Display only; the turn order is the server's.
 process.env.PORT = '4041'; process.env.BO_NOSTORE = '1'; process.env.BO_CLOCKMS = '60000';
 const A = require('assert'), { webkit } = require('playwright-core');
@@ -68,7 +68,7 @@ const WATCH = /^(Ostrich|Vulture|Hyena|Badger|Hunter)'s turn(…| again\.)$/;
     const during = samples.filter(s => s.turn === 'blue' && s.btns.length === 0 && s.t >= serverHers);
     A.ok(during.length > 5, 'there was a stretch where it is her turn and the cartoon still holds the board (' + during.length + ' samples)');
     for (const s of during) {
-      A.equal(s.hint, 'Your turn. Tap to move.', 'her turn line follows the server during the hold, not "' + s.hint + '"');
+      A.equal(s.hint, 'Your turn.', 'during the hold her turn line says only "Your turn." (no buttons yet, so no "Tap to move."), not "' + s.hint + '"');
       A.ok(s.mine, 'and it is marked as hers');
     }
     const clocks = [...new Set(during.map(s => s.clock))];
@@ -77,7 +77,7 @@ const WATCH = /^(Ostrich|Vulture|Hyena|Badger|Hunter)'s turn(…| again\.)$/;
     A.ok(handsOn != null, 'Walk and Kick come up');
     A.ok(holdEnded != null && handsOn - holdEnded <= 500, 'the buttons are up within 0.5 s of the hold ending: ' + Math.round(handsOn - holdEnded) + ' ms');
     const first = samples.find(s => s.btns.some(b => /Walk/.test(b)));
-    A.ok(/^(The vulture found an egg! Move it or sit on it\. )?Your turn\. Tap to move\.$/.test(first.hint) || /Your turn/.test(first.hint), 'Your turn is on the line when the buttons come up');
+    A.equal(first.hint, 'Your turn. Tap to move.', 'when the buttons come up the line is exactly "Your turn. Tap to move."');
     await p.close();
   }
 
@@ -106,13 +106,24 @@ const WATCH = /^(Ostrich|Vulture|Hyena|Badger|Hunter)'s turn(…| again\.)$/;
     await p.waitForFunction(() => { const s = UI._S(); return s && s.phase === 'play' && s.myTurn && s.can && s.can.sit; }, null, { timeout: 10000 });
     await sleep(600);
     A.ok(await p.locator('#actions button', { hasText: 'Sit' }).locator('svg.eye').count() >= 1, mode + ': the Sit button keeps its eye');
-    await p.evaluate(() => { window.__hint.length = 0; });
+    await p.evaluate(() => {
+      window.__hint.length = 0; window.__news = [];
+      const slot = document.getElementById('msgslot');
+      new MutationObserver(() => { const e = slot.querySelector('.status-active'); const t = e ? e.textContent : ''; const last = window.__news[window.__news.length - 1]; if (t && (!last || last.text !== t)) window.__news.push({ t: performance.now(), text: t, id: e.id }); }).observe(slot, { childList: true, subtree: true });
+    });
     await p.locator('#actions button', { hasText: 'Sit' }).click();
     const seen = [];
     for (let i = 0; i < 70; i++) { const s = await snap(p); s.turn = g.turn; seen.push(s); await sleep(50); }
     A.ok(await p.evaluate(() => !!document.querySelector('#board .sittag')), mode + ': the eye is on the sitting ostrich\'s square');
     const lines = await p.evaluate(() => window.__hint.map(h => h.text));
     A.ok(!lines.some(l => /sees you sit/.test(l)), mode + ': the sitting sentence never takes the turn line: ' + JSON.stringify([...new Set(lines)]));
+    const news = await p.evaluate(() => window.__news.filter(n => /sees you sit/.test(n.text)));
+    A.equal(news.length, 1, mode + ': "The vulture sees you sit." shows once as a news line in the status slot: ' + JSON.stringify(news));
+    // It stays up the news minimum (1 s, 0.3 s a word: 5 words = 1.5 s) and then goes.
+    await p.waitForFunction(() => !document.querySelector('#msgslot .status-active'), null, { timeout: 4000 });
+    // She stays sitting through the next turns: no repeat.
+    await sleep(2500);
+    A.equal(await p.evaluate(() => window.__news.filter(n => /sees you sit/.test(n.text)).length), 1, mode + ': not repeated while she stays sitting');
     const away = seen.filter(s => s.turn !== 'blue' && !s.cartoon);
     A.ok(away.length > 3, mode + ': the turn passed to the other side');
     A.ok(away.some(s => WATCH.test(s.hint)), mode + ': while the others play the line names whose turn it is: ' + JSON.stringify([...new Set(away.map(s => s.hint))]));
@@ -173,6 +184,6 @@ const WATCH = /^(Ostrich|Vulture|Hyena|Badger|Hunter)'s turn(…| again\.)$/;
 
   A.deepEqual(errs, [], 'no page errors');
   await browser.close(); S.close();
-  console.log('PASS turn line on a phone: caught ostrich sees her turn and a paused clock during the cartoon, sitting ostrich sees whose turn it is, a fast turn holds a second');
+  console.log('PASS turn line on a phone: caught ostrich sees "Your turn." and a paused clock during the cartoon and "Your turn. Tap to move." with the buttons, a sitting ostrich gets the sit news line once, a fast turn holds a second');
   process.exit(0);
 })().catch(e => { console.error(e); process.exit(1); });

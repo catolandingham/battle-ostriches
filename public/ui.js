@@ -107,12 +107,14 @@ function connect(){
 function acceptState(state){actLock=false;const prev=S;S=state;if(!prev||prev.turn!==S.turn||prev.phase!==S.phase)mode=null;render(prev);sounds(prev);if(!prev)maybeWalk(S.role);}
 // A cartoon holds the board on its snapshot, and the board still gets only the newest held state when the cartoon ends.
 // The turn line and the shot clock sit above that picture, so they follow every state the moment it arrives.
+// While the board is held there are no move buttons: TURNLINE.holdTurn cuts a turn-plus-instruction line down to its turn part.
+const holdTurn=l=>window.TURNLINE?TURNLINE.holdTurn(l):l;
 function heldLine(st){
  if(!st||st.phase!=='play'||st.pass)return null;
  const a=document.createElement('div');
- if(st.three&&(!st.myTurn||st.role==='hunter'))return window.T3UI.hint(st,a);
+ if(st.three&&(!st.myTurn||st.role==='hunter'))return holdTurn(window.T3UI.hint(st,a));
  if(!st.myTurn)return st.role==='blue'?'Vulture\'s turn…':'Ostrich\'s turn…';
- return st.role==='blue'?'Your turn. Tap to move.':st.stones<1?'No stone. Go to rocks.':'Your turn. Tap to fly.';
+ return holdTurn(st.role==='blue'?'Your turn. Tap to move.':st.stones<1?'No stone. Go to rocks.':'Your turn. Tap to fly.');
 }
 function paintHeld(st){
  const line=heldLine(st);if(line==null||!window.TURNLINE)return;
@@ -645,5 +647,7 @@ function render(prev){
  // Last, so a line queued earlier in this paint (a turn line, a cold egg, a cartoon caption) cannot cover it.
  if(window.STATUS_QUEUE){if(ateShow)STATUS_QUEUE.add({text:ATE.LINE,key:'you-ate',className:'ate-line',priority:90,preempt:true,hold:ATE.LINE_MS});
   else if(STATUS_QUEUE.drop)STATUS_QUEUE.drop(item=>item.key==='you-ate');}
+ // She just sat down: one news line on her phone, once per sit (not again while she stays sitting). Same slot and reading time as the other news lines.
+ if(window.STATUS_QUEUE&&window.TURNLINE&&TURNLINE.justSat(S,prev))STATUS_QUEUE.add({id:'announce',key:'sit-seen',className:'show bad',text:TURNLINE.SIT_LINE,priority:60});
 }
 })();

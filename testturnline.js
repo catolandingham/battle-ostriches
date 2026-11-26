@@ -1,5 +1,5 @@
 // The turn line (public/turnline.js): a watcher's line holds about a second, your own line never waits,
-// and the sitting sentence no longer takes the turn line's place. node testturnline.js
+// a held turn line shows only the turn part, and the sitting sentence is a one-time news line (never the turn line). node testturnline.js
 const A = require('assert'), fs = require('fs');
 const TL = require('./public/turnline.js');
 let n = 0;
@@ -13,7 +13,7 @@ function clockHarness(hold) {
 
 ok('which lines count as a watcher line', () => {
   for (const s of ["Badger's turn…", "Vulture's turn…", "Ostrich 1's turn…", "Hyena's turn again."]) assert(TL.isWatch(s), s);
-  for (const s of ['Your turn. Tap to move.', 'Your turn again. Tap to move.', 'No stone. Go to rocks.', 'The vulture sees you sit.', '', "Wait, it's the Badger's turn."]) assert(!TL.isWatch(s), s);
+  for (const s of ['Your turn. Tap to move.', 'Your turn again. Tap to move.', 'No stone. Go to rocks.', '', "Wait, it's the Badger's turn."]) assert(!TL.isWatch(s), s);
 });
 function assert(v, m) { A.ok(v, m); }
 
@@ -69,12 +69,31 @@ ok('going back to the line already up cancels the wait', () => {
   A.deepEqual(h.changes, []);
 });
 
-ok('the sitting sentence is not a turn line any more', () => {
-  for (const f of ['public/ui.js', 'public/three-ui.js', 'public/turnline.js']) {
-    const src = fs.readFileSync(f, 'utf8');
-    A.ok(!/sees you sit/.test(src), f + ' still uses the sitting sentence');
-    A.ok(!/satNote/.test(src), f + ' still checks for a sitting ostrich when it writes the turn line');
-  }
+ok('during the hold the line is only the turn; the instruction joins when the buttons appear', () => {
+  A.equal(TL.holdTurn('Your turn. Tap to move.'), 'Your turn.');
+  A.equal(TL.holdTurn('Your turn. Tap to fly.'), 'Your turn.');
+  A.equal(TL.holdTurn('Your turn. Tap to move. No bird near.'), 'Your turn.', 'a hunter line with its extra words');
+  A.equal(TL.holdTurn('Your turn again. Tap to move.'), 'Your turn again.');
+  for (const s of ['Your turn.', "Vulture's turn…", 'No stone. Go to rocks.', 'When you miss, move 1 more square.', 'Tap to move, or Burrow. No bird will see you dig in.', '']) A.equal(TL.holdTurn(s), s, 'unchanged: ' + s);
+  const ui = fs.readFileSync('public/ui.js', 'utf8');
+  A.ok(/function heldLine[\s\S]*?holdTurn\(window\.T3UI\.hint[\s\S]*?holdTurn\(st\.role==='blue'/.test(ui), 'heldLine cuts both the hunter line and the own-turn line');
+  A.ok(/h='Your turn\. Tap to move\.'|S\.moves\.length\?'Your turn\. Tap to move\.'/.test(ui), 'the full line is still what render() writes when the buttons are up');
+});
+
+ok('the sitting sentence is a news line once per sit, on the ostrich phone only, never the turn line', () => {
+  const ost = (sitting, at) => ({ role: 'blue', ostrich: [2, 1], sittingAt: sitting ? [at || [2, 1]] : [] });
+  A.equal(TL.SIT_LINE, 'The vulture sees you sit.');
+  A.ok(TL.justSat(ost(true), ost(false)), 'she sits down: the line comes');
+  A.ok(!TL.justSat(ost(true), ost(true)), 'she stays sitting a turn: no repeat');
+  A.ok(!TL.justSat(ost(true), null), 'a phone that just joined or rejoined does not announce an old sit');
+  A.ok(!TL.justSat(ost(false), ost(true)), 'getting up says nothing');
+  A.ok(TL.justSat(ost(true), { role: 'blue', ostrich: [2, 1], sittingAt: [[5, 5]] }), 'a new sit on a new square says it again');
+  for (const role of ['red', 'hunter']) A.ok(!TL.justSat({ role, ostrich: [2, 1], sittingAt: [[2, 1]] }, { role, ostrich: [2, 1], sittingAt: [] }), role + ' phones never see it');
+  const ui = fs.readFileSync('public/ui.js', 'utf8'), three = fs.readFileSync('public/three-ui.js', 'utf8');
+  A.ok(!/sees you sit/.test(ui + three), 'the sentence is not written in the turn-line code');
+  A.ok(/STATUS_QUEUE\.add\(\{id:'announce',key:'sit-seen'[^}]*TURNLINE\.SIT_LINE/.test(ui), 'it goes through the news queue');
+  // the sitting ostrich's turn line is whose turn it is
+  A.ok(TL.isWatch("Vulture's turn…"));
 });
 
 ok('the eye that marks a sitting ostrich is still drawn on its square and on the Sit button', () => {

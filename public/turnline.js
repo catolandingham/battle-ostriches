@@ -36,7 +36,15 @@
     }
     return { show, current: () => (shown ? shown.text : ''), waiting: () => waiting };
   }
-  const api = { HOLD_MS, isWatch, create };
+  // While a cartoon holds the board there are no move buttons, so a line that pairs a turn with an instruction
+  // ("Your turn. Tap to move.") shows only its turn part ("Your turn."). The instruction joins it when the buttons appear.
+  const holdTurn = l => (typeof l === 'string' ? l.replace(/^(Your turn( again)?\.) .*$/, '$1') : l);
+  // "The vulture sees you sit." is a news line on the sitting ostrich's own phone, never the turn line.
+  // sat: this view is the ostrich's and it is sitting on its own square. justSat: it was not sitting a moment ago, so a long sit says it once.
+  const SIT_LINE = 'The vulture sees you sit.';
+  const sat = S => !!(S && S.role === 'blue' && S.sittingAt && S.ostrich && S.sittingAt.some(q => q[0] === S.ostrich[0] && q[1] === S.ostrich[1]));
+  const justSat = (S, prev) => !!prev && sat(S) && !sat(prev);
+  const api = { HOLD_MS, isWatch, create, holdTurn, SIT_LINE, sat, justSat };
   if (typeof module !== 'undefined') module.exports = api;
   if (typeof document === 'undefined') return;
   root.TURNLINE = api;
