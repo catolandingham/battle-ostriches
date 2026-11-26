@@ -86,7 +86,7 @@ html #hud>div:first-child{overflow:visible!important}
 
 /* ===== 3. Your own square reads at a glance ===== */
 /* the YOU tag hangs above the square */
-#stage>.youflag,html[data-theme] #stage>.youflag{position:absolute;transform:translate(-50%,-100%);z-index:21;pointer-events:none;font:900 9px/1 system-ui,-apple-system,sans-serif!important;letter-spacing:.3px;text-transform:none!important;padding:1.5px 5px 2px;background:#ffd21f;color:#111;border:1.5px solid #111;border-bottom:0;border-radius:5px 5px 0 0;white-space:nowrap}
+#stage>.youflag,html[data-theme] #stage>.youflag{position:absolute;transform:translate(-50%,-100%);z-index:49;pointer-events:none;font:900 9px/1 system-ui,-apple-system,sans-serif!important;letter-spacing:.3px;text-transform:none!important;padding:1.5px 5px 2px;background:#ffd21f;color:#111;border:1.5px solid #111;border-bottom:0;border-radius:5px 5px 0 0;white-space:nowrap}
 #board .wring.sq,html[data-theme] #board .wring.sq{position:absolute;left:0!important;top:0!important;width:100%!important;height:100%!important;inset:auto;z-index:41!important;filter:none}
 /* arriving on the egg: the ring refills from where it was */
 @keyframes ringfill{from{stroke-dasharray:var(--f0) 100;stroke:var(--c0)}}

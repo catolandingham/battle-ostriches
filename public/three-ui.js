@@ -130,7 +130,7 @@ function hPieces(S,board,prev){const h=S.h3,me=h.mySeat;
  for(const x of h.hunters||[]){const c=cellAt(board,S,x.p);if(!c)continue;const bur=x.burrowed;const pc=document.createElement('div');
   pc.className='pc ph h'+x.kind+(bur?' bur':'')+(x.me?' mine':' rival');pc.innerHTML=bur?MOUND:KIND[x.kind].art;c.appendChild(pc);c.classList.add('hcell');
   if(x.me){const old=document.getElementById('current');if(old&&old!==c)old.removeAttribute('id');c.id='current';}
-  c.dataset.tip=(c.dataset.tip?c.dataset.tip+' · ':'')+(x.me?(bur?'You, hidden.':'You.'):me==='hyena'||me==='badger'?'Rival. Landing on it shoves it.':KIND[x.kind].n+'. Don\'t let it land on you.');
+  {const tp=x.me?(bur?'Hidden.':''):me==='hyena'||me==='badger'?'Rival. Landing on it shoves it.':KIND[x.kind].n+'. Don\'t let it land on you.';if(tp)c.dataset.tip=(c.dataset.tip?c.dataset.tip+' · ':'')+tp;} // no "You." label on your own piece (the YOU tag says it)
 }
 }
 function hOver(S){const h=S.h3,w=S.winner,me=h.mySeat,C=S.cfg;
@@ -339,7 +339,7 @@ function after(S,prev,board){
  // a mound where the badger dug in, only for a bird that saw it dig and only while it stays buried (the server sends h.mound to nobody else)
  if(h.mound){const mc=cellAt(board,S,h.mound);if(mc&&!mc.querySelector('.cmark.cm-badger')){mark(mc,'badger','is');mc.dataset.tip=(mc.dataset.tip?mc.dataset.tip+' · ':'')+'The badger dug in here';mc.setAttribute('aria-label',(mc.getAttribute('aria-label')?mc.getAttribute('aria-label')+'. ':'')+'Badger dug in here');}}
  if(hc){const bur=me==='hunter'&&S.burrowed;const pc=document.createElement('div');pc.className='pc ph h'+k+(bur?' bur':'')+(me==='hunter'?' mine':'');pc.innerHTML=bur?MOUND:KIND[k].art;hc.appendChild(pc);hc.classList.add('hcell');if(me==='hunter'){const old=document.getElementById('current');if(old&&old!==hc)old.removeAttribute('id');hc.id='current';}
-  hc.dataset.tip=(hc.dataset.tip?hc.dataset.tip+' · ':'')+(me==='hunter'?(bur?'You, hidden.':'You.'):KIND[k].n+'. Don\'t let it land on you.');
+  {const tp=me==='hunter'?(bur?'Hidden.':''):KIND[k].n+'. Don\'t let it land on you.';if(tp)hc.dataset.tip=(hc.dataset.tip?hc.dataset.tip+' · ':'')+tp;}
 }
  // ambush sight: a burrowed badger sees the exact square of any bird next to it (S.seenBirds comes from the rules only while burrowed)
  if(me==='hunter'&&S.phase==='play'&&S.burrowed&&S.seenBirds)for(const q of S.seenBirds){const c=cellAt(board,S,q.p);if(!c||c.querySelector('.pc.po,.pc.pv'))continue;

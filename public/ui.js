@@ -521,8 +521,8 @@ function render(prev){
   if(k===vk&&k!==ok&&(m==='spotted'||(blue&&e)))d.classList.add('vfound'); // vulture on a found egg: both show, corner layout
   if(k===vk&&k===ok){d.classList.add('both');tip.push('Vulture and ostrich share this square');}
   const veil=S.simple&&S.veil||{},mound=window.T3UI&&T3UI.MOUND||'';
-  if(k===vk){h+=veil.red&&mound?`<div class="pc ph bur">${mound}</div>`:`<div class="pc pv">${VUL}</div>`;tip.push(blue?'The vulture':'You.');tags.push(blue?'vul':'me');}
-  if(k===ok){if(blue&&e){d.classList.add('sat');}h+=veil.blue&&mound?`<div class="pc ph bur">${mound}</div>`:`<div class="pc po${S.carried?' carrying':''}">${S.carried&&ART.ostrichCarry?ART.ostrichCarry:OST}</div>`;tip.push(blue?'You.':'The ostrich');tags.push(blue?'me':'ost');}
+  if(k===vk){h+=veil.red&&mound?`<div class="pc ph bur">${mound}</div>`:`<div class="pc pv">${VUL}</div>`;if(blue)tip.push('The vulture');tags.push(blue?'vul':'me');} // no "You." label on your own piece: the YOU tag already says it
+  if(k===ok){if(blue&&e){d.classList.add('sat');}h+=veil.blue&&mound?`<div class="pc ph bur">${mound}</div>`:`<div class="pc po${S.carried?' carrying':''}">${S.carried&&ART.ostrichCarry?ART.ostrichCarry:OST}</div>`;if(!blue)tip.push('The ostrich');tags.push(blue?'me':'ost');}
   if(legal)tip.push(kicking?kickTip(x,y):throwing?'Throw here.':setup?(S.phase==='setupEggs'?'Hide an egg here':'Start here'):blue||S.role==='hunter'?'Move here':'Fly here'); // a hunter walks; only the vulture flies
   d.innerHTML=h;d.dataset.tip=[...new Set(tip)].join(' · ');
   d.dataset.tags=tags.join(' ');if(tags.includes('me'))d.id='current';d.onclick=()=>{if(Date.now()<noClick)return;tap(x,y);};board.appendChild(d);}

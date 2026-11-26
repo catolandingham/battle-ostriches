@@ -20,5 +20,3 @@
 #board .cell.sense:has(> .pc):not(#_a)::before,#board .cell.sense:has(> .pc):not(#_a)::after{display:none}
 #board .cell.sense.legal:not(.hit):not(.stone):not(.snno):not(.snyes):not(.h3kb):not(.fxhold)::before,#board .cell.sense.legal:is(.snno,.snyes):not(.hit):not(.stone):not(.cue)::after{background:repeating-linear-gradient(-45deg,rgba(90,50,0,.9) 0 4px,transparent 4px 10px)}
 html[data-theme="bw"] #board .cell.sense:not(.hit):not(.stone):not(.snno):not(.snyes):not(.h3kb):not(.fxhold):not(#_a):not(#_b)::before,html[data-theme="bw"] #board .cell.sense:is(.snno,.snyes):not(.hit):not(.stone):not(.cue):not(#_a):not(#_b)::after{background:repeating-linear-gradient(-45deg,#000 0 3px,transparent 3px 8px)!important}
-/* black and white: the floating "You." label gets a solid white box so stripes do not run through it */
-html[data-theme="bw"] #marktip:not(#_a):not(#_b){background:#fff!important;color:#000!important;border:2px solid #000!important}

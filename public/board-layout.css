@@ -94,3 +94,11 @@ html[data-theme] :is(#board,.mini,#fx) b.snum:not(#_a):not(#_b):not(#_c):not(#_d
 html[data-theme] :is(#board,.mini) .cell>b.snum:not(#_a):not(#_b):not(#_c):not(#_d){left:4px!important;right:auto!important;bottom:4px!important;top:auto!important}
 /* Black and white clears every fill, so a black number sat on the vulture's black body and inside the black YOU frame. The square stays white, the number stays black, and the square sits inside that frame. */
 html[data-theme="bw"] :is(#board,.mini,#fx) b.snum:not(#_a):not(#_b):not(#_c):not(#_d){background-color:#fff!important;background-image:none!important;color:#111!important;-webkit-text-fill-color:#111!important;border-color:#111!important;box-shadow:none!important}
+/* Your own egg square (the warmth ring is drawn round it): the egg and its number sit just inside the ring so they do not cover its corner, and the whole egg is drawn (its outline is not clipped at the bottom). */
+html[data-theme] :is(#board,.mini) .cell .cmark.cm-egg svg:not(#_a):not(#_b):not(#_c):not(#_d):not(#_e){overflow:visible!important}
+html[data-theme] :is(#board,.mini) .cell.sat .cmark.cm-egg:not(#_a):not(#_b):not(#_c):not(#_d):not(#_e){left:11%!important;top:12%!important;width:31%!important;height:39%!important}
+html[data-theme] :is(#board,.mini) .cell.sat .cmark.cm-egg .mk:not(#_a):not(#_b):not(#_c):not(#_d):not(#_e){stroke-width:3px!important}
+html[data-theme] :is(#board,#boardhold,.mini) .cell.sat .wnum:not(#_a):not(#_b):not(#_c):not(#_d):not(#_e){left:11%!important;top:28%!important;width:31%!important;font-size:8px!important}
+/* The number sits on the white egg, so it needs no white halo: the halo was clipped into a block that cut the egg's outline. */
+html[data-theme] :is(#board,#boardhold,.mini) .cell:has(.cm-egg) .wnum:not(.low):not(#_a):not(#_b):not(#_c):not(#_d):not(#_e){text-shadow:none!important;overflow:visible!important}
+html[data-theme] :is(#board,#boardhold,.mini) .cell:has(.cm-egg) .wnum.low:not(#_a):not(#_b):not(#_c):not(#_d):not(#_e){text-shadow:none!important;overflow:visible!important}
