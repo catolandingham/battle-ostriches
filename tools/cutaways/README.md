@@ -13,3 +13,20 @@ source drawings from the art build box (`/workspace/bw/scenes/...`), which are n
 To add a scene: write a function in `scenes.py` that returns 30 steps, add its card rect and a `SCENES` row,
 run `export.py`, then add a row to `TABLE` in `public/cutaways.js` (and, if it is a new kind of moment,
 a candidate in `candidates()`).
+
+## Stone kick-back cartoons (2026-11-25)
+
+The seven `bounce-*` scenes (kick-back A, leaf A and rock B, each with and without the egg in the ostrich's beak, and the
+trampoline, which never has the egg) are built on this Mac from the drawings already in `public/art/cutaways`, not from the art box:
+
+- `bounce_lib.py`: the drawings (approved drawings, parts cut out of them, and the placeholder drawings) and a renderer.
+- `bounce_scenes.py`: the scenes, in 50 ms steps. They run 34 or 38 steps, inside the 2 s the board waits for a cartoon.
+- `bounce_export.py`: run `python3 tools/cutaways/bounce_export.py [preview-folder]` from the repo root (needs numpy,
+  opencv-python and Pillow). It writes `public/art/cutaways/sk-*.webp` and adds the `bounce-*` scenes to
+  `public/cutaway-scenes.js` without touching the others. `export.py` rewrites that file from the art box, so run
+  `bounce_export.py` again after it. With a preview folder it also writes every step, a contact sheet and an mp4 each.
+
+Placeholders that need Brian's approval: `sk-leaf`, `sk-rockpile`, `sk-rockpile2`, `sk-toprock`, `sk-shake`, the carrying
+ostrich (`sk-carry-oknee`, `sk-carry-ow`, `sk-carry-ok`: her approved drawings with the beak opened a little and the egg lying
+sideways inside, as in the approved board icon `public/art/ostrich-carry.svg`), and the trampoline pose (the approved ostrich drawing leaning back, holding `sk-leaf` taut in her
+bill). `sk-*-m` files are mirrored copies of approved drawings.

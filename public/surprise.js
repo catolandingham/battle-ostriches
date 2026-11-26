@@ -83,6 +83,10 @@
       const seen = trails.some(tr => Array.isArray(tr && tr.points) && tr.points.some(pointOk));
       const sq = seen ? (trails.reduce((m, tr) => Math.max(m, squaresOf(null, null, tr.points, 2)), 0) || 2) : 0;
       out.push({ event: 'stone', seq: note.seq, by: note.by || 'red', targets: note.targets.slice(), cartoon: true, squares: sq });
+    } else if (fresh(note, pnote) && (note.bounce === 'kick' || note.bounce === 'trampoline' || note.bounce === 'leaf' || note.bounce === 'rock')) {
+      // The ostrich kicked the stone back (public/cutaways.js bounce rows). Nobody is hit, so no Look out! and no reading
+      // pause; the board waits under the cartoon like any other.
+      out.push({ event: 'stone', seq: note.seq, by: note.by || 'red', targets: [], bounce: note.bounce, cartoon: true, squares: 0 });
     }
     const sm = S.smashNote, psm = prev.smashNote;
     if (fresh(sm, psm)) {

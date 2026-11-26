@@ -381,6 +381,8 @@ function resolveThrow(g, W, target) {
     if (W.ostrichAt(p)) {
       if (kicked) { out.used = true; out.result = 'bounce'; return out; } // a stone is never kicked back twice
       out.kicker = W.ostrichSeatAt ? W.ostrichSeatAt(p) : 'blue'; out.kickedBack = true; out.result = 'bounce'; kicked = true; out.line = 'The ostrich kicked the stone right back!';
+      out.bounce = isFood(g, t) ? 'leaf' : isRock(g, t) ? 'rock' : 'kick'; // which cartoon plays (public/cutaways.js); not a rule
+      out.onLeaf = isFood(g, p); // the ostrich stands on a leaf (see leafBounce)
       if (isFood(g, t) || isRock(g, t)) { // the vulture stands where a stone cannot land: it bounces off and goes one square on, straight past the vulture
         out.line = isFood(g, t) ? 'The stone bounced off the leaf.' : 'The vulture batted it away with a rock.';
         const n = [t[0] + sgn(t[0] - p[0]), t[1] + sgn(t[1] - p[1])];
@@ -408,6 +410,13 @@ function resolveThrow(g, W, target) {
   }
   return out;
 }
+// Brian, 2026-11-25: an ostrich on a leaf, not carrying, bounces the stone back off her leaf (the trampoline cartoon). Same result
+// as any kick-back onto the vulture's own square; only the line and the cartoon differ. A hunter is never told (server.js).
+const KICK_LINE = 'The ostrich kicked the stone right back!', LEAF_LINE = 'The ostrich bounced it back off her leaf!';
+function leafBounce(r, carrying) {
+  if (r && r.bounce === 'kick' && r.onLeaf && !carrying && r.line === KICK_LINE) { r.bounce = 'trampoline'; r.line = LEAF_LINE; }
+  return r;
+}
 // the classic (2 player) adapter
 const classicW = g => ({ thrower: () => g.vulture.slice(), setThrower: q => { g.vulture = q.slice(); },
   ostrichAt: p => onBoard(g.ostrich) && key(p) === key(g.ostrich), eggAt: p => eggAt(g, p), pushAt: () => [],
@@ -415,12 +424,13 @@ const classicW = g => ({ thrower: () => g.vulture.slice(), setThrower: q => { g.
 function vultureThrow(g, p, mkW) {
   if (!throwTargets(g).some(q => key(q) === key(p))) return false;
   g.stones--; g.sniff = null; parkEliminated(g);
-  const from = g.vulture.slice(), r = resolveThrow(g, (mkW || classicW)(g), p);
+  const from = g.vulture.slice(), r = leafBounce(resolveThrow(g, (mkW || classicW)(g), p), g.carrying !== null);
   if (g.simple) S.noteThrow(g, r);
   g.lastAction = { type: 'throw', from, p: p.slice(), result: r.result, line: r.line, kickedBack: r.kickedBack, hop: r.hop, used: r.used };
   if (r.result === 'bounce') g.lastAction.egg = !!(g.carrying !== null || eggAt(g, p)); // a kicked stone does not say what the ostrich guards
   if (r.result === 'hit') g.lastSmash = {seq:g.smashSeq=(g.smashSeq||0)+1,by:'red',owner:'blue'};
-  if (r.line) g.lastStone = { seq: ++g.stoneSeq, text: r.line, by: 'red', targets: r.pushed.map(x => x.kind), kicker:r.kicker||null, trails: r.pushed.map(x=>({key:x.kind,from:x.from,to:x.to,points:x.points||null,scatter:!!x.scatter})), round: g.round };
+  if (r.line) g.lastStone = { seq: ++g.stoneSeq, text: r.line, by: 'red', targets: r.pushed.map(x => x.kind), kicker:r.kicker||null, trails: r.pushed.map(x=>({key:x.kind,from:x.from,to:x.to,points:x.points||null,scatter:!!x.scatter})), round: g.round,
+    bounce: r.bounce || null, carrying: !!(r.kickedBack && g.carrying !== null) }; // carrying: the kicker had an egg in its beak (server.js never sends it to a hunter)
   if (!aliveEggs(g).length) { g.winner = 'red'; g.winBy = 'smashed'; g.phase = 'over'; } else { g.turn = 'blue'; dropCarried(g); }
   return r.result;
 }
@@ -514,6 +524,6 @@ function outlineSniff(v) {
   return sn;
 }
 
-const API = { slideN, CONFIG, HUNTER_GOAL, hunterUpAt, scrambleTo, relocateCaught, DIRS8, resolveThrow, wrecked, nearLeaf, myTurn, slide, awayFrom, wrapDist, wrapDelta, wrapPath, pointsBack, scatterKick, scatterRnd, stoneRnd, markTime, canKick, kickable, kickTargets, kickPlans, kickDone, ostrichKick, newGame, canPlaceEgg, placeEgg, placeOstrich, ostrichMoves, ostrichStep, ostrichSit, canSit, canCarry, mustLeave, onEgg, dropCarried, hideTurn,
+const API = { slideN, CONFIG, HUNTER_GOAL, hunterUpAt, scrambleTo, relocateCaught, DIRS8, resolveThrow, leafBounce, KICK_LINE, LEAF_LINE, wrecked, nearLeaf, myTurn, slide, awayFrom, wrapDist, wrapDelta, wrapPath, pointsBack, scatterKick, scatterRnd, stoneRnd, markTime, canKick, kickable, kickTargets, kickPlans, kickDone, ostrichKick, newGame, canPlaceEgg, placeEgg, placeOstrich, ostrichMoves, ostrichStep, ostrichSit, canSit, canCarry, mustLeave, onEgg, dropCarried, hideTurn,
   endRound, timeout, walkSquares, smellsEgg, flyTargets, throwTargets, vultureFly, vultureThrow, eggAt, aliveEggs, coldIn, sniffFresh, sniffAnnounce, outlineSniff, key, dist, visible, isFood, isRock, parkEliminated, ostrichGuards, foodRoute, isLastRound, breakEgg, eggSnap, undoBreak };
 if (typeof module !== 'undefined') module.exports = API; else window.BO = API;
