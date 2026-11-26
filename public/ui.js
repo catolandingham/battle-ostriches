@@ -611,7 +611,7 @@ function render(prev){
  if(mt&&(!h||/turn…$/.test(h))){const what=S.role==='red'?'Tap to fly':S.role==='hunter'?'Tap to move':'Tap to move';h=(h&&!/turn…$/.test(h)?h:'Your turn. '+what+'.');}
  if(blue&&M==='kick')h='Tap where they go.';
  if(ateShow)h=ATE.LINE;
- $('hint').textContent=h;if(typeof preferEggLine==='function')preferEggLine();if(!ateShow&&h&&(G||(W&&W.txt))&&!(blue&&M==='kick')){const sb=document.createElement('button');sb.className='skipguide';sb.id='skipGuide';sb.textContent='Skip guide';$('hint').appendChild(sb);tapper(sb,()=>{UI.guides(false)});}$('hint').classList.toggle('empty',!h);{const ht=ateShow?'plain':News.hintTone(h,S);$('hint').classList.toggle('news-good',ht==='good');$('hint').classList.toggle('news-bad',ht==='bad');}$('hint').classList.toggle('guide',!!G||!!(W&&W.txt));$('hint').classList.toggle('cold',!G&&!!(W&&W.txt));$('hint').classList.toggle('urgent',!G&&!!(W&&W.urgent));$('log').textContent=S.joined&&!S.opponent&&S.phase!=='over'?'Opponent offline… they can rejoin with the same link.':'';
+ $('hint').textContent=h;if(typeof preferEggLine==='function')preferEggLine();if(!ateShow&&h&&(G||(W&&W.txt))&&!(blue&&M==='kick')){const sb=document.createElement('button');sb.className='skipguide';sb.id='skipGuide';sb.textContent='Skip guide';$('hint').appendChild(sb);tapper(sb,()=>{UI.guides(false)});}$('hint').classList.toggle('empty',!h);{const ht=ateShow?News.tone(ATE.LINE,S):News.hintTone(h,S);$('hint').classList.toggle('news-good',ht==='good');$('hint').classList.toggle('news-bad',ht==='bad');}$('hint').classList.toggle('guide',!!G||!!(W&&W.txt));$('hint').classList.toggle('cold',!G&&!!(W&&W.txt));$('hint').classList.toggle('urgent',!G&&!!(W&&W.urgent));$('log').textContent=S.joined&&!S.opponent&&S.phase!=='over'?'Opponent offline… they can rejoin with the same link.':'';
  // cause before result (D36): stone into the count, carried egg slide, cold egg dims, badger sinks; each only on a screen that already held the facts (fx.js)
  if(window.CAUSE)CAUSE.run(S,prev,board,{stone:STONE,egg:MYEGG,ring:n=>warmRing(n,C.warmth)});
  if(window.PUSH_MOTION)PUSH_MOTION.run(S,prev,board);
@@ -628,7 +628,7 @@ function render(prev){
   o.innerHTML=`<div class="lobbybox"><div class="bigost">${S.winner==='blue'?OST:VUL}</div><h1 class="${News.cls(News.endTone(S))}">${S.pass?(S.winner==='blue'?'Ostrich wins!':'Vulture wins!'):won?'You win!':'You lose'}</h1>${S.ai?`<p>vs computer (${S.ai})</p>`:''}<p>${S.endWhy||(S.winner==='blue'?`The ostrich kept ${S.eggsLeft} egg(s) alive for ${C.rounds} rounds.`:S.winBy==='starved'?`The ostrich starved in round ${S.round}.`:S.winBy==='cold'?`The last egg went cold in round ${S.round}.`:`The vulture smashed every egg by round ${S.round}.`)}</p>${window.T3UI.endBits(S)}</div>`;}
  else o.classList.add('hidden');
  // Last, so a line queued earlier in this paint (a turn line, a cold egg, a cartoon caption) cannot cover it.
- if(window.STATUS_QUEUE){if(ateShow)STATUS_QUEUE.add({text:ATE.LINE,key:'you-ate',className:'ate-line',priority:90,preempt:true,hold:ATE.LINE_MS});
+ if(window.STATUS_QUEUE){if(ateShow)STATUS_QUEUE.add({text:ATE.LINE,key:'you-ate',className:'ate-line '+News.cls(News.tone(ATE.LINE,S)),priority:90,preempt:true,hold:ATE.LINE_MS});
   else if(STATUS_QUEUE.drop)STATUS_QUEUE.drop(item=>item.key==='you-ate');}
 }
 })();

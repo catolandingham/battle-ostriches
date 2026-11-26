@@ -120,7 +120,12 @@ const THEMES = ['classic', 'nature', 'notes', 'golden', 'paper', 'arcade', 'toyb
   await line(Y, 'announce', 'The vulture smashed an egg.', 'plain', NAVY);
   await line(K, 'announce', 'The vulture smashed an egg.', 'plain', NAVY);
   for (const p of ALL) await noBanner(p, p.name);
-  console.log('PASS Hunters: badger green, hyena red, birds navy; smash vulture green, ostrich red, hunters navy');
+  // a clock runs out (Brian, 2026-11-25): "Out of time." is red on the phone whose time ran out; "Time's up. Turn skipped." is navy on every other phone
+  for (const p of ALL) await p.evaluate(() => { window.__news.length = 0; });
+  hg.timeNote = { seq: (hg.timeSeq = (hg.timeSeq || 0) + 1), seat: 'hyena', round: hg.round }; server.broadcast(hroom);
+  await line(Y, 'announce', 'Out of time.', 'bad', RED);
+  for (const p of [O, Vu, K]) await line(p, 'announce', "Time's up. Turn skipped.", 'plain', NAVY);
+  console.log('PASS Hunters: badger green, hyena red, birds navy; smash vulture green, ostrich red, hunters navy; out of time red for the hyena, navy for the rest');
 
   // ---------------------------------------------------------------- 3) every theme keeps a readable green, red and navy line
   const T = A; const sizes = [];

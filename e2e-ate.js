@@ -7,7 +7,7 @@ const assert = require('assert');
 const fs = require('fs');
 const server = require('./server.js');
 const U = 'http://localhost:3977/';
-const OUT = '/opt/cursor/artifacts/';
+const OUT = process.env.ATE_OUT || '/opt/cursor/artifacts/';
 fs.mkdirSync(OUT, { recursive: true });
 const THEMES = ['bw', 'classic', 'nature'];
 
@@ -131,7 +131,9 @@ const THEMES = ['bw', 'classic', 'nature'];
     });
     if (said.raw) {
       assert.ok(/15\|visible\|/.test(said.raw) && said.raw.endsWith('You ate.'), t + ' still shows the new number and the line: ' + said.raw);
-      assert.ok(said.rgb[1] < 80, t + ' the You ate bar stays dark, not the green banner: ' + said.rgb.join(','));
+      // Brian, 2026-11-25: "You ate." is green (news-good) on the ostrich's phone; Black and white stays uncoloured (dark bar).
+      if (t === 'bw') assert.ok(said.rgb[1] < 80, t + ' the You ate bar stays dark in Black and white: ' + said.rgb.join(','));
+      else assert.deepEqual(said.rgb.slice(0, 3), [22, 122, 46], t + ' the You ate bar is the news green: ' + said.rgb.join(','));
     }
     after.push(await shot('ate-header-after-' + t + '.png'));
   }

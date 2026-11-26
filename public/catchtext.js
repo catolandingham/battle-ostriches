@@ -143,7 +143,9 @@
     if (e.kind === 'popout') return side === 'hunter' ? 'plain' : 'bad';
     if (e.kind === 'dug') return h.dugSeen ? 'bad' : 'plain';
     if (e.kind === 'teamFound') return 'good';
-    return 'plain'; // double, last move, time, carry: facts, not good or bad
+    // Brian, 2026-11-25: the player whose clock ran out is told "Out of time." (red); every other phone gets "Time's up. Turn skipped." (navy).
+    if (e.kind === 'time') return e.text === 'Out of time.' ? 'bad' : 'plain';
+    return 'plain'; // double, last move, carry: facts, not good or bad
   }
   const API = { catchLine, catchesLeft, outLine, kickLine, dugLine, burstLine, popOutLine, rivalLine, newEvents, viewerEvent, catchTone, outTone, eventTone };
   if (typeof module !== 'undefined') module.exports = API; else window.CatchText = API;

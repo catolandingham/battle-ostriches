@@ -8,6 +8,8 @@
     // sniff pops and the banner
     'Vulture found your egg!': [B, P, P], 'Found egg!': [P, G, P], 'Vulture sniffed an egg.': [B, P, P], 'Egg nearby!': [P, G, P], 'No egg nearby': [P, P, P],
     'An egg went cold.': [B, G, P],
+    // Brian, 2026-11-25: only the ostrich sees "You ate." and it is good news for her. (Out of time. is judged in catchtext.js, from whose clock ran out.)
+    'You ate.': [G, P, P],
     // the hunters' sense, the near warnings, the pounce, the hit warning
     'Bird near.': [P, P, G], 'Still near.': [P, P, G], 'Nothing near.': [P, P, P], 'Pounce!': [P, P, G],
     'Hyena near!': [B, B, P], 'Badger near!': [B, B, P], 'Look out!': [B, B, B],

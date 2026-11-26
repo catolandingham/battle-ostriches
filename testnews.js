@@ -39,7 +39,7 @@ const T = (t, S) => N.tone(t, S);
 A.equal(T('Vulture found your egg!', ost), 'bad'); A.equal(T('Vulture sniffed an egg.', ost), 'bad'); A.equal(T('Found egg!', vul), 'good'); A.equal(T('Egg nearby!', vul), 'good'); A.equal(T('No egg nearby', vul), 'plain');
 A.equal(T('An egg went cold.', ost), 'bad'); A.equal(T('An egg went cold.', vul), 'good'); A.equal(T('An egg went cold.', hun('hyena')), 'plain');
 A.equal(T('Hyena near!', ost), 'bad'); A.equal(T('Badger near!', vul), 'bad'); A.equal(T('Bird near.', hun('hyena')), 'good'); A.equal(T('Still near.', hun('hyena')), 'good'); A.equal(T('Pounce!', hun('hyena')), 'good'); A.equal(T('Nothing near.', hun('hyena')), 'plain');
-A.equal(T('Look out!', ost), 'bad'); A.equal(T('You ate.', ost), 'plain'); A.equal(T('Egg near', vul), 'good'); A.equal(T('No egg', vul), 'plain');
+A.equal(T('Look out!', ost), 'bad'); A.equal(T('You ate.', ost), 'good'); A.equal(T('You ate.', vul), 'plain'); A.equal(T('You ate.', hun('hyena')), 'plain'); A.equal(T('Egg near', vul), 'good'); A.equal(T('No egg', vul), 'plain');
 A.equal(T('The vulture hunts eggs.', ost), 'plain'); A.equal(T('Some line nobody listed', ost), 'plain');
 // the hint: only a line that is news changes color; the turn prompt after it does not matter
 const HT = (t, S) => N.hintTone(t, S);
@@ -53,4 +53,22 @@ const end = (S, winner, extra) => N.endTone(Object.assign({}, S, { winner }, ext
 A.equal(end(ost, 'blue'), 'good'); A.equal(end(ost, 'red'), 'bad'); A.equal(end(ost, 'hunter'), 'bad'); A.equal(end(hun('hyena'), 'hunter'), 'good'); A.equal(end(vul, 'red'), 'good');
 A.equal(end(team('o1', 'blue'), 'blue'), 'good'); A.equal(end(team('v1', 'red'), 'blue'), 'bad'); A.equal(end(hun('hyena'), 'hyena'), 'good'); A.equal(end(hun('badger'), 'hyena'), 'bad'); A.equal(end(ost, 'hyena'), 'bad');
 A.equal(end(ost, 'none'), ''); A.equal(end(ost, 'blue', { pass: true }), ''); A.equal(end(ost, 'blue', { winBy: 'left' }), '');
+// Brian, 2026-11-25: "Out of time." is red on the phone whose clock ran out; every other phone gets "Time's up. Turn skipped." in navy. Checked on the real views.
+{
+  process.env.PORT = '0'; process.env.BO_NOSTORE = '1'; process.env.BO_BOTMS = '900000';
+  const B = require('./game.js'), T3 = require('./three.js'), SV = require('./server.js');
+  const toneFor = (view, g) => { const seen = {}; const ev = CT.newEvents(seen, Object.assign({ phase: 'play' }, view), { phase: 'play' }).find(e => e.kind === 'time'); return ev && { text: ev.text, tone: CT.eventTone(ev, view) }; };
+  A.equal(CT.eventTone({ kind: 'time', text: 'Out of time.' }, ost), 'bad'); A.equal(CT.eventTone({ kind: 'time', text: "Time's up. Turn skipped." }, vul), 'plain');
+  { // 2 players: the vulture ran out
+    const g = B.newGame(); for (const p of [[2, 1], [6, 1], [2, 5]]) A.ok(B.placeEgg(g, p)); A.ok(B.placeOstrich(g, [2, 1])); g.turn = 'red'; g.phase = 'play'; A.ok(B.timeout(g));
+    const room = { g, players: { blue: {}, red: {} } };
+    A.deepEqual(toneFor(SV.view(room, 'red')), { text: 'Out of time.', tone: 'bad' }); A.deepEqual(toneFor(SV.view(room, 'blue')), { text: "Time's up. Turn skipped.", tone: 'plain' });
+  }
+  { // 3 players: the ostrich ran out; the vulture and the hunter are navy
+    const g = T3.newGame3('hyena', undefined, [4, 3]); for (const p of [[2, 1], [6, 1], [2, 5]]) A.ok(B.placeEgg(g, p)); A.ok(T3.placeOstrich3(g, [2, 1])); g.turn = 'blue'; g.phase = 'play'; A.ok(T3.timeout(g));
+    const room = SV.create3({ role: 'blue', bots: ['red', 'hunter'], kind: 'hyena' }, null).room; room.g = g;
+    A.deepEqual(toneFor(SV.view3(room, 'blue')), { text: 'Out of time.', tone: 'bad' });
+    for (const s of ['red', 'hunter']) A.deepEqual(toneFor(SV.view3(room, s)), { text: "Time's up. Turn skipped.", tone: 'plain' });
+  }
+}
 console.log('PASS news: good, bad and neither for every animal on the lines that are news');
