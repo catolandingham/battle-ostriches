@@ -381,6 +381,7 @@ function resolveThrow(g, W, target) {
     if (W.ostrichAt(p)) {
       if (kicked) { out.used = true; out.result = 'bounce'; return out; } // a stone is never kicked back twice
       out.kicker = W.ostrichSeatAt ? W.ostrichSeatAt(p) : 'blue'; out.kickedBack = true; out.result = 'bounce'; kicked = true; out.line = 'The ostrich kicked the stone right back!';
+      out.bounce = isFood(g, t) ? 'leaf' : isRock(g, t) ? 'rock' : 'kick'; // which cartoon plays (public/cutaways.js); not a rule
       if (isFood(g, t) || isRock(g, t)) { // the vulture stands where a stone cannot land: it bounces off and goes one square on, straight past the vulture
         out.line = isFood(g, t) ? 'The stone bounced off the leaf.' : 'The vulture batted it away with a rock.';
         const n = [t[0] + sgn(t[0] - p[0]), t[1] + sgn(t[1] - p[1])];
@@ -420,7 +421,8 @@ function vultureThrow(g, p, mkW) {
   g.lastAction = { type: 'throw', from, p: p.slice(), result: r.result, line: r.line, kickedBack: r.kickedBack, hop: r.hop, used: r.used };
   if (r.result === 'bounce') g.lastAction.egg = !!(g.carrying !== null || eggAt(g, p)); // a kicked stone does not say what the ostrich guards
   if (r.result === 'hit') g.lastSmash = {seq:g.smashSeq=(g.smashSeq||0)+1,by:'red',owner:'blue'};
-  if (r.line) g.lastStone = { seq: ++g.stoneSeq, text: r.line, by: 'red', targets: r.pushed.map(x => x.kind), kicker:r.kicker||null, trails: r.pushed.map(x=>({key:x.kind,from:x.from,to:x.to,points:x.points||null,scatter:!!x.scatter})), round: g.round };
+  if (r.line) g.lastStone = { seq: ++g.stoneSeq, text: r.line, by: 'red', targets: r.pushed.map(x => x.kind), kicker:r.kicker||null, trails: r.pushed.map(x=>({key:x.kind,from:x.from,to:x.to,points:x.points||null,scatter:!!x.scatter})), round: g.round,
+    bounce: r.bounce || null, carrying: !!(r.kickedBack && g.carrying !== null) }; // carrying: the kicker had an egg in its beak (server.js never sends it to a hunter)
   if (!aliveEggs(g).length) { g.winner = 'red'; g.winBy = 'smashed'; g.phase = 'over'; } else { g.turn = 'blue'; dropCarried(g); }
   return r.result;
 }

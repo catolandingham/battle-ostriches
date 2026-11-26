@@ -192,7 +192,8 @@ function vultureThrow(g, s, p) { clearOut(g);
   g.lastAction = { seat: s, type: 'throw', from, p: p.slice(), result: r.result, line: r.line, kickedBack: r.kickedBack, hop: r.hop, used: r.used };
   if (r.result === 'bounce') g.lastAction.egg = !!(eggAt(g, p) || OS.some(o => live(g, o) && K(g.b[o].pos) === K(p) && g.b[o].carrying !== null));
   if (r.result === 'hit') g.lastSmash = {seq:g.smashSeq=(g.smashSeq||0)+1,by:s,owner:OS[(g.eggs.find(e=>e.id===r.smashed)||{}).nest]||null};
-  if (r.line) g.lastStone = { seq: ++g.stoneSeq, text: r.line, by: s, targets: r.pushed.map(x => x.kind), kicker:r.kicker||null, trails: r.pushed.map(x=>({key:x.kind,from:x.from,to:x.to,points:x.points||null,scatter:!!x.scatter})), round: g.round };
+  if (r.line) g.lastStone = { seq: ++g.stoneSeq, text: r.line, by: s, targets: r.pushed.map(x => x.kind), kicker:r.kicker||null, trails: r.pushed.map(x=>({key:x.kind,from:x.from,to:x.to,points:x.points||null,scatter:!!x.scatter})), round: g.round,
+    bounce: r.bounce || null, carrying: !!(r.kickedBack && r.kicker && g.b[r.kicker] && g.b[r.kicker].carrying != null) }; // carrying: the kicker had an egg in its beak (server.js never sends it to a hunter)
   dropAll(g); next(g); return r.result;
 }
 // --- hunter (5 players) ---

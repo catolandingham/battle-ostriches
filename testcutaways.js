@@ -331,7 +331,9 @@ S.close();
   for (const name in ART.sprites) assert.ok(fs.existsSync(path.join(__dirname, 'public', ART.sprites[name])), 'drawing file for ' + name);
   for (const id of C.TABLE.map(r => r.id)) {
     const sc = ART.scenes[id]; assert.ok(sc, 'drawings for ' + id);
-    assert.equal(sc.steps.length, id === 'kick-wrap' ? 14 : 30, id + ' step count');
+    // the stone kick-back cartoons run longer (Brian, 2026-11-25: a longer throw), within the 2 s the board is held (testbouncecartoon.js)
+    if (/^bounce-/.test(id)) assert.ok(sc.steps.length >= 30 && sc.steps.length <= 40, id + ' step count');
+    else assert.equal(sc.steps.length, id === 'kick-wrap' ? 14 : 30, id + ' step count');
     for (const st of sc.steps) for (const l of st) {
       assert.ok(sc.sprites[l[0]] && ART.sprites[sc.sprites[l[0]]], id + ' uses a known drawing');
       assert.ok(l[3] > 0 && l[4] > 0, id + ' layer has a size');
