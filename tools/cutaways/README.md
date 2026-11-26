@@ -26,6 +26,7 @@ trampoline, which never has the egg) are built on this Mac from the drawings alr
   `public/cutaway-scenes.js` without touching the others. `export.py` rewrites that file from the art box, so run
   `bounce_export.py` again after it. With a preview folder it also writes every step, a contact sheet and an mp4 each.
 
-Placeholders that need Brian's approval: `sk-leaf`, `sk-rockpile`, `sk-rockpile2`, `sk-toprock`, `sk-shake`, the egg in the
-ostrich's beak (`sk-beakegg`), and the trampoline pose (the approved ostrich drawing leaning back, holding `sk-leaf` taut in her
+Placeholders that need Brian's approval: `sk-leaf`, `sk-rockpile`, `sk-rockpile2`, `sk-toprock`, `sk-shake`, the carrying
+ostrich (`sk-carry-oknee`, `sk-carry-ow`, `sk-carry-ok`: her approved drawings with the beak opened a little and the egg lying
+sideways inside, as in the approved board icon `public/art/ostrich-carry.svg`), and the trampoline pose (the approved ostrich drawing leaning back, holding `sk-leaf` taut in her
 bill). `sk-*-m` files are mirrored copies of approved drawings.

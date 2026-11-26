@@ -32,17 +32,11 @@ def turned(L, fx, fy):
     """card point at fraction (fx,fy) of a placed drawing, after its turn (counter-clockwise about its middle)"""
     x,y=foot(L,fx,fy); cx,cy=L.x+L.w/2,L.y+L.h/2; th=math.radians(L.rot); c,s=math.cos(th),math.sin(th)
     dx,dy=x-cx,y-cy; return cx+c*dx+s*dy, cy-s*dx+c*dy
-EGG_DROP=30      # how far the egg's middle sits below the mouth line, in the ostrich drawing's own pixels
-EGG_SCALE=0.95   # the egg's size against the ostrich drawing
-def beak_egg(o):
-    """PLACEHOLDER: the egg held in the ostrich's bill (a carrying ostrich), in front of the bill so it reads at a glance"""
-    W,H=SP[o.n].size; kx,ky=o.w/W,o.h/H; x0,y0,x1,y1=lib.BILLS[o.n]
-    ex,ey=turned(o,(x0+x1)/2/W,(y1+EGG_DROP)/H)
-    return [S('beakegg',ex,ey,kx*EGG_SCALE,rot=o.rot,sy=ky/kx,anchor='center')]
 def ostrich(ls, pose, egg, **kw):
-    o=O(pose,**kw); ls.append(o)
-    if egg: ls+=beak_egg(o)
-    return o
+    """the ostrich in one of her poses; egg=True draws the carrying version of that pose (bounce_lib.carry_pose, a placeholder)"""
+    o=O(pose,**kw)
+    if egg: o.n='carry-'+pose          # same size and place as the plain drawing
+    ls.append(o); return o
 def kick_point(): return foot(O('ok'),0.985,0.405)
 def V(pose, cx, bottom=None, rot=0, sx=1, sy=1, flip=True, k=1.0, a=1):
     return S(pose,cx,G if bottom is None else bottom,SV*k,rot=rot,sx=sx,sy=sy,flip=flip,a=a)

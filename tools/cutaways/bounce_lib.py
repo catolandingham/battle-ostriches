@@ -85,17 +85,57 @@ def shake():
             st,en=(140,220) if side<0 else (-40,40)
             d.arc([(cx-side*40-r)*Q,(130-r)*Q,(cx-side*40+r)*Q,(130+r)*Q],start=st,end=en,fill=(0,0,0,255),width=8*Q)
     _finish(im,'shake')
-def beak_egg():
-    # PLACEHOLDER: the egg she holds in her bill, egg-shaped (narrower at the top), in the cartoon's own heavy line, with a shine
-    W,H=150*Q,180*Q; im=Image.new('RGBA',(W,H),(0,0,0,0)); d=ImageDraw.Draw(im)
-    cx,cy,rw,rh=75,92,60,78; pts=[]
-    for i in range(240):
-        t=2*math.pi*i/240; y=-math.cos(t)*rh; x=math.sin(t)*rw*(1-0.16*math.cos(t)); pts.append(((cx+x)*Q,(cy+y)*Q))
-    d.polygon(pts,fill=(255,255,255,255)); d.line(pts+[pts[0]],fill=(0,0,0,255),width=11*Q,joint='curve')
-    d.arc([(cx-38)*Q,(cy-56)*Q,(cx-6)*Q,(cy-18)*Q],start=195,end=290,fill=(0,0,0,255),width=7*Q)
-    _finish(im,'beakegg')
 # each ostrich drawing's bill (left, top, right, mouth line, in the drawing's pixels): where the egg she carries goes
 BILLS={'ow':(360,118,548,163),'ok':(68,118,270,168),'oknee':(65,116,255,163)}
+# The carrying ostrich, drawn the way the approved board icon does it (public/art/ostrich-carry.svg, Brian 2026-11-08: "beak open a
+# little, egg lying sideways inside"). PLACEHOLDER until Brian approves it in the cartoon. Made from each approved ostrich drawing:
+# the lower half of the bill (and the chin under it) moves down, the gap is the black open mouth, and a white egg lies sideways in it.
+# The icon's proportions: the egg is about half as long as the bill is wide and a little taller than the gap.
+CARRY_GAP=0.25; CARRY_EGG_LEN=0.5; CARRY_EGG_TALL=1.22   # gap and egg length against the bill's width; egg height against the gap
+def carry_pose(n):
+    im=np.array(SP[n]).copy(); x0,y0,x1,y1=BILLS[n]; H,W=im.shape[:2]
+    a=im[...,3]/255.; g=im[...,0]/255.*a+(1-a)
+    bx0,by0,bx1,by1=x0-12,y0-12,x1+12,y1+70; sub=g[by0:by1,bx0:bx1]
+    nc,lab,st,cen=cv2.connectedComponentsWithStats((sub>0.5).astype(np.uint8),4)
+    # the bill's white parts, top to bottom: the top plate, the bottom plate, the chin band under the bill
+    plates=sorted([i for i in range(1,nc) if st[i][4]>300 and st[i][2]>60 and st[i][3]<40],key=lambda i:st[i][1])
+    up,lo,ch=plates[:3]
+    U=(lab==up); Lw=(lab==lo)
+    cols=[x for x in range(sub.shape[1]) if U[:,x].any() and Lw[:,x].any()]
+    ys={x:(np.where(U[:,x])[0].max()+np.where(Lw[:,x])[0].min())/2 for x in cols}
+    xs=np.array(cols); yv=np.array([ys[x] for x in cols]); fit=np.polyfit(xs,yv,2)
+    ux=np.where(U.any(0))[0]; xa,xb=ux.min()-14,ux.max()+15           # the bill's ends, outline included
+    split=lambda x: np.polyval(fit,x)
+    bottom=st[ch][1]+st[ch][3]+12
+    bw=xb-xa; D=int(round(bw*CARRY_GAP))
+    lower=np.zeros_like(im); out=im.copy()
+    for x in range(max(0,xa),min(sub.shape[1],xb)):
+        ysp=int(round(split(x)))+1
+        X=bx0+x; Y0=by0+ysp; Y1=by0+bottom
+        lower[Y0:Y1,X]=im[Y0:Y1,X]; out[Y0:Y1,X]=0
+    # the open mouth: black, a little inside the ends of the bill, as in the icon
+    mi=np.where(U.any(0))[0]; ma,mb=mi.min()+6,mi.max()-6
+    big=Image.fromarray(out); d=ImageDraw.Draw(big)
+    top=[(bx0+x,by0+split(x)-3) for x in range(ma,mb+1,4)]
+    d.polygon(top+[(bx0+x,by0+split(x)+D+6) for x in range(mb,ma-1,-4)],fill=(0,0,0,255))
+    sh=np.zeros_like(lower); sh[D:]=lower[:-D]
+    big.alpha_composite(Image.fromarray(sh))
+    # the egg, lying sideways with its narrow end to her right, as in the icon (its egg is drawn after the bill, over both plates)
+    cx=bx0+(ma+mb)/2; cy=by0+split((ma+mb)/2)+D/2+2; L_=bw*CARRY_EGG_LEN/2; T_=D*CARRY_EGG_TALL/2
+    Q2=4; LW=10   # the egg: a black egg shape, and a white one a line's width smaller inside it
+    def egg_pts(grow):
+        out=[]
+        for k in range(360):
+            t=2*math.pi*k/360; px=math.cos(t)*(L_+grow); py=math.sin(t)*(T_+grow)*(1-0.16*math.cos(t)); out.append(((cx+px)*Q2,(cy+py)*Q2))
+        return out
+    outer=Image.new('L',(W*Q2,H*Q2),0); inner=Image.new('L',(W*Q2,H*Q2),0)
+    ImageDraw.Draw(outer).polygon(egg_pts(LW/2),fill=255); ImageDraw.Draw(inner).polygon(egg_pts(-LW/2),fill=255)
+    A=np.array(outer.resize((W,H),Image.BOX)).astype(np.float32)/255; Wh=np.array(inner.resize((W,H),Image.BOX)).astype(np.float32)/255
+    arr=np.array(big).astype(np.float32); col=np.clip(Wh/np.maximum(A,1e-4),0,1)*255
+    for c in range(3): arr[...,c]=arr[...,c]*(1-A)+col*A
+    arr[...,3]=np.maximum(arr[...,3],A*255); big=Image.fromarray(arr.round().astype(np.uint8))
+    name='carry-'+n; SP[name]=big; ORIGIN[name]=(0,0,W,H); KIND[name]='placeholder'
+    if SPRDIR: big.save(SPRDIR+name+'-PLACEHOLDER.png')
 def build():
     for n in ['eegg','ow','ok','evstand','evstandtip','evrear','evreartip','evthrow','evempty','efly','estone','kburst','eimpact','eground','stars','estreak16','estreak17','estreak18','estreak19']: existing(n)
     from_comps('vscared','chyenavulture-wind',lambda x,y,w,h,a: x>=460)                     # vulture facing left, alarmed
@@ -106,7 +146,8 @@ def build():
     feathers=[(367,116),(370,235),(318,383),(359,434),(514,479),(17,212)]
     for i,(fx,fy) in enumerate(feathers):
         from_comps(f'feather{i}','chyenavulture-impact',lambda x,y,w,h,a,fx=fx,fy=fy: x==fx and y==fy)
-    leaf_flat(); rockpile(); rockpile_top_gone(); toprock(); shake(); beak_egg()
+    leaf_flat(); rockpile(); rockpile_top_gone(); toprock(); shake()
+    for n in BILLS: carry_pose(n)
     # where the stone sits in the vulture's wing (from the approved egg-smash data, as fractions of the source drawing)
     global WING
     WING={'evstand':pt('evstand',0.866,0.357),'evrear':pt('evrear',0.856,0.253),'evthrow':pt('evthrow',0.969,0.41)}
