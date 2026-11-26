@@ -72,6 +72,8 @@ body.red #board{border-bottom-color:#a86d3a}
 .logo{font-size:21px}
 #lobby,#over{background:#0b1a33;color:#fff}.lobbybox{max-width:380px;width:100%}
 #lobby h1,#over h1{font-size:44px;margin:0 0 6px;text-shadow:0 4px 0 #000}
+/* The end card covers everything on the board, in every theme. Board icons (leaf, rock, own egg) sit at 43 to 47 and the theme animal layer #fx at 30, so the card must be above those. Menus, notices, the toast and the rejoin box (55 and up) stay above the card. */
+#over{z-index:52}
 .bigost{width:130px;height:110px;margin:0 auto}
 .bigost.pair{display:flex;align-items:center;justify-content:center;gap:16px;width:auto;max-width:100%;height:110px}.bigost.pair>span{display:block;width:110px;height:110px;flex:none}.bigost.pair>span svg,.bigost.pair>span img{width:100%;height:100%;display:block}
 button.ghost{background:transparent}
