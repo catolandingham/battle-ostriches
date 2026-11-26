@@ -1,0 +1,22 @@
+/* Sense stripes, loaded last so every theme draws them. A square inside the piece's sensing range (class .sense, set in ui.js render) gets a frame of
+   thick "\" stripes in a band along its edge; the middle stays plain. The frame is drawn with the square's ::before (or ::after on a square showing the sniff flash), behind everything drawn on it, so it adds nothing to the page and
+   it stops short of what is there: a square with a piece on it has no frame (the piece fills the square), a rock or a wrecked mark gets a thinner
+   frame, and a square with an egg outline, warmth number or "can walk" bird mark leaves that top-left corner out. The yellow move highlight (.legal) is
+   not touched: a square you can sense and reach is the yellow square with a striped frame. Light stripes in color themes, darker yellow-brown on
+   yellow squares, black in black and white. The sniff flash uses ::before on the square, so it does not share this layer; a square that is showing both the flash and the next-step cue skips the frame. */
+#board .cell.sense{isolation:isolate;--sb:15%;--sc:0%;--sbb:var(--sb);--lh:100%;--lw:0%}
+/* the YOU tag sits at the bottom middle of the square above your piece: that square's frame goes round it (side legs stop well above the tag, then thin legs run beside it) */
+#board .cell.sense.ytag{--sbb:0%;--lh:68%;--lw:4%}
+#board .cell.sense:has(> .cmark, > .ic-myegg){--sc:62%}
+#board .cell.sense:has(> .ic){--sb:9%}
+/* the frame is built from strips (top, right, bottom, left, and two thin lower legs) so a corner can be left out */
+#board .cell.sense:not(.hit):not(.stone):not(.snno):not(.snyes):not(.h3kb):not(.fxhold)::before,#board .cell.sense:is(.snno,.snyes):not(.hit):not(.stone):not(.cue)::after{content:'';position:absolute;inset:0;z-index:-1;pointer-events:none;border-radius:4px;background:repeating-linear-gradient(-45deg,rgba(255,255,255,.8) 0 4px,transparent 4px 10px);
+  -webkit-mask-image:linear-gradient(#000,#000),linear-gradient(#000,#000),linear-gradient(#000,#000),linear-gradient(#000,#000),linear-gradient(#000,#000),linear-gradient(#000,#000);
+  -webkit-mask-repeat:no-repeat;-webkit-mask-position:100% 0,100% 0,0 100%,0 var(--sc),0 100%,100% 100%;
+  -webkit-mask-size:calc(100% - var(--sc)) var(--sb),var(--sb) var(--lh),100% var(--sbb),var(--sb) calc(var(--lh) - var(--sc)),var(--lw) calc(100% - var(--lh)),var(--lw) calc(100% - var(--lh));
+  mask-image:linear-gradient(#000,#000),linear-gradient(#000,#000),linear-gradient(#000,#000),linear-gradient(#000,#000),linear-gradient(#000,#000),linear-gradient(#000,#000);
+  mask-repeat:no-repeat;mask-position:100% 0,100% 0,0 100%,0 var(--sc),0 100%,100% 100%;
+  mask-size:calc(100% - var(--sc)) var(--sb),var(--sb) var(--lh),100% var(--sbb),var(--sb) calc(var(--lh) - var(--sc)),var(--lw) calc(100% - var(--lh)),var(--lw) calc(100% - var(--lh))}
+#board .cell.sense:has(> .pc):not(#_a)::before,#board .cell.sense:has(> .pc):not(#_a)::after{display:none}
+#board .cell.sense.legal:not(.hit):not(.stone):not(.snno):not(.snyes):not(.h3kb):not(.fxhold)::before,#board .cell.sense.legal:is(.snno,.snyes):not(.hit):not(.stone):not(.cue)::after{background:repeating-linear-gradient(-45deg,rgba(90,50,0,.9) 0 4px,transparent 4px 10px)}
+html[data-theme="bw"] #board .cell.sense:not(.hit):not(.stone):not(.snno):not(.snyes):not(.h3kb):not(.fxhold):not(#_a):not(#_b)::before,html[data-theme="bw"] #board .cell.sense:is(.snno,.snyes):not(.hit):not(.stone):not(.cue):not(#_a):not(#_b)::after{background:repeating-linear-gradient(-45deg,#000 0 3px,transparent 3px 8px)!important}

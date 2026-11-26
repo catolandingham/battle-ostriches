@@ -118,3 +118,5 @@ html[data-theme="bw"] #roomLobby .hunterkind button[aria-pressed="true"] small:n
 #roomLobby .rejoinlist .rejoin{width:100%}
 #roomLobby .rejoinrow{margin:12px 0 8px}
 #roomLobby .rejoinrow .big{flex:1}
+/* the "stay on this screen" line under the seats: same small helper text as the footnote, but it takes the theme's own text colour so it reads on dark themes too */
+#roomLobby .footnote.stayline{color:inherit;font-weight:600;line-height:1.35;margin:10px 4px 0}

@@ -93,8 +93,8 @@ function orientPrints(S){if(S.role!=='red'||!S.prints)return;const P=S.prints,b=
 function pinTag(e,S,b){const board=document.getElementById('board');if(!e||!board||!b.p)return;
  const cell=board.children[b.p[1]*S.cfg.cols+b.p[0]];if(!cell)return;const kind=birdKind(b.id);
  const src=[...cell.querySelectorAll(':scope>b.snum')].find(n=>!n.dataset.pinned&&n.classList.contains(kind)&&(b.own?n.classList.contains('me'):b.mate?n.classList.contains('mate'):!n.classList.contains('me')&&!n.classList.contains('mate')));
- if(!src){const old=e.querySelector(':scope>b.snum');if(old)old.remove();return;}
- src.dataset.pinned='1';src.style.visibility='hidden';
+ if(!src){if(e._pinned&&cell.querySelector(':scope>b.snum[data-pinned]'))return;const old=e.querySelector(':scope>b.snum');if(old)old.remove();e._pinned=false;return;} // a second update before the next draw keeps the number it already pinned
+ src.dataset.pinned='1';e._pinned=true;src.style.visibility='hidden';
  let tag=e.querySelector(':scope>b.snum');if(!tag){tag=document.createElement('b');e.appendChild(tag);}
  tag.className=src.className;tag.textContent=src.textContent;
  const cr=cell.getBoundingClientRect(),er=e.getBoundingClientRect();

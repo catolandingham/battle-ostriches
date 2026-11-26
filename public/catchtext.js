@@ -82,7 +82,7 @@
       if(viewer===(k.target|| (who==='vulture'?'red':who)))return `${SEAT[k.by]||'The ostrich'} kicked you ${n} ${unit}!`;
       return `${SEAT[k.by]||'The ostrich'} kicked the ${who} ${n} ${unit}!`; // Approved hunter-target watcher line; vulture-target variants remain draft.
     }
-    if(e.kind==='stone'&&S.stoneNote&&SEAT[S.stoneNote.kicker]&&/^The ostrich kicked the stone/.test(e.text))return e.text.replace('The ostrich',SEAT[S.stoneNote.kicker]);
+    if(e.kind==='stone'&&S.stoneNote&&SEAT[S.stoneNote.kicker]&&/^The ostrich (kicked the stone|bounced it back)/.test(e.text))return e.text.replace('The ostrich',SEAT[S.stoneNote.kicker]);
     if(e.kind==='stone'&&S.stoneNote&&S.stoneNote.targets&&S.stoneNote.targets.length) {
       const n=S.stoneNote,targets=n.targets.join(' and the ');
       if(seat===n.by)return `Your stone hit the ${targets}!`;

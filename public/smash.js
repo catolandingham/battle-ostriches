@@ -50,5 +50,9 @@ function impact(res,x,y,w,st,egg){res=kind(res);try{document.dispatchEvent(new C
 window.SMASH={kind,play,update(S,prev){const la=S&&S.lastAction;if(!la||la.type!=='throw'||!la.from){lastSig=la?JSON.stringify(la)+S.round:null;return;}
  const sig=JSON.stringify(la)+S.round;if(!prev||sig===lastSig){lastSig=sig;return;}lastSig=sig;
  if(la.result==='hit'&&window.CUTAWAYS&&CUTAWAYS.smashCartoon&&CUTAWAYS.smashCartoon()){window.SFX&&SFX.play('smash');return;} // the egg-smash cartoon shows it instead
- if(prev.turn==='red'&&(S.turn==='blue'||S.phase==='over'))requestAnimationFrame(()=>play(S,la));}};
+ if(!(prev.turn==='red'&&(S.turn==='blue'||S.phase==='over')))return;
+ // A kicked-back stone plays its cartoon (public/cutaways.js bounce rows), which already shows the throw and the kick. The
+ // board throw would be hidden under the card, so after the card only the egg-safe / no-egg picture is shown on the square.
+ if(la.result==='bounce'&&window.CUTAWAYS&&CUTAWAYS.busy&&CUTAWAYS.busy()){const wait=()=>{if(CUTAWAYS.busy())return setTimeout(wait,100);ensure();const b=rect(S,la.p);if(b)reveal(la.egg,b.left+b.width/2,b.top+b.height/2,b.width);};setTimeout(wait,100);return;}
+ requestAnimationFrame(()=>play(S,la));}};
 })();
