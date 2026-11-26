@@ -653,10 +653,12 @@ function stamp(room, v, seat) {
     v.lastMoveNote = g.lastMoveNote || null;
     v.timeNote = g.timeNote ? { seq: g.timeNote.seq, text: seat === g.timeNote.seat ? 'Out of time.' : "Time's up. Turn skipped." } : null;
     v.carryNote = g.carryNote && seat === g.carryNote.seat ? { seq: g.carryNote.seq, text: g.carryNote.text } : null;
-    v.stoneNote = g.lastStone ? { seq: g.lastStone.seq, text: g.lastStone.text, by: g.lastStone.by, targets: g.lastStone.targets || [], kicker:g.lastStone.kicker||null,
-      // bounce picks the kick-back, leaf or rock cartoon. carrying draws the egg in the ostrich's beak: every bird already sees the carry,
-      // a hunter sees no birds, so a hunter's phone is never told (it always gets the no-egg cartoon, even after the game ends).
-      bounce: g.lastStone.bounce || null, carrying: !!g.lastStone.carrying && !['hunter', 'hyena', 'badger'].includes(seat) && v.role !== 'hunter' } : null;
+    // bounce picks the kick-back, trampoline, leaf or rock cartoon. carrying draws the egg in the ostrich's beak: every bird already sees
+    // the carry, but a hunter sees no birds, so a hunter's phone is never told (it always gets the no-egg cartoon, even after the game ends).
+    // The trampoline line and cartoon say she stands on a leaf, and there are only two leaves, so a hunter gets the plain kick-back instead.
+    const hunterEye = ['hunter', 'hyena', 'badger'].includes(seat) || v.role === 'hunter', ls = g.lastStone, hideLeaf = !!(ls && hunterEye && ls.bounce === 'trampoline');
+    v.stoneNote = ls ? { seq: ls.seq, text: hideLeaf ? B.KICK_LINE : ls.text, by: ls.by, targets: ls.targets || [], kicker:ls.kicker||null,
+      bounce: hideLeaf ? 'kick' : (ls.bounce || null), carrying: !!ls.carrying && !hunterEye } : null;
     v.smashNote = g.lastSmash ? {seq:g.lastSmash.seq,by:g.lastSmash.by,owner:g.team||v.role==='blue'||v.god?g.lastSmash.owner:null} : null;
     if(v.kick&&g.lastKick){const k=g.lastKick,key=g.team?(k.seat==='hunter'?g.h.kind:k.seat):k.who==='vulture'?'red':k.who;v.kick.key=key;
       if(k.who!=='vulture'&&k.scatter&&k.points){v.kick.trail=k.points.map(p=>p.slice());v.kick.to=k.to.slice();v.kick.wrap=!!k.wrap;}

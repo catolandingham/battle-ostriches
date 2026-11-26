@@ -16,8 +16,8 @@ a candidate in `candidates()`).
 
 ## Stone kick-back cartoons (2026-11-25)
 
-The six `bounce-*` scenes (kick-back A, leaf A and rock B, each with and without the egg in the ostrich's beak) are built
-on this Mac from the drawings already in `public/art/cutaways`, not from the art box:
+The seven `bounce-*` scenes (kick-back A, leaf A and rock B, each with and without the egg in the ostrich's beak, and the
+trampoline, which never has the egg) are built on this Mac from the drawings already in `public/art/cutaways`, not from the art box:
 
 - `bounce_lib.py`: the drawings (approved drawings, parts cut out of them, and the placeholder drawings) and a renderer.
 - `bounce_scenes.py`: the scenes, in 50 ms steps. They run 34 or 38 steps, inside the 2 s the board waits for a cartoon.
@@ -26,5 +26,6 @@ on this Mac from the drawings already in `public/art/cutaways`, not from the art
   `public/cutaway-scenes.js` without touching the others. `export.py` rewrites that file from the art box, so run
   `bounce_export.py` again after it. With a preview folder it also writes every step, a contact sheet and an mp4 each.
 
-Placeholders that need Brian's approval: `sk-leaf`, `sk-rockpile`, `sk-rockpile2`, `sk-toprock`, `sk-shake` and the egg in the
-ostrich's beak (`sk-beakegg`, with `sk-bill-*` drawn over it). `sk-*-m` files are mirrored copies of approved drawings.
+Placeholders that need Brian's approval: `sk-leaf`, `sk-rockpile`, `sk-rockpile2`, `sk-toprock`, `sk-shake`, the egg in the
+ostrich's beak (`sk-beakegg`), and the trampoline pose (the approved ostrich drawing leaning back, holding `sk-leaf` taut in her
+bill). `sk-*-m` files are mirrored copies of approved drawings.

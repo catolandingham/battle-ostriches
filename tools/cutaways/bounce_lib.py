@@ -86,17 +86,16 @@ def shake():
             d.arc([(cx-side*40-r)*Q,(130-r)*Q,(cx-side*40+r)*Q,(130+r)*Q],start=st,end=en,fill=(0,0,0,255),width=8*Q)
     _finish(im,'shake')
 def beak_egg():
-    # PLACEHOLDER: a small egg for the ostrich's bill, in the cartoon's own line weight (the egg-smash egg drawn small has a hairline)
-    W,H=100*Q,124*Q; im=Image.new('RGBA',(W,H),(0,0,0,0)); d=ImageDraw.Draw(im)
-    d.ellipse([8*Q,8*Q,92*Q,116*Q],fill=(255,255,255,255),outline=(0,0,0,255),width=9*Q)
-    d.arc([26*Q,26*Q,52*Q,54*Q],start=200,end=300,fill=(0,0,0,255),width=6*Q)
+    # PLACEHOLDER: the egg she holds in her bill, egg-shaped (narrower at the top), in the cartoon's own heavy line, with a shine
+    W,H=150*Q,180*Q; im=Image.new('RGBA',(W,H),(0,0,0,0)); d=ImageDraw.Draw(im)
+    cx,cy,rw,rh=75,92,60,78; pts=[]
+    for i in range(240):
+        t=2*math.pi*i/240; y=-math.cos(t)*rh; x=math.sin(t)*rw*(1-0.16*math.cos(t)); pts.append(((cx+x)*Q,(cy+y)*Q))
+    d.polygon(pts,fill=(255,255,255,255)); d.line(pts+[pts[0]],fill=(0,0,0,255),width=11*Q,joint='curve')
+    d.arc([(cx-38)*Q,(cy-56)*Q,(cx-6)*Q,(cy-18)*Q],start=195,end=290,fill=(0,0,0,255),width=7*Q)
     _finish(im,'beakegg')
-# the upper half of each ostrich drawing's bill (left, top, right, mouth line, in the drawing's pixels). Drawn again over the egg,
-# so the egg sits between the two halves of the bill instead of in front of the face.
+# each ostrich drawing's bill (left, top, right, mouth line, in the drawing's pixels): where the egg she carries goes
 BILLS={'ow':(360,118,548,163),'ok':(68,118,270,168),'oknee':(65,116,255,163)}
-def bill_tops():
-    for n,box in BILLS.items():
-        c=SP[n].crop(box); SP['bill-'+n]=c; ORIGIN['bill-'+n]=(box[0],box[1],*SP[n].size); KIND['bill-'+n]=('crop',n)
 def build():
     for n in ['eegg','ow','ok','evstand','evstandtip','evrear','evreartip','evthrow','evempty','efly','estone','kburst','eimpact','eground','stars','estreak16','estreak17','estreak18','estreak19']: existing(n)
     from_comps('vscared','chyenavulture-wind',lambda x,y,w,h,a: x>=460)                     # vulture facing left, alarmed
@@ -107,7 +106,7 @@ def build():
     feathers=[(367,116),(370,235),(318,383),(359,434),(514,479),(17,212)]
     for i,(fx,fy) in enumerate(feathers):
         from_comps(f'feather{i}','chyenavulture-impact',lambda x,y,w,h,a,fx=fx,fy=fy: x==fx and y==fy)
-    leaf_flat(); rockpile(); rockpile_top_gone(); toprock(); shake(); beak_egg(); bill_tops()
+    leaf_flat(); rockpile(); rockpile_top_gone(); toprock(); shake(); beak_egg()
     # where the stone sits in the vulture's wing (from the approved egg-smash data, as fractions of the source drawing)
     global WING
     WING={'evstand':pt('evstand',0.866,0.357),'evrear':pt('evrear',0.856,0.253),'evthrow':pt('evthrow',0.969,0.41)}

@@ -1,4 +1,4 @@
-"""Build the six stone kick-back cartoons (bounce_scenes.py) into the game.
+"""Build the seven stone kick-back cartoons (bounce_scenes.py) into the game.
 
     python3 tools/cutaways/bounce_export.py [preview-folder]
 
@@ -106,9 +106,9 @@ def card(d,i,k=1.0):
     c=Image.new('RGB',(W,H),'white'); c.paste(art,(round(E*k),round(E*k)))
     ImageDraw.Draw(c).rounded_rectangle([0,0,W-1,H-1],radius=round(22*k),outline=(17,17,17),width=max(1,round(E*k)))
     return c
-TITLE={'bounce-kick':'Kick-back A, no egg','bounce-kick-egg':'Kick-back A, egg in her beak','bounce-leaf':'Leaf A, no egg','bounce-leaf-egg':'Leaf A, egg in her beak','bounce-rock':'Rock B, no egg','bounce-rock-egg':'Rock B, egg in her beak'}
+TITLE={'bounce-trampoline':'Trampoline: she bounces it off her leaf (never with the egg)','bounce-kick':'Kick-back A, no egg','bounce-kick-egg':'Kick-back A, egg in her beak','bounce-leaf':'Leaf A, no egg','bounce-leaf-egg':'Leaf A, egg in her beak','bounce-rock':'Rock B, no egg','bounce-rock-egg':'Rock B, egg in her beak'}
 rows=[]
-for sid in ['bounce-kick','bounce-kick-egg','bounce-leaf','bounce-leaf-egg','bounce-rock','bounce-rock-egg']:
+for sid in ['bounce-kick','bounce-kick-egg','bounce-trampoline','bounce-leaf','bounce-leaf-egg','bounce-rock','bounce-rock-egg']:
     kind=sid.split('-')[1]; keys=BS.KEYS[kind]; tiles=[]
     for i,beat in keys:
         c=card(data[sid],i,0.62); t=Image.new('RGB',(c.width+10,c.height+44),'white'); t.paste(c,(5,4))

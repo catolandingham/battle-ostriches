@@ -187,7 +187,7 @@ const stoneW = (g, s) => { const b = g.b[s]; return { thrower: () => b.pos.slice
 function vultureThrow(g, s, p) { clearOut(g);
   if (!throwTargets(g, s).some(q => K(q) === K(p))) return false;
   const b = g.b[s]; b.stones--; g.sniffs[s] = null;
-  const from = b.pos.slice(), r = B.resolveThrow(g, stoneW(g, s), p);
+  const from = b.pos.slice(), r0 = B.resolveThrow(g, stoneW(g, s), p), r = B.leafBounce(r0, !!(r0.kicker && g.b[r0.kicker] && g.b[r0.kicker].carrying != null));
   if (g.simple) S.noteThrow(g, r);
   g.lastAction = { seat: s, type: 'throw', from, p: p.slice(), result: r.result, line: r.line, kickedBack: r.kickedBack, hop: r.hop, used: r.used };
   if (r.result === 'bounce') g.lastAction.egg = !!(eggAt(g, p) || OS.some(o => live(g, o) && K(g.b[o].pos) === K(p) && g.b[o].carrying !== null));

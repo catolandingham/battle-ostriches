@@ -30,9 +30,11 @@
     { id: 'stone', event: 'stone', by: 'vulture', target: 'hyena' },
     { id: 'stone-badger', event: 'stone', by: 'vulture', target: 'badger' },
     // The ostrich kicks the vulture's stone straight back (Brian's picks, 2026-11-25). The target is where the vulture stood:
-    // open ground (kick-back A), a leaf (leaf A) or a rock pile (rock B). The -egg rows draw the egg in her beak; a hunter's phone
+    // open ground (kick-back A, or the trampoline when she stood on a leaf), a leaf (leaf A) or a rock pile (rock B). The -egg rows draw the egg in her beak; a hunter's phone
     // is never sent that she carries (server.js), so a hunter always gets the plain row. They come after the stone rows: a
     // bounced stone that then hits a hunter shows that hit.
+    // she stood on a leaf and was not carrying: she bounces it back off her leaf (Brian, 2026-11-25). A hunter is sent 'kick' instead.
+    { id: 'bounce-trampoline', event: 'bounce', by: 'vulture', target: 'trampoline' },
     { id: 'bounce-kick-egg', event: 'bounce', by: 'vulture', target: 'kick', egg: true },
     { id: 'bounce-kick', event: 'bounce', by: 'vulture', target: 'kick', egg: false },
     { id: 'bounce-leaf-egg', event: 'bounce', by: 'vulture', target: 'leaf', egg: true },
@@ -87,7 +89,7 @@
         if (trail && (anyPoint(trail.points) || trail.card)) out.push({ event: 'stone', by: kindOf(note.by || 'vulture'), target, seq: note.seq });
       }
       // Every phone is told the stone came back, so every phone plays it. The drawing is the two birds with no square.
-      if (note.bounce === 'kick' || note.bounce === 'leaf' || note.bounce === 'rock') out.push({ event: 'bounce', by: kindOf(note.by || 'vulture'), target: note.bounce, egg: !!note.carrying, seq: note.seq });
+      if (note.bounce === 'kick' || note.bounce === 'trampoline' || note.bounce === 'leaf' || note.bounce === 'rock') out.push({ event: 'bounce', by: kindOf(note.by || 'vulture'), target: note.bounce, egg: !!note.carrying, seq: note.seq });
     }
     const sm = S.smashNote; // every player is told about a smashed egg, so every player sees it
     if (fresh(sm, prev.smashNote)) out.push({ event: 'smash', by: 'vulture', target: 'egg', seq: sm.seq });
