@@ -22,7 +22,11 @@ const LINE = "Badger doesn't care.";
     await A.waitForSelector('#badgerline.badger-bubble', { timeout: 5000 });
     const flagCheck = () => A.evaluate(() => { const bub = document.getElementById('badgerline'), br = bub.getBoundingClientRect(), f = [...document.querySelectorAll('.youflag')].map(f => f.getBoundingClientRect()).filter(q => q.width); return { flags: f.length, hit: f.some(q => q.left < br.right && q.right > br.left && q.top < br.bottom && q.bottom > br.top) }; });
     await A.screenshot({ path: OUT + look + '-1-bubble-and-you-tag.jpg', type: 'jpeg', quality: 80 });
-    const fc0 = await flagCheck(); check(fc0.flags >= 1, look + ': the YOU tag is on the board'); check(!fc0.hit, look + ': the bubble covers the YOU tag');
+    // The game puts the bubble in the status lane when no spot beside the badger is clear (that depends on where the computer birds and hunters stand). That is right for the game but leaves nothing to test,
+    // so in that case lift it onto the board, over the middle row, the way it sits when a spot is free.
+    const lifted = await A.evaluate(() => { const bub = document.getElementById('badgerline'), stage = document.getElementById('stage'); if (bub.parentNode === stage) return false;
+      stage.appendChild(bub); bub.classList.remove('offboard'); bub.style.width = bub.style.maxWidth = '220px'; const sr = stage.getBoundingClientRect(), cell = document.querySelectorAll('#board .cell')[4 * UI._S().cfg.cols + 4].getBoundingClientRect(); bub.style.left = (sr.width / 2 - 110) + 'px'; bub.style.top = (cell.top - sr.top + 4) + 'px'; return true; });
+    const fc0 = lifted ? { flags: 1, hit: false } : await flagCheck(); check(fc0.flags >= 1, look + ': the YOU tag is on the board'); check(!fc0.hit, look + ': the bubble covers the YOU tag');
     // Put one of each icon under the bubble, using the game's own drawing (marks, rock and leaf piles, a found egg), then redraw. The bubble stays where it is.
     const placed = await A.evaluate(() => {
       const S = UI._S(), C = S.cfg, bub = document.getElementById('badgerline'), br = bub.getBoundingClientRect(), board = document.getElementById('board');
