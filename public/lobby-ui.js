@@ -27,7 +27,7 @@
     if (!st || st.code !== state.code || state.ask) pendingClaim = null;
     st = state; $('lobby').classList.remove('hidden'); $('lobby').classList.add('inroom');
     $('over').classList.add('hidden'); $('homeStep').classList.add('hidden');
-    $('soloStep').classList.add('hidden'); $('passStep').classList.add('hidden');
+    $('soloStep').classList.add('hidden'); $('passStep').classList.add('hidden'); if ($('joinStep')) $('joinStep').classList.add('hidden');
     $('roomLobby').classList.remove('hidden');
     if (state.needKind) kindOpen = true;
     draw();

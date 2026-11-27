@@ -1,4 +1,4 @@
-// Home and friends lobby: the room code is on the screen, not inside Settings or Theme.
+// Home and friends lobby: home has Start / Join / Solo; Join opens the code box (not inside Settings or Theme).
 const { webkit, devices } = require('playwright-core');
 const assert = require('assert'), fs = require('fs');
 process.env.PORT = '4012';
@@ -12,29 +12,35 @@ fs.mkdirSync(OUT, { recursive: true });
   page.on('pageerror', e => errs.push(e.message));
   await page.addInitScript(() => localStorage.setItem('bo_tut_seen', '1'));
   await page.goto('http://127.0.0.1:4012/', { timeout: 20000 });
+  await page.waitForSelector('#playJoin', { timeout: 10000 });
+  const start = await page.evaluate(() => ({
+    big: [...document.querySelectorAll('#homeStep .big')].map(b => b.textContent.trim()),
+    codeShown: !!document.getElementById('codeIn').offsetParent
+  }));
+  assert.deepEqual(start.big, ['Start a game with friends', "Join a friend's game", 'Play solo']);
+  assert.equal(start.codeShown, false, 'the code box waits behind Join');
+  const playHit = await page.evaluate(() => { const r = document.getElementById('playFriend').getBoundingClientRect(); const n = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); return n && n.id; });
+  assert.equal(playHit, 'playFriend', 'nothing covers Start a game with friends');
+  await page.click('#playJoin');
   await page.waitForSelector('#codeIn', { timeout: 10000 });
   const home = await page.evaluate(() => {
     const input = document.getElementById('codeIn');
-    const play = document.getElementById('playFriend');
     const menu = document.getElementById('homeMenu');
     const ir = input.getBoundingClientRect();
-    const pr = play.getBoundingClientRect();
     const hit = (r) => { const n = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); return n && n.id; };
     return {
       joinHidden: document.getElementById('joinRow').classList.contains('hidden'),
       inSettings: menu.contains(input) || document.getElementById('homeGear').contains(input),
       menuHidden: menu.classList.contains('hidden'),
-      playHit: hit(pr),
       codeHit: hit(ir),
       prompt: document.getElementById('haveCode').textContent
     };
   });
-  assert.equal(home.joinHidden, false, 'code field is on the home screen');
+  assert.equal(home.joinHidden, false, 'code field is on the join screen');
   assert.equal(home.inSettings, false, 'code field is not inside settings');
   assert.equal(home.menuHidden, true);
-  assert.equal(home.playHit, 'playFriend', 'nothing covers Play with friends');
   assert.equal(home.codeHit, 'codeIn', 'the code box receives the tap');
-  assert.match(home.prompt, /Have a code\? Type it here to join/);
+  assert.match(home.prompt, /Type the code your friend sees/);
   await page.locator('#codeIn').fill('QZ', { timeout: 8000 });
   await page.setViewportSize({ width: 390, height: 320 });
   const typed = await page.evaluate(() => {
@@ -128,6 +134,7 @@ fs.mkdirSync(OUT, { recursive: true });
   await join.addInitScript(() => localStorage.setItem('bo_tut_seen', '1'));
   const code = (await page.textContent('#lobbyCode')).trim();
   await join.goto('http://127.0.0.1:4012/');
+  await join.click('#playJoin');
   await join.fill('#codeIn', code);
   await join.evaluate(c => UI.open({ t: 'join', code: c }), code);
   await join.waitForSelector('#roomLobby:not(.hidden)');

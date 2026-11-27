@@ -19,7 +19,7 @@ const server = require('./server.js');
     const pb = pass.getBoundingClientRect();
     return { big, pass: pass.className, passBottom: pb.bottom, w: innerWidth };
   });
-  assert.deepEqual(home.big, ['Play with friends', 'Play solo']);
+  assert.deepEqual(home.big, ['Start a game with friends', "Join a friend's game", 'Play solo']);
   assert.ok(!/\bbig\b/.test(home.pass), 'pass is a secondary link');
   assert.ok(home.passBottom < 844, 'pass link is on the phone screen');
   await A.click('#playFriend');
