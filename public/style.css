@@ -93,7 +93,7 @@ html[data-theme=classic] #rules .card button.ghost{background:#eef3fb;color:#102
 .tutimg{height:min(44vh,360px);display:flex;justify-content:center;background:#0b1a33;border:4px solid #000;border-radius:14px;overflow:hidden}
 .tutimg img{height:100%;width:auto}
 .tutcard h2{margin:10px 0 4px;font-size:22px}.tutcard p{margin:0 0 8px;font-size:16px;font-weight:600;min-height:66px}
-.dots{display:flex;gap:6px;justify-content:center;margin:6px 0}.dots span{width:10px;height:10px;border-radius:50%;background:#ccc;border:2px solid #000}.dots span.on{background:#ff7a2a}
+.dots{display:flex;gap:6px;justify-content:center;margin:6px 0}.dots span{width:10px;height:10px;border-radius:50%;background:#ccc;border:2px solid #000}.dots span.on{background:#ff7a2a;width:24px;border-radius:6px}
 .tutnav{display:flex;gap:8px}.tutnav button{background:#14306b;color:#fff}.tutnav button#tutNext{background:#ff7a2a;color:#000}
 .tutskip{position:absolute;top:8px;right:8px;flex:none;padding:4px 10px;font-size:14px;z-index:2;box-shadow:none}
 #tutRules{display:inline-block;margin-top:8px;color:#14306b;font-weight:700}
