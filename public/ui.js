@@ -649,5 +649,6 @@ function render(prev){
   else if(STATUS_QUEUE.drop)STATUS_QUEUE.drop(item=>item.key==='you-ate');}
  // She just sat down: one news line on her phone, once per sit (not again while she stays sitting). Same slot and reading time as the other news lines.
  if(window.STATUS_QUEUE&&window.TURNLINE&&TURNLINE.justSat(S,prev))STATUS_QUEUE.add({id:'announce',key:'sit-seen',className:'show bad',text:TURNLINE.SIT_LINE,priority:60});
+ if(window.HINTS)HINTS.check(S);
 }
 })();
