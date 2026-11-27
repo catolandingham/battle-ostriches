@@ -124,3 +124,7 @@ html[data-theme="bw"] :is(button.on,button[aria-pressed="true"]) *:not(#_a):not(
 html[data-theme="bw"] :is(#roomLobby .rolecard.mine,#roomLobby .setup-opt.on):not(#_a):not(#_b){background-color:var(--bg)!important;color:var(--fg)!important;outline:4px solid var(--fg)!important;outline-offset:0!important;font-weight:700!important}
 html[data-theme="bw"] :is(#roomLobby .rolecard.mine,#roomLobby .setup-opt.on) :is(b,small,span):not(#_a):not(#_b){color:var(--fg)!important;-webkit-text-fill-color:var(--fg)!important;background-color:transparent!important}
 html[data-theme="bw"] :is(#roomLobby .rolecard.mine,#roomLobby .setup-opt.on) svg *:not(#_a):not(#_b){stroke:var(--fg)!important}
+/* The badger's speech bubble is drawn over the board, so in black and white it needs a solid white fill like every other text box (the blanket rule above makes everything see-through, and the board marks showed through the letters). */
+html[data-theme="bw"] #badgerline.badger-bubble:not(#_a):not(#_b){background-color:var(--bg)!important}
+/* The square's tooltip (long-press or hover) is drawn over the board. It is white on black in every look; the blanket rule above left it black text on nothing, over the board marks. */
+html[data-theme="bw"] #marktip:not(#_a):not(#_b):not(#_c){background-color:var(--fg)!important;color:var(--bg)!important;border:var(--bd) solid var(--bg)!important;outline:var(--bd) solid var(--fg)}
