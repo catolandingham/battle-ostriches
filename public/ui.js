@@ -149,12 +149,11 @@ const send=o=>{try{tipBar(null)}catch(e){}
 function wantSimple(){try{return new URLSearchParams(location.search).get('simple')==='1';}catch(e){return false;}}
 function open(msg){if(msg&&wantSimple())msg.simple=true;pending=msg;attempts=0;if(ws&&ws.readyState===1)sendPending();else connect();}
 function tapper(el,fn){if(!el)return;let t=0;el.addEventListener('touchend',e=>{e.preventDefault();t=Date.now();fn();},{passive:false});el.addEventListener('click',()=>{if(Date.now()-t>600)fn();});}
-function home(){$('homeStep').classList.remove('hidden');$('joinStep').classList.add('hidden');$('passStep').classList.add('hidden');$('soloStep').classList.add('hidden');$('roomLobby').classList.add('hidden');status('');}
+function home(){$('homeStep').classList.remove('hidden');$('passStep').classList.add('hidden');$('soloStep').classList.add('hidden');$('roomLobby').classList.add('hidden');status('');}
 let soloN=2;const soloHint=()=>{const t={1:'You + 1 computer → Ostrich and Vulture',2:'You + 2 computers → Hunter',3:'You + 3 computers → choose 2 vs 2 or Hunters',4:'You + 4 computers → 2 vs 2 + hunter'};$('soloHint').textContent=t[soloN];};
 tapper($('playFriend'),()=>open({t:'create',friends:1}));
 tapper($('playSolo'),()=>{home();$('homeStep').classList.add('hidden');$('soloStep').classList.remove('hidden');soloHint();});
-tapper($('playJoin'),()=>{home();$('homeStep').classList.add('hidden');$('joinStep').classList.remove('hidden');$('codeIn').focus();});
-tapper($('joinBack'),home);tapper($('soloBack'),home);tapper($('passBack'),home);
+tapper($('soloBack'),home);tapper($('passBack'),home);
 tapper($('playPass'),()=>{home();$('homeStep').classList.add('hidden');$('passStep').classList.remove('hidden');});
 tapper($('passGo'),()=>open({t:'create',pass:true}));
 tapper($('soloGo'),()=>open({t:'create',solo:1,bots:soloN}));
