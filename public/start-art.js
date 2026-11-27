@@ -2,12 +2,12 @@
 // and each topic has one real B&W board picture in public/tut/start/ (made by tools/shoot-start-cards.js). A line that matches nothing gets the
 // fallback picture, so the box is never empty. The test e2e-start-cards.js checks that every file exists.
 (function () {
-  const TOPICS = ['tap', 'eggs', 'eat', 'catch', 'pounce', 'boost', 'burrow', 'tie', 'warm', 'share'];
+  const TOPICS = ['tap', 'eggs', 'eat', 'catch', 'knockout', 'pounce', 'boost', 'burrow', 'tie', 'warm', 'share'];
   // first match wins
   const KEYS = [
     ['warm', /warm your teammate/i], ['share', /share found eggs/i], ['tie', /same number of knock-outs|you tie/i],
     ['boost', /after a knock-out/i], ['burrow', /burrow/i], ['pounce', /you smell/i],
-    ['catch', /gets to your square|catches knock|knock a bird out|knocks out 1/i],
+    ['catch', /gets to your square|knocks out 1/i], ['knockout', /knock a bird out/i],
     ['eggs', /egg/i], ['eat', /eat in time|doesn't eat/i], ['tap', /tap a lit square/i],
   ];
   const FALLBACK = 'tap';
