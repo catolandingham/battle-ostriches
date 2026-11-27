@@ -54,14 +54,14 @@
     const h = S.h3 || {}, oh = prev.h3 || {};
     const k = S.kick, pk = prev.kick;
     if (fresh(k, pk)) {
-      // A fully redacted trail still announces the kick; it does not play a
-      // cartoon or a slide this phone cannot see (and must not pause the
-      // board for a picture that never appears). Mixed visible/hidden steps
-      // still use the public length so the slide duration is not a tell.
+      // A fully redacted trail still announces the kick, and every phone plays the
+      // animals-only cartoon (Brian, 2026-11-27). It plays no slide this phone cannot
+      // see. Mixed visible/hidden steps still use the public length so the slide
+      // duration is not a tell.
       const pathSeen = pointOk(k.to) || (Array.isArray(k.trail) && k.trail.some(pointOk));
       out.push({
         event: 'kick', seq: k.seq, by: k.by || 'blue', who: k.who, key: k.key, target: k.target,
-        trail: k.trail, to: k.to, moved: k.moved, cartoon: pathSeen || !!k.card,
+        trail: k.trail, to: k.to, moved: k.moved, cartoon: true,
         squares: pathSeen ? squaresOf(null, k.to, k.trail, k.moved) : 0
       });
     }
@@ -215,7 +215,7 @@
   function animMs(ev, role) {
     if (!ev) return 0;
     const look = (role === 'affected' && ev.lookout) ? LOOKOUT_MS : 0;
-    const cartoon = role === 'watcher' ? 0 : (ev.cartoon ? CARTOON_MS : 0);
+    const cartoon = ev.cartoon ? CARTOON_MS : 0;
     const motion = Math.max(0, ev.squares || 0) * STEP_MS;
     return look + cartoon + motion;
   }
@@ -236,12 +236,12 @@
       if ((a && !isAffected(S, pick)) || (ev.squares || 0) > (pick.squares || 0) || (ev.cartoon && !pick.cartoon)) pick = ev;
     }
     pick.lookout = lookout;
-    // A watcher is neither the kicker nor the animal that was hit. Their kick
-    // slide starts with the board, not after the cartoon. If the hunter is
-    // already outside this phone's sight, there is no slide and no "near" line.
+    // A watcher is neither the kicker nor the animal that was hit. Their cartoon
+    // plays first, then the slide (the slide never covers the cartoon). If the hunter
+    // is already outside this phone's sight, there is no slide and no "near" line.
     const watchKick = pick.event === 'kick' && !affected && !actor;
     const skipSlide = watchKick && !hunterStillSeen(S, pick);
-    const showCartoon = !!pick.cartoon && !watchKick;
+    const showCartoon = !!pick.cartoon;
     const motionDelay = (lookout ? LOOKOUT_MS : 0) + (showCartoon ? CARTOON_MS : 0);
     const motionMs = skipSlide ? 0 : Math.max(0, pick.squares || 0) * STEP_MS;
     const animation = motionDelay + motionMs;
