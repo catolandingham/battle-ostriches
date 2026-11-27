@@ -28,7 +28,7 @@ const K = p => p[0] + ',' + p[1];
       const bd = document.getElementById('board').getBoundingClientRect(), cs = [...document.querySelectorAll('#board .cell')];
       const el = (o.at && cs[o.at[1] * 9 + o.at[0]]) || o.focus && cs.find(c => c.matches(o.focus) || c.querySelector(o.focus)) || cs[Math.floor(cs.length / 2)], c = el.getBoundingClientRect();
       const W = o.cols * c.width + 2, H = o.rows * c.height + 2; let L = c.x + c.width / 2 - W / 2, T = c.y + c.height / 2 - H / 2;
-      L = Math.max(bd.x, Math.min(L, bd.right - W)); T = Math.max(bd.y, Math.min(T, bd.bottom - H));
+      if (o.anchor) { T = c.y; if (o.anchor === 'topleft') L = c.x - 1; } L = Math.max(bd.x, Math.min(L, bd.right - W)); T = Math.max(bd.y, Math.min(T, bd.bottom - H));
       const tag = 16; // the YOU tag of a top-row square sticks out above the board
       const q = id => { const a = document.getElementById(id).getBoundingClientRect(); return a.height > 0 ? { top: a.top - 3, h: a.height + 6 } : null; };
       L = Math.max(0, L - 8); return { x: L, y: T - tag, w: W + 16, h: H + tag, hud: q('hud'), at: q('actions') };
@@ -59,17 +59,19 @@ const K = p => p[0] + ',' + p[1];
   };
   // a two-panel strip: left panel, a bold arrow, right panel, each with a small label, in one 480 px picture
   const tagNote = p => p.evaluate(() => { let e = [...document.querySelectorAll('body *')].find(e => e.children.length === 0 && /Bird near|No bird/.test(e.textContent) && e.getBoundingClientRect().height > 0); while (e && e.getBoundingClientRect().width < 300) e = e.parentElement; if (e) e.id = 'xnote'; return !!e; });
+  // two panels one above the other with a down arrow (each panel as wide as the picture box allows); pn.cols sets the panel's width so every square is the same size
   const strip = async (name, panels) => {
     const uri = f => 'data:image/png;base64,' + fs.readFileSync(path.join(RAW, f + '.png')).toString('base64');
-    const dim = f => { const b = fs.readFileSync(path.join(RAW, f + '.png')); return [b.readUInt32BE(16), b.readUInt32BE(20)]; };
-    const cell = pn => { const [w, h] = dim(pn.f); return `<div style="flex:${w / h} 1 0;min-width:0;text-align:center"><img src="${uri(pn.f)}" style="width:100%;display:block;border:2px solid #000">${pn.label ? `<div style="font:700 12px -apple-system,Helvetica;margin-top:3px">${pn.label}</div>` : ''}</div>`; };
-    const arrow = '<svg width="30" height="30" viewBox="0 0 30 30" style="flex:none"><path d="M3 11h13V4l11 11-11 11v-7H3z" fill="#000"/></svg>';
-    const pg = await (await b.newContext({ viewport: { width: 480, height: 400 }, deviceScaleFactor: 2 })).newPage();
-    await pg.setContent(`<body style="margin:0;background:#fff"><div id="s" style="display:flex;align-items:center;gap:6px;width:480px;padding:4px;box-sizing:border-box">${cell(panels[0])}${arrow}${cell(panels[1])}</div></body>`);
+    const cell = pn => `<div style="text-align:center"><img src="${uri(pn.f)}" style="width:${pn.cols * 100 + 44}px;display:block;margin:0 auto;border:3px solid #000">${pn.label ? `<div style="font:700 24px -apple-system,Helvetica;margin-top:4px">${pn.label}</div>` : ''}</div>`;
+    const arrow = '<svg width="44" height="40" viewBox="0 0 30 30" style="display:block;margin:0 auto"><path d="M11 3v13H4l11 11 11-11h-7V3z" fill="#000"/></svg>';
+    const W = Math.max(...panels.map(q => q.cols)) * 100 + 60;
+    const pg = await (await b.newContext({ viewport: { width: W, height: 800 }, deviceScaleFactor: 1 })).newPage();
+    await pg.setContent(`<body style="margin:0;background:#fff"><div id="s" style="width:${W}px;padding:6px 0;box-sizing:border-box">${cell(panels[0])}${arrow}${cell(panels[1])}</div></body>`);
     const f = path.join(RAW, name + '-raw.png'); await (await pg.$('#s')).screenshot({ path: f });
     const out = path.join(RAW, name + '.png');
-    execFileSync('ffmpeg', ['-y', '-v', 'error', '-i', f, '-filter_complex', 'scale=480:-2,split[a][b];[a]palettegen=max_colors=32[p];[b][p]paletteuse', out]);
-    console.log('strip', name, fs.statSync(out).size, 'bytes'); await pg.context().close();
+    execFileSync('ffmpeg', ['-y', '-v', 'error', '-i', f, '-filter_complex', 'split[a][b];[a]palettegen=max_colors=32[p];[b][p]paletteuse', out]);
+    const sz = execFileSync('ffprobe', ['-v', 'error', '-show_entries', 'stream=width,height', '-of', 'csv=p=0', out]).toString().trim();
+    console.log('strip', name, fs.statSync(out).size, 'bytes', sz); await pg.context().close();
   };
   const team3 = async () => { // 2 vulture phones, 1 ostrich phone, 1 computer ostrich
     const A = await mk(), V = await mk(), W = await mk();
@@ -97,32 +99,32 @@ const K = p => p[0] + ',' + p[1];
       // left: the knock-out has just happened (the vulture is OUT in the bird bar); right: the hyena's next move reaches 3 squares along a row
       await inject(p, g => { g.round = 6; g.ostrich = [8, 5]; g.vulture = [8, 6]; g.three.h = [0, 3]; g.three.birds.red = { out: true, catches: 2, skip: 0, why: 'caught' }; g.turn = 'hunter'; g.three.pounce = false; g.three.sense = false; g.three.senseSeq++; g.three.senseAt = [0, 3]; });
       console.log('boost lit', await p.evaluate(() => document.querySelectorAll('#board .cell.legal').length));
-      await crop(p, 'boost-L', { els: [{ sel: '#h3bar', x: 100, w: 190 }], noBoard: true }); await crop(p, 'boost-R', { at: [2, 3], cols: 5, rows: 2 });
-      await strip('boost', [{ f: 'boost-L', label: 'A bird is knocked out' }, { f: 'boost-R', label: 'Your next move: 3 squares' }]); },
+      await crop(p, 'boost-L', { els: [{ sel: '#h3bar', x: 100, w: 190 }], noBoard: true }); await crop(p, 'boost-R', { at: [0, 3], cols: 4, rows: 1, anchor: 'topleft' });
+      await strip('boost', [{ f: 'boost-L', cols: 3, label: 'A bird is knocked out' }, { f: 'boost-R', cols: 4, label: 'Your next move: 3 squares' }]); },
     pounce: async () => { const p = await solo(2, 'hyena');
       // left: the turn starts and the smell says a bird is near; right: the hyena landed on an empty square (a miss), smells again and may move 1 more
       await inject(p, g => { g.round = 6; g.ostrich = [4, 3]; g.vulture = [8, 6]; g.three.h = [2, 3]; g.turn = 'hunter'; g.three.pounce = false; g.three.sense = true; g.three.senseSeq++; g.three.senseAt = [2, 3]; });
-      console.log('note', await tagNote(p)); await crop(p, 'pounce-L', { at: [2, 3], cols: 5, rows: 3, els: ['#xnote'] });
+      console.log('note', await tagNote(p)); await crop(p, 'pounce-L', { at: [2, 3], cols: 3, rows: 2, anchor: 'top' });
       await p.evaluate(() => { [...document.querySelectorAll('#board .cell')][2 * 9 + 2].click(); }); // an empty square next to the bird's: no catch
       await p.waitForTimeout(2500); await closeCard(p);
       console.log('after move', JSON.stringify(await p.evaluate(() => ({ hint: document.getElementById('hint').innerText, banner: (document.getElementById('banner') || {}).innerText, legal: document.querySelectorAll('#board .cell.legal').length, acts: [...document.querySelectorAll('#actions button')].map(b => b.innerText), turn: UI._S().myTurn }))));
       await p.screenshot({ path: RAW + '/pounce-after.png' });
-      await tagNote(p); await crop(p, 'pounce-R', { at: [2, 2], cols: 5, rows: 3, buttons: true, els: ['#xnote'] });
-      await strip('pounce', [{ f: 'pounce-L', label: 'Smell: a bird is near' }, { f: 'pounce-R', label: 'Missed: smell again' }]); },
+      await tagNote(p); await crop(p, 'pounce-R', { at: [2, 2], cols: 3, rows: 2, anchor: 'top' });
+      await strip('pounce', [{ f: 'pounce-L', cols: 3, label: 'Smell: a bird is near' }, { f: 'pounce-R', cols: 3, label: 'Missed: smell again' }]); },
     burrow: async () => { const p = await solo(2, 'badger'); await inject(p, g => { g.round = 4; g.ostrich = [1, 5]; g.vulture = [8, 5]; g.three.h = [4, 3]; g.turn = 'hunter'; g.three.sense = false; g.three.senseSeq++; g.three.senseAt = [4, 3]; }); await crop(p, 'burrow', { focus: '#current', buttons: true }); },
     tie: async () => { const p = await solo(3, 'hyena'); await inject(p, g => { const h = g.hunt; h.birds.red = { out: true, catches: 1, skip: 0, why: 'caught' }; h.birds.blue = { out: true, catches: 1, skip: 0, why: 'caught' }; h.hs.hyena.kos = 1; h.hs.badger.kos = 1; h.hs.hyena.catches = 1; h.hs.badger.catches = 1; g.phase = 'over'; g.winner = 'none'; g.winBy = 'both'; h.final = true; g.endWhy = 'Both birds are out. The hunters tie: you have the same number of knock-outs, and the same number of catches.'; }, 'over'); await p.waitForTimeout(3500); console.log(await p.evaluate(() => [...document.querySelectorAll('body *')].filter(e => /tie/i.test(e.textContent) && e.children.length < 3 && e.getBoundingClientRect().height > 0).map(e => e.tagName + '#' + e.id + '.' + e.className + ' ' + Math.round(e.getBoundingClientRect().top)).slice(0, 8))); await crop(p, 'tie', { clip: [105, 245] }); },
     warm: async () => { const p = await team('ostrich'); let e;
       await inject(p, g => { g.round = 16; e = eggsOf(g, 1)[0]; const x = e.pos[0] > 0 ? e.pos[0] - 1 : 1; g.b.o1.pos = [x, e.pos[1]]; g.b.o2.pos = [e.pos[0], Math.min(6, e.pos[1] + 2)]; g.eggs.forEach(q => q.lastWarm = g.round); e.lastWarm = g.round - (g.cfg.warmth - 2); g.turn = 'o1'; e = { pos: e.pos.slice() }; });
-      await crop(p, 'warm-L', { at: e.pos, cols: 3, rows: 3 });
+      await crop(p, 'warm-L', { at: e.pos, cols: 3, rows: 2, anchor: 'top' });
       await inject(p, g => { const x = eggsOf(g, 1)[0]; g.b.o1.pos = x.pos.slice(); x.lastWarm = g.round; g.turn = 'o1'; });
-      await crop(p, 'warm-R', { at: e.pos, cols: 3, rows: 3 });
-      await strip('warm', [{ f: 'warm-L', label: 'Next to the egg' }, { f: 'warm-R', label: 'Standing on it' }]); },
+      await crop(p, 'warm-R', { at: e.pos, cols: 3, rows: 2, anchor: 'top' });
+      await strip('warm', [{ f: 'warm-L', cols: 3, label: 'Next to the egg' }, { f: 'warm-R', cols: 3, label: 'Standing on it' }]); },
     share: async () => { const { A, V, W, seats } = await team3(); console.log('seats', seats); let e;
       const set = g => { e = eggsOf(g, 0)[0]; e.pos = [2, 3]; const [x, y] = e.pos; g.round = 4; g.marks = { [K(e.pos)]: 'spotted' }; g.b.v1.pos = e.pos.slice(); g.b.v2.pos = [x < 5 ? x + 3 : x - 3, y]; g.turn = 'o2'; };
       await inject([V, W], set, 'play'); const [x, y] = e.pos;
-      await crop(V, 'share-L', { at: e.pos, cols: 3, rows: 3 });
-      const far = [x < 5 ? x + 3 : x - 3, y], mid = [(x + far[0]) / 2, y]; await crop(W, 'share-R', { at: [x < 5 ? x + 1 : x - 1, y], cols: 5, rows: 3 });
-      await strip('share', [{ f: 'share-L', label: 'Your screen' }, { f: 'share-R', label: "Teammate's screen" }]); },
+      await crop(V, 'share-L', { at: e.pos, cols: 3, rows: 2, anchor: 'top' });
+      const far = [x < 5 ? x + 3 : x - 3, y], mid = [(x + far[0]) / 2, y]; await crop(W, 'share-R', { at: [x < 5 ? x + 1 : x - 1, y], cols: 5, rows: 2, anchor: 'top' });
+      await strip('share', [{ f: 'share-L', cols: 3, label: 'Your screen' }, { f: 'share-R', cols: 5, label: "Teammate's screen" }]); },
   };
   for (const k of (process.env.SCENE || '').split(',').filter(Boolean)) { try { await S[k](); } catch (e) { console.log('FAILED', k, e.message.slice(0, 200)); } }
   await b.close(); process.exit(0);

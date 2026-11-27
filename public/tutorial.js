@@ -30,7 +30,7 @@ function build(){el=document.createElement('div');el.id='tut';el.className='scre
 function go(n){if(n<0||n>=list.length)return;i=n;const s=list[i];
  const bw=document.documentElement.getAttribute('data-theme')==='bw',SA=window.StartArt;let art=s.art,img=s.img?'/tut/'+s.img:null;
  if(!art&&!img){if(bw&&SA)img=SA.src(s.d);else art=s.alt||OST;}
- document.getElementById('tutImg').innerHTML=art||(img?`<img src="${img}" alt="">`:'');document.getElementById('tutImg').className='tutimg'+(art?' art':'');
+ document.getElementById('tutImg').innerHTML=art||(img?`<img src="${img}" alt="">`:'');document.getElementById('tutImg').className='tutimg'+(art?' art':'')+(img&&/\/(warm|share|boost|pounce)\.png$/.test(img)?' tall':'');
  document.getElementById('tutT').textContent=s.t;document.getElementById('tutD').textContent=s.d;
  document.getElementById('tutDots').innerHTML=list.map((_,k)=>`<span class="${k===i?'on':''}"${k===i?' aria-current="step"':''}></span>`).join('');
  document.getElementById('tutBack').disabled=i===0;document.getElementById('tutNext').textContent=i===list.length-1?"Let's play":'Next';}
