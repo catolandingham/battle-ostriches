@@ -62,7 +62,7 @@
     { animal: 'ostrich', id: 'hunter', when: x => x.mode !== '2' && x.mode !== '4' && seenHunters(x).length > 0,
       text: x => `Did you know? You only see a hunter within ${sq(x.m.see || 2)}. If it lands on your square it catches you, and ${x.ko} catches knock you out.` },
     { animal: 'ostrich', id: 'caught', when: x => !!(x.h.lastCatch && x.h.lastCatch.bird === (x.h.mySeat || x.S.role)),
-      text: x => `Did you know? When a hunter catches you, you are set down ${sq(x.cfg.scramble || 3)} away and keep your turn. ${x.ko} catches knock you out.` },
+      text: x => `Did you know? When a hunter catches you, you are set down ${sq(x.cfg.scramble || 3)} away. ${x.ko} catches knock you out.` },
     { animal: 'ostrich', id: 'cool', when: x => eggsOff(x, true).some(e => e.coldIn <= cooling(x)),
       text: x => `Did you know? An egg goes cold if you don't stand on it for ${x.c.warmth} rounds. The number on an egg is how many rounds it has left. Walk back to warm it.` },
     { animal: 'ostrich', id: 'mateCool', when: x => !!(x.h.team && eggsOff(x, false).some(e => e.coldIn <= cooling(x))),
@@ -96,7 +96,7 @@
     { animal: 'vulture', id: 'hunter', when: x => x.mode !== '2' && x.mode !== '4' && seenHunters(x).length > 0,
       text: x => `Did you know? You only see a hunter within ${sq(x.m.see || 2)}. If it lands on your square it catches you, and ${x.ko} catches knock you out.` },
     { animal: 'vulture', id: 'caught', when: x => !!(x.h.lastCatch && x.h.lastCatch.bird === (x.h.mySeat || x.S.role)),
-      text: x => `Did you know? When a hunter catches you, you are set down ${sq(x.cfg.scramble || 3)} away and keep your turn. ${x.ko} catches knock you out.` },
+      text: x => `Did you know? When a hunter catches you, you are set down ${sq(x.cfg.scramble || 3)} away. ${x.ko} catches knock you out.` },
     { animal: 'vulture', id: 'eat', when: x => x.S.hungerLeft <= Math.ceil(x.c.food / 2),
       text: x => `Did you know? The ostrich starves if it does not eat every ${x.c.food} turns. The leaf number at the top is its turns left.` },
 
