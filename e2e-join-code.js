@@ -32,7 +32,7 @@ fs.mkdirSync(OUT, { recursive: true });
   assert.equal(home.joinHidden, false, 'code field is on the home screen');
   assert.equal(home.inSettings, false, 'code field is not inside settings');
   assert.equal(home.menuHidden, true);
-  assert.equal(home.playHit, 'playFriend', 'nothing covers Play with friends');
+  assert.equal(home.playHit, 'playFriend', 'nothing covers Start a game with friends');
   assert.equal(home.codeHit, 'codeIn', 'the code box receives the tap');
   assert.match(home.prompt, /Have a code\? Type it here to join/);
   await page.locator('#codeIn').fill('QZ', { timeout: 8000 });

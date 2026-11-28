@@ -127,3 +127,7 @@ html[data-theme="bw"] :is(#roomLobby .rolecard.mine,#roomLobby .setup-opt.on) sv
 
 /* start cards: the current page dot is a filled, longer bar; the others stay hollow (the rule above clears every background in this look) */
 html[data-theme="bw"] .dots span.on:not(#_a):not(#_b){background-color:var(--fg)!important;width:24px;border-radius:6px}
+/* The badger's speech bubble is drawn over the board, so in black and white it needs a solid white fill like every other text box (the blanket rule above makes everything see-through, and the board marks showed through the letters). */
+html[data-theme="bw"] #badgerline.badger-bubble:not(#_a):not(#_b){background-color:var(--bg)!important}
+/* The square's tooltip (long-press or hover) is drawn over the board. It is white on black in every look; the blanket rule above left it black text on nothing, over the board marks. */
+html[data-theme="bw"] #marktip:not(#_a):not(#_b):not(#_c){background-color:var(--fg)!important;color:var(--bg)!important;border:var(--bd) solid var(--bg)!important;outline:var(--bd) solid var(--fg)}

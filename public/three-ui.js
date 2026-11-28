@@ -216,6 +216,7 @@ const bubble=window.BADGER_BUBBLE.create({
  schedule:setTimeout,cancel:clearTimeout,
  blocked:()=>!!document.querySelector('#msgslot .status-active')
 });
+window.BADGER_SAY=text=>bubble.add(text,bubbleState); // test hook: the same path a real saying takes
 window.BADGER_BUBBLE_PAUSE=()=>bubble.pause();
 window.BADGER_BUBBLE_RESUME=()=>bubble.resume();
 function badgerSquare(S){if(!S)return null;const h=S.h3||{},kind=S.role==='hunter'?(S.kind||h.kind):h.kind;
@@ -240,6 +241,8 @@ function placeBubble(el,S){const stage=document.getElementById('stage'),board=do
  const sr=stage.getBoundingClientRect(),br=el.getBoundingClientRect(),cr=cell.getBoundingClientRect();
  const slot=document.getElementById('hint')||document.getElementById('msgslot'),srSlot=slot&&slot.getBoundingClientRect();
  const pieces=[...board.querySelectorAll('.pc')].map(n=>n.getBoundingClientRect());
+ // The YOU tag sits just above the player's own square. Keep the bubble clear of it (and of any other tag in the stage), with a 3px gap.
+ for(const f of stage.querySelectorAll('.youflag')){const q=f.getBoundingClientRect();if(q.width)pieces.push({left:q.left-3,right:q.right+3,top:q.top-3,bottom:q.bottom+3});}
  const hits=(x,y)=>{const box={l:x,t:y,r:x+br.width,b:y+br.height};
   if(box.l<sr.left+1||box.r>sr.right-1||box.t<sr.top+1||box.b>sr.bottom-1)return true;
   if(srSlot&&box.l<srSlot.right-1&&box.r>srSlot.left+1&&box.t<srSlot.bottom-1&&box.b>srSlot.top+1)return true;
