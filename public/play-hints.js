@@ -1,7 +1,7 @@
 // "Did you know?" hints: a short card that shows the first time a new action or rule matters during your turn.
 // Built on the existing just-in-time tips (tutorial.js TUT.tip): same once-only localStorage habit, same bo_tips_off master switch,
 // the six old tips it covers (kick, warm, food, carry, sniff, throwtip) are handed over to it while hints are on, and every older tip follows the switch.
-// All player-facing words are in the TABLE below (one line each). They are PENDING Brian's approval.
+// All player-facing words are in the TABLE below (one line each).
 // Numbers are never typed here: they come from the rules (state.rules, state.cfg), the same numbers the role card uses.
 // Stacking (PR #96): above bubbles (300), below cutaways (400), so it sits at 350.
 // Never shows to a computer player (a computer has no phone). In Pass & Play it shows on the phone in hand.
@@ -53,11 +53,12 @@
 
   // ---- THE TABLE: one row per hint. animal, id, when(x) is the trigger, text(x) is the line. ----
   // Order is priority: the first row that is true and not yet seen is the one shown (at most one per turn).
-  // Wording is pending Brian's yes. A wording change is a one-line edit here.
+  // Approved by Snack Quest Chat on Brian's say-so, 2026-11-27 ('push ahead and make decisions and merge'); Brian has not read them yet.
+  // A wording change is a one-line edit here.
   const TABLE = [
     // Ostrich (classic, 3 players, Hunters, and each ostrich in the team modes)
     { animal: 'ostrich', id: 'kick', when: x => !!(x.S.can && x.S.can.kick),
-      text: x => `Did you know? As the Ostrich, you can kick an animal that's 1 square away. Tap Kick to push it ${sq(x.c.kick)}${x.mode === '4h' ? ` (${x.c.kickBadger} for a badger)` : ''}.` },
+      text: x => `Did you know? As the Ostrich, you can kick an animal that's 1 square away. Tap Kick to push it ${sq(x.c.kick)}${x.mode === '4h' || x.kind === 'badger' ? ` (${x.c.kickBadger} for a badger)` : ''}.` },
     { animal: 'ostrich', id: 'hunter', when: x => x.mode !== '2' && x.mode !== '4' && seenHunters(x).length > 0,
       text: x => `Did you know? You only see a hunter within ${sq(x.m.see || 2)}. If it lands on your square it catches you, and ${x.ko} catches knock you out.` },
     { animal: 'ostrich', id: 'caught', when: x => !!(x.h.lastCatch && x.h.lastCatch.bird === (x.h.mySeat || x.S.role)),
@@ -75,7 +76,7 @@
     { animal: 'ostrich', id: 'sit', when: x => !!(x.S.onEgg && x.S.can && x.S.can.sit),
       text: x => `Did you know? Tap Sit to stay on your egg and keep it warm. Anyone who can see you can see you sitting.` },
     { animal: 'ostrich', id: 'bounce', when: x => valid(x.S.vulture) && x.me && cheb(x.me, x.S.vulture) <= x.c.throwRange,
-      text: x => `Did you know? A stone thrown at your square is kicked back at the vulture. Squares next to you are not safe.` },
+      text: x => `Did you know? A stone thrown at your square is kicked back at the vulture. Eggs on the squares next to you are not protected.` },
 
     // Vulture (classic, 3 players, Hunters, and each vulture in the team modes)
     { animal: 'vulture', id: 'fly', when: x => !!(x.S.fly && x.S.fly.length),
@@ -105,7 +106,7 @@
     { animal: 'hyena', id: 'sense', when: x => x.S.sense != null,
       text: x => `Did you know? Each time you move you learn yes or no: is a bird within ${sq(x.S.senseRange || x.m.sense || 2)}? It does not say which way. A dashed bird outline shows where one may be.` },
     { animal: 'hyena', id: 'pounce', when: x => !!x.S.pounce,
-      text: x => `Did you know? You smelled a bird and missed, so you get ${sq(x.m.pounce || 1)} more move. That is a pounce. Tap Stay to skip it.` },
+      text: x => `Did you know? You smelled a bird and missed, so you may move ${sq(x.m.pounce || 1)} more. That's a pounce. Tap Stay to skip it.` },
     { animal: 'hyena', id: 'rival', when: x => x.mode === '4h' && seenHunters(x).some(q => x.me && cheb(x.me, q.p) <= 1),
       text: x => `Did you know? If you move onto the other hunter, you push it away.` },
     { animal: 'hyena', id: 'caught', when: x => !!(x.h.lastCatch && x.h.lastCatch.ko),
@@ -172,7 +173,7 @@
     { animal: AIRY, id: 'mRound', kind: 'mark', head: '#roundsLeft', when: x => x.S.round > 1,
       text: x => `Did you know? The round counter at the top shows the round out of ${x.c.rounds}. ${x.animal === 'ostrich' ? `You win if an egg is still alive at the end.` : x.animal === 'vulture' ? `If an egg lasts all ${x.c.rounds} rounds, you lose.` : `If an egg lasts all ${x.c.rounds} rounds, the hunters lose.`}` },
     { animal: AIRY, id: 'sTimer', kind: 'scene', head: '#timerToggle', when: x => x.S.showTimers !== false && x.S.clockLeft != null && x.S.clockLeft >= 0,
-      text: x => `Did you know? Each turn has a timer of ${Math.round(((x.h.clockMs || x.S.clockMs || 10000)) / 1000)} seconds. When it runs out, your turn ends. You can turn the timer off in the menu.` },
+      text: x => `Did you know? Each turn has a timer of ${Math.round(((x.h.clockMs || x.S.clockMs || 10000)) / 1000)} seconds. When it runs out, your turn ends. Only the host can turn the timer off, with the clock button at the top.` },
 
     // ===== Scenarios: what is going on right now =====
     { animal: AIRY, id: 'sWait', kind: 'scene', wait: true, when: x => !x.S.myTurn && !x.S.god,
@@ -180,7 +181,7 @@
     { animal: AIRY, id: 'sBot', kind: 'scene', wait: true, when: x => !x.S.myTurn && !x.S.god && !!(x.S.ai || Object.values(x.h.seats || {}).includes('bot')),
       text: x => `Did you know? A computer player takes its turn by itself, by the same rules as you.` },
     { animal: AIRY, id: 'sCutaway', kind: 'scene', wait: true, when: x => cutSeen && !x.S.god,
-      text: x => `Did you know? The short picture you just saw showed what happened to a piece. The board is now back to the real position.` },
+      text: x => `Did you know? The short cartoon shows what just happened. The board now shows where everyone is.` },
     { animal: 'ostrich', id: 'sEggGone', kind: 'scene', when: x => (x.S.eggs || []).some(e => e && !e.alive) || x.S.lastCold > 0,
       text: x => `Did you know? A broken or cold egg is gone for good. You win if any egg is still alive after round ${x.c.rounds}.` },
     { animal: 'vulture', id: 'sEggGone', kind: 'scene', when: x => x.S.eggsLeft < (x.cfg.eggs || 0) || x.S.lastCold > 0,

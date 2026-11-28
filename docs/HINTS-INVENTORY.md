@@ -53,7 +53,7 @@ Server field names: view builders are in `server.js`: `view()` (classic, lines 4
 | found | The vulture found one of your eggs | `S.marks[key(egg.pos)]==='spotted'` on an alive egg | all | Did you know? A filled egg means the vulture found it. It stays found until you carry it to a new square. | yes |
 | carry | You stand on an egg and may carry it | `S.onEgg && S.can.carry` | all but simple | Did you know? You can carry an egg {carryWalk} square to hide it somewhere new. Tap Carry, then a square. | yes |
 | sit | You stand on an egg and may sit | `S.onEgg && S.can.sit` | all | Did you know? Tap Sit to stay on your egg and keep it warm. Anyone who can see you can see you sitting. | yes |
-| bounce | The vulture is close enough to throw at you | `cheb(S.ostrich, S.vulture) <= rules.cfg.throwRange` | all | Did you know? A stone thrown at your square is kicked back at the vulture. Squares next to you are not safe. | yes |
+| bounce | The vulture is close enough to throw at you | `cheb(S.ostrich, S.vulture) <= rules.cfg.throwRange` | all | Did you know? A stone thrown at your square is kicked back at the vulture. Eggs on the squares next to you are not protected. | yes |
 | wrecked | A wrecked square appears | any `S.marks[k]` is `'hit'` or `'stone'` | all | Did you know? A wrecked square is out for good. Nobody can land on it. | yes |
 | leaf-close | A leaf is within walking distance and you are hungry | `cfg.foods` within `rules.cfg.walk` of you | all | (folded into `food`) | no |
 | egg-on-leaf | Carry is blocked next to a leaf | `ui.js` 359 shake when carry target is within 1 of food | all | "Eggs can't go onto or next to a leaf." | not built |
@@ -83,7 +83,7 @@ Server field names: view builders are in `server.js`: `view()` (classic, lines 4
 |---|---|---|---|---|---|
 | walk | First turn | `S.hmoves.length>0` (`server.js` 138, 424, 517) | 3, 4h, 5 | Did you know? Tap a square to walk up to {walk} squares. Land on a bird and you catch it. {ko} catches knock a bird out. | yes (hyena and badger) |
 | sense | You are told yes or no | `S.sense!=null` on your turn (`three-ui.js` 354) | 3, 4h, 5 | Did you know? Each time you move you learn yes or no: is a bird within {sense} squares? It does not say which way. A dashed bird outline shows where one may be. | yes |
-| pounce | Hyena may move again after a miss | `S.pounce` truthy | 3, 4h, 5 (hyena) | Did you know? You smelled a bird and missed, so you get {pounce} more move. That is a pounce. Tap Stay to skip it. | yes |
+| pounce | Hyena may move again after a miss | `S.pounce` truthy | 3, 4h, 5 (hyena) | Did you know? You smelled a bird and missed, so you may move {pounce} more. That's a pounce. Tap Stay to skip it. | yes |
 | burrow | Badger may hide | `!S.burrowed`, animal badger (card line: "Tap Burrow to hide. Birds within 2 squares see where.") | 3, 4h, 5 | Did you know? Tap Burrow to hide. Birds within {see} squares see where. | yes |
 | ambush | Burrowed badger sees a bird next to it | `S.burrowed && S.seenBirds.length` (`three-ui.js` 349) | 3, 4h, 5 | Did you know? A burrowed badger sees the exact square of any bird next to it. | yes |
 | rival | The other hunter is next to you | 4h only: `h3.hunters` entry with `me:false` within 1 (`hunt.js` 204) | 4h | Did you know? If you move onto the other hunter, you push it away. (No number: the push distance is `TH.rivalKnock`, which is not in `state.rules`.) | yes |
@@ -164,7 +164,7 @@ Wording lives in the TABLE in `public/play-hints.js`; a change is a one-line edi
 | ostrich | found | rule | Did you know? A filled egg means the vulture found it. It stays found until you carry it to a new square. |
 | ostrich | carry | rule | Did you know? You can carry an egg 1 square to hide it somewhere new. Tap Carry, then a square. |
 | ostrich | sit | rule | Did you know? Tap Sit to stay on your egg and keep it warm. Anyone who can see you can see you sitting. |
-| ostrich | bounce | rule | Did you know? A stone thrown at your square is kicked back at the vulture. Squares next to you are not safe. |
+| ostrich | bounce | rule | Did you know? A stone thrown at your square is kicked back at the vulture. Eggs on the squares next to you are not protected. |
 | vulture | fly | rule | Did you know? Tap a square to fly up to 2 squares. Every landing sniffs for an egg 1 square away. |
 | vulture | sniff | rule | Did you know? "Egg nearby" means an egg is within 1 square of where you landed, but not which square. A dashed egg marks where one may be. |
 | vulture | mateSniff | rule | Did you know? You and your teammate share every sniff. Your teammate's answer shows on your board too. |
@@ -175,7 +175,7 @@ Wording lives in the TABLE in `public/play-hints.js`; a change is a one-line edi
 | vulture | eat | rule | Did you know? The ostrich starves if it does not eat every 15 turns. The leaf number at the top is its turns left. |
 | hyena, badger | walk | rule | Did you know? Tap a square to walk up to 2 squares. Land on a bird and you catch it. 2 catches knock a bird out. |
 | hyena, badger | sense | rule | Did you know? Each time you move you learn yes or no: is a bird within 2 squares? It does not say which way. A dashed bird outline shows where one may be. |
-| hyena | pounce | rule | Did you know? You smelled a bird and missed, so you get 1 square more move. That is a pounce. Tap Stay to skip it. |
+| hyena | pounce | rule | Did you know? You smelled a bird and missed, so you may move 1 square more. That's a pounce. Tap Stay to skip it. |
 | hyena, badger | rival | rule | Did you know? If you move onto the other hunter, you push it away. |
 | hyena | caught | rule | Did you know? 2 catches knock a bird out. After a knock-out you move 3 squares, with no pounce. |
 | badger | burrow | rule | Did you know? Tap Burrow to hide. Birds within 2 squares see where. |
@@ -212,10 +212,10 @@ Wording lives in the TABLE in `public/play-hints.js`; a change is a one-line edi
 | ostrich | mRound | mark | Did you know? The round counter at the top shows the round out of 30. You win if an egg is still alive at the end. |
 | vulture | mRound | mark | Did you know? The round counter at the top shows the round out of 30. If an egg lasts all 30 rounds, you lose. |
 | hyena, badger | mRound | mark | Did you know? The round counter at the top shows the round out of 30. If an egg lasts all 30 rounds, the hunters lose. |
-| everyone | sTimer | scene | Did you know? Each turn has a timer of 10 seconds. When it runs out, your turn ends. You can turn the timer off in the menu. |
+| everyone | sTimer | scene | Did you know? Each turn has a timer of 10 seconds. When it runs out, your turn ends. Only the host can turn the timer off, with the clock button at the top. |
 | everyone | sWait | scene | Did you know? When it is not your turn, the other players move. The line above the board says whose turn it is. |
 | everyone | sBot | scene | Did you know? A computer player takes its turn by itself, by the same rules as you. |
-| everyone | sCutaway | scene | Did you know? The short picture you just saw showed what happened to a piece. The board is now back to the real position. |
+| everyone | sCutaway | scene | Did you know? The short cartoon shows what just happened. The board now shows where everyone is. |
 | ostrich | sEggGone | scene | Did you know? A broken or cold egg is gone for good. You win if any egg is still alive after round 30. |
 | vulture | sEggGone | scene | Did you know? Every broken or cold egg counts toward your win. You win when every egg is broken or cold. |
 | ostrich | sLast | scene | Did you know? These are the last rounds. Keep one egg alive until round 30 and you win. |
