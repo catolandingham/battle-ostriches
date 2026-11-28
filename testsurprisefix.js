@@ -164,7 +164,7 @@ function boardHTML(pieceAt) {
   assert.equal(top.hint, "You're on the egg!");
   assert.ok(!top.status.some(t => /hunts eggs/.test(t)), 'the hunt intro is not the status line: ' + top.status.join(' | '));
 
-  // A watcher who can still see the hunter plays the kick slide at once, with no cartoon in front of it.
+  // A watcher who can still see the hunter plays the kick cartoon first (Brian, 2026-11-27), then the slide, never both at once.
   const P3 = await c.newPage();
   await P3.goto('http://localhost:4017/?theme=comic');
   await P3.waitForSelector('#board');
@@ -181,6 +181,9 @@ function boardHTML(pieceAt) {
     const prev = { role: 'red', phase: 'play', cfg, vulture: [7, 5], ostrich: [3, 3], h3: { mySeat: 'red', kind: 'hyena', hunter: [6, 3] }, kick: null };
     const S = { role: 'red', phase: 'play', cfg, vulture: [7, 5], ostrich: [3, 3], h3: { mySeat: 'red', kind: 'hyena', hunter: [7, 3] }, kick: { seq: 9, who: 'hyena', by: 'blue', target: 'hyena', key: 'hyena', moved: 2, to: [7, 3], trail: [[6, 3], [7, 3]] } };
     window.__watchT = Date.now();
+    // Record the first moment a slide layer exists (it can be short-lived on a slow or different engine, so polling for it can miss it).
+    window.__slide = null;
+    new MutationObserver(() => { if (!window.__slide && document.querySelector('.push-motion, .partial-motion')) window.__slide = { at: Date.now(), cartoon: !!document.getElementById('cutaway'), go: !!document.getElementById('surprise-go') }; }).observe(document.body, { childList: true, subtree: true });
     window.CUTAWAYS.prepare(S, prev, board);
     let neu = '';
     for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) neu += cell(x, y, (x === 7 && y === 3) ? '<div class="pc ph hhyena" id="landed"></div>' : '');
@@ -188,16 +191,13 @@ function boardHTML(pieceAt) {
     window.PUSH_MOTION.run(S, prev, board);
     window.CUTAWAYS.play(S, prev, board);
   });
-  await P3.waitForFunction(() => !!document.querySelector('.push-motion, .partial-motion'), null, { timeout: 1000 });
-  const watch = await P3.evaluate(() => ({
-    ms: Date.now() - window.__watchT,
-    cartoon: !!document.getElementById('cutaway'),
-    go: !!document.getElementById('surprise-go'),
-    slide: !!document.querySelector('.push-motion, .partial-motion')
-  }));
+  const early = await P3.evaluate(() => ({ cartoon: !!document.getElementById('cutaway'), slide: !!document.querySelector('.push-motion, .partial-motion') }));
+  assert.ok(early.cartoon && !early.slide, 'the watcher cartoon covers the board before the slide');
+  await P3.waitForFunction(() => !!window.__slide, null, { timeout: 6000 }).catch(async e => { console.error('DIAG', JSON.stringify(await P3.evaluate(() => ({ cls: document.documentElement.className, cut: !!document.getElementById('cutaway'), layers: [...document.querySelectorAll('#stage > *')].map(n => n.className || n.id), ms: Date.now() - window.__watchT })))); throw e; });
+  const watch = await P3.evaluate(() => ({ ms: window.__slide.at - window.__watchT, cartoon: window.__slide.cartoon, go: window.__slide.go, slide: true }));
   assert.ok(watch.slide, 'the watcher slide is playing');
-  assert.ok(watch.ms < 800, 'the watcher slide does not wait out the 2s cartoon: ' + watch.ms);
-  assert.ok(!watch.cartoon, 'a watcher does not get the kick cartoon in front of the slide');
+  assert.ok(watch.ms >= 1500 && watch.ms < 3500, 'the watcher slide starts after the 2s cartoon: ' + watch.ms);
+  assert.ok(!watch.cartoon, 'the cartoon is gone when the slide plays');
   assert.ok(!watch.go, 'a watcher has no continue button');
 
   await b.close();

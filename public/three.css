@@ -51,7 +51,9 @@
 /* The live saying sits near the badger when that square is already on this phone, and never in the status slot.
    A long line wraps across the phone, under the hint, and is never clipped. */
 html[data-theme] #badgerline.badger-bubble{box-sizing:border-box!important;background:#2a1606!important;color:#ffd21f!important;font:800 13px/1.25 system-ui,-apple-system,sans-serif!important;text-align:center!important;text-transform:none!important;letter-spacing:0!important;white-space:normal!important;overflow-wrap:anywhere!important;height:auto!important;max-height:none!important;overflow:visible!important;padding:6px 8px!important;border:3px solid #111!important;border-radius:12px!important;box-shadow:0 2px 0 #111!important;pointer-events:none}
-#stage>#badgerline.badger-bubble{position:absolute;z-index:24;margin:0}
+/* Stacking order for text drawn over the board: every board mark and icon (rock pile, leaf, egg, X, rings, cue frames) stays at or below 47 and the YOU tag is 49 (200 in black and white),
+   so a speech bubble sits above all of them at 300 (cut-away scenes are 400). A new board mark must stay under 100. */
+#stage>#badgerline.badger-bubble{position:absolute;z-index:300;margin:0}
 #app>#badgerline.badger-bubble.offboard{position:relative;align-self:center;z-index:6;width:auto;max-width:calc(100% - 16px);margin:0 8px 4px}
 .badgerwin{font-weight:900;color:#ffd21f;background:#2a1606;border-radius:12px;padding:8px 12px;display:inline-block}
 /* the one-line announcement for a big event: outside #board so a redraw never erases it; the script keeps each line up about 3 seconds */

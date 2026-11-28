@@ -10,6 +10,14 @@ assert.equal(C.seenWrap([[4, 3], [5, 3], [6, 3], [7, 3]], { cols: 9, rows: 7 }),
 assert.equal(C.seenWrap([[8, 3], null, [0, 3]], { cols: 9, rows: 7 }), false, 'a hidden step is not a wrap this phone can see');
 assert.equal(C.seenWrap([[4, 6], [4, 0], [4, 1]], { cols: 9, rows: 7 }), true, 'a vertical wrap counts');
 
+
+// Brian, 2026-11-27: every phone gets the cartoon. A phone the server sent no squares gets the animals only.
+function blind(scene, label) {
+  assert.ok(scene, label + ' still gets the cartoon');
+  assert.equal(scene.trail, null, label + ' cartoon has no path');
+  assert.ok(!scene.wrap, label + ' cartoon is not the wrap row');
+  assert.equal(/"at"|"to"|"trail":\[|burrow|wrap":true/.test(JSON.stringify(scene)), false, label + ' cartoon names no square, path, wrap or burrow');
+}
 function shot(f) { const o = {}; for (const r of f.roles) o[r] = f.view(r); return o; }
 function ids(f, prev) { const o = {}; for (const r of f.roles) { const s = C.sceneFor(f.view(r), prev[r]); o[r] = s && s.id; } return o; }
 
@@ -28,8 +36,8 @@ for (const mode of ['3p', 'Hunters', '5p']) {
   assert.equal(got[hyena], 'kick', mode + ' hyena sees the kick cartoon');
   for (const r of straight.roles) if (r !== kicker && r !== hyena) {
     const view = straight.view(r), sent = !!(view.kick && ((view.kick.trail && view.kick.trail.some(p => p && p[0] >= 0)) || (view.kick.to && view.kick.to[0] >= 0)));
-    if (sent) assert.ok(got[r], mode + ' ' + r + ' sees a kick the server sent');
-    else assert.equal(got[r], null, mode + ' ' + r + ' is not sent the kick');
+    assert.ok(got[r], mode + ' ' + r + ' sees the kick cartoon');
+    if (!sent) blind(C.sceneFor(view, before[r]), mode + ' ' + r + ' (no squares)');
   }
   assert.equal(C.sceneFor(straight.view(kicker), before[kicker]).by, 'ostrich');
   assert.equal(C.sceneFor(straight.view(kicker), before[kicker]).target, 'hyena');
@@ -49,8 +57,8 @@ for (const mode of ['3p', 'Hunters', '5p']) {
   assert.equal(wgot[hyena], w.lastKick.wrap ? 'kick-wrap' : 'kick', mode + ' hyena cartoon has no path, only the wrap flag');
   for (const r of wrap.roles) if (r !== wrap.blue && r !== hyena) {
     const view = wrap.view(r), sent = !!(view.kick && ((view.kick.trail && view.kick.trail.some(p => p && p[0] >= 0)) || (view.kick.to && view.kick.to[0] >= 0)));
-    if (sent) assert.ok(wgot[r], mode + ' ' + r + ' sees a kick the server sent');
-    else assert.equal(wgot[r], null, mode + ' ' + r + ' is not sent the kick');
+    assert.ok(wgot[r], mode + ' ' + r + ' sees the kick cartoon');
+    if (!sent) blind(C.sceneFor(view, wbefore[r]), mode + ' ' + r + ' (no squares)');
   }
   // a bird who can see the hyena leave, but not the far side, gets the plain kick picture
   const near = make(S, mode), n = near.g; n.turn = near.blue;
@@ -79,7 +87,9 @@ for (const mode of ['3p', 'Hunters', '5p']) {
   const vp = shot(v); assert.ok(T.ostrichKick3(vg, [4, 3]));
   assert.equal(C.sceneFor(v.view('blue'), vp.blue).id, 'kick-vulture');
   assert.equal(C.sceneFor(v.view('red'), vp.red).id, 'kick-vulture', 'the vulture sees being kicked');
-  assert.equal(C.sceneFor(v.view('hunter'), vp.hunter), null, 'a far hunter does not see a kick on the vulture');
+  const far = C.sceneFor(v.view('hunter'), vp.hunter);
+  assert.equal(far && far.id, 'kick-vulture', 'a far hunter now sees the kick picture on the vulture (Brian, 2026-11-27)');
+  assert.equal(far.trail, null, 'with no path'); assert.ok(!far.wrap, 'and no wrap row');
 }
 
 // The cartoon record is the animals only. A phone that was not sent a square must not find one here.
@@ -195,8 +205,8 @@ for (const mode of ['3p', 'Hunters', '5p']) {
   for (const r of f.roles) if (r !== f.red && r !== hyena) {
     const view = f.view(r), trails = (view.stoneNote && view.stoneNote.trails) || [];
     const sent = trails.some(t => t.card || (t.points && t.points.some(p => p && p[0] >= 0)));
-    if (sent) assert.ok(got[r], mode + ' ' + r + ' sees a stone the server sent');
-    else assert.equal(got[r], null, mode + ' ' + r + ' is not sent the stone');
+    assert.ok(got[r], mode + ' ' + r + ' sees the stone cartoon');
+    if (!sent) blind(C.sceneFor(view, prev[r]), mode + ' ' + r + ' (no squares)');
   }
   const miss = make(S, mode), mg = miss.g; mg.turn = miss.red;
   if (mode === '5p') { mg.b.v1.pos = [3, 3]; mg.h.kind = 'badger'; mg.h.p = [4, 3]; mg.b.v1.stones = 1; mg.b.o1.pos = [8, 0]; mg.b.o2.pos = [0, 6]; mg.b.v2.pos = [0, 0]; }
@@ -210,8 +220,8 @@ for (const mode of ['3p', 'Hunters', '5p']) {
   for (const r of miss.roles) if (r !== miss.red && r !== badger) {
     const view = miss.view(r), trails = (view.stoneNote && view.stoneNote.trails) || [];
     const sent = trails.some(t => t.card || (t.points && t.points.some(p => p && p[0] >= 0)));
-    if (sent) assert.ok(mgot[r], mode + ' ' + r + ' sees a badger stone the server sent');
-    else assert.equal(mgot[r], null, mode + ' ' + r + ' is not sent the badger stone');
+    assert.ok(mgot[r], mode + ' ' + r + ' sees the badger stone cartoon');
+    if (!sent) blind(C.sceneFor(view, mp[r]), mode + ' ' + r + ' (no squares)');
   }
 }
 
@@ -339,6 +349,64 @@ S.close();
       assert.ok(l[3] > 0 && l[4] > 0, id + ' layer has a size');
     }
   }
+}
+
+// --- Brian, 2026-11-27: a phone with no squares still gets the cartoon, as the animals only ---
+// Strip every square from a real view (what a blind phone is sent: the event line, the animals and the seq), then check the cartoon.
+function blindView(v) {
+  const c = JSON.parse(JSON.stringify(v));
+  if (c.kick) { c.kick.trail = null; c.kick.to = null; c.kick.wrap = false; }
+  if (c.stoneNote) c.stoneNote.trails = (c.stoneNote.trails || []).map(t => ({ key: t.key, points: null, card: true }));
+  if (c.h3 && c.h3.burst) { c.h3.burst.trail = null; c.h3.burst.to = null; }
+  if (c.h3 && c.h3.rival) { c.h3.rival.trail = null; c.h3.rival.to = null; }
+  return c;
+}
+for (const mode of ['3p', 'Hunters', '5p']) {
+  // kick on a hunter, wrapping: the blind phone gets the plain kick, never the wrap row
+  const w = make(S, mode), g = w.g; g.turn = w.blue;
+  if (mode === '5p') { g.b.o1.pos = [7, 3]; g.b.o2.pos = [0, 6]; g.b.v1.pos = [0, 0]; g.b.v2.pos = [4, 6]; g.h.p = [8, 3]; g.h.kind = 'hyena'; }
+  else if (mode === '3p') { g.ostrich = [7, 3]; g.vulture = [0, 6]; g.three.h = [8, 3]; g.three.pounce = false; }
+  else { g.ostrich = [7, 3]; g.vulture = [0, 6]; g.hunt.hs.hyena.p = [8, 3]; g.hunt.hs.badger.p = [4, 6]; g.hunt.hs.hyena.pounce = false; }
+  const before = shot(w);
+  assert.ok(mode === '5p' ? TT.ostrichKick(g, 'o1', [8, 3]) : mode === '3p' ? T.ostrichKick3(g, [8, 3]) : H.ostrichKickH(g, [8, 3]), mode + ' wrap kick');
+  for (const r of w.roles) {
+    const sighted = C.sceneFor(w.view(r), before[r]);
+    assert.ok(sighted, mode + ' ' + r + ' gets the kick cartoon');
+    const b = C.sceneFor(blindView(w.view(r)), before[r]);
+    blind(b, mode + ' ' + r + ' blind kick');
+    assert.equal(b.id, 'kick', mode + ' ' + r + ' blind phone gets the plain kick, not ' + (sighted && sighted.id));
+  }
+  // a stone hit on a hunter
+  const st = make(S, mode), sg = st.g; sg.turn = st.red;
+  if (mode === '5p') { sg.b.v1.pos = [3, 3]; sg.b.v2.pos = [0, 0]; sg.b.o1.pos = [8, 6]; sg.b.o2.pos = [0, 6]; sg.h.p = [4, 3]; sg.h.kind = 'hyena'; sg.b.v1.stones = 1; }
+  else if (mode === '3p') { sg.vulture = [3, 3]; sg.ostrich = [8, 6]; sg.three.h = [4, 3]; sg.stones = 1; }
+  else { sg.vulture = [3, 3]; sg.ostrich = [8, 6]; sg.hunt.hs.hyena.p = [4, 3]; sg.hunt.hs.badger.p = [0, 0]; sg.stones = 1; }
+  const sp = shot(st);
+  assert.ok(mode === '5p' ? TT.vultureThrow(sg, 'v1', [4, 3]) : mode === '3p' ? T.vultureThrow3(sg, [4, 3]) : H.vultureThrowH(sg, [4, 3]), mode + ' stone hit');
+  for (const r of st.roles) { const b = C.sceneFor(blindView(st.view(r)), sp[r]); blind(b, mode + ' ' + r + ' blind stone'); assert.equal(b.id, 'stone'); }
+  // the ostrich kicks the vulture: a hunter's phone cannot see her. It still gets the picture.
+  const kv = make(S, mode), kg = kv.g; kg.turn = kv.blue;
+  if (mode === '5p') { kg.b.o1.pos = [3, 3]; kg.b.o2.pos = [0, 0]; kg.b.v1.pos = [4, 3]; kg.b.v2.pos = [0, 6]; kg.h.p = [8, 6]; kg.h.kind = 'hyena'; }
+  else if (mode === '3p') { kg.ostrich = [3, 3]; kg.vulture = [4, 3]; kg.three.h = [8, 6]; }
+  else { kg.ostrich = [3, 3]; kg.vulture = [4, 3]; kg.hunt.hs.hyena.p = [8, 6]; kg.hunt.hs.badger.p = [0, 6]; }
+  const kp = shot(kv);
+  assert.ok(mode === '5p' ? TT.ostrichKick(kg, 'o1', [4, 3]) : mode === '3p' ? T.ostrichKick3(kg, [4, 3]) : H.ostrichKickH(kg, [4, 3]), mode + ' kick the vulture');
+  for (const r of kv.roles) { const sc = C.sceneFor(kv.view(r), kp[r]); assert.ok(sc && sc.id === 'kick-vulture', mode + ' ' + r + ' sees the vulture kick cartoon'); if (!kv.view(r).kick.trail || !kv.view(r).kick.trail.some(p => p && p[0] >= 0)) blind(sc, mode + ' ' + r + ' (real blind view)'); }
+}
+// Hunters mode: burst and shove, with every square taken out of the view. 3-player and 2 vs 2 + hunter have no burst or shove.
+{
+  const f = make(S, 'Hunters'), g = f.g;
+  g.turn = 'badger'; g.hunt.hs.badger.p = [4, 3]; g.hunt.hs.badger.burrowed = true; g.hunt.hs.badger.pounce = false;
+  g.hunt.hs.hyena.p = [4, 3]; g.hunt.hs.hyena.came = { to: [4, 3], dir: [1, 0] }; g.ostrich = [0, 0]; g.vulture = [0, 6];
+  const prev = shot(f); assert.ok(H.hunterBurst(g));
+  for (const r of f.roles) { const b = C.sceneFor(blindView(f.view(r)), prev[r]); blind(b, 'burst ' + r); assert.equal(b.id, 'burst'); }
+  for (const mode of ['3p', '5p']) { const m = make(S, mode); for (const r of m.roles) assert.ok(!(m.view(r).h3 && (m.view(r).h3.burst || m.view(r).h3.rival)), mode + ' has no burst or shove to show'); }
+}
+{
+  const f = make(S, 'Hunters'), g = f.g; g.turn = 'badger';
+  g.hunt.hs.badger.p = [3, 3]; g.hunt.hs.badger.burrowed = false; g.hunt.hs.badger.pounce = false; g.hunt.hs.hyena.p = [4, 3]; g.ostrich = [0, 0]; g.vulture = [0, 6];
+  const prev = shot(f); assert.ok(H.hunterMove(g, [4, 3]), 'shove');
+  for (const r of f.roles) { const b = C.sceneFor(blindView(f.view(r)), prev[r]); blind(b, 'shove ' + r); assert.equal(b.id, 'shove-badger-hyena'); }
 }
 
 console.log('PASS cutaway scenes: mapping and who may see them, including a wrap and the egg smash, and every scene has its drawings');
