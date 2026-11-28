@@ -46,7 +46,7 @@ Server field names: view builders are in `server.js`: `view()` (classic, lines 4
 |---|---|---|---|---|---|
 | kick | An animal is 1 square away and can be kicked | `S.can.kick` (server: `kickTargets(g).length>0` on your turn; `server.js` 59, 152, 434, 530) | all | Did you know? As the Ostrich, you can kick an animal that's 1 square away. Tap Kick to push it {rules.cfg.kick} squares. (4h adds "({kickBadger} for a badger)") | yes |
 | hunter | A hunter comes into view | `h3.hunter` (modes 3, 5) or a `h3.hunters` entry with `me:false` (4h), set only inside `see` range | 3, 4h, 5 | Did you know? You only see a hunter within {see} squares. If it lands on your square it catches you, and {ko} catches knock you out. | yes |
-| caught | You were just caught (first time) | `h3.lastCatch.bird === h3.mySeat \|\| S.role` | 3, 4h, 5 | Did you know? When a hunter catches you, you are set down {cfg.scramble} squares away and keep your turn. {ko} catches knock you out. | yes |
+| caught | You were just caught (first time) | `h3.lastCatch.bird === h3.mySeat \|\| S.role` | 3, 4h, 5 | Did you know? When a hunter catches you, you are set down {cfg.scramble} squares away. {ko} catches knock you out. | yes |
 | cool | One of your eggs is half way to cold and you are not on it | `S.eggs[i].coldIn <= ceil(rules.cfg.warmth/2)`, alive, not carried, `pos` not your square, `mine!==false` (`ui.js` 386 to 398 uses a fixed 8 for its own guide) | all | Did you know? An egg goes cold if you don't stand on it for {warmth} rounds. The number on an egg is how many rounds it has left. Walk back to warm it. | yes |
 | mateCool | A teammate's egg is half way to cold | same, `mine===false`, `h3.team` | 4, 5 | Did you know? You can warm your teammate's eggs too. Stand on one before its number runs out. | yes |
 | food | You are half way to starving | `S.hungerLeft <= ceil(rules.cfg.food/2)` | all | Did you know? You must step on a leaf every {food} turns or you starve. You have {hungerLeft} turns left. | yes |
@@ -71,7 +71,7 @@ Server field names: view builders are in `server.js`: `view()` (classic, lines 4
 | noStone | Out of stones | `S.stones<1` | all | Did you know? You are out of stones. Land on a rock pile to pick up another. | yes |
 | kicked | An ostrich is next to you | `cheb(S.vulture, S.ostrich)<=1` (birds always see each other) | all | Did you know? An ostrich next to you can kick you {kick} squares straight away from it. Fly out of its reach if you can. | yes |
 | hunter | A hunter comes into view | as ostrich | 3, 4h, 5 | Did you know? You only see a hunter within {see} squares. If it lands on your square it catches you, and {ko} catches knock you out. | yes |
-| caught | You were just caught | as ostrich | 3, 4h, 5 | Did you know? When a hunter catches you, you are set down {scramble} squares away and keep your turn. {ko} catches knock you out. | yes |
+| caught | You were just caught | as ostrich | 3, 4h, 5 | Did you know? When a hunter catches you, you are set down {scramble} squares away. {ko} catches knock you out. | yes |
 | eat | The ostrich is half way to starving | `S.hungerLeft <= ceil(food/2)` (public number) | all | Did you know? The ostrich starves if it does not eat every {food} turns. The leaf number at the top is its turns left. | yes |
 | wrecked | A wrecked square appears | as ostrich | all | Did you know? A wrecked square is out for good. Nobody can land on it. | yes |
 | rocks-near | A rock pile is in reach while out of stones | `cfg.rocks` within `fly` | all | (folded into `noStone`) | no |
@@ -157,7 +157,7 @@ Wording lives in the TABLE in `public/play-hints.js`; a change is a one-line edi
 |---|---|---|---|
 | ostrich | kick | rule | Did you know? As the Ostrich, you can kick an animal that's 1 square away. Tap Kick to push it 3 squares. |
 | ostrich, vulture | hunter | rule | Did you know? You only see a hunter within 2 squares. If it lands on your square it catches you, and 2 catches knock you out. |
-| ostrich, vulture | caught | rule | Did you know? When a hunter catches you, you are set down 3 squares away and keep your turn. 2 catches knock you out. |
+| ostrich, vulture | caught | rule | Did you know? When a hunter catches you, you are set down 3 squares away. 2 catches knock you out. |
 | ostrich | cool | rule | Did you know? An egg goes cold if you don't stand on it for 15 rounds. The number on an egg is how many rounds it has left. Walk back to warm it. |
 | ostrich | mateCool | rule | Did you know? You can warm your teammate's eggs too. Stand on one before its number runs out. |
 | ostrich | food | rule | Did you know? You must step on a leaf every 15 turns or you starve. You have 7 turns left. |
