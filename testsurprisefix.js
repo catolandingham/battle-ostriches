@@ -190,7 +190,7 @@ function boardHTML(pieceAt) {
   });
   const early = await P3.evaluate(() => ({ cartoon: !!document.getElementById('cutaway'), slide: !!document.querySelector('.push-motion, .partial-motion') }));
   assert.ok(early.cartoon && !early.slide, 'the watcher cartoon covers the board before the slide');
-  await P3.waitForFunction(() => !!document.querySelector('.push-motion, .partial-motion'), null, { timeout: 4000 });
+  await P3.waitForFunction(() => !!document.querySelector('.push-motion, .partial-motion'), null, { timeout: 4000 }).catch(async e => { console.error('DIAG', JSON.stringify(await P3.evaluate(() => ({ hidden: document.hidden, vis: document.visibilityState, cls: document.documentElement.className, reduced: matchMedia('(prefers-reduced-motion:reduce)').matches, cut: !!document.getElementById('cutaway'), hold: !!document.getElementById('boardhold'), layers: [...document.querySelectorAll('#stage > *')].map(n => n.className || n.id), ms: Date.now() - window.__watchT })))); throw e; });
   const watch = await P3.evaluate(() => ({
     ms: Date.now() - window.__watchT,
     cartoon: !!document.getElementById('cutaway'),
