@@ -14,7 +14,8 @@ function linesFor(S){
  const card=Roles.roleCard(h.mySeat||S.role,S.role==='hunter'?(S.kind||h.kind):h.kind,mode,S.rules);
  if(!card||!card.lines||!card.lines.length)return null;
  const bits=card.lines.slice(0,3);while(bits.length<3)bits.push('Tap a lit square on your turn.');
- return [{t:card.title,d:bits[0]},{t:'Your move',d:bits[1]},{t:'Remember',d:bits[2]}];
+ const own=window.ART&&ART[card.picture]||OST; // card 1: the player's own animal; cards 2 and 3: a real B&W board picture (other looks: the animal again)
+ return [{t:card.title,d:bits[0],art:own},{t:'Your move',d:bits[1],alt:own},{t:'Remember',d:bits[2],alt:own}];
 }
 let list=[],i=0,el,after=null;
 function build(){el=document.createElement('div');el.id='tut';el.className='screen hidden';el.innerHTML=
@@ -27,9 +28,11 @@ function build(){el=document.createElement('div');el.id='tut';el.className='scre
  let x0=null;el.addEventListener('touchstart',e=>{x0=e.touches[0].clientX;},{passive:true});
  el.addEventListener('touchend',e=>{if(x0===null)return;const dx=e.changedTouches[0].clientX-x0;x0=null;if(Math.abs(dx)>50)go(i+(dx<0?1:-1));});}
 function go(n){if(n<0||n>=list.length)return;i=n;const s=list[i];
- document.getElementById('tutImg').innerHTML=s.art||(s.img?`<img src="/tut/${s.img}" alt="">`:'');document.getElementById('tutImg').className='tutimg'+(s.art?' art':'');
+ const bw=document.documentElement.getAttribute('data-theme')==='bw',SA=window.StartArt;let art=s.art,img=s.img?'/tut/'+s.img:null;
+ if(!art&&!img){if(bw&&SA)img=SA.src(s.d);else art=s.alt||OST;}
+ document.getElementById('tutImg').innerHTML=art||(img?`<img src="${img}" alt="">`:'');document.getElementById('tutImg').className='tutimg'+(art?' art':'')+(img&&/\/(warm|share|boost|pounce)\.png$/.test(img)?' tall':'');
  document.getElementById('tutT').textContent=s.t;document.getElementById('tutD').textContent=s.d;
- document.getElementById('tutDots').innerHTML=list.map((_,k)=>`<span class="${k===i?'on':''}"></span>`).join('');
+ document.getElementById('tutDots').innerHTML=list.map((_,k)=>`<span class="${k===i?'on':''}"${k===i?' aria-current="step"':''}></span>`).join('');
  document.getElementById('tutBack').disabled=i===0;document.getElementById('tutNext').textContent=i===list.length-1?"Let's play":'Next';}
 function close(){el.classList.add('hidden');}
 function showCards(cards){if(!el)build();list=cards&&cards.length?cards:FALLBACK;el.classList.remove('hidden');go(0);}
@@ -44,7 +47,7 @@ const seen=id=>{try{return localStorage.getItem('bo_tip_'+id)}catch(e){return 1}
 let shownThisTurn=false;
 function tip(id,text){if(localStorage.getItem('bo_tips_off')||seen(id))return;const b=document.getElementById('tipbar');if(b&&!b.classList.contains('hidden'))return; // one at a time
  try{localStorage.setItem('bo_tip_'+id,'1')}catch(e){}window.UI&&UI._tip&&UI._tip(text);}
-window.TUT={show,tip,offer,intro:FALLBACK,
+window.TUT={show,tip,offer,intro:FALLBACK,cards:linesFor,showCards,
  maybeShow(){},
  firstVisit(){offer(window.UI&&UI._S&&UI._S());}};
 })();
