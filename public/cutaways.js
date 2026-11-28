@@ -1,11 +1,13 @@
 // Full-screen cartoon scenes for the big moments that have art, including the vulture smashing an egg.
 // A new pair is a row in TABLE plus its drawings and steps in public/cutaway-scenes.js
 // (made by tools/cutaways/export.py; see tools/cutaways/README.md). Nothing else.
-// A kick, a stone, a burst, or a shove plays only for a player who can already see
-// that moment. A catch, and the knock-out picture, plays on every phone: the drawing
-// is the two animals and carries no square, so it does not show where the hunter was,
-// where the bird landed, or whether a badger was buried. A wrapping
-// kick (the path leaves one edge and comes back on the other) uses the wrap row.
+// Every event the server already announces to a phone as a line plays its cartoon on that phone (Brian, 2026-11-27):
+// a kick, a stone hit, a stone kicked back, an egg smash, a badger burst, a hunter shove, a catch, a knock-out.
+// The drawing is the two animals and carries no square, so it does not show where anything was, where it landed, or
+// whether a badger was buried. A phone that can see the squares (its own view carries the kick's path) gets the same
+// cartoon and then the board slide. A wrapping kick (the path leaves one edge and comes back on the other) uses the wrap
+// row, and the little board strip inside it, only on a phone whose own trail includes the jump. A phone that cannot see
+// gets the plain kick: no path, no wrap, no board strip. The cartoon reads only fields the phone's view already carries.
 (function (root) {
   const MS = 2000, REVEAL = 1500, STEP = 50;
   // The wrap shows the kick, then the little board: it fades in at WRAP_FADE and the hyena
@@ -73,8 +75,9 @@
     const h = S.h3 || {}, oh = prev.h3 || {};
     const k = S.kick;
     if (fresh(k, prev.kick)) {
-      const seen = anyPoint(k.trail) || pointOk(k.to) || !!k.card;
-      if (seen) out.push({ event: 'kick', by: kindOf(k.by || 'ostrich'), target: kindOf(k.who), wrap: !!(k.wrap || seenWrap(k.trail, S.cfg)), seq: k.seq, trail: k.trail });
+      // The kick line goes to every phone, so every phone plays the cartoon. Only a phone whose own trail has squares gets the wrap row and the path.
+      const sees = anyPoint(k.trail);
+      out.push({ event: 'kick', by: kindOf(k.by || 'ostrich'), target: kindOf(k.who), wrap: sees && !!(k.wrap || seenWrap(k.trail, S.cfg)), seq: k.seq, trail: sees ? k.trail : null });
     }
     const lc = h.lastCatch;
     // The square (lc.at) is only on phones that may see the hunter. The cartoon does not use it.
@@ -85,8 +88,7 @@
     if (fresh(note, prev.stoneNote)) {
       for (const t of note.targets || []) {
         const target = kindOf(t);
-        const trail = (note.trails || []).find(x => kindOf(x.key) === target);
-        if (trail && (anyPoint(trail.points) || trail.card)) out.push({ event: 'stone', by: kindOf(note.by || 'vulture'), target, seq: note.seq });
+        out.push({ event: 'stone', by: kindOf(note.by || 'vulture'), target, seq: note.seq }); // the hit line is in every view; the drawing has no square
       }
       // Every phone is told the stone came back, so every phone plays it. The drawing is the two birds with no square.
       if (note.bounce === 'kick' || note.bounce === 'trampoline' || note.bounce === 'leaf' || note.bounce === 'rock') out.push({ event: 'bounce', by: kindOf(note.by || 'vulture'), target: note.bounce, egg: !!note.carrying, seq: note.seq });
@@ -94,9 +96,9 @@
     const sm = S.smashNote; // every player is told about a smashed egg, so every player sees it
     if (fresh(sm, prev.smashNote)) out.push({ event: 'smash', by: 'vulture', target: 'egg', seq: sm.seq });
     const b = h.burst;
-    if (fresh(b, oh.burst) && (pointOk(b.to) || anyPoint(b.trail))) out.push({ event: 'burst', by: 'badger', target: 'hyena', seq: b.seq });
+    if (fresh(b, oh.burst)) out.push({ event: 'burst', by: 'badger', target: 'hyena', seq: b.seq });
     const rv = h.rival;
-    if (fresh(rv, oh.rival) && (pointOk(rv.to) || anyPoint(rv.trail))) {
+    if (fresh(rv, oh.rival)) {
       const by = kindOf(rv.by);
       out.push({ event: 'shove', by, target: by === 'hyena' ? 'badger' : 'hyena', seq: rv.seq });
     }
@@ -364,10 +366,9 @@
     const ev = (root.PUSH_MOTION && PUSH_MOTION.events(S, prev)) || [];
     const pol = (root.SURPRISE && SURPRISE.policy) ? SURPRISE.policy(S, prev) : null;
     api.policy = pol;
-    // Watchers play a kick on the board. The cartoon must not cover that slide,
-    // and a hunter who has already left sight gets neither.
-    const watcherKick = !!(pol && pol.ev && pol.ev.event === 'kick' && !pol.affected && !pol.actor);
-    const useScene = scene && !watcherKick;
+    // Every phone plays the cartoon first. A phone that can see the squares then plays the board slide
+    // (surprise.js policy: the slide starts after the cartoon); one that cannot plays no slide.
+    const useScene = scene;
     if (!useScene && !ev.length) return;
     const stage = document.getElementById('stage');
     if (stage && board.children.length) {

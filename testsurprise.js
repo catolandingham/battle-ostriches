@@ -368,7 +368,7 @@ const P = require('./public/push-motion');
   const wp = SUR.policy(watch, prev.red);
   if (T.hunterSeenBy(g, 'red')) {
     assert.ok(wp.bystander && wp.watchSlide && !wp.skipSlide && !wp.skipNear, 'a watcher who can still see the hunter plays the slide');
-    assert.equal(wp.motionDelay, 0, 'the watcher slide does not wait for the cartoon');
+    assert.equal(wp.motionDelay, SUR.CARTOON_MS, 'the watcher cartoon plays first, then the slide');
     assert.ok(wp.motionMs > 0);
     const ev = P.events(watch, prev.red).filter(e => e.key === 'hyena' || e.key === watch.kick.key);
     assert.equal(ev.length, 1, 'one slide, taken from the redacted trail');
@@ -389,7 +389,7 @@ const P = require('./public/push-motion');
   assert.deepEqual(watch.kick.trail, g.lastKick.points);
   const wp = SUR.policy(watch, prev.red);
   assert.ok(wp.watchSlide && !wp.skipSlide, 'a far watcher plays the shove');
-  assert.equal(wp.motionDelay, 0);
+  assert.equal(wp.motionDelay, SUR.CARTOON_MS, 'cartoon first, then the slide');
   assert.ok(wp.motionMs > 0);
   assert.equal(P.events(watch, prev.red).filter(e => e.key === 'hyena' || e.key === watch.kick.key).length, 1, 'the far phone gets a slide');
   assert.ok(watch.kick.trail.every(p => p[0] !== g.ostrich[0] || p[1] !== g.ostrich[1]), 'the path does not name the ostrich square');
