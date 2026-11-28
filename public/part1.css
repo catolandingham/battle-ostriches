@@ -127,7 +127,8 @@ html[data-theme] #board .cell.sat>.wring.sq,html #board .cell.sat>.wring.sq{left
 /* on your egg the square's own ring and the YOU tag mark you: the round ring under the animal would only cut across the egg */
 html #board .cell.sat .youring,html #board .cell.vfound .youring{display:none}
 /* a newly found egg pulses twice (found-pulse.js); with reduced motion it only shows */
-@keyframes foundpulse{0%,100%{opacity:1}40%{opacity:.35}}
+/* The pulse never dims the egg (an opacity dip turned the solid black egg grey, most noticeably as its square lit up): it stays the same solid fill and gains a thin pale-and-dark halo that fades in and out. */
+@keyframes foundpulse{0%,100%{filter:drop-shadow(0 0 0 rgba(255,255,255,0)) drop-shadow(0 0 0 rgba(17,17,17,0))}40%{filter:drop-shadow(0 0 2px #fff) drop-shadow(0 0 3px #111)}}
 :is(#board,.mini,#howPics) .justfound{animation:foundpulse .55s ease-in-out 2;transform-origin:50% 60%}
 @keyframes foundpulse2{0%,100%{opacity:1}40%{opacity:.55}}
 #howPics .realpic.found img{animation:foundpulse2 .55s ease-in-out 2 .3s}

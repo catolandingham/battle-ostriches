@@ -33,6 +33,33 @@ const server = require('./server');
   await page.evaluate(() => { document.querySelector('#board').innerHTML = '<div class="cell spotted"><span class="ic-spot"><i class="cmark cm-egg is"><svg></svg></i></span></div>'; });
   await page.waitForTimeout(50);
   assert.equal(await page.locator('#board .justfound').count(), 0, 'same found egg does not repeat on redraw');
+  // A found egg reads the same on a lit square as on a plain one, in Black and white and Classic, even at the peak of its pulse. The other egg marks too.
+  {
+    const mk = (cls, inner) => '<div class="cell ' + cls + '">' + inner + '</div>';
+    const path = '<svg viewBox="0 0 36 44"><path class="mk-d" d="M18 3L30 40H6Z"/><path class="mk" d="M18 3L30 40H6Z"/></svg>';
+    const marks = { found: '<span class="ic ic-spot"><i class="cmark cm-egg is">' + path + '</i></span>', maybe: '<i class="cmark cm-egg">' + path + '</i>', mine: '<span class="ic ic-myegg"><i class="cmark cm-egg is">' + path + '</i><span class="wnum">3</span></span>' };
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+    for (const theme of ['bw', 'classic']) {
+      await page.evaluate(t => document.documentElement.setAttribute('data-theme', t), theme);
+      for (const [name, inner] of Object.entries(marks)) {
+        const seen = {};
+        for (const [lit, cls] of [['plain', 'spotted'], ['lit', 'spotted legal'], ['throw', 'spotted legal target']]) {
+          await page.evaluate(() => { document.querySelector('#board').innerHTML = ''; }); await page.waitForTimeout(30); // an empty board forgets the last found egg, so the next one pulses again
+          await page.evaluate(h => { document.querySelector('#board').innerHTML = h; }, mk(cls, inner));
+          if (name === 'found') {
+            await page.waitForSelector('#board .justfound', { state: 'attached' });
+            await page.evaluate(() => document.querySelectorAll('#board .justfound').forEach(e => e.getAnimations().forEach(a => { a.pause(); a.currentTime = 220; })));
+          }
+          seen[lit] = await page.evaluate(() => { const m = document.querySelector('#board .mk'), out = []; for (let e = m; e && e.id !== 'board'; e = e.parentElement) out.push(getComputedStyle(e).opacity); const s = getComputedStyle(m); return JSON.stringify({ fill: s.fill, stroke: s.stroke, opacity: out }); });
+        }
+        assert.equal(seen.lit, seen.plain, theme + ' ' + name + ' egg on a lit square matches a plain one: ' + JSON.stringify(seen));
+        assert.equal(seen.throw, seen.plain, theme + ' ' + name + ' egg on a throw square matches a plain one: ' + JSON.stringify(seen));
+        assert.ok(JSON.parse(seen.plain).opacity.every(o => o === '1'), theme + ' ' + name + ' egg is never dimmed: ' + seen.plain);
+        if (name === 'found') assert.equal(JSON.parse(seen.plain).fill, theme === 'bw' ? 'rgb(0, 0, 0)' : 'rgb(255, 255, 255)', theme + ' found egg fill');
+      }
+    }
+    await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'bw'));
+  }
   await page.evaluate(() => UI.closeRules());
   await page.evaluate(() => {
     document.querySelector('#lobby').classList.add('hidden');
